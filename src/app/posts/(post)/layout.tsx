@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import './globals.css'
-import Header from '@/components/header'
+import './mdx.css'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -14,8 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-[rgba(28,28,30)]" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <Header />
+      <body className="prose" suppressHydrationWarning>
         {children}
       </body>
     </html>

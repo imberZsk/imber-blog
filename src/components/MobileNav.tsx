@@ -1,0 +1,103 @@
+'use client'
+
+import { Menu, X } from 'lucide-react'
+import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { navItems } from '../../config'
+
+const menuVariants = {
+  closed: {
+    opacity: 0,
+    y: -4,
+    transition: {
+      duration: 0.2,
+      when: 'beforeChildren'
+    }
+  },
+  open: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.2,
+      when: 'beforeChildren',
+      staggerChildren: 0.06
+    }
+  }
+}
+
+const itemVariants = {
+  closed: {
+    opacity: 0,
+    x: -16
+  },
+  open: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.23, 1, 0.32, 1]
+    }
+  }
+}
+
+const MobileNav = () => {
+  const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+
+  return (
+    <div className="lg:hidden">
+      <motion.button
+        className="rounded-full p-2 text-zinc-300 transition-colors hover:bg-white/5 hover:text-zinc-100"
+        onClick={() => setIsOpen(!isOpen)}
+        whileTap={{ scale: 0.95 }}
+      >
+        <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </motion.div>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fixed inset-0 top-[60px] z-50"
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={menuVariants}
+          >
+            <motion.div
+              className="h-[calc(100vh-60px)] bg-[#1a1a1a]/95 backdrop-blur-xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <nav className="mx-auto max-w-6xl px-4 py-8">
+                <div className="space-y-3">
+                  {navItems.map((item) => (
+                    <motion.div key={item.path} variants={itemVariants}>
+                      <Link
+                        href={item.path}
+                        className={`block rounded-lg px-3 py-2 text-base font-medium transition-colors ${
+                          pathname === item.path
+                            ? 'bg-white/10 text-zinc-100'
+                            : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
+                        }`}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </nav>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+export default MobileNav
