@@ -2,13 +2,13 @@ import { Github, Mail, Twitter } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import BlurText from '@/components/BlurText/BlurText'
-// import Aurora from '@/components/Aurora/Aurora'
+import Aurora from '@/components/Aurora/Aurora'
 
 export default function HomePage() {
   return (
     <div className="min-h-screen text-zinc-100">
       <section className="relative h-screen">
-        {/* <Aurora /> */}
+        <Aurora />
 
         {/* Main Content */}
         <main className="mx-auto flex min-h-screen max-w-6xl px-4">
