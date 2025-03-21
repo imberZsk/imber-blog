@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { postsConfig } from '../../../config'
 import { Calendar, Tag, Eye } from 'lucide-react'
+import { PADDING_TOP } from '../const'
+import { cn } from '../../../lib/utils'
 
 const Page = () => {
   return (
-    <div className="mx-auto mt-16 max-w-4xl px-4 py-8 sm:mt-20 md:mt-24">
+    <div className={cn('mx-auto max-w-4xl px-4 py-8', PADDING_TOP)}>
       <div className="space-y-8">
         {postsConfig.map((post, index) => (
           <Link

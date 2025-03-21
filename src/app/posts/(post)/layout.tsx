@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import './mdx.css'
+import { PADDING_TOP } from '@/app/const'
+import { cn } from '../../../../lib/utils'
+import { TableOfContents } from '@/components/TableOfContents'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -12,10 +15,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-[rgba(28,28,30)]" suppressHydrationWarning>
-      <body className="prose" suppressHydrationWarning>
-        {children}
-      </body>
-    </html>
+    <div className="relative mx-auto max-w-7xl">
+      <TableOfContents />
+      <article className={cn('prose mx-auto max-w-3xl px-4', PADDING_TOP)}>{children}</article>
+    </div>
   )
 }

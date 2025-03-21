@@ -1,0 +1,105 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { cn } from '../../lib/utils'
+
+interface Heading {
+  id: string
+  text: string
+  level: number
+}
+
+export function TableOfContents() {
+  const [headings, setHeadings] = useState<Heading[]>([])
+  const [activeId, setActiveId] = useState<string>('')
+
+  useEffect(() => {
+    // 等待 DOM 完全加载
+    const getHeadings = () => {
+      const elements = Array.from(document.querySelectorAll('h1[id], h2[id], h3[id]'))
+        .filter(
+          (element): element is HTMLElement =>
+            element instanceof HTMLElement && element.id.length > 0 && element.textContent !== null
+        )
+        .map((element) => ({
+          id: element.id,
+          text: element.textContent || '',
+          level: parseInt(element.tagName[1])
+        }))
+
+      setHeadings(elements)
+    }
+
+    getHeadings()
+    // 监听内容变化
+    const observer = new MutationObserver(() => {
+      setTimeout(getHeadings, 100) // 延迟执行以确保 ID 已经生成
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    // 监听滚动位置
+    const scrollObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id)
+          }
+        })
+      },
+      {
+        rootMargin: '-100px 0% -66%',
+        threshold: 1.0
+      }
+    )
+
+    headings.forEach(({ id }) => {
+      const element = document.getElementById(id)
+      if (element) {
+        scrollObserver.observe(element)
+      }
+    })
+
+    return () => {
+      observer.disconnect()
+      scrollObserver.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headings.length])
+
+  if (headings.length === 0) return null
+
+  return (
+    <nav className="fixed top-[3.8125rem] right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 lg:block">
+      <h2 className="font-semibold text-zinc-100">目录</h2>
+      <ul className="mt-4 space-y-3 text-sm">
+        {headings.map((heading) => (
+          <li
+            key={heading.id}
+            style={{
+              paddingLeft: `${(heading.level - 1) * 16}px`
+            }}
+          >
+            <a
+              href={`#${heading.id}`}
+              className={cn(
+                'inline-block text-zinc-400 transition-colors hover:text-zinc-100',
+                activeId === heading.id && 'font-medium text-blue-400'
+              )}
+              onClick={(e) => {
+                e.preventDefault()
+                const element = document.getElementById(heading.id)
+                if (element) {
+                  const yOffset = -100 // 考虑固定头部的高度
+                  const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
+                  window.scrollTo({ top: y, behavior: 'smooth' })
+                }
+              }}
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
