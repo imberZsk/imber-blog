@@ -13,6 +13,42 @@ MDX 是一种强大的文档格式，它允许你在 Markdown 文档中使用 Re
 - 支持 JSX 语法
 - 可以使用 JavaScript 表达式
 
+## 交互式代码编辑器示例
+
+下面是一个简单的 React 组件示例，你可以直接编辑代码并查看效果：
+
+import { CodeEditor } from '@/components'
+
+<CodeEditor
+  files={{
+    '/App.tsx': `import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h2>计数器示例</h2>
+      <p>当前计数: {count}</p>
+      <button 
+        onClick={() => setCount(count + 1)}
+        style={{
+          padding: '8px 16px',
+          background: '#0070f3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        增加计数
+      </button>
+    </div>
+  );
+}`
+  }}
+/>
+
 ## 为什么选择 MDX?
 
 MDX 结合了 Markdown 的简洁性和 React 的灵活性，是编写技术文档的理想选择。

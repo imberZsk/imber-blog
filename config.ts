@@ -1,31 +1,31 @@
 export const postsConfig = [
   {
-    title: '在 Expo 中使用 Native 组件',
+    title: 'Javascript 中的this',
     href: '/posts/hello-world',
     date: '2025-02-09',
-    tags: ['技术', 'react-native', 'swiftui'],
+    tags: ['技术', 'Javascript'],
     views: 514
   },
   {
-    title: 'React Native 实践：Colors',
-    href: '/posts/colors',
-    date: '2025-01-26',
-    tags: ['技术', 'react-native', 'follow-development'],
-    views: 621
+    title: 'Javascript 中的原型',
+    href: '/posts/hello-world',
+    date: '2025-02-09',
+    tags: ['技术', 'Javascript'],
+    views: 514
   },
   {
-    title: '构想：Electron Render OTA 更新',
-    href: '/posts/electron-ota',
-    date: '2024-12-12',
-    tags: ['技术', 'electron'],
-    views: 1013
+    title: 'React 中的状态管理',
+    href: '/posts/hello-world',
+    date: '2025-02-09',
+    tags: ['技术', 'React'],
+    views: 514
   },
   {
-    title: 'Vercel 部署的单页应用（SPA）动态 Meta 标签实践',
-    href: '/posts/vercel-spa-meta',
-    date: '2024-11-03',
-    tags: ['技术', 'follow-development', 'node', 'vercel'],
-    views: 1361
+    title: 'React 中的组件通信',
+    href: '/posts/hello-world',
+    date: '2025-02-09',
+    tags: ['技术', 'React'],
+    views: 514
   }
 ]
 

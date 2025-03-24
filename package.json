@@ -10,6 +10,7 @@
     "postinstall": "simple-git-hooks"
   },
   "dependencies": {
+    "@codesandbox/sandpack-react": "^2.20.0",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "^15.2.3",
