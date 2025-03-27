@@ -42,9 +42,11 @@ const Page = () => {
           >
             <Link
               href={post.href}
-              className="group block space-y-3 rounded-lg bg-zinc-900/50 p-6 transition-all hover:bg-zinc-900/70"
+              className="group block space-y-3 rounded-lg bg-zinc-900/50 p-6 transition-all hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-zinc-900/20"
             >
-              <h2 className="text-xl font-semibold text-zinc-100 group-hover:text-blue-400">{post.title}</h2>
+              <h2 className="text-xl font-semibold text-zinc-100 transition-colors group-hover:text-amber-300/90">
+                {post.title}
+              </h2>
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
                 <div className="flex items-center gap-1">

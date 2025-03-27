@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
+import { PADDING_TOP } from '@/app/const'
 
 interface Heading {
   id: string
@@ -69,7 +70,12 @@ export function TableOfContents() {
   if (headings.length === 0) return null
 
   return (
-    <nav className="fixed top-[3.8125rem] right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 lg:block">
+    <nav
+      className={cn(
+        'fixed right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 lg:block',
+        PADDING_TOP
+      )}
+    >
       <h2 className="font-semibold text-zinc-100">目录</h2>
       <ul className="mt-4 space-y-3 text-sm">
         {headings.map((heading) => (

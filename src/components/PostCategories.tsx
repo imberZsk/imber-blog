@@ -13,7 +13,7 @@ const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCa
         <button
           onClick={() => onCategoryChange('all')}
           className={cn(
-            'rounded-full px-4 py-1.5 text-sm transition-colors',
+            'cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors',
             activeCategory === 'all'
               ? 'bg-blue-500 text-white'
               : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300'
@@ -26,7 +26,7 @@ const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCa
             key={category}
             onClick={() => onCategoryChange(category)}
             className={cn(
-              'rounded-full px-4 py-1.5 text-sm transition-colors',
+              'cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors',
               activeCategory === category
                 ? 'bg-blue-500 text-white'
                 : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300'
