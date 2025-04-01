@@ -1,8 +1,9 @@
-import { Github, Mail, Twitter } from 'lucide-react'
+import { Github } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import BlurText from '@/components/BlurText/BlurText'
 import Aurora from '@/components/Aurora/Aurora'
+import { JuejinSvg } from '@/components/icons'
 
 export default function HomePage() {
   return (
@@ -55,39 +56,18 @@ export default function HomePage() {
               {/* Social Links */}
               <div className="flex justify-center gap-2 lg:justify-start">
                 <Link
-                  href="https://innei.in"
-                  target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 transition-colors hover:bg-blue-500/20"
-                >
-                  <Mail className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="https://github.com"
-                  target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500 transition-colors hover:bg-red-500/20"
-                >
-                  <Github className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="https://github.com"
+                  href="https://github.com/imberZsk"
                   target="_blank"
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-white transition-colors hover:bg-black/20"
                 >
                   <Github className="h-5 w-5" />
                 </Link>
                 <Link
-                  href="https://github.com"
+                  href="https://juejin.cn/user/3378167164966920/posts"
                   target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/10 text-orange-500 transition-colors hover:bg-orange-500/20"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-white transition-colors hover:bg-black/20"
                 >
-                  <Github className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="https://github.com"
-                  target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 transition-colors hover:bg-blue-500/20"
-                >
-                  <Twitter className="h-5 w-5" />
+                  <JuejinSvg className="h-5 w-5" />
                 </Link>
               </div>
             </div>

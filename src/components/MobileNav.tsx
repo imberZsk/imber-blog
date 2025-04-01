@@ -61,14 +61,14 @@ const MobileNav = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 top-[60px] z-50"
+            className="fixed inset-0 top-[72px] z-50"
             initial="closed"
             animate="open"
             exit="closed"
             variants={menuVariants}
           >
             <motion.div
-              className="h-[calc(100vh-60px)] bg-[#1a1a1a]/95 backdrop-blur-xl"
+              className="h-[calc(100vh-72px)] bg-[#1a1a1a]/95 backdrop-blur-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
