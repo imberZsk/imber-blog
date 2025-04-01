@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { postsConfig } from '../../../config'
+import { postsConfig } from './config'
 import { Calendar, Tag, Eye } from 'lucide-react'
 import { PADDING_TOP } from '../const'
 import { cn } from '../../../lib/utils'
