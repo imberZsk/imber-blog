@@ -42,6 +42,7 @@ const Page = () => {
           >
             <Link
               href={post.href}
+              target="_blank"
               className="group block space-y-3 rounded-lg bg-zinc-900/50 p-6 transition-all hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-zinc-900/20"
             >
               <h2 className="text-xl font-semibold text-zinc-100 transition-colors group-hover:text-amber-300/90">
