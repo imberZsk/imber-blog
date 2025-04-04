@@ -1,1 +1,170 @@
 # SWR
+
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
+> SWR 数据请求库详解
+
+## 什么是 SWR
+
+SWR 是 React Hooks 的数据请求库，由 Vercel 团队开发。它的名字来源于 "stale-while-revalidate"（过期重新验证）策略，这是一种缓存策略，允许在后台重新验证数据的同时，立即返回缓存的数据。
+
+## SWR 的核心特性
+
+### 1. 自动缓存和重新验证
+
+```jsx
+import useSWR from 'swr'
+
+function Profile() {
+  const { data, error } = useSWR('/api/user', fetcher)
+
+  if (error) return <div>failed to load</div>
+  if (!data) return <div>loading...</div>
+  return <div>hello {data.name}!</div>
+}
+```
+
+### 2. 实时数据更新
+
+```jsx
+function Dashboard() {
+  const { data } = useSWR('/api/stats', fetcher, {
+    refreshInterval: 1000 // 每秒刷新一次
+  })
+  // ...
+}
+```
+
+### 3. 依赖请求
+
+```jsx
+function Projects({ userId }) {
+  const { data: user } = useSWR('/api/user/' + userId)
+  const { data: projects } = useSWR(() => '/api/projects?uid=' + user.id)
+  // ...
+}
+```
+
+## SWR 的配置选项
+
+### 1. 全局配置
+
+```jsx
+import { SWRConfig } from 'swr'
+
+function App() {
+  return (
+    <SWRConfig
+      value={{
+        refreshInterval: 3000,
+        fetcher: (resource, init) => fetch(resource, init).then((res) => res.json())
+      }}
+    >
+      <Dashboard />
+    </SWRConfig>
+  )
+}
+```
+
+### 2. 局部配置
+
+```jsx
+const { data } = useSWR('/api/user', fetcher, {
+  revalidateOnFocus: false, // 窗口聚焦时不重新验证
+  dedupingInterval: 2000, // 2秒内不重复请求
+  refreshInterval: 0, // 不自动刷新
+  errorRetryCount: 5, // 错误重试次数
+  onError: (err) => {
+    // 错误处理
+    console.error(err)
+  }
+})
+```
+
+## SWR 的高级用法
+
+### 1. 条件请求
+
+```jsx
+function Profile({ shouldFetch }) {
+  const { data } = useSWR(shouldFetch ? '/api/user' : null, fetcher)
+  // ...
+}
+```
+
+### 2. 并行请求
+
+```jsx
+function Profile() {
+  const { data: user } = useSWR('/api/user')
+  const { data: projects } = useSWR('/api/projects')
+  // ...
+}
+```
+
+### 3. 乐观更新
+
+```jsx
+function Profile() {
+  const { data, mutate } = useSWR('/api/user', fetcher)
+
+  return (
+    <div>
+      <h1>My name is {data.name}.</h1>
+      <button
+        onClick={async () => {
+          const newName = data.name.toUpperCase()
+
+          // 立即更新本地数据
+          mutate({ ...data, name: newName }, false)
+
+          // 发送请求更新服务器
+          await requestUpdateUsername(newName)
+
+          // 触发重新验证
+          mutate()
+        }}
+      >
+        Uppercase my name!
+      </button>
+    </div>
+  )
+}
+```
+
+## SWR 的优势
+
+1. **自动缓存**：自动缓存请求结果，减少重复请求
+2. **实时更新**：支持自动重新验证和实时更新
+3. **错误处理**：内置错误处理和重试机制
+4. **类型安全**：支持 TypeScript
+5. **轻量级**：体积小，性能好
+
+## 源码分析
+
+SWR 的核心实现在 `use-swr.ts` 中：
+
+```ts
+export function useSWR<Data = any, Error = any>(
+  key: Key,
+  fetcher: Fetcher<Data> | null,
+  config: SWRConfiguration<Data, Error> = {}
+): SWRResponse<Data, Error> {
+  // ...
+}
+```
+
+## 总结
+
+SWR 是一个强大的数据请求库，它通过以下方式简化了数据获取：
+
+1. 自动缓存和重新验证
+2. 实时数据更新
+3. 依赖请求
+4. 乐观更新
+5. 错误处理
+
+## 源码仓库
+
+https://github.com/vercel/swr

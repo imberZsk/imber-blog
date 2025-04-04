@@ -71,3 +71,78 @@ import { Button } from './components'
 
 <Button>点击我</Button>
 ```
+
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
+> Nextjs 国际化 not found 方案
+
+## 问题背景
+
+在 Next.js 项目中，当用户访问不存在的页面时，会显示默认的 404 页面。但是在国际化项目中，我们需要根据用户的语言显示对应的 404 页面。
+
+## 解决方案
+
+### 1. 创建自定义 404 页面
+
+在 `app` 目录下创建 `not-found.tsx` 文件：
+
+```tsx
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useTranslation } from '@/app/i18n/client'
+
+export default function NotFound() {
+  const router = useRouter()
+  const { t } = useTranslation('common')
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">{t('notFound.title')}</h1>
+      <p className="mb-8 text-xl">{t('notFound.description')}</p>
+      <button onClick={() => router.push('/')} className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
+        {t('notFound.backHome')}
+      </button>
+    </div>
+  )
+}
+```
+
+### 2. 配置国际化
+
+在 `i18n` 配置中添加对应的翻译：
+
+```ts
+// i18n/locales/zh/common.json
+{
+  "notFound": {
+    "title": "页面未找到",
+    "description": "抱歉，您访问的页面不存在",
+    "backHome": "返回首页"
+  }
+}
+
+// i18n/locales/en/common.json
+{
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Sorry, the page you are looking for does not exist",
+    "backHome": "Back to Home"
+  }
+}
+```
+
+### 3. 使用方式
+
+当用户访问不存在的页面时，Next.js 会自动显示我们自定义的 404 页面，并根据用户的语言显示对应的翻译。
+
+## 注意事项
+
+1. 确保 `not-found.tsx` 文件位于 `app` 目录的根目录下
+2. 使用 `useTranslation` 时，确保传入正确的 namespace
+3. 可以根据需要自定义 404 页面的样式和内容
+
+## 源码仓库
+
+https://github.com/imberZsk/nextjs-i18n-not-found

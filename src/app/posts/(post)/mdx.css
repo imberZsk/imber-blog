@@ -87,15 +87,23 @@
   padding-left: 1em;
 }
 
+/* 优化行内代码样式 */
 .prose code {
   color: var(--tw-prose-code);
   font-weight: 600;
   font-size: 0.875em;
   background-color: var(--tw-prose-code-bg);
-  padding: 0.25rem 0.375rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
+/* 优化代码块样式 */
 .prose pre {
   color: var(--tw-prose-pre-code);
   background-color: var(--tw-prose-pre-bg);
@@ -105,13 +113,31 @@
   line-height: 1.7142857;
   margin-top: 1.7142857em;
   margin-bottom: 1.7142857em;
-  border-radius: 0.375rem;
-  padding: 0.8571429em 1.1428571em;
+  border-radius: 0.5rem;
+  padding: 1.25em 1.5em;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* 代码块内的代码样式 */
+.prose pre code {
+  color: inherit;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-weight: inherit;
+  box-shadow: none;
 }
 
 .prose img {
   margin-top: 2em;
   margin-bottom: 2em;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .prose hr {

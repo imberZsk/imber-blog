@@ -1,1 +1,144 @@
-# zustand
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
+> Zustand 状态管理库详解
+
+## 什么是 Zustand
+
+Zustand 是一个轻量级的状态管理库，它的设计理念是简单、灵活和可扩展。与 Redux 相比，Zustand 的 API 更加简洁，学习曲线更平缓。
+
+## Zustand 的核心特性
+
+### 1. 创建 Store
+
+```ts
+import create from 'zustand'
+
+interface BearState {
+  bears: number
+  increase: (by: number) => void
+}
+
+const useStore = create<BearState>((set) => ({
+  bears: 0,
+  increase: (by) => set((state) => ({ bears: state.bears + by }))
+}))
+```
+
+### 2. 使用 Store
+
+```tsx
+function BearCounter() {
+  const bears = useStore((state) => state.bears)
+  return <h1>{bears} around here ...</h1>
+}
+
+function Controls() {
+  const increase = useStore((state) => state.increase)
+  return <button onClick={() => increase(1)}>one up</button>
+}
+```
+
+### 3. 中间件
+
+```ts
+import { devtools, persist } from 'zustand/middleware'
+
+const useStore = create(
+  devtools(
+    persist(
+      (set) => ({
+        bears: 0,
+        increase: (by) => set((state) => ({ bears: state.bears + by }))
+      }),
+      {
+        name: 'bear-storage'
+      }
+    )
+  )
+)
+```
+
+## Zustand 的高级用法
+
+### 1. 异步操作
+
+```ts
+const useStore = create((set) => ({
+  fishies: {},
+  fetch: async (pond) => {
+    const response = await fetch(pond)
+    set({ fishies: await response.json() })
+  }
+}))
+```
+
+### 2. 订阅状态变化
+
+```ts
+const useStore = create((set) => ({
+  bears: 0,
+  increase: (by) => set((state) => ({ bears: state.bears + by }))
+}))
+
+// 订阅状态变化
+useStore.subscribe((state) => {
+  console.log('bears changed to', state.bears)
+})
+```
+
+### 3. 派生状态
+
+```ts
+const useStore = create((set) => ({
+  bears: 0,
+  fish: 0,
+  increaseBears: (by) => set((state) => ({ bears: state.bears + by })),
+  increaseFish: (by) => set((state) => ({ fish: state.fish + by }))
+}))
+
+// 派生状态
+const total = useStore((state) => state.bears + state.fish)
+```
+
+## Zustand 的优势
+
+1. **简单易用**：API 简洁，学习曲线平缓
+2. **类型安全**：完全支持 TypeScript
+3. **性能优秀**：基于 React 的 Context API，性能好
+4. **中间件支持**：支持多种中间件，如 devtools、persist 等
+5. **轻量级**：体积小，无依赖
+
+## 源码分析
+
+Zustand 的核心实现在 `zustand.ts` 中：
+
+```ts
+export function create<T extends State>(createState: StateCreator<T, [], []>): UseBoundStore<T> {
+  // ...
+}
+```
+
+## 与 Redux 的对比
+
+| 特性     | Zustand | Redux |
+| -------- | ------- | ----- |
+| 学习曲线 | 平缓    | 陡峭  |
+| 代码量   | 少      | 多    |
+| 性能     | 好      | 一般  |
+| 中间件   | 支持    | 支持  |
+| 类型支持 | 好      | 好    |
+
+## 总结
+
+Zustand 是一个优秀的状态管理库，它通过以下方式简化了状态管理：
+
+1. 简单的 API 设计
+2. 类型安全
+3. 性能优化
+4. 中间件支持
+5. 轻量级
+
+## 源码仓库
+
+https://github.com/pmndrs/zustand

@@ -1,1 +1,151 @@
 # React Fiber
+
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
+> React Fiber 架构详解
+
+## 什么是 Fiber
+
+Fiber 是 React 16 引入的新架构，它是一个用于实现增量渲染的算法。Fiber 的主要目标是提高 React 的性能和响应性，特别是在处理大型应用和复杂 UI 时。
+
+## Fiber 的核心概念
+
+### 1. 可中断的渲染
+
+Fiber 允许 React 在渲染过程中中断工作，让浏览器有机会处理用户输入和其他高优先级任务。
+
+```js
+// 在 Fiber 架构中，渲染过程可以被中断
+function performUnitOfWork(fiber) {
+  // 执行当前工作单元
+  // 如果时间片用完，可以中断并返回
+  if (shouldYield()) {
+    return null
+  }
+  // 继续执行
+  return nextFiber
+}
+```
+
+### 2. 优先级调度
+
+Fiber 引入了优先级的概念，允许 React 根据任务的紧急程度来决定执行顺序。
+
+```js
+const ImmediatePriority = 1
+const UserBlockingPriority = 2
+const NormalPriority = 3
+const LowPriority = 4
+const IdlePriority = 5
+```
+
+### 3. 双缓存技术
+
+Fiber 使用双缓存技术来避免 UI 闪烁，确保渲染过程的平滑。
+
+```js
+// 当前显示的树
+let current = null
+// 正在构建的树
+let workInProgress = null
+```
+
+## Fiber 的数据结构
+
+Fiber 节点是一个 JavaScript 对象，包含以下主要属性：
+
+```js
+{
+  type: Function | String, // 组件类型
+  key: String,            // 唯一标识
+  stateNode: Object,      // 对应的 DOM 节点
+  return: Fiber,          // 父节点
+  child: Fiber,           // 第一个子节点
+  sibling: Fiber,         // 兄弟节点
+  alternate: Fiber,       // 用于双缓存
+  effectTag: Number,      // 副作用标记
+  nextEffect: Fiber,      // 下一个副作用
+}
+```
+
+## Fiber 的工作流程
+
+### 1. 渲染阶段
+
+```js
+function performUnitOfWork(fiber) {
+  // 1. 开始工作
+  beginWork(fiber)
+
+  // 2. 如果有子节点，继续处理子节点
+  if (fiber.child) {
+    return fiber.child
+  }
+
+  // 3. 处理兄弟节点
+  let nextFiber = fiber
+  while (nextFiber) {
+    // 4. 完成当前节点
+    completeWork(nextFiber)
+
+    // 5. 如果有兄弟节点，处理兄弟节点
+    if (nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+
+    // 6. 返回父节点
+    nextFiber = nextFiber.return
+  }
+}
+```
+
+### 2. 提交阶段
+
+```js
+function commitRoot(root) {
+  // 1. 提交副作用
+  commitBeforeMutationEffects()
+
+  // 2. 更新 DOM
+  commitMutationEffects()
+
+  // 3. 调用生命周期和 ref
+  commitLayoutEffects()
+}
+```
+
+## Fiber 的优势
+
+1. **更好的性能**：通过可中断的渲染和优先级调度，提高了应用的响应性
+2. **更好的错误处理**：引入了错误边界，可以更好地处理组件中的错误
+3. **更好的并发支持**：为未来的并发特性（如 Suspense）提供了基础
+
+## 源码分析
+
+React Fiber 的核心实现在 `ReactFiber.js` 中：
+
+```js
+function createFiber(
+  tag: WorkTag,
+  pendingProps: mixed,
+  key: null | string,
+  mode: TypeOfMode,
+): Fiber {
+  return new FiberNode(tag, pendingProps, key, mode)
+}
+```
+
+## 总结
+
+React Fiber 架构通过以下方式改进了 React：
+
+1. 实现了可中断的渲染
+2. 引入了优先级调度
+3. 使用了双缓存技术
+4. 提供了更好的错误处理
+5. 为并发特性提供了基础
+
+## 源码仓库
+
+https://github.com/facebook/react

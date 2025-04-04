@@ -1,1 +1,102 @@
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
 # Nextjs 国际化站点地图分片方案
+
+## 问题背景
+
+在 Next.js 国际化项目中，我们需要为每个语言版本生成对应的站点地图。当网站内容较多时，单个站点地图文件可能会变得很大，影响搜索引擎的抓取效率。
+
+## 解决方案
+
+### 1. 创建站点地图生成器
+
+在 `app` 目录下创建 `sitemap.ts` 文件：
+
+```ts
+import { MetadataRoute } from 'next'
+import { languages } from '@/app/i18n/settings'
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://example.com'
+  const routes = ['/', '/posts', '/notes', '/friends', '/more']
+
+  const sitemaps = languages.flatMap((lang) => {
+    return routes.map((route) => ({
+      url: `${baseUrl}/${lang}${route}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.8
+    }))
+  })
+
+  return sitemaps
+}
+```
+
+### 2. 创建分片站点地图
+
+在 `app` 目录下创建 `sitemap/[index].ts` 文件：
+
+```ts
+import { MetadataRoute } from 'next'
+import { languages } from '@/app/i18n/settings'
+
+export default async function sitemap({ params }: { params: { index: string } }): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://example.com'
+  const index = parseInt(params.index)
+  const chunkSize = 1000 // 每个分片的大小
+
+  const routes = ['/', '/posts', '/notes', '/friends', '/more']
+  const allUrls = languages.flatMap((lang) => {
+    return routes.map((route) => ({
+      url: `${baseUrl}/${lang}${route}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.8
+    }))
+  })
+
+  const start = index * chunkSize
+  const end = start + chunkSize
+  return allUrls.slice(start, end)
+}
+```
+
+### 3. 创建站点地图索引
+
+在 `app` 目录下创建 `sitemap.xml.ts` 文件：
+
+```ts
+import { MetadataRoute } from 'next'
+import { languages } from '@/app/i18n/settings'
+
+export default async function sitemapIndex(): Promise<MetadataRoute.SitemapIndex> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://example.com'
+  const routes = ['/', '/posts', '/notes', '/friends', '/more']
+  const totalUrls = languages.length * routes.length
+  const chunkSize = 1000
+  const totalChunks = Math.ceil(totalUrls / chunkSize)
+
+  return Array.from({ length: totalChunks }, (_, i) => ({
+    url: `${baseUrl}/sitemap/${i}.xml`,
+    lastModified: new Date()
+  }))
+}
+```
+
+## 使用方式
+
+1. 访问 `https://example.com/sitemap.xml` 获取站点地图索引
+2. 搜索引擎会根据索引文件获取所有分片站点地图
+3. 每个分片站点地图包含最多 1000 个 URL
+
+## 注意事项
+
+1. 确保 `NEXT_PUBLIC_BASE_URL` 环境变量已正确设置
+2. 可以根据需要调整 `chunkSize` 的大小
+3. 建议定期更新站点地图，保持内容的新鲜度
+
+## 源码仓库
+
+https://github.com/imberZsk/nextjs-i18n-sitemap

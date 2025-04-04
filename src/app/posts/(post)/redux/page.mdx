@@ -1,1 +1,188 @@
-# Redux
+import ImageModal from '@/components/ImageModal'
+import '../mdx.css'
+
+> Redux 状态管理库详解
+
+## 什么是 Redux
+
+Redux 是一个可预测的状态容器，用于 JavaScript 应用。它可以帮助你编写行为一致、运行于不同环境（客户端、服务器和原生应用）且易于测试的应用。
+
+## Redux 的核心概念
+
+### 1. Store
+
+```js
+import { createStore } from 'redux'
+import rootReducer from './reducers'
+
+const store = createStore(rootReducer)
+```
+
+### 2. Action
+
+```js
+// 定义 action 类型
+const ADD_TODO = 'ADD_TODO'
+
+// 定义 action 创建函数
+function addTodo(text) {
+  return {
+    type: ADD_TODO,
+    text
+  }
+}
+```
+
+### 3. Reducer
+
+```js
+function todos(state = [], action) {
+  switch (action.type) {
+    case 'ADD_TODO':
+      return [
+        ...state,
+        {
+          text: action.text,
+          completed: false
+        }
+      ]
+    default:
+      return state
+  }
+}
+```
+
+## Redux 的基本用法
+
+### 1. 创建 Store
+
+```js
+import { createStore } from 'redux'
+import todoApp from './reducers'
+
+const store = createStore(todoApp)
+```
+
+### 2. 订阅状态变化
+
+```js
+const unsubscribe = store.subscribe(() => console.log(store.getState()))
+```
+
+### 3. 分发 Action
+
+```js
+store.dispatch(addTodo('Learn Redux'))
+```
+
+## Redux 的高级特性
+
+### 1. 中间件
+
+```js
+import { createStore, applyMiddleware } from 'redux'
+import thunk from 'redux-thunk'
+import logger from 'redux-logger'
+
+const store = createStore(rootReducer, applyMiddleware(thunk, logger))
+```
+
+### 2. 异步 Action
+
+```js
+function fetchTodos() {
+  return (dispatch) => {
+    dispatch(requestTodos())
+    return fetch('/api/todos')
+      .then((response) => response.json())
+      .then((json) => dispatch(receiveTodos(json)))
+  }
+}
+```
+
+### 3. 组合 Reducer
+
+```js
+import { combineReducers } from 'redux'
+import todos from './todos'
+import visibilityFilter from './visibilityFilter'
+
+const todoApp = combineReducers({
+  todos,
+  visibilityFilter
+})
+```
+
+## Redux Toolkit
+
+Redux Toolkit 是 Redux 官方推荐的工具集，它简化了 Redux 的使用。
+
+### 1. 创建 Slice
+
+```js
+import { createSlice } from '@reduxjs/toolkit'
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: 0,
+  reducers: {
+    increment: (state) => state + 1,
+    decrement: (state) => state - 1
+  }
+})
+```
+
+### 2. 创建 Store
+
+```js
+import { configureStore } from '@reduxjs/toolkit'
+import counterReducer from './counterSlice'
+
+const store = configureStore({
+  reducer: {
+    counter: counterReducer
+  }
+})
+```
+
+## Redux 的优势
+
+1. **可预测性**：状态变化是可预测的
+2. **可调试**：支持时间旅行调试
+3. **可扩展**：支持中间件和增强器
+4. **社区支持**：有丰富的生态系统
+5. **跨平台**：可以在任何 JavaScript 环境中运行
+
+## 源码分析
+
+Redux 的核心实现在 `createStore.js` 中：
+
+```js
+export default function createStore(reducer, preloadedState, enhancer) {
+  // ...
+}
+```
+
+## 与 Zustand 的对比
+
+| 特性     | Redux | Zustand |
+| -------- | ----- | ------- |
+| 学习曲线 | 陡峭  | 平缓    |
+| 代码量   | 多    | 少      |
+| 性能     | 一般  | 好      |
+| 中间件   | 支持  | 支持    |
+| 类型支持 | 好    | 好      |
+
+## 总结
+
+Redux 是一个强大的状态管理库，它通过以下方式管理状态：
+
+1. 单一数据源
+2. 状态只读
+3. 使用纯函数修改状态
+4. 支持中间件
+5. 支持时间旅行调试
+
+## 源码仓库
+
+https://github.com/reduxjs/redux
