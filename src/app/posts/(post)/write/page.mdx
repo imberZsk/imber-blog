@@ -37,41 +37,41 @@ function controlConcurrent(arr, max) {
 }
 ```
 
+### 数组转数
+
+```js
+function arrayToTree(items, id = null, link = 'parentId') {
+  return items
+    .filter((item) => item[link] === id)
+    .map((item) => ({
+      ...item,
+      children: arrayToTree(items, item.id)
+    }))
+}
+```
+
+### 大数相加
+
+```js
+var addStrings = function (num1, num2) {
+  const len = Math.max(num1.length, num2.length)
+  num1 = num1.padStart(len, '0')
+  num2 = num2.padStart(len, '0')
+  let carry = 0
+  let result = ''
+  for (let i = len - 1; i >= 0; i--) {
+    const sum = +num1[i] + +num2[i] + carry
+    // 取余数
+    result = (sum % 10) + result
+    carry = sum >= 10 ? 1 : 0
+  }
+  return carry ? '1' + result : result
+}
+```
+
 ## 数组相关
 
-### 旋转数组
-
-```javascript
-function rotate(nums, k) {
-  k = k % nums.length
-  nums.unshift(...nums.splice(-k))
-  return nums
-}
-```
-
-### 最大子序和
-
-```javascript
-function maxSubArray(nums) {
-  let max = nums[0]
-  let sum = 0
-  for (let num of nums) {
-    sum = Math.max(sum + num, num)
-    max = Math.max(max, sum)
-  }
-  return max
-}
-```
-
 ## 字符串操作
-
-### 反转字符串
-
-```javascript
-function reverseString(str) {
-  return str.split('').reverse().join('')
-}
-```
 
 ### 验证回文字符串
 
@@ -95,18 +95,6 @@ function longestCommonPrefix(strs) {
     }
   }
   return prefix
-}
-```
-
-### 字符串转换整数
-
-```javascript
-function myAtoi(str) {
-  const num = parseInt(str.trim())
-  if (isNaN(num)) return 0
-  const INT_MAX = 2 ** 31 - 1
-  const INT_MIN = -(2 ** 31)
-  return Math.max(Math.min(num, INT_MAX), INT_MIN)
 }
 ```
 
