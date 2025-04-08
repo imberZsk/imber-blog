@@ -68,6 +68,13 @@ export const postsConfig = [
     date: '2025-02-09',
     tags: ['技术', 'HTTP'],
     views: 32
+  },
+  {
+    title: '一些手写题',
+    href: '/posts/write',
+    date: '2025-02-09',
+    tags: ['技术', '手写'],
+    views: 32
   }
 ]
 
