@@ -1,0 +1,220 @@
+## this指向经典题目
+
+#### 题目 1：全局环境中的 this
+
+```javascript
+console.log(this === window) // 浏览器环境下输出什么？
+
+// 输出 true
+```
+
+#### 题目 2：普通函数调用
+
+```javascript
+function test() {
+  console.log(this)
+}
+test() // 输出什么？
+
+// 非严格模式：window（浏览器）或 global（Node.js）
+// 严格模式：undefined
+```
+
+#### 题目 3：对象方法调用
+
+```javascript
+const obj = {
+  name: 'Alice',
+  greet: function () {
+    console.log(`Hello, ${this.name}`)
+  }
+}
+obj.greet() // 输出什么？
+
+// 输出 Hello, Alice
+```
+
+#### 题目 4：嵌套对象方法
+
+```javascript
+const obj = {
+  name: 'Bob',
+  outer: function () {
+    function inner() {
+      console.log(this.name)
+    }
+    inner()
+  }
+}
+obj.outer() // 输出什么？
+
+// 输出 undefined
+```
+
+#### 题目 5：箭头函数
+
+```javascript
+const obj = {
+  name: 'Charlie',
+  greet: () => {
+    console.log(`Hello, ${this.name}`)
+  }
+}
+obj.greet() // 输出什么？
+
+// 输出 Hello, undefined
+```
+
+#### 题目 6：构造函数
+
+```javascript
+function Person(name) {
+  this.name = name
+}
+const person = new Person('David')
+console.log(person.name) // 输出什么？
+
+// 输出 David
+```
+
+#### 题目 7：call/apply 改变 this
+
+```javascript
+const obj1 = { name: 'Eve' }
+const obj2 = { name: 'Frank' }
+
+function showName() {
+  console.log(this.name)
+}
+
+showName.call(obj1) // 输出什么？
+showName.apply(obj2) // 输出什么？
+
+// 输出 Eve
+// 输出 Frank
+```
+
+#### 题目 8：bind 方法
+
+```javascript
+const obj = {
+  name: 'Grace',
+  greet: function () {
+    setTimeout(
+      function () {
+        console.log(`Hello, ${this.name}`)
+      }.bind(this),
+      100
+    )
+  }
+}
+obj.greet() // 输出什么？
+
+// 输出 Hello, Grace
+```
+
+#### 题目 9：DOM 事件处理函数
+
+```html
+<button id="myBtn">Click me</button>
+<script>
+  document.getElementById('myBtn').addEventListener('click', function () {
+    console.log(this) // 点击按钮时输出什么？
+  })
+</script>
+
+// 输出 button
+```
+
+#### 题目 10：类中的 this
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name
+  }
+  greet() {
+    console.log(`Hello, ${this.name}`)
+  }
+}
+const person = new Person('Henry')
+person.greet() // 输出什么？
+
+// 输出 Hello, Henry
+```
+
+#### 题目 11：箭头函数中的 this
+
+```javascript
+const obj = {
+  name: 'Ivy',
+  greet: function () {
+    setTimeout(function () {
+      console.log(`Hello, ${this.name}`)
+    }, 100)
+  }
+}
+obj.greet() // 输出什么？
+
+// 输出 Hello, undefined
+```
+
+#### 题目 12：箭头函数解决 this 问题
+
+```javascript
+const obj = {
+  name: 'Jack',
+  greet: function () {
+    setTimeout(() => {
+      console.log(`Hello, ${this.name}`)
+    }, 100)
+  }
+}
+obj.greet() // 输出什么？
+
+// 输出 Hello, Jack
+```
+
+#### 题目 13：严格模式下的 this
+
+```javascript
+'use strict'
+function test() {
+  console.log(this)
+}
+test() // 输出什么？
+
+// 输出 undefined
+```
+
+#### 题目 14：多层嵌套的 this
+
+```javascript
+const obj = {
+  name: 'Kate',
+  outer: function () {
+    const inner = () => {
+      console.log(this.name)
+    }
+    inner()
+  }
+}
+obj.outer() // 输出什么？
+
+// 输出 Kate
+```
+
+#### 题目 15：方法作为回调函数
+
+```javascript
+const obj = {
+  name: 'Liam',
+  greet: function () {
+    console.log(`Hello, ${this.name}`)
+  }
+}
+
+setTimeout(obj.greet, 100) // 输出什么？
+
+// 输出 Hello, undefined
+```

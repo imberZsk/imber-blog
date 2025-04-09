@@ -1,0 +1,277 @@
+## Promise 执行顺序经典题目
+
+#### 题目 1：基础 Promise 执行顺序（基础）
+
+```javascript
+console.log('1')
+
+setTimeout(() => console.log('2'), 0)
+
+Promise.resolve().then(() => console.log('3'))
+
+console.log('4')
+
+// 输出 1 4 3 2
+```
+
+#### 题目 2：多层 Promise 嵌套（基础）
+
+```javascript
+console.log('start')
+
+Promise.resolve()
+  .then(() => {
+    console.log('promise1')
+    return Promise.resolve('promise2')
+  })
+  .then((res) => {
+    console.log(res)
+    setTimeout(() => console.log('timeout'), 0)
+  })
+
+console.log('end')
+
+// 输出 start end promise1 promise2 timeout
+```
+
+#### 题目 3：async/await 基础（await后面的成了微任务）
+
+```javascript
+async function async1() {
+  console.log('async1 start')
+  await async2()
+  console.log('async1 end')
+}
+
+async function async2() {
+  console.log('async2')
+}
+
+console.log('script start')
+
+setTimeout(() => console.log('setTimeout'), 0)
+
+async1()
+
+new Promise((resolve) => {
+  console.log('promise1')
+  resolve()
+}).then(() => {
+  console.log('promise2')
+})
+
+console.log('script end')
+
+// 输出
+// script start
+// async1 start
+// async2
+// promise1
+// script end
+// async1 end
+// promise2
+// setTimeout
+```
+
+#### 题目 4：Promise 和 setTimeout 混合（执行完了同步再执行resolve）
+
+```javascript
+console.log('1')
+
+setTimeout(() => console.log('2'), 10)
+
+new Promise((resolve) => {
+  console.log('3')
+  resolve()
+  console.log('4')
+}).then(() => console.log('5'))
+
+setTimeout(() => console.log('6'), 0)
+
+console.log('7')
+
+// 输出 1 3 4 7 5 6 2
+```
+
+#### 题目 5：复杂 async/await 流程（then都会执行）
+
+```javascript
+async function async1() {
+  console.log('async1 start')
+  await async2()
+  console.log('async1 middle')
+  await async3()
+  console.log('async1 end')
+}
+
+async function async2() {
+  console.log('async2')
+}
+
+async function async3() {
+  console.log('async3')
+}
+
+console.log('script start')
+
+setTimeout(() => console.log('setTimeout'), 0)
+
+async1()
+
+new Promise((resolve) => {
+  console.log('promise1')
+  resolve(1)
+})
+  .then((res) => {
+    console.log('promise2', res)
+    return Promise.resolve(2)
+  })
+  .then((res) => {
+    console.log('promise3', res)
+  })
+
+console.log('script end')
+
+// 输出
+// script start
+// async1 start
+// async2
+// promise1
+// script end
+// async1 middle
+// async3
+// promise2
+// async1 end
+// promise3
+// setTimeout
+```
+
+#### 题目 6：Promise.all 执行顺序（基础）
+
+```javascript
+console.log('start')
+
+Promise.all([
+  new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('promise1')
+      resolve(1)
+    }, 2000)
+  }),
+  new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('promise2')
+      resolve(2)
+    }, 1000)
+  })
+]).then((res) => {
+  console.log('all done', res)
+})
+
+console.log('end')
+
+// 输出
+// start
+// end
+// promise2
+// promise1
+// all done [1, 2]
+```
+
+#### 题目 7：微任务与宏任务混合（基础）
+
+```javascript
+console.log('1')
+
+setTimeout(() => console.log('2'), 0)
+
+Promise.resolve().then(() => {
+  console.log('3')
+  Promise.resolve().then(() => {
+    console.log('4')
+    setTimeout(() => console.log('5'), 0)
+  })
+})
+
+Promise.resolve().then(() => console.log('6'))
+
+console.log('7')
+
+// 输出 1 7 3 6 4 2 5
+```
+
+#### 题目 8：async 函数中的 return（基础）
+
+```javascript
+async function async1() {
+  console.log('async1 start')
+  return 'async1 end'
+}
+
+console.log('script start')
+
+async1().then((res) => console.log(res))
+
+new Promise((resolve) => {
+  console.log('promise1')
+  resolve('promise2')
+}).then((res) => console.log(res))
+
+console.log('script end')
+
+// 输出
+// script start
+// async1 start
+// promise1
+// script end
+// async1 end
+// promise2
+```
+
+#### 题目 9：Promise 链式调用（基础）
+
+```javascript
+console.log('start')
+
+new Promise((resolve) => {
+  console.log('promise1')
+  resolve('promise2')
+})
+  .then((res) => {
+    console.log(res)
+    return 'promise3'
+  })
+  .then((res) => {
+    console.log(res)
+    setTimeout(() => console.log('timeout'), 0)
+    return 'promise4'
+  })
+  .then((res) => console.log(res))
+
+console.log('end')
+
+// 输出 start promise1 end promise2 promise3 promise4 timeout
+```
+
+#### 题目 10：复杂事件循环（清空完微任务再执行宏任务）
+
+```javascript
+console.log('1')
+
+setTimeout(() => {
+  console.log('2')
+  Promise.resolve().then(() => console.log('3'))
+}, 0)
+
+new Promise((resolve) => {
+  console.log('4')
+  resolve()
+}).then(() => {
+  console.log('5')
+  setTimeout(() => console.log('6'), 0)
+})
+
+Promise.resolve().then(() => console.log('7'))
+
+console.log('8')
+```
