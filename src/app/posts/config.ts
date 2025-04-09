@@ -75,6 +75,20 @@ export const postsConfig = [
     date: '2025-02-09',
     tags: ['技术', '手写'],
     views: 32
+  },
+  {
+    title: 'this指向',
+    href: '/posts/this',
+    date: '2025-02-09',
+    tags: ['技术', 'this'],
+    views: 32
+  },
+  {
+    title: 'promise',
+    href: '/posts/promise',
+    date: '2025-02-09',
+    tags: ['技术', 'promise'],
+    views: 32
   }
 ]
 
