@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Header from '@/components/header'
+import { ChatBot } from '@/components/ChatBot'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="">
         <Header />
         {children}
+        <ChatBot />
       </body>
     </html>
   )
