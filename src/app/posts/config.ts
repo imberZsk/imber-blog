@@ -77,6 +77,13 @@ export const postsConfig = [
     views: 32
   },
   {
+    title: '一些算法题',
+    href: '/posts/leetcode',
+    date: '2025-02-09',
+    tags: ['技术', '算法'],
+    views: 32
+  },
+  {
     title: 'this指向',
     href: '/posts/this',
     date: '2025-02-09',

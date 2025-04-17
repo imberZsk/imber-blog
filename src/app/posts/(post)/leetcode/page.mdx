@@ -1,0 +1,483 @@
+## 数组相关
+
+### 两数之和
+
+```js
+const twoSum = function (nums, target) {
+  // 这里我用对象来模拟 map 的能力
+  const diffs = {}
+  // 缓存数组长度
+  const len = nums.length
+  // 遍历数组
+  for (let i = 0; i < len; i++) {
+    // 判断当前值对应的 target 差值是否存在（是否已遍历过）
+    if (diffs[target - nums[i]] !== undefined) {
+      // 若有对应差值，那么答案get！
+      return [diffs[target - nums[i]], i]
+    }
+    // 若没有对应差值，则记录当前值
+    diffs[nums[i]] = i
+  }
+}
+```
+
+### 合并两个有序数组
+
+```js
+const merge = function (nums1, m, nums2, n) {
+  // 初始化两个指针的指向，初始化 nums1 尾部索引k
+  let i = m - 1,
+    j = n - 1,
+    k = m + n - 1
+  // 当两个数组都没遍历完时，指针同步移动
+  while (i >= 0 && j >= 0) {
+    // 取较大的值，从末尾往前填补
+    if (nums1[i] >= nums2[j]) {
+      nums1[k] = nums1[i]
+      i--
+      k--
+    } else {
+      nums1[k] = nums2[j]
+      j--
+      k--
+    }
+  }
+
+  // nums2 留下的情况，特殊处理一下
+  while (j >= 0) {
+    nums1[k] = nums2[j]
+    k--
+    j--
+  }
+}
+```
+
+### 三数之和
+
+```js
+const threeSum = function (nums) {
+  // 用于存放结果数组
+  let res = []
+  // 给 nums 排序
+  nums = nums.sort((a, b) => {
+    return a - b
+  })
+  // 缓存数组长度
+  const len = nums.length
+  // 注意我们遍历到倒数第三个数就足够了，因为左右指针会遍历后面两个数
+  for (let i = 0; i < len - 2; i++) {
+    // 左指针 j
+    let j = i + 1
+    // 右指针k
+    let k = len - 1
+    // 如果遇到重复的数字，则跳过
+    if (i > 0 && nums[i] === nums[i - 1]) {
+      continue
+    }
+    while (j < k) {
+      // 三数之和小于0，左指针前进
+      if (nums[i] + nums[j] + nums[k] < 0) {
+        j++
+        // 处理左指针元素重复的情况
+        while (j < k && nums[j] === nums[j - 1]) {
+          j++
+        }
+      } else if (nums[i] + nums[j] + nums[k] > 0) {
+        // 三数之和大于0，右指针后退
+        k--
+
+        // 处理右指针元素重复的情况
+        while (j < k && nums[k] === nums[k + 1]) {
+          k--
+        }
+      } else {
+        // 得到目标数字组合，推入结果数组
+        res.push([nums[i], nums[j], nums[k]])
+
+        // 左右指针一起前进
+        j++
+        k--
+
+        // 若左指针元素重复，跳过
+        while (j < k && nums[j] === nums[j - 1]) {
+          j++
+        }
+
+        // 若右指针元素重复，跳过
+        while (j < k && nums[k] === nums[k + 1]) {
+          k--
+        }
+      }
+    }
+  }
+
+  // 返回结果数组
+  return res
+}
+```
+
+## 字符串操作
+
+### 验证回文字符串
+
+```javascript
+function isPalindrome(str) {
+  // 缓存字符串的长度
+  const len = str.length
+  // 遍历前半部分，判断和后半部分是否对称
+  for (let i = 0; i < len / 2; i++) {
+    if (str[i] !== str[len - i - 1]) {
+      return false
+    }
+  }
+  return true
+}
+```
+
+### 最多删除一个字符。判断是否能成为回文字符串
+
+```js
+const validPalindrome = function (s) {
+  // 缓存字符串的长度
+  const len = s.length
+
+  // i、j分别为左右指针
+  let i = 0,
+    j = len - 1
+
+  // 当左右指针均满足对称时，一起向中间前进
+  while (i < j && s[i] === s[j]) {
+    i++
+    j--
+  }
+
+  // 尝试判断跳过左指针元素后字符串是否回文
+  if (isPalindrome(i + 1, j)) {
+    return true
+  }
+  // 尝试判断跳过右指针元素后字符串是否回文
+  if (isPalindrome(i, j - 1)) {
+    return true
+  }
+
+  // 工具方法，用于判断字符串是否回文
+  function isPalindrome(st, ed) {
+    while (st < ed) {
+      if (s[st] !== s[ed]) {
+        return false
+      }
+      st++
+      ed--
+    }
+    return true
+  }
+
+  // 默认返回 false
+  return false
+}
+```
+
+### 最长公共前缀
+
+```javascript
+function longestCommonPrefix(strs) {
+  if (strs.length === 0) return ''
+  let prefix = strs[0]
+  for (let i = 1; i < strs.length; i++) {
+    while (strs[i].indexOf(prefix) !== 0) {
+      prefix = prefix.substring(0, prefix.length - 1)
+      if (prefix === '') return ''
+    }
+  }
+  return prefix
+}
+```
+
+### 有效的括号
+
+```javascript
+function isValid(s) {
+  const stack = []
+  const map = {
+    '(': ')',
+    '[': ']',
+    '{': '}'
+  }
+  for (let char of s) {
+    if (map[char]) {
+      stack.push(char)
+    } else {
+      if (stack.length === 0 || map[stack.pop()] !== char) {
+        return false
+      }
+    }
+  }
+  return stack.length === 0
+}
+```
+
+## 链表问题
+
+### 反转链表
+
+```javascript
+function reverseList(head) {
+  let prev = null
+  let curr = head
+  while (curr) {
+    const next = curr.next
+    curr.next = prev
+    prev = curr
+    curr = next
+  }
+  return prev
+}
+```
+
+### 环形链表检测
+
+```javascript
+function hasCycle(head) {
+  let slow = head
+  let fast = head
+  while (fast && fast.next) {
+    slow = slow.next
+    fast = fast.next.next
+    if (slow === fast) return true
+  }
+  return false
+}
+```
+
+### 合并两个有序链表
+
+```javascript
+function mergeTwoLists(l1, l2) {
+  const dummy = new ListNode(0)
+  let curr = dummy
+  while (l1 && l2) {
+    if (l1.val < l2.val) {
+      curr.next = l1
+      l1 = l1.next
+    } else {
+      curr.next = l2
+      l2 = l2.next
+    }
+    curr = curr.next
+  }
+  curr.next = l1 || l2
+  return dummy.next
+}
+```
+
+### 删除链表倒数第 N 个节点
+
+```javascript
+function removeNthFromEnd(head, n) {
+  const dummy = new ListNode(0)
+  dummy.next = head
+  let fast = dummy
+  let slow = dummy
+  for (let i = 0; i <= n; i++) {
+    fast = fast.next
+  }
+  while (fast) {
+    fast = fast.next
+    slow = slow.next
+  }
+  slow.next = slow.next.next
+  return dummy.next
+}
+```
+
+## 树相关
+
+### 二叉树的前序遍历
+
+```javascript
+function preorderTraversal(root) {
+  const result = []
+  function traverse(node) {
+    if (!node) return
+    result.push(node.val)
+    traverse(node.left)
+    traverse(node.right)
+  }
+  traverse(root)
+  return result
+}
+```
+
+### 二叉树的最大深度
+
+```javascript
+function maxDepth(root) {
+  if (!root) return 0
+  return Math.max(maxDepth(root.left), maxDepth(root.right)) + 1
+}
+```
+
+### 对称二叉树判断
+
+```javascript
+function isSymmetric(root) {
+  function isMirror(left, right) {
+    if (!left && !right) return true
+    if (!left || !right) return false
+    return left.val === right.val && isMirror(left.left, right.right) && isMirror(left.right, right.left)
+  }
+  return isMirror(root, root)
+}
+```
+
+### 二叉树的层序遍历
+
+```javascript
+function levelOrder(root) {
+  if (!root) return []
+  const result = []
+  const queue = [root]
+  while (queue.length) {
+    const level = []
+    const size = queue.length
+    for (let i = 0; i < size; i++) {
+      const node = queue.shift()
+      level.push(node.val)
+      if (node.left) queue.push(node.left)
+      if (node.right) queue.push(node.right)
+    }
+    result.push(level)
+  }
+  return result
+}
+```
+
+## 排序和搜索
+
+### 快速排序
+
+```javascript
+function quickSort(arr) {
+  if (arr.length <= 1) return arr
+  const pivot = arr[0]
+  const left = []
+  const right = []
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] < pivot) {
+      left.push(arr[i])
+    } else {
+      right.push(arr[i])
+    }
+  }
+  return [...quickSort(left), pivot, ...quickSort(right)]
+}
+```
+
+### 二分查找
+
+```javascript
+function binarySearch(nums, target) {
+  let left = 0
+  let right = nums.length - 1
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2)
+    if (nums[mid] === target) return mid
+    if (nums[mid] < target) {
+      left = mid + 1
+    } else {
+      right = mid - 1
+    }
+  }
+  return -1
+}
+```
+
+### 合并两个有序数组
+
+```javascript
+function merge(nums1, m, nums2, n) {
+  let i = m - 1
+  let j = n - 1
+  let k = m + n - 1
+  while (i >= 0 && j >= 0) {
+    if (nums1[i] > nums2[j]) {
+      nums1[k--] = nums1[i--]
+    } else {
+      nums1[k--] = nums2[j--]
+    }
+  }
+  while (j >= 0) {
+    nums1[k--] = nums2[j--]
+  }
+}
+```
+
+### 搜索旋转排序数组
+
+```javascript
+function search(nums, target) {
+  let left = 0
+  let right = nums.length - 1
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2)
+    if (nums[mid] === target) return mid
+    if (nums[left] <= nums[mid]) {
+      if (target >= nums[left] && target < nums[mid]) {
+        right = mid - 1
+      } else {
+        left = mid + 1
+      }
+    } else {
+      if (target > nums[mid] && target <= nums[right]) {
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
+    }
+  }
+  return -1
+}
+```
+
+## 动态规划
+
+### 爬楼梯问题
+
+```javascript
+function climbStairs(n) {
+  if (n <= 2) return n
+  let dp = [1, 2]
+  for (let i = 2; i < n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2]
+  }
+  return dp[n - 1]
+}
+```
+
+### 买卖股票的最佳时机
+
+```javascript
+function maxProfit(prices) {
+  let minPrice = Infinity
+  let maxProfit = 0
+  for (let price of prices) {
+    minPrice = Math.min(minPrice, price)
+    maxProfit = Math.max(maxProfit, price - minPrice)
+  }
+  return maxProfit
+}
+```
+
+### 打家劫舍问题
+
+```javascript
+function rob(nums) {
+  if (nums.length === 0) return 0
+  if (nums.length === 1) return nums[0]
+  const dp = [nums[0], Math.max(nums[0], nums[1])]
+  for (let i = 2; i < nums.length; i++) {
+    dp[i] = Math.max(dp[i - 1], dp[i - 2] + nums[i])
+  }
+  return dp[nums.length - 1]
+}
+```
