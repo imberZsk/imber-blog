@@ -133,19 +133,6 @@ function deepClone(obj, cache = new WeakMap()) {
 }
 ```
 
-### 数组转数
-
-```js
-function arrayToTree(items, id = null, link = 'parentId') {
-  return items
-    .filter((item) => item[link] === id)
-    .map((item) => ({
-      ...item,
-      children: arrayToTree(items, item.id)
-    }))
-}
-```
-
 ### 拍平数组
 
 ```js
@@ -249,43 +236,6 @@ class LRUCache {
 }
 ```
 
-### Promise.all 实现
-
-```javascript
-function promiseAll(promises) {
-  return new Promise((resolve, reject) => {
-    const results = []
-    let count = 0
-    promises.forEach((promise, index) => {
-      Promise.resolve(promise)
-        .then((result) => {
-          results[index] = result
-          count++
-          if (count === promises.length) {
-            resolve(results)
-          }
-        })
-        .catch(reject)
-    })
-  })
-}
-```
-
-### 函数柯里化
-
-```javascript
-function curry(fn) {
-  return function curried(...args) {
-    if (args.length >= fn.length) {
-      return fn.apply(this, args)
-    }
-    return function (...args2) {
-      return curried.apply(this, args.concat(args2))
-    }
-  }
-}
-```
-
 ### 防抖和节流实现
 
 ```javascript
@@ -333,4 +283,32 @@ function sortVersions(versions) {
   return versions.sort(compareVersion)
 }
 console.log(sortVersions(['0.1.2', '0.2.1', '0.0.1', '2.0.0', '1.0.221']))
+```
+
+### 函数柯里化
+
+```javascript
+function curry(fn) {
+  return function curried(...args) {
+    if (args.length >= fn.length) {
+      return fn.apply(this, args)
+    }
+    return function (...args2) {
+      return curried.apply(this, args.concat(args2))
+    }
+  }
+}
+```
+
+### 数组转数
+
+```js
+function arrayToTree(items, id = null, link = 'parentId') {
+  return items
+    .filter((item) => item[link] === id)
+    .map((item) => ({
+      ...item,
+      children: arrayToTree(items, item.id)
+    }))
+}
 ```
