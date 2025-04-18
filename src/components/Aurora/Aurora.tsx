@@ -207,5 +207,5 @@ export default function Aurora(props: AuroraProps) {
     }
   }, [amplitude, blend, colorStops])
 
-  return <div ref={ctnDom} className="pointer-events-none absolute z-0 h-full w-full" />
+  return <div ref={ctnDom} className="pointer-events-none absolute z-0 h-1/2 w-full" />
 }

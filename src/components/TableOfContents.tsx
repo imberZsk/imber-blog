@@ -22,20 +22,28 @@ export function TableOfContents() {
           (element): element is HTMLElement =>
             element instanceof HTMLElement && element.id.length > 0 && element.textContent !== null
         )
-        .map((element) => ({
-          id: element.id,
-          text: element.textContent || '',
-          level: parseInt(element.tagName[1])
-        }))
+        .map((element) => {
+          return {
+            id: element.id,
+            text: element.textContent || '',
+            level: parseInt(element.tagName[1])
+          }
+        })
 
-      setHeadings(elements)
+      if (elements.length > 0) {
+        setHeadings(elements)
+      }
     }
 
+    // 初始获取
     getHeadings()
+
     // 监听内容变化
     const observer = new MutationObserver(() => {
-      setTimeout(getHeadings, 100) // 延迟执行以确保 ID 已经生成
+      // 增加延迟，确保 MDX 内容已经完全渲染
+      setTimeout(getHeadings, 100)
     })
+
     observer.observe(document.body, { childList: true, subtree: true })
 
     // 监听滚动位置
@@ -64,10 +72,11 @@ export function TableOfContents() {
       observer.disconnect()
       scrollObserver.disconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headings.length])
 
-  if (headings.length === 0) return null
+  if (headings.length === 0) {
+    return null
+  }
 
   return (
     <nav

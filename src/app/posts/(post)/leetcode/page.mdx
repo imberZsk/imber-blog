@@ -1,9 +1,11 @@
+import { CodeSandbox } from '@/components/CodeSandbox'
+
 ## 数组相关
 
 ### 两数之和
 
-```js
-const twoSum = function (nums, target) {
+<CodeSandbox
+  code={`const twoSum = function (nums, target) {
   // 这里我用对象来模拟 map 的能力
   const diffs = {}
   // 缓存数组长度
@@ -18,15 +20,14 @@ const twoSum = function (nums, target) {
     // 若没有对应差值，则记录当前值
     diffs[nums[i]] = i
   }
-}
-```
+}`}
+/>
 
 ### 合并两个有序数组
 
 双指针
 
-```js
-const merge = function (nums1, m, nums2, n) {
+<CodeSandbox code={`const merge = function (nums1, m, nums2, n) {
   // 初始化两个指针的指向，初始化 nums1 尾部索引k
   let i = m - 1,
     j = n - 1,
@@ -45,21 +46,19 @@ const merge = function (nums1, m, nums2, n) {
     }
   }
 
-  // nums2 留下的情况，特殊处理一下
-  while (j >= 0) {
-    nums1[k] = nums2[j]
-    k--
-    j--
-  }
+// nums2 留下的情况，特殊处理一下
+while (j >= 0) {
+nums1[k] = nums2[j]
+k--
+j--
 }
-```
+}`} />
 
 ### 三数之和
 
 双指针
 
-```js
-const threeSum = function (nums) {
+<CodeSandbox code={`const threeSum = function (nums) {
   // 用于存放结果数组
   let res = []
   // 给 nums 排序
@@ -113,19 +112,19 @@ const threeSum = function (nums) {
         }
       }
     }
-  }
 
-  // 返回结果数组
-  return res
 }
-```
+
+// 返回结果数组
+return res
+}`} />
 
 ## 字符串操作
 
 ### 验证回文字符串
 
-```javascript
-function isPalindrome(str) {
+<CodeSandbox
+  code={`function isPalindrome(str) {
   // 缓存字符串的长度
   const len = str.length
   // 遍历前半部分，判断和后半部分是否对称
@@ -135,61 +134,59 @@ function isPalindrome(str) {
     }
   }
   return true
-}
-```
+}`}
+/>
 
 ### 最多删除一个字符。判断是否能成为回文字符串
 
 对撞指针
 
-```js
-const validPalindrome = function (s) {
+<CodeSandbox code={`const validPalindrome = function (s) {
   // 缓存字符串的长度
   const len = s.length
 
-  // i、j分别为左右指针
-  let i = 0,
-    j = len - 1
+// i、j分别为左右指针
+let i = 0,
+j = len - 1
 
-  // 当左右指针均满足对称时，一起向中间前进
-  while (i < j && s[i] === s[j]) {
-    i++
-    j--
-  }
-
-  // 尝试判断跳过左指针元素后字符串是否回文
-  if (isPalindrome(i + 1, j)) {
-    return true
-  }
-
-  // 尝试判断跳过右指针元素后字符串是否回文
-  if (isPalindrome(i, j - 1)) {
-    return true
-  }
-
-  // 工具方法，用于判断字符串是否回文
-  function isPalindrome(st, ed) {
-    while (st < ed) {
-      if (s[st] !== s[ed]) {
-        return false
-      }
-      st++
-      ed--
-    }
-    return true
-  }
-
-  // 默认返回 false
-  return false
+// 当左右指针均满足对称时，一起向中间前进
+while (i < j && s[i] === s[j]) {
+i++
+j--
 }
-```
+
+// 尝试判断跳过左指针元素后字符串是否回文
+if (isPalindrome(i + 1, j)) {
+return true
+}
+
+// 尝试判断跳过右指针元素后字符串是否回文
+if (isPalindrome(i, j - 1)) {
+return true
+}
+
+// 工具方法，用于判断字符串是否回文
+function isPalindrome(st, ed) {
+while (st < ed) {
+if (s[st] !== s[ed]) {
+return false
+}
+st++
+ed--
+}
+return true
+}
+
+// 默认返回 false
+return false
+}`} />
 
 ## 链表问题
 
 ### 合并两个有序链表
 
-```javascript
-function mergeTwoLists(l1, l2) {
+<CodeSandbox
+  code={`function mergeTwoLists(l1, l2) {
   const dummy = new ListNode(0)
   // 穿针引线，也有点像双指针
   let curr = dummy
@@ -205,41 +202,39 @@ function mergeTwoLists(l1, l2) {
   }
   curr.next = l1 || l2
   return dummy.next
-}
-```
+}`}
+/>
 
 ### 删除链表倒数第 N 个节点
 
 快慢指针
 
-```javascript
-function removeNthFromEnd(head, n) {
+<CodeSandbox code={`function removeNthFromEnd(head, n) {
   const dummy = new ListNode(0)
   dummy.next = head
   let fast = dummy
   let slow = dummy
 
-  // 只走n步
-  for (let i = 0; i <= n; i++) {
-    fast = fast.next
-  }
-
-  // 一起走
-  while (fast) {
-    fast = fast.next
-    slow = slow.next
-  }
-  slow.next = slow.next.next
-  return dummy.next
+// 只走n步
+for (let i = 0; i <= n; i++) {
+fast = fast.next
 }
-```
+
+// 一起走
+while (fast) {
+fast = fast.next
+slow = slow.next
+}
+slow.next = slow.next.next
+return dummy.next
+}`} />
 
 ### 反转链表
 
 记录下一个节点
 
-```javascript
-function reverseList(head) {
+<CodeSandbox
+  code={`function reverseList(head) {
   let prev = null
   let curr = head
   while (curr) {
@@ -249,15 +244,15 @@ function reverseList(head) {
     curr = next
   }
   return prev
-}
-```
+}`}
+/>
 
 ### 环形链表检测
 
 快慢指针，或者打一个flag标识
 
-```javascript
-function hasCycle(head) {
+<CodeSandbox
+  code={`function hasCycle(head) {
   let slow = head
   let fast = head
   while (fast && fast.next) {
@@ -266,15 +261,14 @@ function hasCycle(head) {
     if (slow === fast) return true
   }
   return false
-}
-```
+}`}
+/>
 
 ## 栈
 
 ### 有效的括号
 
-```javascript
-function isValid(s) {
+<CodeSandbox code={`function isValid(s) {
   const stack = []
   const map = {
     '(': ')',
@@ -295,19 +289,20 @@ function isValid(s) {
 
 // 用一个 map 来维护左括号和右括号的对应关系
 const leftToRight = {
-  '(': ')',
-  '[': ']',
-  '{': '}'
+'(': ')',
+'[': ']',
+'{': '}'
 }
 
-/**
- * @param {string} s
- * @return {boolean}
- */
-const isValid = function (s) {
+/\*\*
+
+- @param {string} s
+- @return {boolean}
+  \*/
+  const isValid = function (s) {
   // 结合题意，空字符串无条件判断为 true
   if (!s) {
-    return true
+  return true
   }
   // 初始化 stack 数组
   const stack = []
@@ -315,22 +310,21 @@ const isValid = function (s) {
   const len = s.length
   // 遍历字符串
   for (let i = 0; i < len; i++) {
-    // 缓存单个字符
-    const ch = s[i]
-    // 判断是否是左括号，这里我为了实现加速，没有用数组的 includes 方法，直接手写判断逻辑
-    if (ch === '(' || ch === '{' || ch === '[') stack.push(leftToRight[ch])
-    // 若不是左括号，则必须是和栈顶的左括号相配对的右括号
-    else {
-      // 若栈为空，或栈顶的左括号没有和当前字符匹配上，那么判为无效
-      if (!stack.length || stack.pop() !== ch) {
-        return false
-      }
-    }
+  // 缓存单个字符
+  const ch = s[i]
+  // 判断是否是左括号，这里我为了实现加速，没有用数组的 includes 方法，直接手写判断逻辑
+  if (ch === '(' || ch === '{' || ch === '[') stack.push(leftToRight[ch])
+  // 若不是左括号，则必须是和栈顶的左括号相配对的右括号
+  else {
+  // 若栈为空，或栈顶的左括号没有和当前字符匹配上，那么判为无效
+  if (!stack.length || stack.pop() !== ch) {
+  return false
+  }
+  }
   }
   // 若所有的括号都能配对成功，那么最后栈应该是空的
   return !stack.length
-}
-```
+  }`} />
 
 ## 队列
 
@@ -344,8 +338,7 @@ const isValid = function (s) {
 
 ### 二叉树的前序遍历
 
-```javascript
-function preorderTraversal(root) {
+<CodeSandbox code={`function preorderTraversal(root) {
   const result = []
   function traverse(node) {
     if (!node) return
@@ -359,24 +352,22 @@ function preorderTraversal(root) {
 
 // 所有遍历函数的入参都是树的根结点对象
 function preorder(root) {
-  // 递归边界，root 为空
-  if (!root) {
-    return
-  }
-
-  // 输出当前遍历的结点值
-  console.log('当前遍历的结点值是：', root.val)
-  // 递归遍历左子树
-  preorder(root.left)
-  // 递归遍历右子树
-  preorder(root.right)
+// 递归边界，root 为空
+if (!root) {
+return
 }
-```
+
+// 输出当前遍历的结点值
+console.log('当前遍历的结点值是：', root.val)
+// 递归遍历左子树
+preorder(root.left)
+// 递归遍历右子树
+preorder(root.right)
+}`} />
 
 ### 二叉树的层序遍历
 
-```javascript
-function levelOrder(root) {
+<CodeSandbox code={`function levelOrder(root) {
   if (!root) return []
   const result = []
   const queue = [root]
@@ -395,33 +386,32 @@ function levelOrder(root) {
 }
 
 function BFS(root) {
-  const queue = [] // 初始化队列queue
-  // 根结点首先入队
-  queue.push(root)
-  // 队列不为空，说明没有遍历完全
-  while (queue.length) {
-    const top = queue[0] // 取出队头元素
-    // 访问 top
-    console.log(top.val)
-    // 如果左子树存在，左子树入队
-    if (top.left) {
-      queue.push(top.left)
-    }
-    // 如果右子树存在，右子树入队
-    if (top.right) {
-      queue.push(top.right)
-    }
-    queue.shift() // 访问完毕，队头元素出队
-  }
+const queue = [] // 初始化队列queue
+// 根结点首先入队
+queue.push(root)
+// 队列不为空，说明没有遍历完全
+while (queue.length) {
+const top = queue[0] // 取出队头元素
+// 访问 top
+console.log(top.val)
+// 如果左子树存在，左子树入队
+if (top.left) {
+queue.push(top.left)
 }
-```
+// 如果右子树存在，右子树入队
+if (top.right) {
+queue.push(top.right)
+}
+queue.shift() // 访问完毕，队头元素出队
+}
+}`} />
 
 ## 排序和搜索
 
 ### 快速排序
 
-```javascript
-function quickSort(arr) {
+<CodeSandbox
+  code={`function quickSort(arr) {
   if (arr.length <= 1) return arr
   const pivot = arr[0]
   const left = []
@@ -434,13 +424,13 @@ function quickSort(arr) {
     }
   }
   return [...quickSort(left), pivot, ...quickSort(right)]
-}
-```
+}`}
+/>
 
 ### 二分查找
 
-```javascript
-function binarySearch(nums, target) {
+<CodeSandbox
+  code={`function binarySearch(nums, target) {
   let left = 0
   let right = nums.length - 1
   while (left <= right) {
@@ -453,28 +443,28 @@ function binarySearch(nums, target) {
     }
   }
   return -1
-}
-```
+}`}
+/>
 
 ## 动态规划
 
 ### 爬楼梯问题
 
-```javascript
-function climbStairs(n) {
+<CodeSandbox
+  code={`function climbStairs(n) {
   if (n <= 2) return n
   let dp = [1, 2]
   for (let i = 2; i < n; i++) {
     dp[i] = dp[i - 1] + dp[i - 2]
   }
   return dp[n - 1]
-}
-```
+}`}
+/>
 
 ### 买卖股票的最佳时机
 
-```javascript
-function maxProfit(prices) {
+<CodeSandbox
+  code={`function maxProfit(prices) {
   let minPrice = Infinity
   let maxProfit = 0
   for (let price of prices) {
@@ -482,13 +472,13 @@ function maxProfit(prices) {
     maxProfit = Math.max(maxProfit, price - minPrice)
   }
   return maxProfit
-}
-```
+}`}
+/>
 
 ### 打家劫舍问题
 
-```javascript
-function rob(nums) {
+<CodeSandbox
+  code={`function rob(nums) {
   if (nums.length === 0) return 0
   if (nums.length === 1) return nums[0]
   const dp = [nums[0], Math.max(nums[0], nums[1])]
@@ -496,5 +486,5 @@ function rob(nums) {
     dp[i] = Math.max(dp[i - 1], dp[i - 2] + nums[i])
   }
   return dp[nums.length - 1]
-}
-```
+}`}
+/>

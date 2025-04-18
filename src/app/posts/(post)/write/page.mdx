@@ -1,15 +1,16 @@
+import { CodeSandbox } from '@/components/CodeSandbox'
+
 ### 控制请求并发
 
-```javascript
-function controlConcurrent(arr, max) {
+<CodeSandbox code={`function controlConcurrent(arr, max) {
   let running = 0 // 当前正在执行的请求数
   let index = 0 // 当前要执行的请求索引
 
-  function runNext() {
-    // 如果所有请求都已执行完，或者当前正在执行的请求数达到最大值，则返回
-    if (index >= arr.length || running >= max) {
-      return
-    }
+function runNext() {
+// 如果所有请求都已执行完，或者当前正在执行的请求数达到最大值，则返回
+if (index >= arr.length || running >= max) {
+return
+}
 
     running++ // 增加正在执行的请求数
     const currentIndex = index++
@@ -17,28 +18,27 @@ function controlConcurrent(arr, max) {
     // 执行当前请求
     arr[currentIndex]()
       .then(() => {
-        console.log(`请求 ${currentIndex + 1} 完成`)
+        console.log(\`请求 \${currentIndex + 1} 完成\`)
       })
       .catch((err) => {
-        console.error(`请求 ${currentIndex + 1} 失败:`, err)
+        console.error(\`请求 \${currentIndex + 1} 失败:\`, err)
       })
       .finally(() => {
         running-- // 减少正在执行的请求数
         runNext() // 执行下一个请求
       })
-  }
 
-  // 启动初始的 max 个请求
-  for (let i = 0; i < max; i++) {
-    runNext()
-  }
 }
-```
+
+// 启动初始的 max 个请求
+for (let i = 0; i < max; i++) {
+runNext()
+}
+}`} />
 
 ### new
 
-```js
-// function new(fn){
+<CodeSandbox code={`// function new(fn){
 //   // const newObj = {}
 //   // newObj.__proto__ = fn.prototype
 //   const newObj = Object.create(fn.prototype)
@@ -46,17 +46,15 @@ function controlConcurrent(arr, max) {
 //   return typeof(res) === 'object' && res !== null ? res : newObj
 // }
 
-function _new(Fn, ...args) {
-  const obj = Object.create(Fn.prototype)
-  const result = Fn.apply(obj, args)
-  return result instanceof Object ? result : obj
-}
-```
+function \_new(Fn, ...args) {
+const obj = Object.create(Fn.prototype)
+const result = Fn.apply(obj, args)
+return result instanceof Object ? result : obj
+}`} />
 
 ### instanceof
 
-```js
-// function instanceof(a,b){
+<CodeSandbox code={`// function instanceof(a,b){
 //   const l = a.__proto__
 //   const r = b.prototype
 //   while(true){
@@ -71,21 +69,19 @@ function _new(Fn, ...args) {
 // }
 
 function instanceOf(obj, fn) {
-  let proto = Object.getPrototypeOf(obj) // 获取对象的原型
-  while (proto !== null) {
-    if (proto === fn.prototype) {
-      return true
-    }
-    proto = Object.getPrototypeOf(proto) // 继续向上查找
-  }
-  return false
+let proto = Object.getPrototypeOf(obj) // 获取对象的原型
+while (proto !== null) {
+if (proto === fn.prototype) {
+return true
 }
-```
+proto = Object.getPrototypeOf(proto) // 继续向上查找
+}
+return false
+}`} />
 
 ### 深拷贝
 
-```js
-// function deepClone(obj, cache = new WeakMap()) {
+<CodeSandbox code={`// function deepClone(obj, cache = new WeakMap()) {
 //   if (typeof obj !== 'object' || obj === null) return
 //   if (cache.has(obj)) {
 //     return cache.get(obj)
@@ -98,45 +94,44 @@ function instanceOf(obj, fn) {
 //     }
 //   }
 
-//   return target
+// return target
 // }
 
 function deepClone(obj, cache = new WeakMap()) {
-  // 处理基本类型和null/undefined
-  if (obj === null || typeof obj !== 'object') {
-    return obj // 这里应该返回原值，而不是undefined
-  }
-
-  // 处理循环引用
-  if (cache.has(obj)) {
-    return cache.get(obj)
-  }
-
-  // 处理特殊对象类型
-  if (obj instanceof Date) return new Date(obj)
-  if (obj instanceof RegExp) return new RegExp(obj)
-
-  // 初始化克隆对象
-  const target = Array.isArray(obj) ? [] : {}
-
-  // 保存引用，防止循环引用
-  cache.set(obj, target)
-
-  // 递归拷贝属性
-  for (let key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      target[key] = deepClone(obj[key], cache)
-    }
-  }
-
-  return target
+// 处理基本类型和null/undefined
+if (obj === null || typeof obj !== 'object') {
+return obj // 这里应该返回原值，而不是undefined
 }
-```
+
+// 处理循环引用
+if (cache.has(obj)) {
+return cache.get(obj)
+}
+
+// 处理特殊对象类型
+if (obj instanceof Date) return new Date(obj)
+if (obj instanceof RegExp) return new RegExp(obj)
+
+// 初始化克隆对象
+const target = Array.isArray(obj) ? [] : {}
+
+// 保存引用，防止循环引用
+cache.set(obj, target)
+
+// 递归拷贝属性
+for (let key in obj) {
+if (obj.hasOwnProperty(key)) {
+target[key] = deepClone(obj[key], cache)
+}
+}
+
+return target
+}`} />
 
 ### 拍平数组
 
-```js
-// 测试数据
+<CodeSandbox
+  code={`// 测试数据
 const a = [
   [1, 2],
   [3, 4],
@@ -160,13 +155,12 @@ function flat(arr) {
     return pre.concat(Array.isArray(next) ? flat(next) : next)
   }, [])
   return res
-}
-```
+}`}
+/>
 
 ### 大数相加
 
-```js
-// ## 逻辑
+<CodeSandbox code={`// ## 逻辑
 
 // 拿到两个字符串最长 length，然后用 padStart 在前面加 0
 
@@ -182,64 +176,62 @@ function flat(arr) {
 
 // 前面补 0，末尾相加，每次判断是否有进位
 
-/**
- * @params {String} num1
- * @params {String} num2
- */
+/\*\*
 
-/**
- * @param {string} num1
- * @param {string} num2
- * @return {string}
- */
-var addStrings = function (num1, num2) {
+- @params {String} num1
+- @params {String} num2
+  \*/
+
+/\*\*
+
+- @param {string} num1
+- @param {string} num2
+- @return {string}
+  \*/
+  var addStrings = function (num1, num2) {
   const len = Math.max(num1.length, num2.length)
   num1 = num1.padStart(len, '0')
   num2 = num2.padStart(len, '0')
   let carry = 0
   let result = ''
   for (let i = len - 1; i >= 0; i--) {
-    const sum = +num1[i] + +num2[i] + carry
-    // 取余数
-    result = (sum % 10) + result
-    carry = sum >= 10 ? 1 : 0
+  const sum = +num1[i] + +num2[i] + carry
+  // 取余数
+  result = (sum % 10) + result
+  carry = sum >= 10 ? 1 : 0
   }
   return carry ? '1' + result : result
-}
-```
+  }`} />
 
 ### LRU 缓存
 
-```javascript
-class LRUCache {
+<CodeSandbox code={`class LRUCache {
   constructor(capacity) {
     this.capacity = capacity
     this.cache = new Map()
   }
 
-  get(key) {
-    if (!this.cache.has(key)) return -1
-    const value = this.cache.get(key)
-    this.cache.delete(key)
-    this.cache.set(key, value)
-    return value
-  }
-
-  put(key, value) {
-    if (this.cache.has(key)) {
-      this.cache.delete(key)
-    } else if (this.cache.size >= this.capacity) {
-      this.cache.delete(this.cache.keys().next().value)
-    }
-    this.cache.set(key, value)
-  }
+get(key) {
+if (!this.cache.has(key)) return -1
+const value = this.cache.get(key)
+this.cache.delete(key)
+this.cache.set(key, value)
+return value
 }
-```
+
+put(key, value) {
+if (this.cache.has(key)) {
+this.cache.delete(key)
+} else if (this.cache.size >= this.capacity) {
+this.cache.delete(this.cache.keys().next().value)
+}
+this.cache.set(key, value)
+}
+}`} />
 
 ### 防抖和节流实现
 
-```javascript
-// 防抖
+<CodeSandbox code={`// 防抖
 function debounce(fn, delay) {
   let timer = null
   return function (...args) {
@@ -252,21 +244,20 @@ function debounce(fn, delay) {
 
 // 节流
 function throttle(fn, delay) {
-  let lastTime = 0
-  return function (...args) {
-    const now = Date.now()
-    if (now - lastTime >= delay) {
-      fn.apply(this, args)
-      lastTime = now
-    }
-  }
+let lastTime = 0
+return function (...args) {
+const now = Date.now()
+if (now - lastTime >= delay) {
+fn.apply(this, args)
+lastTime = now
 }
-```
+}
+}`} />
 
 ### 版本号排序
 
-```js
-function compareVersion(version1, version2) {
+<CodeSandbox
+  code={`function compareVersion(version1, version2) {
   const v1 = version1.split('.')
   const v2 = version2.split('.')
   const length = Math.max(v1.length, v2.length)
@@ -282,13 +273,13 @@ function compareVersion(version1, version2) {
 function sortVersions(versions) {
   return versions.sort(compareVersion)
 }
-console.log(sortVersions(['0.1.2', '0.2.1', '0.0.1', '2.0.0', '1.0.221']))
-```
+console.log(sortVersions(['0.1.2', '0.2.1', '0.0.1', '2.0.0', '1.0.221']))`}
+/>
 
 ### 函数柯里化
 
-```javascript
-function curry(fn) {
+<CodeSandbox
+  code={`function curry(fn) {
   return function curried(...args) {
     if (args.length >= fn.length) {
       return fn.apply(this, args)
@@ -297,18 +288,18 @@ function curry(fn) {
       return curried.apply(this, args.concat(args2))
     }
   }
-}
-```
+}`}
+/>
 
 ### 数组转数
 
-```js
-function arrayToTree(items, id = null, link = 'parentId') {
+<CodeSandbox
+  code={`function arrayToTree(items, id = null, link = 'parentId') {
   return items
     .filter((item) => item[link] === id)
     .map((item) => ({
       ...item,
       children: arrayToTree(items, item.id)
     }))
-}
-```
+}`}
+/>

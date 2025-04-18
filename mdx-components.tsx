@@ -9,8 +9,15 @@ const createUniqueId = (text: string) => {
   // 基础 ID
   const baseId = text
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
+    .replace(/\s+/g, '-') // 将空格替换为连字符
+    .replace(/[^a-z0-9-]/g, '') // 移除所有非字母数字和连字符的字符
+    .replace(/^-+|-+$/g, '') // 移除开头和结尾的连字符
+    .replace(/-+/g, '-') // 将多个连字符替换为单个连字符
+
+  // 如果 ID 为空，生成一个随机 ID
+  if (!baseId) {
+    return `heading-${Math.random().toString(36).substr(2, 9)}`
+  }
 
   // 如果 ID 已存在，添加数字后缀
   if (usedIds.has(baseId)) {
