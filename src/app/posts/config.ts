@@ -33,6 +33,27 @@ export const postsConfig = [
     date: '2025-02-09',
     tags: ['技术', 'promise'],
     views: 32
+  },
+  {
+    title: 'Sandpack',
+    href: '/posts/sandpack',
+    date: '2025-02-09',
+    tags: ['技术', '博客'],
+    views: 32
+  },
+  // {
+  //   title: '侧边栏',
+  //   href: '/posts/next-mdx',
+  //   date: '2025-02-09',
+  //   tags: ['技术', 'next', 'mdx', '博客'],
+  //   views: 32
+  // },
+  {
+    title: 'Next MDX',
+    href: '/posts/next-mdx',
+    date: '2025-02-09',
+    tags: ['技术', 'next', 'mdx', '博客'],
+    views: 32
   }
 ]
 
