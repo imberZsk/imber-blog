@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Header from '@/components/header'
 import { ChatBot } from '@/components/ChatBot'
+import { ThemeProvider } from 'next-themes'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="en" className="bg-[rgba(28,28,30)]" suppressHydrationWarning>
       <body suppressHydrationWarning className="">
         <Header />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
         <ChatBot />
       </body>
     </html>
