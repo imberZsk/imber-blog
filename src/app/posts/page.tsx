@@ -43,13 +43,13 @@ const Page = () => {
             <Link
               href={post.href}
               target="_blank"
-              className="group block space-y-3 rounded-lg bg-zinc-900/50 p-6 transition-all hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-zinc-900/20"
+              className="group block space-y-3 rounded-lg bg-zinc-100/50 p-6 transition-all hover:bg-zinc-100/80 hover:shadow-lg hover:shadow-zinc-100/20 dark:bg-zinc-900/50 dark:hover:bg-zinc-900/80 dark:hover:shadow-zinc-900/20"
             >
-              <h2 className="text-xl font-semibold text-zinc-100 transition-colors group-hover:text-amber-300/90">
+              <h2 className="text-xl font-semibold text-zinc-900 transition-colors group-hover:text-amber-600/90 dark:text-zinc-100 dark:group-hover:text-amber-300/90">
                 {post.title}
               </h2>
 
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   <span>{post.date}</span>
@@ -61,8 +61,10 @@ const Page = () => {
                     <span
                       key={tagIndex}
                       className={cn(
-                        'rounded bg-zinc-800 px-2 py-0.5 text-xs',
-                        tag === activeCategory && 'bg-blue-500/20 text-blue-400'
+                        'rounded px-2 py-0.5 text-xs',
+                        tag === activeCategory
+                          ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                          : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                       )}
                     >
                       {tag}

@@ -15,13 +15,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-[rgba(28,28,30)]" suppressHydrationWarning>
+    <html lang="en" className="" suppressHydrationWarning>
       <body suppressHydrationWarning className="">
-        <Header />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <Header />
           {children}
+          <ChatBot />
         </ThemeProvider>
-        <ChatBot />
       </body>
     </html>
   )

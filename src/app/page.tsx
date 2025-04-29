@@ -4,10 +4,9 @@ import Link from 'next/link'
 import BlurText from '@/components/BlurText/BlurText'
 // import Aurora from '@/components/Aurora/Aurora'
 import { JuejinSvg } from '@/components/icons'
-
 export default function HomePage() {
   return (
-    <div className="min-h-screen text-zinc-100">
+    <div className="min-h-screen text-zinc-900 dark:text-zinc-100">
       <section className="relative h-screen">
         {/* <Aurora /> */}
 
@@ -39,10 +38,10 @@ export default function HomePage() {
                     delay={150}
                     direction="bottom"
                     animateBy="letters"
-                    className="inline-block font-mono text-yellow-500"
+                    className="inline-block font-mono text-yellow-600 dark:text-yellow-500"
                   />
                 </div>
-                <div className="text-sm text-zinc-400">
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">
                   <BlurText
                     text="An independent developer coding with love"
                     delay={200}
@@ -58,14 +57,14 @@ export default function HomePage() {
                 <Link
                   href="https://github.com/imberZsk"
                   target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-white transition-colors hover:bg-black/20"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                 >
                   <Github className="h-5 w-5" />
                 </Link>
                 <Link
                   href="https://juejin.cn/user/3378167164966920/posts"
                   target="_blank"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-white transition-colors hover:bg-black/20"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                 >
                   <JuejinSvg className="h-5 w-5" />
                 </Link>
@@ -80,7 +79,7 @@ export default function HomePage() {
         </main>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-1/2 mx-auto w-full -translate-x-1/2 px-4 py-8 text-center text-sm text-zinc-500">
+        <div className="absolute bottom-0 left-1/2 mx-auto w-full -translate-x-1/2 px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-500">
           <BlurText
             text="我既无法了解宇宙，也无法看透未来，一个简单的自我"
             delay={200}
