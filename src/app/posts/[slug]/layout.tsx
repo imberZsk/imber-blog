@@ -1,4 +1,4 @@
-// import './mdx.css'
+import './mdx.css'
 import { TableOfContents } from '@/components/TableOfContents'
 import { MDXContent } from '@/components/MDXContent'
 

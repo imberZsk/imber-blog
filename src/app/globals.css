@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* @custom-variant dark (&:is(.dark *)); */
-@plugin "@tailwindcss/typography";
+/* @plugin "@tailwindcss/typography"; */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

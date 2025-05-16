@@ -85,7 +85,7 @@ export function TableOfContents() {
         PADDING_TOP
       )}
     >
-      <h2 className="font-semibold text-zinc-100">目录</h2>
+      <h2 className="font-semibold dark:text-zinc-100">目录</h2>
       <ul className="mt-4 space-y-3 text-sm">
         {headings.map((heading) => (
           <li
@@ -97,7 +97,7 @@ export function TableOfContents() {
             <a
               href={`#${heading.id}`}
               className={cn(
-                'inline-block text-zinc-400 transition-colors hover:text-zinc-100',
+                'inline-block text-zinc-400 transition-colors hover:text-zinc-500 dark:hover:text-zinc-100',
                 activeId === heading.id && 'font-medium text-blue-400'
               )}
               onClick={(e) => {
