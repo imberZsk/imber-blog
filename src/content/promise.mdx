@@ -4,170 +4,226 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ### 题目 1：async/await
 
-<CodeSandbox code={
-`async function async1() {
-  console.log('async1 start')
-  await async2()
-  console.log('async1 end')
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function AsyncAwaitDemo() {
+  const [logs, setLogs] = useState([])
+
+  function log(msg) {
+    setLogs((prev) => [...prev, msg])
+  }
+
+  async function async1() {
+    log('async1 start')
+    await async2()
+    log('async1 end')
+  }
+  async function async2() {
+    log('async2')
+  }
+
+  function handleClick() {
+    setLogs([])
+    log('script start')
+    setTimeout(() => log('setTimeout'), 0)
+    async1()
+    new Promise((resolve) => {
+      log('promise1')
+      resolve()
+    }).then(() => {
+      log('promise2')
+    })
+    log('script end')
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>执行 async/await 顺序</button>
+      <div>输出：</div>
+      <pre>{logs.join('\n')}</pre>
+    </div>
+  )
 }
+```
 
-async function async2() {
-console.log('async2')
-}
-
-console.log('script start')
-
-setTimeout(() => console.log('setTimeout'), 0)
-
-async1()
-
-new Promise((resolve) => {
-console.log('promise1')
-resolve()
-}).then(() => {
-console.log('promise2')
-})
-
-console.log('script end')
-
-// 输出
-// script start
-// async1 start
-// async2
-// promise1
-// script end
-// async1 end
-// promise2
-// setTimeout`} />
-
-解释：await fn，这个fn仍然是同步，但是 await fn后面的成了微任务
+</Sandpack>
 
 ### 题目 2：resolve
 
-<CodeSandbox code={`console.log('1')
+<Sandpack>
 
-setTimeout(() => console.log('2'), 10)
+```js
+import { useState } from 'react'
 
-new Promise((resolve) => {
-console.log('3')
-resolve()
-console.log('4')
-}).then(() => console.log('5'))
+export default function ResolveDemo() {
+  const [logs, setLogs] = useState([])
+  function log(msg) {
+    setLogs((prev) => [...prev, msg])
+  }
+  function handleClick() {
+    setLogs([])
+    log('1')
+    setTimeout(() => log('2'), 10)
+    new Promise((resolve) => {
+      log('3')
+      resolve()
+      log('4')
+    }).then(() => log('5'))
+    setTimeout(() => log('6'), 0)
+    log('7')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>执行 resolve 顺序</button>
+      <div>输出：</div>
+      <pre>{logs.join('\n')}</pre>
+    </div>
+  )
+}
+```
 
-setTimeout(() => console.log('6'), 0)
-
-console.log('7')
-
-// 输出 1 3 4 7 5 6 2`} />
-
-解释：resolve 不会阻止当前的同步执行，所以先打印3，4，执行完了同步再执行resolve
+</Sandpack>
 
 ### 题目 3：then
 
-<CodeSandbox code={`async function async1() {
-  console.log('async1 start')
-  await async2()
-  console.log('async1 middle')
-  await async3()
-  console.log('async1 end')
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function ThenDemo() {
+  const [logs, setLogs] = useState([])
+  function log(msg) {
+    setLogs((prev) => [...prev, msg])
+  }
+  async function async1() {
+    log('async1 start')
+    await async2()
+    log('async1 middle')
+    await async3()
+    log('async1 end')
+  }
+  async function async2() {
+    log('async2')
+  }
+  async function async3() {
+    log('async3')
+  }
+  function handleClick() {
+    setLogs([])
+    log('script start')
+    setTimeout(() => log('setTimeout'), 0)
+    async1()
+    new Promise((resolve) => {
+      log('promise1')
+      resolve(1)
+    })
+      .then((res) => {
+        log('promise2 ' + res)
+        return Promise.resolve(2)
+      })
+      .then((res) => {
+        log('promise3 ' + res)
+      })
+    log('script end')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>执行 then 顺序</button>
+      <div>输出：</div>
+      <pre>{logs.join('\n')}</pre>
+    </div>
+  )
 }
+```
 
-async function async2() {
-console.log('async2')
-}
-
-async function async3() {
-console.log('async3')
-}
-
-console.log('script start')
-
-setTimeout(() => console.log('setTimeout'), 0)
-
-async1()
-
-new Promise((resolve) => {
-console.log('promise1')
-resolve(1)
-})
-.then((res) => {
-console.log('promise2', res)
-return Promise.resolve(2)
-})
-.then((res) => {
-console.log('promise3', res)
-})
-
-console.log('script end')
-
-// 输出
-// script start
-// async1 start
-// async2
-// promise1
-// script end
-// async1 middle
-// async3
-// promise2
-// async1 end
-// promise3
-// setTimeout`} />
-
-解释：多个 then 都会执行
+</Sandpack>
 
 ### 题目 4：Promise.all
 
-<CodeSandbox code={`console.log('start')
+<Sandpack>
 
-Promise.all([
-new Promise((resolve) => {
-setTimeout(() => {
-console.log('promise1')
-resolve(1)
-}, 2000)
-}),
-new Promise((resolve) => {
-setTimeout(() => {
-console.log('promise2')
-resolve(2)
-}, 1000)
-})
-]).then((res) => {
-console.log('all done', res)
-})
+```js
+import { useState } from 'react'
 
-console.log('end')
+export default function PromiseAllDemo() {
+  const [logs, setLogs] = useState([])
+  function log(msg) {
+    setLogs((prev) => [...prev, msg])
+  }
+  function handleClick() {
+    setLogs([])
+    log('start')
+    Promise.all([
+      new Promise((resolve) => {
+        setTimeout(() => {
+          log('promise1')
+          resolve(1)
+        }, 2000)
+      }),
+      new Promise((resolve) => {
+        setTimeout(() => {
+          log('promise2')
+          resolve(2)
+        }, 1000)
+      })
+    ]).then((res) => {
+      log('all done ' + JSON.stringify(res))
+    })
+    log('end')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>执行 Promise.all 顺序</button>
+      <div>输出：</div>
+      <pre>{logs.join('\n')}</pre>
+    </div>
+  )
+}
+```
 
-// 输出
-// start
-// end
-// promise2
-// promise1
-// all done [1, 2]`} />
-
-解释：promise.all 会等待所有 promise 都执行完，然后执行 then
+</Sandpack>
 
 ### 题目 5：事件循环
 
-<CodeSandbox code={`console.log('1')
+<Sandpack>
 
-setTimeout(() => {
-console.log('2')
-Promise.resolve().then(() => console.log('3'))
-}, 0)
+```js
+import { useState } from 'react'
 
-new Promise((resolve) => {
-console.log('4')
-resolve()
-}).then(() => {
-console.log('5')
-setTimeout(() => console.log('6'), 0)
-})
+export default function EventLoopDemo() {
+  const [logs, setLogs] = useState([])
+  function log(msg) {
+    setLogs((prev) => [...prev, msg])
+  }
+  function handleClick() {
+    setLogs([])
+    log('1')
+    setTimeout(() => {
+      log('2')
+      Promise.resolve().then(() => log('3'))
+    }, 0)
+    new Promise((resolve) => {
+      log('4')
+      resolve()
+    }).then(() => {
+      log('5')
+      setTimeout(() => log('6'), 0)
+    })
+    Promise.resolve().then(() => log('7'))
+    log('8')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>执行事件循环顺序</button>
+      <div>输出：</div>
+      <pre>{logs.join('\n')}</pre>
+    </div>
+  )
+}
+```
 
-Promise.resolve().then(() => console.log('7'))
-
-console.log('8')
-
-// 输出 1 4 8 5 7 2 3 6`} />
-
-解释：清空完微任务再执行宏任务
+</Sandpack>

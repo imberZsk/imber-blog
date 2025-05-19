@@ -2,304 +2,475 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ### 控制请求并发
 
-<CodeSandbox code={`function controlConcurrent(arr, max) {
-  let running = 0 // 当前正在执行的请求数
-  let index = 0 // 当前要执行的请求索引
+<Sandpack>
 
-function runNext() {
-// 如果所有请求都已执行完，或者当前正在执行的请求数达到最大值，则返回
-if (index >= arr.length || running >= max) {
-return
+```js
+import { useState, useEffect } from 'react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+
+  function controlConcurrent(arr, max) {
+    let running = 0 // 当前正在执行的请求数
+    let index = 0 // 当前要执行的请求索引
+
+    function runNext() {
+      // 如果所有请求都已执行完，或者当前正在执行的请求数达到最大值，则返回
+      if (index >= arr.length || running >= max) {
+        return
+      }
+
+      running++ // 增加正在执行的请求数
+      const currentIndex = index++
+
+      // 执行当前请求
+      arr[currentIndex]()
+        .then(() => {
+          console.log(`请求 ${currentIndex + 1} 完成`)
+        })
+        .catch((err) => {
+          console.error(`请求 ${currentIndex + 1} 失败:`, err)
+        })
+        .finally(() => {
+          running-- // 减少正在执行的请求数
+          runNext() // 执行下一个请求
+        })
+    }
+
+    for (let i = 0; i < max; i++) {
+      runNext()
+    }
+  }
+
+  const arr = [
+    () => fetch('https://imber.netlify.app/api?time=2'),
+    () => fetch('https://imber.netlify.app/api?time=3'),
+    () => fetch('https://imber.netlify.app/api?time=2'),
+    () => fetch('https://imber.netlify.app/api?time=1'),
+    () => fetch('https://imber.netlify.app/api?time=3'),
+    () => fetch('https://imber.netlify.app/api?time=2')
+  ]
+
+  return <button onClick={() => controlConcurrent(arr, 3)}>控制请求并发</button>
 }
+```
 
-    running++ // 增加正在执行的请求数
-    const currentIndex = index++
-
-    // 执行当前请求
-    arr[currentIndex]()
-      .then(() => {
-        console.log(\`请求 \${currentIndex + 1} 完成\`)
-      })
-      .catch((err) => {
-        console.error(\`请求 \${currentIndex + 1} 失败:\`, err)
-      })
-      .finally(() => {
-        running-- // 减少正在执行的请求数
-        runNext() // 执行下一个请求
-      })
-
-}
-
-// 启动初始的 max 个请求
-for (let i = 0; i < max; i++) {
-runNext()
-}
-}`} />
+</Sandpack>
 
 ### new
 
-<CodeSandbox code={`// function new(fn){
-//   // const newObj = {}
-//   // newObj.__proto__ = fn.prototype
-//   const newObj = Object.create(fn.prototype)
-//   const res = fn.apply(newObj,arguments)
-//   return typeof(res) === 'object' && res !== null ? res : newObj
-// }
+<Sandpack>
 
-function \_new(Fn, ...args) {
-const obj = Object.create(Fn.prototype)
-const result = Fn.apply(obj, args)
-return result instanceof Object ? result : obj
-}`} />
+```js
+import { useState } from 'react'
+
+export default function NewDemo() {
+  const [result, setResult] = useState('')
+
+  function myNew(Fn, ...args) {
+    const obj = Object.create(Fn.prototype)
+    const res = Fn.apply(obj, args)
+    return res instanceof Object ? res : obj
+  }
+
+  function handleClick() {
+    function Person(name) {
+      this.name = name
+    }
+    const p = myNew(Person, '张三')
+    setResult(JSON.stringify(p))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 myNew</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### instanceof
 
-<CodeSandbox code={`// function instanceof(a,b){
-//   const l = a.__proto__
-//   const r = b.prototype
-//   while(true){
-//     if(l===null){
-//       return false
-//     }
-//     if(l === r){
-//       return true
-//     }
-//     l = l.__proto__
-//   }
-// }
+<Sandpack>
 
-function instanceOf(obj, fn) {
-let proto = Object.getPrototypeOf(obj) // 获取对象的原型
-while (proto !== null) {
-if (proto === fn.prototype) {
-return true
+```js
+import { useState } from 'react'
+
+export default function InstanceOfDemo() {
+  const [result, setResult] = useState('')
+
+  function instanceOf(obj, fn) {
+    let proto = Object.getPrototypeOf(obj)
+    while (proto !== null) {
+      if (proto === fn.prototype) return true
+      proto = Object.getPrototypeOf(proto)
+    }
+    return false
+  }
+
+  function handleClick() {
+    function Person() {}
+    const p = new Person()
+    setResult(instanceOf(p, Person) ? '是' : '否')
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 instanceOf</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
-proto = Object.getPrototypeOf(proto) // 继续向上查找
-}
-return false
-}`} />
+```
+
+</Sandpack>
 
 ### 深拷贝
 
-<CodeSandbox code={`// function deepClone(obj, cache = new WeakMap()) {
-//   if (typeof obj !== 'object' || obj === null) return
-//   if (cache.has(obj)) {
-//     return cache.get(obj)
-//   }
-//   const target = obj instanceof Array ? [] : {}
-//   cache.set(obj, target)
-//   for (let key in obj) {
-//     if (obj.hasOwnProperty(key)) {
-//       target[key] = deepClone(obj[key], cache)
-//     }
-//   }
+<Sandpack>
 
-// return target
-// }
+```js
+import { useState } from 'react'
 
-function deepClone(obj, cache = new WeakMap()) {
-// 处理基本类型和null/undefined
-if (obj === null || typeof obj !== 'object') {
-return obj // 这里应该返回原值，而不是undefined
+export default function DeepCloneDemo() {
+  const [result, setResult] = useState('')
+
+  function deepClone(obj, cache = new WeakMap()) {
+    if (obj === null || typeof obj !== 'object') return obj
+    if (cache.has(obj)) return cache.get(obj)
+    if (obj instanceof Date) return new Date(obj)
+    if (obj instanceof RegExp) return new RegExp(obj)
+    const target = Array.isArray(obj) ? [] : {}
+    cache.set(obj, target)
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        target[key] = deepClone(obj[key], cache)
+      }
+    }
+    return target
+  }
+
+  function handleClick() {
+    const obj = { a: 1, b: { c: 2 } }
+    const clone = deepClone(obj)
+    setResult(JSON.stringify(clone))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 deepClone</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
+```
 
-// 处理循环引用
-if (cache.has(obj)) {
-return cache.get(obj)
-}
-
-// 处理特殊对象类型
-if (obj instanceof Date) return new Date(obj)
-if (obj instanceof RegExp) return new RegExp(obj)
-
-// 初始化克隆对象
-const target = Array.isArray(obj) ? [] : {}
-
-// 保存引用，防止循环引用
-cache.set(obj, target)
-
-// 递归拷贝属性
-for (let key in obj) {
-if (obj.hasOwnProperty(key)) {
-target[key] = deepClone(obj[key], cache)
-}
-}
-
-return target
-}`} />
+</Sandpack>
 
 ### 拍平数组
 
-<CodeSandbox
-  code={`// 测试数据
-const a = [
-  [1, 2],
-  [3, 4],
-  [2, 3, 4, [7, 4, 9]]
-]
-// 递归
-function flat(arr) {
-  const target = []
-  arr.forEach((item) => {
-    if (item instanceof Array) {
-      target.push(...flat(item))
-    } else {
-      target.push(item)
-    }
-  })
-  return target
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function FlatDemo() {
+  const [result, setResult] = useState('')
+
+  function flat(arr) {
+    return arr.reduce((pre, next) => pre.concat(Array.isArray(next) ? flat(next) : next), [])
+  }
+
+  function handleClick() {
+    const a = [
+      [1, 2],
+      [3, 4],
+      [2, 3, 4, [7, 4, 9]]
+    ]
+    setResult(JSON.stringify(flat(a)))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 flat</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
-// reduce
-function flat(arr) {
-  let res = arr.reduce((pre, next) => {
-    return pre.concat(Array.isArray(next) ? flat(next) : next)
-  }, [])
-  return res
-}`}
-/>
+```
+
+</Sandpack>
 
 ### 大数相加
 
-<CodeSandbox code={`// ## 逻辑
+<Sandpack>
 
-// 拿到两个字符串最长 length，然后用 padStart 在前面加 0
+```js
+import { useState } from 'react'
 
-// 定义一个 carry 表示进位，然后 for 循环，用 i = len - 1 来做循环，因为要从最后面开始加
+export default function AddStringsDemo() {
+  const [result, setResult] = useState('')
 
-// 定义一个 result 表示最后的结果
-
-// 循环里定义一个 sum，表示每次相加（转数字再加），然后判断是否有 carry(是否>10)，有的话 result += sum % 10
-
-// 最后返回看是否有 carry，有的话 result + 1 否则 result
-
-// ## 核心思想
-
-// 前面补 0，末尾相加，每次判断是否有进位
-
-/\*\*
-
-- @params {String} num1
-- @params {String} num2
-  \*/
-
-/\*\*
-
-- @param {string} num1
-- @param {string} num2
-- @return {string}
-  \*/
-  var addStrings = function (num1, num2) {
-  const len = Math.max(num1.length, num2.length)
-  num1 = num1.padStart(len, '0')
-  num2 = num2.padStart(len, '0')
-  let carry = 0
-  let result = ''
-  for (let i = len - 1; i >= 0; i--) {
-  const sum = +num1[i] + +num2[i] + carry
-  // 取余数
-  result = (sum % 10) + result
-  carry = sum >= 10 ? 1 : 0
+  function addStrings(num1, num2) {
+    const len = Math.max(num1.length, num2.length)
+    num1 = num1.padStart(len, '0')
+    num2 = num2.padStart(len, '0')
+    let carry = 0
+    let result = ''
+    for (let i = len - 1; i >= 0; i--) {
+      const sum = +num1[i] + +num2[i] + carry
+      result = (sum % 10) + result
+      carry = sum >= 10 ? 1 : 0
+    }
+    return carry ? '1' + result : result
   }
-  return carry ? '1' + result : result
-  }`} />
+
+  function handleClick() {
+    setResult(addStrings('123456789123456789', '987654321987654321'))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试大数相加</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### LRU 缓存
 
-<CodeSandbox code={`class LRUCache {
-  constructor(capacity) {
-    this.capacity = capacity
-    this.cache = new Map()
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function LRUCacheDemo() {
+  const [result, setResult] = useState('')
+
+  class LRUCache {
+    constructor(capacity) {
+      this.capacity = capacity
+      this.cache = new Map()
+    }
+    get(key) {
+      if (!this.cache.has(key)) return -1
+      const value = this.cache.get(key)
+      this.cache.delete(key)
+      this.cache.set(key, value)
+      return value
+    }
+    put(key, value) {
+      if (this.cache.has(key)) {
+        this.cache.delete(key)
+      } else if (this.cache.size >= this.capacity) {
+        this.cache.delete(this.cache.keys().next().value)
+      }
+      this.cache.set(key, value)
+    }
   }
 
-get(key) {
-if (!this.cache.has(key)) return -1
-const value = this.cache.get(key)
-this.cache.delete(key)
-this.cache.set(key, value)
-return value
-}
+  function handleClick() {
+    const lru = new LRUCache(2)
+    lru.put(1, 1)
+    lru.put(2, 2)
+    lru.get(1)
+    lru.put(3, 3)
+    setResult(JSON.stringify(Array.from(lru.cache.entries())))
+  }
 
-put(key, value) {
-if (this.cache.has(key)) {
-this.cache.delete(key)
-} else if (this.cache.size >= this.capacity) {
-this.cache.delete(this.cache.keys().next().value)
+  return (
+    <div>
+      <button onClick={handleClick}>测试 LRUCache</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
-this.cache.set(key, value)
-}
-}`} />
+```
+
+</Sandpack>
 
 ### 防抖和节流实现
 
-<CodeSandbox code={`// 防抖
-function debounce(fn, delay) {
-  let timer = null
-  return function (...args) {
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      fn.apply(this, args)
-    }, delay)
-  }
-}
+<Sandpack>
 
-// 节流
-function throttle(fn, delay) {
-let lastTime = 0
-return function (...args) {
-const now = Date.now()
-if (now - lastTime >= delay) {
-fn.apply(this, args)
-lastTime = now
+```js
+import { useState, useRef } from 'react'
+
+export default function DebounceThrottleDemo() {
+  const [debounceCount, setDebounceCount] = useState(0)
+  const [throttleCount, setThrottleCount] = useState(0)
+  const debounceRef = useRef(0)
+  const throttleRef = useRef(0)
+
+  function debounce(fn, delay) {
+    let timer = null
+    return function (...args) {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        fn.apply(this, args)
+      }, delay)
+    }
+  }
+
+  function throttle(fn, delay) {
+    let lastTime = 0
+    return function (...args) {
+      const now = Date.now()
+      if (now - lastTime >= delay) {
+        fn.apply(this, args)
+        lastTime = now
+      }
+    }
+  }
+
+  const handleDebounce = debounce(() => {
+    debounceRef.current += 1
+    setDebounceCount(debounceRef.current)
+  }, 1000)
+
+  const handleThrottle = throttle(() => {
+    throttleRef.current += 1
+    setThrottleCount(throttleRef.current)
+  }, 1000)
+
+  return (
+    <div>
+      <button onClick={handleDebounce}>测试防抖</button>
+      <span>防抖触发次数：{debounceCount}</span>
+      <br />
+      <button onClick={handleThrottle}>测试节流</button>
+      <span>节流触发次数：{throttleCount}</span>
+    </div>
+  )
 }
-}
-}`} />
+```
+
+</Sandpack>
 
 ### 版本号排序
 
-<CodeSandbox
-  code={`function compareVersion(version1, version2) {
-  const v1 = version1.split('.')
-  const v2 = version2.split('.')
-  const length = Math.max(v1.length, v2.length)
-  for (let i = 0; i < length; i++) {
-    const num1 = parseInt(v1[i] || 0)
-    const num2 = parseInt(v2[i] || 0)
-    if (num1 !== num2) {
-      return num1 - num2
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function VersionSortDemo() {
+  const [result, setResult] = useState('')
+
+  function compareVersion(version1, version2) {
+    const v1 = version1.split('.')
+    const v2 = version2.split('.')
+    const length = Math.max(v1.length, v2.length)
+    for (let i = 0; i < length; i++) {
+      const num1 = parseInt(v1[i] || 0)
+      const num2 = parseInt(v2[i] || 0)
+      if (num1 !== num2) {
+        return num1 - num2
+      }
     }
+    return 0
   }
-  return 0
+  function sortVersions(versions) {
+    return versions.sort(compareVersion)
+  }
+
+  function handleClick() {
+    setResult(JSON.stringify(sortVersions(['0.1.2', '0.2.1', '0.0.1', '2.0.0', '1.0.221'])))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试版本号排序</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
-function sortVersions(versions) {
-  return versions.sort(compareVersion)
-}
-console.log(sortVersions(['0.1.2', '0.2.1', '0.0.1', '2.0.0', '1.0.221']))`}
-/>
+```
+
+</Sandpack>
 
 ### 函数柯里化
 
-<CodeSandbox
-  code={`function curry(fn) {
-  return function curried(...args) {
-    if (args.length >= fn.length) {
-      return fn.apply(this, args)
-    }
-    return function (...args2) {
-      return curried.apply(this, args.concat(args2))
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function CurryDemo() {
+  const [result, setResult] = useState('')
+
+  function curry(fn) {
+    return function curried(...args) {
+      if (args.length >= fn.length) {
+        return fn.apply(this, args)
+      }
+      return function (...args2) {
+        return curried.apply(this, args.concat(args2))
+      }
     }
   }
-}`}
-/>
+
+  function handleClick() {
+    function add(a, b, c) {
+      return a + b + c
+    }
+    const curriedAdd = curry(add)
+    setResult(curriedAdd(1)(2)(3))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试柯里化</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 数组转数
 
-<CodeSandbox
-  code={`function arrayToTree(items, id = null, link = 'parentId') {
-  return items
-    .filter((item) => item[link] === id)
-    .map((item) => ({
-      ...item,
-      children: arrayToTree(items, item.id)
-    }))
-}`}
-/>
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function ArrayToTreeDemo() {
+  const [result, setResult] = useState('')
+
+  function arrayToTree(items, id = null, link = 'parentId') {
+    return items
+      .filter((item) => item[link] === id)
+      .map((item) => ({
+        ...item,
+        children: arrayToTree(items, item.id)
+      }))
+  }
+
+  function handleClick() {
+    const arr = [
+      { id: 1, parentId: null, name: 'A' },
+      { id: 2, parentId: 1, name: 'B' },
+      { id: 3, parentId: 1, name: 'C' },
+      { id: 4, parentId: 2, name: 'D' }
+    ]
+    setResult(JSON.stringify(arrayToTree(arr)))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试数组转树</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>

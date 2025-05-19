@@ -1,3 +1,4 @@
+import { CodeSandbox } from '@/components/CodeSandbox'
 import type { MDXComponents } from 'mdx/types'
 
 // 用于存储已使用的 ID 和它们的计数
@@ -58,6 +59,17 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
           {props.children}
         </h3>
       )
+    },
+    Sandpack: (props) => {
+      // 递归提取 children 里的代码字符串
+      function extractCode(node: any): string {
+        if (typeof node === 'string') return node
+        if (Array.isArray(node)) return node.map(extractCode).join('')
+        if (node && node.props && node.props.children) return extractCode(node.props.children)
+        return ''
+      }
+      const code = extractCode(props.children)
+      return <CodeSandbox code={code} />
     },
     ...components
   }

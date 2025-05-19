@@ -4,120 +4,139 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ### 两数之和
 
-<CodeSandbox
-  code={`const twoSum = function (nums, target) {
-  // 这里我用对象来模拟 map 的能力
-  const diffs = {}
-  // 缓存数组长度
-  const len = nums.length
-  // 遍历数组
-  for (let i = 0; i < len; i++) {
-    // 判断当前值对应的 target 差值是否存在（是否已遍历过）
-    if (diffs[target - nums[i]] !== undefined) {
-      // 若有对应差值，那么答案get！
-      return [diffs[target - nums[i]], i]
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function TwoSumDemo() {
+  const [result, setResult] = useState('')
+
+  function twoSum(nums, target) {
+    const diffs = {}
+    const len = nums.length
+    for (let i = 0; i < len; i++) {
+      if (diffs[target - nums[i]] !== undefined) {
+        return [diffs[target - nums[i]], i]
+      }
+      diffs[nums[i]] = i
     }
-    // 若没有对应差值，则记录当前值
-    diffs[nums[i]] = i
   }
-}`}
-/>
+
+  function handleClick() {
+    setResult(JSON.stringify(twoSum([2, 7, 11, 15], 9)))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试两数之和</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 合并两个有序数组
 
-双指针
+<Sandpack>
 
-<CodeSandbox code={`const merge = function (nums1, m, nums2, n) {
-  // 初始化两个指针的指向，初始化 nums1 尾部索引k
-  let i = m - 1,
-    j = n - 1,
-    k = m + n - 1
-  // 当两个数组都没遍历完时，指针同步移动
-  while (i >= 0 && j >= 0) {
-    // 取较大的值，从末尾往前填补
-    if (nums1[i] >= nums2[j]) {
-      nums1[k] = nums1[i]
-      i--
-      k--
-    } else {
-      nums1[k] = nums2[j]
-      j--
-      k--
+```js
+import { useState } from 'react'
+
+export default function MergeArrayDemo() {
+  const [result, setResult] = useState('')
+
+  function merge(nums1, m, nums2, n) {
+    let i = m - 1,
+      j = n - 1,
+      k = m + n - 1
+    while (i >= 0 && j >= 0) {
+      if (nums1[i] >= nums2[j]) {
+        nums1[k] = nums1[i]
+        i--
+        k--
+      } else {
+        nums1[k] = nums2[j]
+        j--
+        k--
+      }
     }
+    while (j >= 0) {
+      nums1[k] = nums2[j]
+      k--
+      j--
+    }
+    return nums1
   }
 
-// nums2 留下的情况，特殊处理一下
-while (j >= 0) {
-nums1[k] = nums2[j]
-k--
-j--
+  function handleClick() {
+    setResult(JSON.stringify(merge([1, 2, 3, 0, 0, 0], 3, [2, 5, 6], 3)))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试合并有序数组</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
-}`} />
+```
+
+</Sandpack>
 
 ### 三数之和
 
-双指针
+<Sandpack>
 
-<CodeSandbox code={`const threeSum = function (nums) {
-  // 用于存放结果数组
-  let res = []
-  // 给 nums 排序
-  nums = nums.sort((a, b) => {
-    return a - b
-  })
-  // 缓存数组长度
-  const len = nums.length
-  // 注意我们遍历到倒数第三个数就足够了，因为左右指针会遍历后面两个数
-  for (let i = 0; i < len - 2; i++) {
-    // 左指针 j
-    let j = i + 1
-    // 右指针k
-    let k = len - 1
-    // 如果遇到重复的数字，则跳过
-    if (i > 0 && nums[i] === nums[i - 1]) {
-      continue
-    }
-    while (j < k) {
-      // 三数之和小于0，左指针前进
-      if (nums[i] + nums[j] + nums[k] < 0) {
-        j++
-        // 处理左指针元素重复的情况
-        while (j < k && nums[j] === nums[j - 1]) {
+```js
+import { useState } from 'react'
+
+export default function ThreeSumDemo() {
+  const [result, setResult] = useState('')
+
+  function threeSum(nums) {
+    let res = []
+    nums = nums.sort((a, b) => a - b)
+    const len = nums.length
+    for (let i = 0; i < len - 2; i++) {
+      let j = i + 1
+      let k = len - 1
+      if (i > 0 && nums[i] === nums[i - 1]) continue
+      while (j < k) {
+        if (nums[i] + nums[j] + nums[k] < 0) {
           j++
-        }
-      } else if (nums[i] + nums[j] + nums[k] > 0) {
-        // 三数之和大于0，右指针后退
-        k--
-
-        // 处理右指针元素重复的情况
-        while (j < k && nums[k] === nums[k + 1]) {
+          while (j < k && nums[j] === nums[j - 1]) j++
+        } else if (nums[i] + nums[j] + nums[k] > 0) {
           k--
-        }
-      } else {
-        // 得到目标数字组合，推入结果数组
-        res.push([nums[i], nums[j], nums[k]])
-
-        // 左右指针一起前进
-        j++
-        k--
-
-        // 若左指针元素重复，跳过
-        while (j < k && nums[j] === nums[j - 1]) {
+          while (j < k && nums[k] === nums[k + 1]) k--
+        } else {
+          res.push([nums[i], nums[j], nums[k]])
           j++
-        }
-
-        // 若右指针元素重复，跳过
-        while (j < k && nums[k] === nums[k + 1]) {
           k--
+          while (j < k && nums[j] === nums[j - 1]) j++
+          while (j < k && nums[k] === nums[k + 1]) k--
         }
       }
     }
+    return res
+  }
 
+  function handleClick() {
+    setResult(JSON.stringify(threeSum([-1, 0, 1, 2, -1, -4])))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试三数之和</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
+```
 
-// 返回结果数组
-return res
-}`} />
+</Sandpack>
 
 ## 长度最小的子数组
 
@@ -129,63 +148,84 @@ return res
 
 ### 验证回文字符串
 
-<CodeSandbox
-  code={`function isPalindrome(str) {
-  // 缓存字符串的长度
-  const len = str.length
-  // 遍历前半部分，判断和后半部分是否对称
-  for (let i = 0; i < len / 2; i++) {
-    if (str[i] !== str[len - i - 1]) {
-      return false
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function PalindromeDemo() {
+  const [result, setResult] = useState('')
+
+  function isPalindrome(str) {
+    const len = str.length
+    for (let i = 0; i < len / 2; i++) {
+      if (str[i] !== str[len - i - 1]) {
+        return false
+      }
     }
+    return true
   }
-  return true
-}`}
-/>
+
+  function handleClick() {
+    setResult(isPalindrome('abccba') ? '是回文' : '不是回文')
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试回文字符串</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 最多删除一个字符。判断是否能成为回文字符串
 
-对撞指针
+<Sandpack>
 
-<CodeSandbox code={`const validPalindrome = function (s) {
-  // 缓存字符串的长度
-  const len = s.length
+```js
+import { useState } from 'react'
 
-// i、j分别为左右指针
-let i = 0,
-j = len - 1
+export default function ValidPalindromeDemo() {
+  const [result, setResult] = useState('')
 
-// 当左右指针均满足对称时，一起向中间前进
-while (i < j && s[i] === s[j]) {
-i++
-j--
+  function validPalindrome(s) {
+    const len = s.length
+    let i = 0,
+      j = len - 1
+    while (i < j && s[i] === s[j]) {
+      i++
+      j--
+    }
+    if (isPalindrome(i + 1, j)) return true
+    if (isPalindrome(i, j - 1)) return true
+    function isPalindrome(st, ed) {
+      while (st < ed) {
+        if (s[st] !== s[ed]) return false
+        st++
+        ed--
+      }
+      return true
+    }
+    return false
+  }
+
+  function handleClick() {
+    setResult(validPalindrome('abca') ? '可以' : '不可以')
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试最多删除一个字符回文</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
+```
 
-// 尝试判断跳过左指针元素后字符串是否回文
-if (isPalindrome(i + 1, j)) {
-return true
-}
-
-// 尝试判断跳过右指针元素后字符串是否回文
-if (isPalindrome(i, j - 1)) {
-return true
-}
-
-// 工具方法，用于判断字符串是否回文
-function isPalindrome(st, ed) {
-while (st < ed) {
-if (s[st] !== s[ed]) {
-return false
-}
-st++
-ed--
-}
-return true
-}
-
-// 默认返回 false
-return false
-}`} />
+</Sandpack>
 
 ## 链表问题
 

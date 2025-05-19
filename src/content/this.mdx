@@ -4,102 +4,217 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ### 题目 1：全局环境中的 this
 
-<CodeSandbox code={`console.log(this === window) // 浏览器环境下输出什么？
+<Sandpack>
 
-// 输出 true`} />
+```js
+import { useState } from 'react'
+
+export default function GlobalThisDemo() {
+  const [result, setResult] = useState('')
+  function handleClick() {
+    setResult(typeof window !== 'undefined' ? (this === window ? 'true' : 'false') : '非浏览器环境')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>测试全局 this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 2：普通函数调用
 
-<CodeSandbox code={`function test() {
-  console.log(this)
-}
-test() // 输出什么？
+<Sandpack>
 
-// 非严格模式：window（浏览器）或 global（Node.js）
-// 严格模式：undefined`} />
+```js
+import { useState } from 'react'
+
+export default function NormalFuncDemo() {
+  const [result, setResult] = useState('')
+  function test() {
+    setResult(this)
+  }
+  return (
+    <div>
+      <button onClick={test}>测试普通函数 this</button>
+      <div>结果：{String(result)}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 3：对象方法调用
 
-<CodeSandbox code={`const obj = {
-  name: 'Alice',
-  greet: function () {
-    console.log(\`Hello, \${this.name}\`)
-  }
-}
-obj.greet() // 输出什么？
+<Sandpack>
 
-// 输出 Hello, Alice`} />
+```js
+import { useState } from 'react'
+
+export default function ObjectMethodDemo() {
+  const [result, setResult] = useState('')
+  const obj = {
+    name: 'Alice',
+    greet: function () {
+      setResult(`Hello, ${this.name}`)
+    }
+  }
+  return (
+    <div>
+      <button onClick={obj.greet}>测试对象方法 this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 4：嵌套对象方法
 
-<CodeSandbox code={`
-const obj = {
-  name: 'Bob',
-  outer: function () {
-    function inner() {
-      console.log(this.name)
-    }
-    inner()
-  }
-}
-obj.outer() // 输出什么？
+<Sandpack>
 
-// 输出 undefined`
-} />
+```js
+import { useState } from 'react'
+
+export default function NestedObjectMethodDemo() {
+  const [result, setResult] = useState('')
+  const obj = {
+    name: 'Bob',
+    outer: function () {
+      function inner() {
+        setResult(this?.name)
+      }
+      inner()
+    }
+  }
+  return (
+    <div>
+      <button onClick={obj.outer}>测试嵌套对象方法 this</button>
+      <div>结果：{String(result)}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 5：箭头函数
 
-<CodeSandbox code={`const obj = {
-  name: 'Charlie',
-  greet: () => {
-    console.log(\`Hello, \${this.name}\`)
-  }
-}
-obj.greet() // 输出什么？
+<Sandpack>
 
-// 输出 Hello, undefined`} />
+```js
+import { useState } from 'react'
+
+export default function ArrowFuncDemo() {
+  const [result, setResult] = useState('')
+  const obj = {
+    name: 'Charlie',
+    greet: () => {
+      setResult(`Hello, ${this?.name}`)
+    }
+  }
+  return (
+    <div>
+      <button onClick={obj.greet}>测试箭头函数 this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 6：构造函数
 
-<CodeSandbox code={`function Person(name) {
-  this.name = name
-}
-const person = new Person('David')
-console.log(person.name) // 输出什么？
+<Sandpack>
 
-// 输出 David`} />
+```js
+import { useState } from 'react'
+
+export default function ConstructorDemo() {
+  const [result, setResult] = useState('')
+  function Person(name) {
+    this.name = name
+  }
+  function handleClick() {
+    const person = new Person('David')
+    setResult(person.name)
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>测试构造函数 this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 7：call/apply 改变 this
 
-<CodeSandbox code={`const obj1 = { name: 'Eve' }
-const obj2 = { name: 'Frank' }
+<Sandpack>
 
-function showName() {
-console.log(this.name)
+```js
+import { useState } from 'react'
+
+export default function CallApplyDemo() {
+  const [result, setResult] = useState('')
+  const obj1 = { name: 'Eve' }
+  const obj2 = { name: 'Frank' }
+  function showName() {
+    setResult(this.name)
+  }
+  function handleClick() {
+    showName.call(obj1)
+    setTimeout(() => showName.apply(obj2), 100)
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>测试 call/apply this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
 }
+```
 
-showName.call(obj1) // 输出什么？
-showName.apply(obj2) // 输出什么？
-
-// 输出 Eve
-// 输出 Frank`} />
+</Sandpack>
 
 ### 题目 8：bind 方法
 
-<CodeSandbox code={`const obj = {
-  name: 'Grace',
-  greet: function () {
-    setTimeout(
-      function () {
-        console.log(\`Hello, \${this.name}\`)
-      }.bind(this),
-      100
-    )
-  }
-}
-obj.greet() // 输出什么？
+<Sandpack>
 
-// 输出 Hello, Grace`} />
+```js
+import { useState } from 'react'
+
+export default function BindDemo() {
+  const [result, setResult] = useState('')
+  const obj = {
+    name: 'Grace',
+    greet: function () {
+      setTimeout(
+        function () {
+          setResult(`Hello, ${this.name}`)
+        }.bind(this),
+        100
+      )
+    }
+  }
+  return (
+    <div>
+      <button onClick={obj.greet}>测试 bind this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 9：DOM 事件处理函数
 
@@ -114,18 +229,35 @@ obj.greet() // 输出什么？
 
 ### 题目 10：类中的 this
 
-<CodeSandbox code={`class Person {
-  constructor(name) {
-    this.name = name
-  }
-  greet() {
-    console.log(\`Hello, \${this.name}\`)
-  }
-}
-const person = new Person('Henry')
-person.greet() // 输出什么？
+<Sandpack>
 
-// 输出 Hello, Henry`} />
+```js
+import { useState } from 'react'
+
+export default function ClassThisDemo() {
+  const [result, setResult] = useState('')
+  class Person {
+    constructor(name) {
+      this.name = name
+    }
+    greet() {
+      setResult(`Hello, ${this.name}`)
+    }
+  }
+  function handleClick() {
+    const person = new Person('Henry')
+    person.greet()
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>测试类 this</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 11：箭头函数中的 this
 
@@ -143,17 +275,31 @@ obj.greet() // 输出什么？
 
 ### 题目 12：箭头函数解决 this 问题
 
-<CodeSandbox code={`const obj = {
-  name: 'Jack',
-  greet: function () {
-    setTimeout(() => {
-      console.log(\`Hello, \${this.name}\`)
-    }, 100)
-  }
-}
-obj.greet() // 输出什么？
+<Sandpack>
 
-// 输出 Hello, Jack`} />
+```js
+import { useState } from 'react'
+
+export default function ArrowThisDemo() {
+  const [result, setResult] = useState('')
+  const obj = {
+    name: 'Jack',
+    greet: function () {
+      setTimeout(() => {
+        setResult(`Hello, ${this.name}`)
+      }, 100)
+    }
+  }
+  return (
+    <div>
+      <button onClick={obj.greet}>测试箭头函数 this 2</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
 
 ### 题目 13：严格模式下的 this
 
