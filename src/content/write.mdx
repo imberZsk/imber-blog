@@ -51,7 +51,12 @@ export default function Counter() {
     () => fetch('https://imber.netlify.app/api?time=2')
   ]
 
-  return <button onClick={() => controlConcurrent(arr, 3)}>控制请求并发</button>
+  return (
+    <div>
+      <button onClick={() => controlConcurrent(arr, 3)}>控制请求并发</button>
+      <div>结果在控制台查看接口请求</div>
+    </div>
+  )
 }
 ```
 
