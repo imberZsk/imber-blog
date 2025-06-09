@@ -73,8 +73,10 @@ export default function NewDemo() {
   const [result, setResult] = useState('')
 
   function myNew(Fn, ...args) {
+    // obj.__proto__ = Fn.prototype
     const obj = Object.create(Fn.prototype)
     const res = Fn.apply(obj, args)
+    // 用 instanceof 可以排除 null
     return res instanceof Object ? res : obj
   }
 
@@ -223,11 +225,16 @@ export default function AddStringsDemo() {
     const len = Math.max(num1.length, num2.length)
     num1 = num1.padStart(len, '0')
     num2 = num2.padStart(len, '0')
+    // 进位
     let carry = 0
+    // 结果
     let result = ''
     for (let i = len - 1; i >= 0; i--) {
+      // 当前位相加
       const sum = +num1[i] + +num2[i] + carry
+      // 当前位相加结果
       result = (sum % 10) + result
+      // 进位
       carry = sum >= 10 ? 1 : 0
     }
     return carry ? '1' + result : result
@@ -248,64 +255,12 @@ export default function AddStringsDemo() {
 
 </Sandpack>
 
-### LRU 缓存
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function LRUCacheDemo() {
-  const [result, setResult] = useState('')
-
-  class LRUCache {
-    constructor(capacity) {
-      this.capacity = capacity
-      this.cache = new Map()
-    }
-    get(key) {
-      if (!this.cache.has(key)) return -1
-      const value = this.cache.get(key)
-      this.cache.delete(key)
-      this.cache.set(key, value)
-      return value
-    }
-    put(key, value) {
-      if (this.cache.has(key)) {
-        this.cache.delete(key)
-      } else if (this.cache.size >= this.capacity) {
-        this.cache.delete(this.cache.keys().next().value)
-      }
-      this.cache.set(key, value)
-    }
-  }
-
-  function handleClick() {
-    const lru = new LRUCache(2)
-    lru.put(1, 1)
-    lru.put(2, 2)
-    lru.get(1)
-    lru.put(3, 3)
-    setResult(JSON.stringify(Array.from(lru.cache.entries())))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试 LRUCache</button>
-      <div>结果：{result}</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
 ### 防抖和节流实现
 
 <Sandpack>
 
 ```js
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 
 export default function DebounceThrottleDemo() {
   const [debounceCount, setDebounceCount] = useState(0)
@@ -334,15 +289,31 @@ export default function DebounceThrottleDemo() {
     }
   }
 
+  // function throttle(fn, delay) {
+  //   let timer = null
+  //   return function (...args) {
+  //     if (!timer) {
+  //       timer = setTimeout(() => {
+  //         fn.apply(this, args)
+  //         timer = null
+  //       }, delay)
+  //     }
+  //   }
+  // }
+
   const handleDebounce = debounce(() => {
     debounceRef.current += 1
     setDebounceCount(debounceRef.current)
   }, 1000)
 
-  const handleThrottle = throttle(() => {
-    throttleRef.current += 1
-    setThrottleCount(throttleRef.current)
-  }, 1000)
+  // 使用useCallback,避免每次lastTime为0
+  const handleThrottle = useCallback(
+    throttle(() => {
+      throttleRef.current += 1
+      setThrottleCount(throttleRef.current)
+    }, 2000),
+    []
+  )
 
   return (
     <div>
@@ -351,6 +322,65 @@ export default function DebounceThrottleDemo() {
       <br />
       <button onClick={handleThrottle}>测试节流</button>
       <span>节流触发次数：{throttleCount}</span>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### LRU 缓存
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function LRUCacheDemo() {
+  const [result, setResult] = useState('')
+
+  class LRUCache {
+    constructor(capacity) {
+      this.capacity = capacity // 缓存容量
+      this.cache = new Map() // 缓存
+    }
+    get(key) {
+      // 如果缓存中没有该key，返回-1
+      if (!this.cache.has(key)) return -1
+      const value = this.cache.get(key)
+      // 删除该key
+      this.cache.delete(key)
+      // 将该key重新插入到缓存中
+      this.cache.set(key, value)
+      // 返回该key的值
+      return value
+    }
+    put(key, value) {
+      // 如果缓存中已经存在该key，删除该key
+      if (this.cache.has(key)) {
+        this.cache.delete(key)
+      } else if (this.cache.size >= this.capacity) {
+        // 如果缓存容量已满，删除最久未使用的key
+        this.cache.delete(this.cache.keys().next().value)
+      }
+      // 将该key插入到缓存中
+      this.cache.set(key, value)
+    }
+  }
+
+  function handleClick() {
+    const lru = new LRUCache(2)
+    lru.put(1, 1)
+    lru.put(2, 2)
+    lru.get(1)
+    lru.put(3, 3)
+    setResult(JSON.stringify(Array.from(lru.cache.entries())))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 LRUCache</button>
+      <div>结果：{result}</div>
     </div>
   )
 }
@@ -369,16 +399,27 @@ export default function VersionSortDemo() {
   const [result, setResult] = useState('')
 
   function compareVersion(version1, version2) {
-    const v1 = version1.split('.')
-    const v2 = version2.split('.')
+    // 1. 按 '.' 分割版本号
+    const v1 = version1.split('.') // '1.2.3' → ['1', '2', '3']
+    const v2 = version2.split('.') // '1.3.0' → ['1', '3', '0']
+
+    // 2. 取最大长度，处理不同段数的版本号
     const length = Math.max(v1.length, v2.length)
+
+    // 3. 逐段比较
     for (let i = 0; i < length; i++) {
-      const num1 = parseInt(v1[i] || 0)
-      const num2 = parseInt(v2[i] || 0)
+      // 4. 转为数字，缺失的段用 0 补齐
+      const num1 = parseInt(v1[i] || 0) // v1[i] 不存在时用 0
+      const num2 = parseInt(v2[i] || 0) // v2[i] 不存在时用 0
+
+      // 5. 如果当前段不相等，直接返回差值
       if (num1 !== num2) {
-        return num1 - num2
+        return num1 - num2 // 负数表示 version1 < version2
       }
+      // 6. 相等则继续比较下一段
     }
+
+    // 7. 完全相同返回 0
     return 0
   }
   function sortVersions(versions) {
@@ -412,20 +453,26 @@ export default function CurryDemo() {
 
   function curry(fn) {
     return function curried(...args) {
+      // 如果参数长度大于等于原函数参数长度，直接调用原函数
       if (args.length >= fn.length) {
         return fn.apply(this, args)
       }
+      // 否则返回一个新的函数，继续接收参数
       return function (...args2) {
+        // 将新接收的参数拼接到已接收的参数中，并递归调用curried函数
         return curried.apply(this, args.concat(args2))
       }
     }
   }
 
   function handleClick() {
+    // 普通函数
     function add(a, b, c) {
       return a + b + c
     }
+    // 柯里化函数
     const curriedAdd = curry(add)
+    // 调用柯里化函数
     setResult(curriedAdd(1)(2)(3))
   }
 
@@ -440,7 +487,7 @@ export default function CurryDemo() {
 
 </Sandpack>
 
-### 数组转数
+### 数组转树
 
 <Sandpack>
 
@@ -452,10 +499,11 @@ export default function ArrayToTreeDemo() {
 
   function arrayToTree(items, id = null, link = 'parentId') {
     return items
-      .filter((item) => item[link] === id)
+      .filter((item) => item[link] === id) // 1. 筛选当前层级的节点
       .map((item) => ({
-        ...item,
-        children: arrayToTree(items, item.id)
+        // 2. 转换每个节点
+        ...item, // 3. 保留原有属性
+        children: arrayToTree(items, item.id) // 4. 递归查找子节点
       }))
   }
 

@@ -4,6 +4,8 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ### 题目 1：async/await
 
+解释：await fn，这个fn仍然是同步，但是 await fn后面的成了微任务，所以会先打印 async1 end
+
 <Sandpack>
 
 ```js
@@ -53,6 +55,8 @@ export default function AsyncAwaitDemo() {
 
 ### 题目 2：resolve
 
+解释：resolve 不会阻止当前的同步执行，所以先打印3，4，执行完了同步再执行resolve，两个setTimeout，一个0，一个10，所以先打印6，2
+
 <Sandpack>
 
 ```js
@@ -88,6 +92,8 @@ export default function ResolveDemo() {
 </Sandpack>
 
 ### 题目 3：then
+
+解释：多个 then 都会执行
 
 <Sandpack>
 
@@ -144,6 +150,8 @@ export default function ThenDemo() {
 
 ### 题目 4：Promise.all
 
+解释：promise.all 会等待所有 promise 都执行完，然后执行 then
+
 <Sandpack>
 
 ```js
@@ -188,6 +196,8 @@ export default function PromiseAllDemo() {
 </Sandpack>
 
 ### 题目 5：事件循环
+
+解释：清空完微任务再执行宏任务
 
 <Sandpack>
 

@@ -1,0 +1,26 @@
+## 闭包
+
+```js
+// 经典闭包题目
+for (var i = 0; i < 3; i++) {
+  setTimeout(function () {
+    console.log(i) // 输出 3, 3, 3
+  }, 1000)
+}
+
+// 解决方案1：使用闭包
+for (var i = 0; i < 3; i++) {
+  ;(function (j) {
+    setTimeout(function () {
+      console.log(j) // 输出 0, 1, 2
+    }, 1000) // 用1000 * i可以表示每隔多少秒打印
+  })(i)
+}
+
+// 解决方案2：使用 let
+for (let i = 0; i < 3; i++) {
+  setTimeout(function () {
+    console.log(i) // 输出 0, 1, 2
+  }, 1000) // 用1000 * i可以表示每隔多少秒打印
+}
+```
