@@ -1,26 +1,274 @@
-## 闭包
+## 经典打印题
+
+- 闭包问题：var 函数作用域，在循环中，会共享变量，导致最后都是3，let/const 是块级作用域，块级作用域会创建新的作用域，不会共享变量
+- 变量提升：var 和 function 会提升，但赋值不会，函数提升优先级高于变量声明，但变量赋值会覆盖
+- 作用域链：每个函数都有自己的作用域，变量查找沿作用域链向上
+
+### 题目 1：经典闭包问题
+
+<Sandpack>
 
 ```js
-// 经典闭包题目
-for (var i = 0; i < 3; i++) {
-  setTimeout(function () {
-    console.log(i) // 输出 3, 3, 3
-  }, 1000)
-}
+import { useState } from 'react'
 
-// 解决方案1：使用闭包
-for (var i = 0; i < 3; i++) {
-  ;(function (j) {
-    setTimeout(function () {
-      console.log(j) // 输出 0, 1, 2
-    }, 1000) // 用1000 * i可以表示每隔多少秒打印
-  })(i)
-}
+export default function ClosureDemo() {
+  const [result, setResult] = useState('')
 
-// 解决方案2：使用 let
-for (let i = 0; i < 3; i++) {
-  setTimeout(function () {
-    console.log(i) // 输出 0, 1, 2
-  }, 1000) // 用1000 * i可以表示每隔多少秒打印
+  function testVarProblem() {
+    setResult('测试中...')
+    const results = []
+
+    // 经典闭包问题：var 在循环中的问题
+    for (var i = 0; i < 3; i++) {
+      setTimeout(function () {
+        results.push(`var问题: ${i}`)
+        if (results.length === 3) {
+          setResult(results.join('\n') + '\n解释：var是函数作用域，循环结束时i=3，所以都输出3')
+        }
+      }, 100 * results.length)
+    }
+  }
+
+  function testClosureSolution() {
+    setResult('测试中...')
+    const results = []
+
+    // 解决方案1：使用闭包
+    for (var i = 0; i < 3; i++) {
+      ;(function (j) {
+        setTimeout(function () {
+          results.push(`闭包解决: ${j}`)
+          if (results.length === 3) {
+            setResult(results.join('\n') + '\n解释：立即执行函数创建了新的作用域，j保存了当时的i值')
+          }
+        }, 100 * results.length)
+      })(i)
+    }
+  }
+
+  function testLetSolution() {
+    setResult('测试中...')
+    const results = []
+
+    // 解决方案2：使用 let
+    for (let i = 0; i < 3; i++) {
+      setTimeout(function () {
+        results.push(`let解决: ${i}`)
+        if (results.length === 3) {
+          setResult(results.join('\n') + '\n解释：let是块级作用域，每次循环都创建新的i')
+        }
+      }, 100 * results.length)
+    }
+  }
+
+  return (
+    <div>
+      <div>
+        <button onClick={testVarProblem}>测试 var 问题</button>
+        <button onClick={testClosureSolution}>测试闭包解决方案</button>
+        <button onClick={testLetSolution}>测试 let 解决方案</button>
+      </div>
+      <pre>结果：{result}</pre>
+      <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>经典闭包问题：for循环中的异步操作</div>
+    </div>
+  )
 }
 ```
+
+</Sandpack>
+
+### 题目 2：基础变量提升
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function BasicHoistingDemo() {
+  const [result, setResult] = useState('')
+
+  function testHoisting() {
+    const results = []
+
+    // 模拟变量提升的例子
+    function hoistingExample() {
+      try {
+        results.push(`1. console.log(a): ${typeof a}`) // undefined
+        var a = 1
+        results.push(`2. console.log(a): ${a}`) // 1
+        results.push(`3. console.log(b): ${typeof b}`) // undefined
+        var b = function () {
+          return 2
+        }
+        results.push(`4. console.log(b()): ${b()}`) // 2
+        results.push(`5. console.log(c()): ${c()}`) // 3
+        function c() {
+          return 3
+        }
+      } catch (error) {
+        results.push(`错误: ${error.message}`)
+      }
+    }
+
+    hoistingExample()
+    setResult(results.join('\n') + '\n\n解释：var和function声明会被提升，但赋值不会')
+  }
+
+  return (
+    <div>
+      <button onClick={testHoisting}>测试基础变量提升</button>
+      <pre>结果：{result}</pre>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### 题目 3：复杂提升情况
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function ComplexHoistingDemo() {
+  const [result, setResult] = useState('')
+
+  function testComplexHoisting() {
+    const results = []
+
+    function complexExample() {
+      try {
+        // 嵌套函数的复杂提升
+        results.push(`1. 调用outer(): ${outer()}`)
+
+        function outer() {
+          results.push(`2. outer中调用inner(): ${inner()}`) // 重点
+
+          var inner = function () {
+            return 'inner表达式'
+          }
+
+          function inner() {
+            return 'inner声明'
+          }
+
+          results.push(`3. 重新赋值后inner(): ${inner()}`)
+          return 'outer完成'
+        }
+      } catch (error) {
+        results.push(`错误: ${error.message}`)
+      }
+    }
+
+    complexExample()
+    setResult(results.join('\n') + '\n\n解释：函数声明提升优先级高于变量声明，但变量赋值会覆盖')
+  }
+
+  return (
+    <div>
+      <button onClick={testComplexHoisting}>测试复杂提升情况</button>
+      <pre>结果：{result}</pre>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### 题目 4：基础作用域链
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function BasicScopeDemo() {
+  const [result, setResult] = useState('')
+
+  function testScope() {
+    const results = []
+
+    var x = 1
+    function outer() {
+      var x = 2
+      function inner() {
+        results.push(`inner中的x: ${x}`) // undefined
+        var x = 3
+        results.push(`赋值后inner中的x: ${x}`) // 3
+      }
+      inner()
+      results.push(`outer中的x: ${x}`) // 2
+    }
+    outer()
+    results.push(`全局中的x: ${x}`) // 1
+
+    setResult(results.join('\n') + '\n\n解释：每个函数都有自己的作用域，变量查找沿作用域链向上')
+  }
+
+  return (
+    <div>
+      <button onClick={testScope}>测试基础作用域链</button>
+      <pre>结果：{result}</pre>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### 题目 5：块级作用域
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function BlockScopeDemo() {
+  const [result, setResult] = useState('')
+
+  function testBlockScope() {
+    const results = []
+
+    function blockScopeExample() {
+      var varVariable = '全局var'
+      let letVariable = '全局let'
+
+      results.push(`1. 块外 var: ${varVariable}`)
+      results.push(`2. 块外 let: ${letVariable}`)
+
+      if (true) {
+        var varVariable = '块内var' // 覆盖外层var
+        let letVariable = '块内let' // 块级作用域新变量
+        const constVariable = '块内const'
+
+        results.push(`3. 块内 var: ${varVariable}`)
+        results.push(`4. 块内 let: ${letVariable}`)
+        results.push(`5. 块内 const: ${constVariable}`)
+      }
+
+      results.push(`6. 块外 var: ${varVariable}`) // 被覆盖了（重点）
+      results.push(`7. 块外 let: ${letVariable}`) // 还是原来的值
+
+      try {
+        results.push(`8. 块外访问const: ${constVariable}`)
+      } catch (e) {
+        results.push(`8. 块外访问const错误: ${e.name}`)
+      }
+    }
+
+    blockScopeExample()
+    setResult(results.join('\n') + '\n\n解释：var是函数作用域，let/const是块级作用域')
+  }
+
+  return (
+    <div>
+      <button onClick={testBlockScope}>测试块级作用域</button>
+      <pre>结果：{result}</pre>
+    </div>
+  )
+}
+```
+
+</Sandpack>

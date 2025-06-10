@@ -13,7 +13,10 @@ export function generateStaticParams() {
     { slug: 'leetcode' },
     { slug: 'safe' },
     { slug: 'sandpack' },
-    { slug: 'promise' }
+    { slug: 'promise' },
+    { slug: 'react-write' },
+    { slug: 'print' },
+    { slug: 'responsive' }
   ]
 }
 

@@ -1,0 +1,101 @@
+## Tailwind 自适应布局 & 响应式布局
+
+### 自适应布局 & 自适应布局
+
+这样区分响应式布局和自适应布局，只代表个人理解
+
+自适应布局
+
+- 根据屏幕大小自动伸缩
+- 使用 rem 或者 vw 单位
+- 适用于营销活动页面，适配移动端H5，Hybird，PC端是看到的移动端页面
+
+<video src="/posts/responsive/media3.mov" controls />
+
+响应式布局：
+
+- 根据屏幕大小自动调整布局
+- 使用媒体查询，单位基本只需要使用 px
+- 使用flex,grid,百分比布局
+
+<video src="/posts/responsive/media2.mov" controls />
+
+### 自适应布局实现
+
+自适应布局会随着屏幕大小自动伸缩，所以需要使用 rem 或者 vw 单位，rem 是相对于根元素的 font-size，vw 是相对于视口的宽度
+
+在 tailwind 中使用 vw 的话，相对于 rem 没有那么方便，因为 tailwind 中字体是 rem 单位，用vw如果想要限制在pc上看到的大小，往往需要写两套，也就是正常写一套vw然后媒体查询还要写一套
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+import './styles.css'
+
+export default function App() {
+  return (
+    <div className="container">
+      <h1>自适应布局示例</h1>
+      <div className="responsive-box">
+        <p>这个盒子会根据屏幕大小自动伸缩</p>
+      </div>
+    </div>
+  )
+}
+```
+
+```css src/styles.css
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.responsive-box {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 2rem;
+  margin: 1rem;
+  backdrop-filter: blur(10px);
+  width: 80vw;
+  max-width: 500px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.responsive-box:hover {
+  transform: scale(1.05);
+}
+
+h1 {
+  font-size: 4vw;
+  margin-bottom: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 6vw;
+  }
+
+  .responsive-box {
+    padding: 1rem;
+    width: 90vw;
+  }
+}
+```
+
+</Sandpack>
+
+### 响应式布局实现
+
+需要特别注意的是 tailwind 中需要移动端优先
+
+### 图片的响应式

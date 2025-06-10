@@ -1,60 +1,72 @@
 export const postsConfig = [
-  {
-    title: 'Nextjs 模拟 XSS & CSRF',
-    href: '/posts/safe',
-    date: '2025-02-09',
-    tags: ['技术', 'Web安全'],
-    views: 123
-  },
-
-  {
-    title: '算法题',
-    href: '/posts/leetcode',
-    date: '2025-02-09',
-    tags: ['技术', '算法'],
-    views: 32
-  },
-
-  {
-    title: 'Sandpack',
-    href: '/posts/sandpack',
-    date: '2025-02-09',
-    tags: ['技术', '博客'],
-    views: 32
-  },
   // {
-  //   title: '侧边栏',
+  //   title: 'Sandpack',
+  //   href: '/posts/sandpack',
+  //   date: '2025-02-09',
+  //   tags: ['博客'],
+  //   views: 32
+  // },
+  // {
+  //   title: 'Next MDX',
   //   href: '/posts/next-mdx',
   //   date: '2025-02-09',
-  //   tags: ['技术', 'next', 'mdx', '博客'],
+  //   tags: ['next', '博客'],
   //   views: 32
   // },
   {
-    title: 'Next MDX',
-    href: '/posts/next-mdx',
+    title: 'Web 安全：用 Nextjs 模拟 XSS & CSRF',
+    href: '/posts/safe',
     date: '2025-02-09',
-    tags: ['技术', 'next', 'mdx', '博客'],
-    views: 32
+    tags: ['web安全'],
+    views: 123
   },
   {
-    title: '手写题',
+    title: 'Tailwind 自适应布局 & 响应式布局',
+    href: '/posts/responsive',
+    date: '2025-02-09',
+    tags: ['tailwind'],
+    views: 123
+  },
+  // {
+  //   title: '复习面试题 - 算法题',
+  //   href: '/posts/leetcode',
+  //   date: '2025-02-09',
+  //   tags: ['算法'],
+  //   views: 32
+  // },
+  // {
+  //   title: '复习面试题 - react 手写题',
+  //   href: '/posts/react-write',
+  //   date: '2025-02-09',
+  //   tags: ['react', '面试题'],
+  //   views: 32
+  // },
+  {
+    title: '复习面试题 - 手写题',
     href: '/posts/write',
     date: '2025-02-09',
-    tags: ['技术', '手写'],
+    tags: ['面试题'],
     views: 32
   },
   {
-    title: 'this 指向',
+    title: '复习面试题 - 经典打印题',
+    href: '/posts/print',
+    date: '2025-02-09',
+    tags: ['面试题'],
+    views: 32
+  },
+  {
+    title: '复习面试题 - this 指向',
     href: '/posts/this',
     date: '2025-02-09',
-    tags: ['技术', 'this'],
+    tags: ['面试题'],
     views: 32
   },
   {
-    title: 'Promise 执行顺序',
+    title: '复习面试题 - Promise 执行顺序',
     href: '/posts/promise',
     date: '2025-02-09',
-    tags: ['技术', 'promise'],
+    tags: ['面试题'],
     views: 32
   }
 ]

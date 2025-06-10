@@ -2,8 +2,9 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ## this 指向
 
-- 在严格模式下（React 默认严格模式），普通函数的 this 是 undefined
-- 在非严格模式下，普通函数的 this 指向全局对象（浏览器中是 window）
+- 在严格模式下（React 默认严格模式），普通函数的 this 是 undefined，在非严格模式下，普通函数的 this 指向全局对象（浏览器中是 window）
+- 箭头函数没有 this，会继承外层作用域的 this，如果用 call 或者 apply 改变 this 指向也没用
+- 方法作为回掉的时候，其实也是指向了全局this 丢失了绑定
 
 ### 题目 1：全局环境中的 this
 
@@ -141,7 +142,7 @@ export default function BindDemo() {
 
 </Sandpack>
 
-### 题目 8：箭头函数中的 this
+### 题目 6：箭头函数中的 this
 
 <Sandpack>
 
@@ -171,7 +172,7 @@ export default function ArrowThisDemo1() {
 
 </Sandpack>
 
-### 题目 9：箭头函数解决 this 问题
+### 题目 7：箭头函数解决 this 问题
 
 <Sandpack>
 
@@ -199,7 +200,7 @@ export default function ArrowThisDemo() {
 
 </Sandpack>
 
-### 题目 10：严格模式下的 this
+### 题目 8：严格模式下的 this
 
 <Sandpack>
 
@@ -226,7 +227,7 @@ export default function StrictModeThisDemo() {
 
 </Sandpack>
 
-### 题目 11：多层嵌套的 this
+### 题目 9：多层嵌套的 this
 
 <Sandpack>
 
@@ -256,7 +257,7 @@ export default function NestedThisDemo() {
 
 </Sandpack>
 
-### 题目 12：方法作为回调函数
+### 题目 10：方法作为回调函数
 
 <Sandpack>
 
@@ -281,6 +282,73 @@ export default function CallbackThisDemo() {
       <button onClick={handleClick}>测试回调函数 this</button>
       <div>结果：{result}</div>
       <div>解释：输出 Hello, undefined（方法作为回调函数时丢失了 this 绑定）</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### 题目 11：显示和隐式
+
+[this 指向问题](https://mp.weixin.qq.com/s/hYm0JgBI25grNG_2sCRlTA)
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function ComplexThisDemo() {
+  const [result, setResult] = useState('')
+
+  // 模拟全局变量
+  if (typeof window !== 'undefined') {
+    window.name = 'window'
+  }
+
+  const person1 = {
+    name: 'person1',
+    foo1: function () {
+      return this.name
+    },
+    foo2: () => {
+      return typeof window !== 'undefined' ? window.name : 'window'
+    },
+    foo3: function () {
+      return function () {
+        return typeof window !== 'undefined' ? window.name : 'window'
+      }
+    },
+    foo4: function () {
+      return () => {
+        return this.name
+      }
+    }
+  }
+
+  const person2 = { name: 'person2' }
+
+  function handleClick() {
+    const results = []
+
+    results.push(`person1.foo1(): ${person1.foo1()}`)
+    results.push(`person1.foo1.call(person2): ${person1.foo1.call(person2)}`)
+    results.push(`person1.foo2(): ${person1.foo2()}`)
+    results.push(`person1.foo2.call(person2): ${person1.foo2.call(person2)}`)
+    results.push(`person1.foo3()(): ${person1.foo3()()}`)
+    results.push(`person1.foo3.call(person2)(): ${person1.foo3.call(person2)()}`)
+    results.push(`person1.foo3().call(person2): ${person1.foo3().call(person2)}`)
+    results.push(`person1.foo4()(): ${person1.foo4()()}`)
+    results.push(`person1.foo4.call(person2)(): ${person1.foo4.call(person2)()}`)
+    results.push(`person1.foo4().call(person2): ${person1.foo4().call(person2)}`)
+
+    setResult(results.join('\n'))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试复杂 this 指向</button>
+      <pre>结果：{result}</pre>
     </div>
   )
 }

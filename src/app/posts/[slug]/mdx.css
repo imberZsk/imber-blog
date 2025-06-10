@@ -1,7 +1,6 @@
 /* 基于 @tailwindcss/typography 的样式 */
 .prose {
   color: var(--tw-prose-body);
-  max-width: 65ch;
   font-size: 1rem;
   line-height: 1.75;
 }

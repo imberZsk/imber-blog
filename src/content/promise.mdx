@@ -2,6 +2,11 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 ## Promise 打印执行顺序
 
+- await 后面是微任务
+- resolve 不会影响同步执行
+- then都会执行，默认是return undefined
+- 事件循环，先清空微任务，再执行宏任务
+
 ### 题目 1：async/await
 
 解释：await fn，这个fn仍然是同步，但是 await fn后面的成了微任务，所以会先打印 async1 end
@@ -91,7 +96,62 @@ export default function ResolveDemo() {
 
 </Sandpack>
 
-### 题目 3：then
+### 题目 3：Promise链式调用
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function PromiseDemo() {
+  const [result, setResult] = useState('')
+
+  function testPromiseChain() {
+    setResult('执行中...')
+    const results = []
+
+    results.push('1. 开始执行')
+
+    Promise.resolve()
+      .then(() => {
+        results.push('2. 第一个then')
+        return Promise.resolve()
+      })
+      .then(() => {
+        results.push('3. 第二个then')
+        // return Promise.resolve()
+      })
+      .then(() => {
+        results.push('4. 第三个then')
+        updateResult()
+      })
+
+    Promise.resolve().then(() => {
+      results.push('5. 独立的Promise')
+      updateResult()
+    })
+
+    results.push('6. 同步代码结束')
+
+    function updateResult() {
+      setResult(results.join('\n') + '\n\n解释：微任务按照加入队列的顺序执行')
+    }
+
+    setTimeout(updateResult, 10)
+  }
+
+  return (
+    <div>
+      <button onClick={testPromiseChain}>测试Promise链</button>
+      <pre>结果：{result}</pre>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+### 题目 4：then
 
 解释：多个 then 都会执行
 
@@ -148,7 +208,7 @@ export default function ThenDemo() {
 
 </Sandpack>
 
-### 题目 4：Promise.all
+### 题目 5：Promise.all
 
 解释：promise.all 会等待所有 promise 都执行完，然后执行 then
 
@@ -195,7 +255,7 @@ export default function PromiseAllDemo() {
 
 </Sandpack>
 
-### 题目 5：事件循环
+### 题目 6：事件循环
 
 解释：清空完微任务再执行宏任务
 

@@ -1,29 +1,26 @@
 import { Sandpack } from '@codesandbox/sandpack-react'
+import type { SandpackFile } from '@codesandbox/sandpack-react'
 
 interface CodeSandboxProps {
-  code: string
+  files: Record<string, SandpackFile>
 }
 
-export function CodeSandbox({ code }: CodeSandboxProps) {
+export function CodeSandbox({ files }: CodeSandboxProps) {
   return (
     <div className="my-4">
       <Sandpack
         template="react"
         theme={'dark'}
-        files={{
-          '/App.js': {
-            code,
-            active: true
-          }
-        }}
+        files={files}
         options={{
+          // externalResources: ['https://cdn.tailwindcss.com'],
           // showInlineErrors: true,
           // showNavigator: true,
           // showTabs: true,
           // closableTabs: true,
-          wrapContent: false,
-          showConsole: true,
-          showConsoleButton: true,
+          // wrapContent: false,
+          // showConsole: true,
+          // showConsoleButton: true,
           // editorHeight: 500,
           editorWidthPercentage: 60 // 代码占的百分比
           // showConsole: true,
