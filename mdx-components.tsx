@@ -136,7 +136,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     Sandpack: (props) => {
       try {
         const files = createFileMap(props.children)
-        return <CodeSandbox files={files} />
+        return <CodeSandbox template={props.template} customSetup={props.customSetup} files={files} />
       } catch (error) {
         console.error('解析 Sandpack 文件时出错:', error)
         // 回退到原来的单文件模式
@@ -147,7 +147,13 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
           return ''
         }
         const code = extractCode(props.children)
-        return <CodeSandbox files={{ [AppJSPath]: { code, active: true } }} />
+        return (
+          <CodeSandbox
+            template={props.template}
+            customSetup={props.customSetup}
+            files={{ [AppJSPath]: { code, active: true } }}
+          />
+        )
       }
     },
     ...components

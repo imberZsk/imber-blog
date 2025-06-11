@@ -1,18 +1,12 @@
 export const postsConfig = [
-  // {
-  //   title: 'Sandpack',
-  //   href: '/posts/sandpack',
-  //   date: '2025-02-09',
-  //   tags: ['博客'],
-  //   views: 32
-  // },
-  // {
-  //   title: 'Next MDX',
-  //   href: '/posts/next-mdx',
-  //   date: '2025-02-09',
-  //   tags: ['next', '博客'],
-  //   views: 32
-  // },
+  {
+    title: '基于 Next MDX & Sandpack 的博客',
+    href: '/posts/sandpack-mdx',
+    date: '2025-02-09',
+    tags: ['博客'],
+    views: 32
+  },
+
   {
     title: 'Web 安全：用 Nextjs 模拟 XSS & CSRF',
     href: '/posts/safe',
@@ -21,8 +15,15 @@ export const postsConfig = [
     views: 123
   },
   {
-    title: '基于 Tailwind 的营销活动 H5 自适应布局',
+    title: '基于 Tailwind 的响应式布局',
     href: '/posts/responsive',
+    date: '2025-02-09',
+    tags: ['tailwind'],
+    views: 123
+  },
+  {
+    title: '基于 Tailwind 的营销活动 H5 自适应布局',
+    href: '/posts/adaptive',
     date: '2025-02-09',
     tags: ['tailwind'],
     views: 123

@@ -1,18 +1,11 @@
-import { Image } from 'next/image'
+## 基于 Tailwind 的响应式布局
 
-## Tailwind 的营销活动 H5 自适应布局
+- [Tailwind 响应式设计](https://tailwindcss.com/docs/responsive-design)
+- [Nextjs Images](https://nextjs.org/docs/app/getting-started/images)
 
-### 自适应布局 & 响应式布局
+### 响应式布局
 
-这样区分响应式布局和自适应布局，只代表个人理解
-
-自适应布局
-
-- 根据屏幕大小自动伸缩
-- 使用 rem 或者 vw 单位
-- 适用于营销活动页面，适配移动端 H5，Hybird，PC端是看到的移动端页面
-
-<video src="/posts/responsive/media3.mov" controls />
+如上篇文章所说的，响应式布局和自适应布局的区别，这里不再赘述
 
 响应式布局：
 
@@ -23,181 +16,63 @@ import { Image } from 'next/image'
 
 <video src="/posts/responsive/media2.mov" controls />
 
-### 自适应布局实现
+### 移动端优先
 
-自适应布局会随着屏幕大小自动伸缩，所以需要使用 rem 或者 vw 单位，rem 是相对于根元素的 font-size，vw 是相对于视口的宽度
+无前缀的类名（如 uppercase）对所有屏幕大小都有效，而带前缀的类名（如 md：uppercase）仅在指定的断点及以上处生效。
 
-在 tailwind 中使用 vw 的话，相对于 rem 没有那么方便，因为 tailwind 中字体是 rem 单位，
+开发的时候应该先做移动端，然后做 PC 端，因为 PC 端会覆盖移动端样式
 
-这两个例子可以直接在 codesandbox 中运行
+### Tailwind 常用响应式布局的类名
 
-#### vw 实现，因为 codesandbox 中暂没找到方案实时编译 tailwind，所以直接加了css
+sm、md、lg、xl、2xl 是 Tailwind 的响应式断点，分别对应 640px、768px、1024px、1280px、1536px
 
-vw 的值是 1000 尺寸设计稿的值 / 10，sm断点的值是前面的值\*6.4或者谷歌控制台选到 640 尺寸的时候直接取值，不考虑pc的情况下这样是挺好的，用 vw 如果想要限制在 pc 上看到的大小，往往需要写两套，也就是正常写一套 vw 然后媒体查询还要写一套
+min-[320px]:text-center 使用断点任意值，表示在 320px 及以上的屏幕上，text-center 类名生效
 
-原理是：设计稿1000 / 屏幕宽度100vw = 设计稿点出来的数值 / 写到屏幕的数值，求出写到屏幕的数值 = 设计稿点出来的数值 / 10
+container 类名表示内容区域被限制在容器内，不会超出容器边界，
+它表示容器，跟padding一起用断点的时候不会很生硬，外层也加一层元素会控制样式更加灵活
 
-<img src="/posts/responsive/media4.png" alt="media4" />
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-import './styles.css'
-
-export default function App() {
-  const buttonClass =
-    'mx-[1.4vw] cursor-pointer rounded-sm border px-[4vw] py-[1vw] text-[3vw] whitespace-nowrap sm:mx-[9px] sm:px-[26px] sm:py-[6px] sm:text-[19px] mx14 smmx-9'
-
-  return (
-    <>
-      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
-
-      <div
-        className="relative mx-auto h-[169.5vw] max-w-[640px] bg-white sm:h-[1084.8px]"
-        style={{ maxWidth: '640px' }}
-      >
-        <ul className="absolute top-4 left-1/2 mx-auto flex w-fit text-white" style={{ transform: 'translateX(-50%)' }}>
-          <li className={buttonClass}>我的愿望</li>
-          <li className={buttonClass}>活动规则</li>
-          <li className={buttonClass}>今日抽奖</li>
-          <li className={buttonClass}>官方平台</li>
-        </ul>
-
-        <img
-          src={'https://fms.res.meizu.com/dms/2025/06/11/f30304d8-e041-41e6-9fcf-614c13e9ae99.png'}
-          className="h-full w-full object-cover"
-          alt=""
-        />
-      </div>
-    </>
-  )
-}
-```
-
-```css /styles.css
-.mx14 {
-  margin-left: 1.4vw;
-  margin-right: 1.4vw;
-}
-
-.mx-\[1.4vw\] {
-  margin-left: 1.4vw;
-  margin-right: 1.4vw;
-}
-.px-\[4vw\] {
-  padding-left: 4vw;
-  padding-right: 4vw;
-}
-.py-\[1vw\] {
-  padding-top: 1vw;
-  padding-bottom: 1vw;
-}
-.text-\[3vw\] {
-  font-size: 3vw;
-}
-
-@media (min-width: 640px) {
-  .sm\:mx-\[9px\] {
-    margin-left: 9px;
-    margin-right: 9px;
+```css
+.container {
+  width: 100%;
+  @media (width >= 40rem /* 640px */) {
+    max-width: 40rem /* 640px */;
   }
-  .sm\:px-\[26px\] {
-    padding-left: 26px;
-    padding-right: 26px;
+  @media (width >= 48rem /* 768px */) {
+    max-width: 48rem /* 768px */;
   }
-  .sm\:py-\[6px\] {
-    padding-top: 6px;
-    padding-bottom: 6px;
+  @media (width >= 64rem /* 1024px */) {
+    max-width: 64rem /* 1024px */;
   }
-  .sm\:text-\[19px\] {
-    font-size: 19px;
+  @media (width >= 80rem /* 1280px */) {
+    max-width: 80rem /* 1280px */;
   }
-  .smmx-9 {
-    margin-left: 9px;
-    margin-right: 9px;
+  @media (width >= 96rem /* 1536px */) {
+    max-width: 96rem /* 1536px */;
   }
 }
 ```
 
-</Sandpack>
+### 图片的响应式
 
-#### rem 实现（推荐）
+先聊聊 Nextjs 的 Image 组件
 
-rem 的原理也同上，但是需要设置根元素的 font-size，然后使用 rem 单位，这样就可以根据根元素的 font-size 来计算出 rem 的值，注意设计稿宽度不同，计算出来的数值也不同
+Nextjs 中图片有三种存放的方式
 
-需要特别注意的是这样设置了后，由于根元素的 rem 单位变了，使用 top-4 这类的tailwind 类就不准确了
+- 第一种是放到 public 文件夹，使用的时候 `src='/demo.png'`
 
-原理是：写到屏幕的数值 = 设计稿点出来的数值 × (100vw / 1000px) = 设计稿点出来的数值 × 0.1vw
+- 第二种是放到 app 文件夹，使用的时候 `import DemoImage from './demo.png'`，然后`src={DemoImage}`
 
-设置根字体大小为 0.1vw，最大值为 0.64px，最小值为 0.32px，这样在 320px 的时候，根字体大小为 0.32px，在 640px 的时候，根字体大小为 0.64px，这样可以直接使用设计稿点出来的数值，比较方便
+- 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`
 
-<Sandpack>
+{/* TODO: */}
 
-```js
-import { useState } from 'react'
-import './styles.css'
+对于本地图片，Next.js 将根据导入的文件自动确定图像的 width 和 height 。这些值用于防止在加载图像时出现累积布局偏移，
+Image 组件会给本地图片自动转 webp 格式，还会自动 loading="lazy" 来支持图片懒加载
 
-export default function App() {
-  const buttonClass =
-    'mx-[14rem] cursor-pointer rounded-sm border px-[40rem] py-[10rem] text-[30rem] whitespace-nowrap mx14'
+Image 组件的 width 和 height 如果遇到响应式，不确定宽高的情况咋办？
 
-  return (
-    <>
-      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
+width 和 height 和图片真实宽高无关，所以只有比例关系有用
 
-      <div className="relative h-[1690.5rem] max-w-[640px] bg-white" style={{ maxWidth: '640px' }}>
-        <ul
-          className="absolute top-[40rem] left-1/2 mx-auto flex w-fit text-white"
-          style={{ transform: 'translateX(-50%)' }}
-        >
-          <li className={buttonClass}>我的愿望</li>
-          <li className={buttonClass}>活动规则</li>
-          <li className={buttonClass}>今日抽奖</li>
-          <li className={buttonClass}>官方平台</li>
-        </ul>
+### 理想的响应式布局
 
-        <img
-          src={'https://fms.res.meizu.com/dms/2025/06/11/f30304d8-e041-41e6-9fcf-614c13e9ae99.png'}
-          className="h-full w-full object-cover"
-          alt=""
-        />
-      </div>
-    </>
-  )
-}
-```
-
-```css /styles.css
-html {
-  font-size: min(0.1vw, 0.64px);
-  /* max(MIN, min(VAL, MAX)) */
-  /* 或者  font-size: clamp(0.32px, 0.1vw, 0.64px); */
-  margin: 0 auto;
-  max-width: 640px;
-}
-
-.mx14 {
-  margin-left: 14rem;
-  margin-right: 14rem;
-}
-
-.px-\[40rem\] {
-  padding-left: 40rem;
-  padding-right: 40rem;
-}
-.py-\[10rem\] {
-  padding-top: 10rem;
-  padding-bottom: 10rem;
-}
-
-.text-\[30rem\] {
-  font-size: 30rem;
-}
-
-.top-\[40rem\] {
-  top: 40rem;
-}
-```
-
-</Sandpack>
+### 自适应 + 响应式布局

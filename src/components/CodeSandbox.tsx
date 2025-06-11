@@ -1,18 +1,39 @@
 import { Sandpack } from '@codesandbox/sandpack-react'
-import type { SandpackFile } from '@codesandbox/sandpack-react'
+import type { SandpackSetup, SandpackFile } from '@codesandbox/sandpack-react'
 // import { Sandpack } from '@codesandbox/sandpack-react/unstyled'
+
+type SandpackTemplate =
+  | 'react'
+  | 'react-ts'
+  | 'nextjs'
+  | 'vanilla'
+  | 'vanilla-ts'
+  | 'vite'
+  | 'vite-react'
+  | 'vite-react-ts'
+  | 'vue'
+  | 'vue-ts'
+  | 'angular'
+  | 'svelte'
+  | 'solid'
+  | 'static'
+  | 'node'
+  | 'test-ts'
 
 interface CodeSandboxProps {
   files: Record<string, SandpackFile>
+  template?: SandpackTemplate
+  customSetup?: SandpackSetup
 }
 
-export function CodeSandbox({ files }: CodeSandboxProps) {
+export function CodeSandbox({ files, template = 'react', customSetup }: CodeSandboxProps) {
   return (
     <div className="my-4">
       <Sandpack
-        template="react"
+        template={template}
         theme={'dark'}
         files={files}
+        customSetup={customSetup}
         options={{
           // externalResources: ['https://cdn.tailwindcss.com'],
           // showInlineErrors: true,

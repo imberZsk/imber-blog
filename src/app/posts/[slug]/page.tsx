@@ -7,16 +7,16 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
 export function generateStaticParams() {
   return [
-    { slug: 'next-mdx' },
     { slug: 'write' },
     { slug: 'this' },
     { slug: 'leetcode' },
     { slug: 'safe' },
-    { slug: 'sandpack' },
+    { slug: 'sandpack-mdx' },
     { slug: 'promise' },
     { slug: 'react-write' },
     { slug: 'print' },
-    { slug: 'responsive' }
+    { slug: 'responsive' },
+    { slug: 'adaptive' }
   ]
 }
 
