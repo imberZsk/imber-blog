@@ -1,6 +1,8 @@
-## Tailwind 自适应布局 & 响应式布局
+import { Image } from 'next/image'
 
-### 自适应布局 & 自适应布局
+## Tailwind 的营销活动 H5 自适应布局
+
+### 自适应布局 & 响应式布局
 
 这样区分响应式布局和自适应布局，只代表个人理解
 
@@ -8,7 +10,7 @@
 
 - 根据屏幕大小自动伸缩
 - 使用 rem 或者 vw 单位
-- 适用于营销活动页面，适配移动端H5，Hybird，PC端是看到的移动端页面
+- 适用于营销活动页面，适配移动端 H5，Hybird，PC端是看到的移动端页面
 
 <video src="/posts/responsive/media3.mov" controls />
 
@@ -17,6 +19,7 @@
 - 根据屏幕大小自动调整布局
 - 使用媒体查询，单位基本只需要使用 px
 - 使用flex,grid,百分比布局
+- 需要特别注意的是 tailwind 中需要移动端优先
 
 <video src="/posts/responsive/media2.mov" controls />
 
@@ -24,7 +27,17 @@
 
 自适应布局会随着屏幕大小自动伸缩，所以需要使用 rem 或者 vw 单位，rem 是相对于根元素的 font-size，vw 是相对于视口的宽度
 
-在 tailwind 中使用 vw 的话，相对于 rem 没有那么方便，因为 tailwind 中字体是 rem 单位，用vw如果想要限制在pc上看到的大小，往往需要写两套，也就是正常写一套vw然后媒体查询还要写一套
+在 tailwind 中使用 vw 的话，相对于 rem 没有那么方便，因为 tailwind 中字体是 rem 单位，
+
+这两个例子可以直接在 codesandbox 中运行
+
+#### vw 实现，因为 codesandbox 中暂没找到方案实时编译 tailwind，所以直接加了css
+
+vw 的值是 1000 尺寸设计稿的值 / 10，sm断点的值是前面的值\*6.4或者谷歌控制台选到 640 尺寸的时候直接取值，不考虑pc的情况下这样是挺好的，用 vw 如果想要限制在 pc 上看到的大小，往往需要写两套，也就是正常写一套 vw 然后媒体查询还要写一套
+
+原理是：设计稿1000 / 屏幕宽度100vw = 设计稿点出来的数值 / 写到屏幕的数值，求出写到屏幕的数值 = 设计稿点出来的数值 / 10
+
+<img src="/posts/responsive/media4.png" alt="media4" />
 
 <Sandpack>
 
@@ -33,69 +46,158 @@ import { useState } from 'react'
 import './styles.css'
 
 export default function App() {
+  const buttonClass =
+    'mx-[1.4vw] cursor-pointer rounded-sm border px-[4vw] py-[1vw] text-[3vw] whitespace-nowrap sm:mx-[9px] sm:px-[26px] sm:py-[6px] sm:text-[19px] mx14 smmx-9'
+
   return (
-    <div className="container">
-      <h1>自适应布局示例</h1>
-      <div className="responsive-box">
-        <p>这个盒子会根据屏幕大小自动伸缩</p>
+    <>
+      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
+
+      <div
+        className="relative mx-auto h-[169.5vw] max-w-[640px] bg-white sm:h-[1084.8px]"
+        style={{ maxWidth: '640px' }}
+      >
+        <ul className="absolute top-4 left-1/2 mx-auto flex w-fit text-white" style={{ transform: 'translateX(-50%)' }}>
+          <li className={buttonClass}>我的愿望</li>
+          <li className={buttonClass}>活动规则</li>
+          <li className={buttonClass}>今日抽奖</li>
+          <li className={buttonClass}>官方平台</li>
+        </ul>
+
+        <img
+          src={'https://fms.res.meizu.com/dms/2025/06/11/f30304d8-e041-41e6-9fcf-614c13e9ae99.png'}
+          className="h-full w-full object-cover"
+          alt=""
+        />
       </div>
-    </div>
+    </>
   )
 }
 ```
 
-```css src/styles.css
-.container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-family: Arial, sans-serif;
+```css /styles.css
+.mx14 {
+  margin-left: 1.4vw;
+  margin-right: 1.4vw;
 }
 
-.responsive-box {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  padding: 2rem;
-  margin: 1rem;
-  backdrop-filter: blur(10px);
-  width: 80vw;
-  max-width: 500px;
-  text-align: center;
-  transition: transform 0.3s ease;
+.mx-\[1.4vw\] {
+  margin-left: 1.4vw;
+  margin-right: 1.4vw;
+}
+.px-\[4vw\] {
+  padding-left: 4vw;
+  padding-right: 4vw;
+}
+.py-\[1vw\] {
+  padding-top: 1vw;
+  padding-bottom: 1vw;
+}
+.text-\[3vw\] {
+  font-size: 3vw;
 }
 
-.responsive-box:hover {
-  transform: scale(1.05);
-}
-
-h1 {
-  font-size: 4vw;
-  margin-bottom: 2rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-@media (max-width: 768px) {
-  h1 {
-    font-size: 6vw;
+@media (min-width: 640px) {
+  .sm\:mx-\[9px\] {
+    margin-left: 9px;
+    margin-right: 9px;
   }
-
-  .responsive-box {
-    padding: 1rem;
-    width: 90vw;
+  .sm\:px-\[26px\] {
+    padding-left: 26px;
+    padding-right: 26px;
+  }
+  .sm\:py-\[6px\] {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .sm\:text-\[19px\] {
+    font-size: 19px;
+  }
+  .smmx-9 {
+    margin-left: 9px;
+    margin-right: 9px;
   }
 }
 ```
 
 </Sandpack>
 
-### 响应式布局实现
+#### rem 实现（推荐）
 
-需要特别注意的是 tailwind 中需要移动端优先
+rem 的原理也同上，但是需要设置根元素的 font-size，然后使用 rem 单位，这样就可以根据根元素的 font-size 来计算出 rem 的值，注意设计稿宽度不同，计算出来的数值也不同
 
-### 图片的响应式
+需要特别注意的是这样设置了后，由于根元素的 rem 单位变了，使用 top-4 这类的tailwind 类就不准确了
+
+原理是：写到屏幕的数值 = 设计稿点出来的数值 × (100vw / 1000px) = 设计稿点出来的数值 × 0.1vw
+
+设置根字体大小为 0.1vw，最大值为 0.64px，最小值为 0.32px，这样在 320px 的时候，根字体大小为 0.32px，在 640px 的时候，根字体大小为 0.64px，这样可以直接使用设计稿点出来的数值，比较方便
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+import './styles.css'
+
+export default function App() {
+  const buttonClass =
+    'mx-[14rem] cursor-pointer rounded-sm border px-[40rem] py-[10rem] text-[30rem] whitespace-nowrap mx14'
+
+  return (
+    <>
+      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
+
+      <div className="relative h-[1690.5rem] max-w-[640px] bg-white" style={{ maxWidth: '640px' }}>
+        <ul
+          className="absolute top-[40rem] left-1/2 mx-auto flex w-fit text-white"
+          style={{ transform: 'translateX(-50%)' }}
+        >
+          <li className={buttonClass}>我的愿望</li>
+          <li className={buttonClass}>活动规则</li>
+          <li className={buttonClass}>今日抽奖</li>
+          <li className={buttonClass}>官方平台</li>
+        </ul>
+
+        <img
+          src={'https://fms.res.meizu.com/dms/2025/06/11/f30304d8-e041-41e6-9fcf-614c13e9ae99.png'}
+          className="h-full w-full object-cover"
+          alt=""
+        />
+      </div>
+    </>
+  )
+}
+```
+
+```css /styles.css
+html {
+  font-size: min(0.1vw, 0.64px);
+  /* max(MIN, min(VAL, MAX)) */
+  /* 或者  font-size: clamp(0.32px, 0.1vw, 0.64px); */
+  margin: 0 auto;
+  max-width: 640px;
+}
+
+.mx14 {
+  margin-left: 14rem;
+  margin-right: 14rem;
+}
+
+.px-\[40rem\] {
+  padding-left: 40rem;
+  padding-right: 40rem;
+}
+.py-\[10rem\] {
+  padding-top: 10rem;
+  padding-bottom: 10rem;
+}
+
+.text-\[30rem\] {
+  font-size: 30rem;
+}
+
+.top-\[40rem\] {
+  top: 40rem;
+}
+```
+
+</Sandpack>

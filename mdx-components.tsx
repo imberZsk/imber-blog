@@ -32,8 +32,8 @@ const createUniqueId = (text: string) => {
   }
 }
 
-export const AppJSPath = `/src/App.js`
-export const StylesCSSPath = `/src/styles.css`
+export const AppJSPath = `/App.js`
+export const StylesCSSPath = `/styles.css`
 
 const createFileMap = (children: any): Record<string, SandpackFile> => {
   const result: Record<string, SandpackFile> = {}

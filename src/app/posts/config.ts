@@ -21,7 +21,7 @@ export const postsConfig = [
     views: 123
   },
   {
-    title: 'Tailwind 自适应布局 & 响应式布局',
+    title: '基于 Tailwind 的营销活动 H5 自适应布局',
     href: '/posts/responsive',
     date: '2025-02-09',
     tags: ['tailwind'],

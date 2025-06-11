@@ -81,7 +81,7 @@ export function TableOfContents() {
   return (
     <nav
       className={cn(
-        'fixed right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 lg:block',
+        'fixed right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 xl:block',
         PADDING_TOP
       )}
     >
