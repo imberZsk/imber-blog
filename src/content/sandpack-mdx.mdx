@@ -1,20 +1,95 @@
 import Image from 'next/image'
 
-## Next MDX
-
-对于博客来说，写 MarkDown 可以快速生成 HTML 也就是文章，而 MDX 是 MarkDown 的扩展，支持在 MarkDown 中写 JSX，使用 React 组件。
+## 基于 Next MDX & Sandpack 的博客
 
 - [Next 官方文档](https://nextjs.org/docs/app/building-your-application/configuring/mdx#helpful-links)
 - [Next example](https://github.com/vercel/next.js/tree/canary/examples/mdx)
+- [Sandpack 官方文档](https://sandpack.codesandbox.io/docs)
 
-## 文章的目录划分
+### Next MDX
+
+对于博客来说，写 MarkDown 可以快速生成 HTML 也就是文章，而 MDX 是 MarkDown 的扩展，支持在 MarkDown 中写 JSX，使用 React 组件。参考上面的官方文档就可以做 MDX 功能
+
+对于文章的目录划分，可以参考下面的官方例子
 
 <Image src="/mdx-files.avif" height={1690} width={3200} className="h-full w-full object-cover" alt="mdx-files" />
 
-## 文章样式
+每次新增文章的时候，手动去 [slug] 里增加 generateStaticParams 配置，这样就可以在 build 的时候生成静态页面
 
-## 文章侧边栏实现
+![image1.png](/posts/sandpack-mdx/image1.png)
 
-## Sandpack
+### 文章样式
 
-因为最近打算手写个博客，博客里需要在线执行代码，所以研究了下 `sandpack`，一个在线编辑器，支持在浏览器在线编译和运行代码，
+因为是 Nextjs + tailwind 项目，可以使用 `@tailwindcss/typography` 来实现文章样式，其实就是加了一些 css，所以可以自己加，也没多少样式
+
+![image2.png](/posts/sandpack-mdx/image2.png)
+
+### 文章侧边栏目录实现
+
+侧边栏目录需要自己写，Next MDX 没有提供侧边栏目录功能
+
+1、文章渲染时生成唯一 id，用来定位目录和做锚点，这个 id 直接取标题
+
+![image3.png](/posts/sandpack-mdx/image3.png)
+
+2、监听内容变化，动态或者获取到 h1, h2, h3 的 id，然后生成目录
+
+```tsx
+const getHeadings = () => {
+  const elements = Array.from(document.querySelectorAll('h1[id], h2[id], h3[id]'))
+    .filter(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement && element.id.length > 0 && element.textContent !== null
+    )
+    .map((element) => {
+      return {
+        id: element.id,
+        text: element.textContent || '',
+        level: parseInt(element.tagName[1])
+      }
+    })
+
+  if (elements.length > 0) {
+    setHeadings(elements)
+  }
+}
+
+// 初始获取
+getHeadings()
+```
+
+3、监听滚动位置，滚动到对应位置，对应的目录显示高亮
+
+```tsx
+const getHeadings = () => {
+  const elements = Array.from(document.querySelectorAll('h1[id], h2[id], h3[id]'))
+    .filter(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement && element.id.length > 0 && element.textContent !== null
+    )
+    .map((element) => {
+      return {
+        id: element.id,
+        text: element.textContent || '',
+        level: parseInt(element.tagName[1])
+      }
+    })
+
+  if (elements.length > 0) {
+    setHeadings(elements)
+  }
+}
+
+// 初始获取
+getHeadings()
+```
+
+当前的问题，滚动到对应目录高亮，在代码块过长的时候失效，需要优化
+
+### Sandpack
+
+`sandpack`，一个在线编辑器，支持在浏览器在线编译和运行代码，
+
+### 仓库地址
+
+[github 地址](https://github.com/imberZsk/imber)

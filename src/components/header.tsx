@@ -16,7 +16,7 @@ const Header = () => {
           {/* 中间Logo */}
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:left-0 lg:translate-x-0">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/avatar.jpg" alt="Logo" width={32} height={32} className="rounded-full" />
+              <Image src="/avatar.jpg" alt="Logo" width={32} height={32} priority className="rounded-full" />
             </Link>
           </div>
 

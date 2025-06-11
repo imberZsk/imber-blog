@@ -2,36 +2,6 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 import type { MDXComponents } from 'mdx/types'
 import type { SandpackFile } from '@codesandbox/sandpack-react'
 
-// 用于存储已使用的 ID 和它们的计数
-const usedIds = new Map<string, number>()
-
-const createUniqueId = (text: string) => {
-  if (typeof text !== 'string') return ''
-
-  // 基础 ID
-  const baseId = text
-    .toLowerCase()
-    .replace(/\s+/g, '-') // 将空格替换为连字符
-    .replace(/[^a-z0-9-]/g, '') // 移除所有非字母数字和连字符的字符
-    .replace(/^-+|-+$/g, '') // 移除开头和结尾的连字符
-    .replace(/-+/g, '-') // 将多个连字符替换为单个连字符
-
-  // 如果 ID 为空，生成一个随机 ID
-  if (!baseId) {
-    return `heading-${Math.random().toString(36).substr(2, 9)}`
-  }
-
-  // 如果 ID 已存在，添加数字后缀
-  if (usedIds.has(baseId)) {
-    const count = usedIds.get(baseId)! + 1
-    usedIds.set(baseId, count)
-    return `${baseId}-${count}`
-  } else {
-    usedIds.set(baseId, 1)
-    return baseId
-  }
-}
-
 export const AppJSPath = `/App.js`
 export const StylesCSSPath = `/styles.css`
 
@@ -105,12 +75,9 @@ const createFileMap = (children: any): Record<string, SandpackFile> => {
 }
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
-  // 重置 ID 计数器
-  usedIds.clear()
-
   return {
     h1: (props) => {
-      const id = createUniqueId(props.children?.toString())
+      const id = props.children?.toString()
       return (
         <h1 id={id} {...props}>
           {props.children}
@@ -118,7 +85,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       )
     },
     h2: (props) => {
-      const id = createUniqueId(props.children?.toString())
+      const id = props.children?.toString()
       return (
         <h2 id={id} {...props}>
           {props.children}
@@ -126,7 +93,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       )
     },
     h3: (props) => {
-      const id = createUniqueId(props.children?.toString())
+      const id = props.children?.toString()
       return (
         <h3 id={id} {...props}>
           {props.children}
@@ -136,6 +103,9 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     Sandpack: (props) => {
       try {
         const files = createFileMap(props.children)
+
+        console.log(files, '??????????????????')
+
         return <CodeSandbox template={props.template} customSetup={props.customSetup} files={files} />
       } catch (error) {
         console.error('解析 Sandpack 文件时出错:', error)
