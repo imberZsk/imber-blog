@@ -273,7 +273,6 @@ import { NextRequest } from 'next/server'
 
 const prisma = new PrismaClient()
 export async function GET(request: NextRequest) {
-  console.log(request.url)
   const searchParams = request.nextUrl.searchParams
   const fromUid = 27
   const uid = searchParams.get('to')

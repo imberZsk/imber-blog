@@ -73,7 +73,6 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       )
     },
     Sandpack: (props) => {
-      console.log(props, 'props')
       try {
         const files = createFileMap(props.children)
 
