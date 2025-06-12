@@ -8,56 +8,26 @@ export const StylesCSSPath = `/styles.css`
 const createFileMap = (children: any): Record<string, SandpackFile> => {
   const result: Record<string, SandpackFile> = {}
 
-  // 递归查找所有 pre 元素
-  function findPreElements(node: any): any[] {
-    if (!node) return []
+  const preElements = children
 
-    if (Array.isArray(node)) {
-      return node.flatMap(findPreElements)
-    }
-
-    // 检查是否是 pre 元素
-    if (node.type === 'pre' || (node.type && (node.type as any).mdxName === 'pre')) {
-      return [node]
-    }
-
-    // 递归检查 children
-    if (node.props && node.props.children) {
-      return findPreElements(node.props.children)
-    }
-
-    return []
-  }
-
-  const preElements = findPreElements(children)
-
-  preElements.forEach((codeSnippet) => {
-    const codeElement = codeSnippet.props.children
+  preElements.forEach((codeSnippet: { props: { children: any } }) => {
+    const codeElement = codeSnippet.props.children // 实际的 <code> 元素
     if (!codeElement || !codeElement.props) return
 
     const { props } = codeElement
-    let filePath: string
-    let fileHidden = false
-    let fileActive = false
+    let filePath: string // 文件路径
+    const fileHidden = false // 是否隐藏文件
+    const fileActive = false //
 
-    if (props.meta) {
-      const [name, ...params] = props.meta.split(' ')
-      filePath = '/' + name
-      if (params.includes('hidden')) {
-        fileHidden = true
-      }
-      if (params.includes('active')) {
-        fileActive = true
-      }
+    console.log(props, '123')
+
+    if (props.className === 'language-js' || props.className === 'language-javascript') {
+      filePath = AppJSPath
+    } else if (props.className === 'language-css') {
+      filePath = StylesCSSPath
     } else {
-      if (props.className === 'language-js' || props.className === 'language-javascript') {
-        filePath = AppJSPath
-      } else if (props.className === 'language-css') {
-        filePath = StylesCSSPath
-      } else {
-        // 默认作为 JS 文件处理
-        filePath = AppJSPath
-      }
+      // 默认作为 JS 文件处理
+      filePath = AppJSPath
     }
 
     if (result[filePath]) {
@@ -104,26 +74,9 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       try {
         const files = createFileMap(props.children)
 
-        console.log(files, '??????????????????')
-
         return <CodeSandbox template={props.template} customSetup={props.customSetup} files={files} />
       } catch (error) {
-        console.error('解析 Sandpack 文件时出错:', error)
-        // 回退到原来的单文件模式
-        function extractCode(node: any): string {
-          if (typeof node === 'string') return node
-          if (Array.isArray(node)) return node.map(extractCode).join('')
-          if (node && node.props && node.props.children) return extractCode(node.props.children)
-          return ''
-        }
-        const code = extractCode(props.children)
-        return (
-          <CodeSandbox
-            template={props.template}
-            customSetup={props.customSetup}
-            files={{ [AppJSPath]: { code, active: true } }}
-          />
-        )
+        console.log(error, 'error解析出错啦')
       }
     },
     ...components

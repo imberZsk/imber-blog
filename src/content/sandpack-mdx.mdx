@@ -166,11 +166,105 @@ useEffect(() => {
 </ul>
 ```
 
-当前的问题，滚动到对应目录高亮，在代码块过长的时候失效，需要优化
-
 ### Sandpack
 
-`sandpack`，一个在线编辑器，支持在浏览器在线编译和运行代码，
+`sandpack`，一个在线编辑器，支持在浏览器在线编译和运行代码，做完达到的效果如下：
+
+<img src="/posts/sandpack-mdx/image5.png" alt="sandpack" />
+<img src="/posts/sandpack-mdx/image4.png" alt="sandpack" />
+
+### MDX 里实现 Sandpack 组件
+
+1、注册 Sandpack 组件
+
+这一步是用 nextjs mdx 的能力，注册一个组件，这个组件使用开源的 sandpack 组件
+
+<img src="/posts/sandpack-mdx/image6.png" alt="sandpack" />
+
+2、props 解析（重点），在上一步做完后，`<Sandpack>` 组件里的代码会被解析字符串通过 props 拿到，然后自己写解析，解析成开源 sandpack 组件需要的格式，也就是图里上面的 react element 格式转成需要的对象配置格式
+
+<img src="/posts/sandpack-mdx/image7.png" alt="sandpack" />
+
+这个props的数据可以看出
+
+- 比如```js这个会被处理成language-js，同理 css 会被处理成 language-css
+- 数据在 pre 同级的 props 的 children.props 里
+- 设置的 hidden active 参数属于 meta 信息
+
+目前只写了一段比较简单的，后续还应该处理更多
+
+```js
+export const AppJSPath = `/App.js`
+export const StylesCSSPath = `/styles.css`
+
+
+const createFileMap = (children: any): Record<string, SandpackFile> => {
+  const result: Record<string, SandpackFile> = {}
+
+  const preElements = children
+
+  preElements.forEach((codeSnippet: { props: { children: any } }) => {
+    const codeElement = codeSnippet.props.children // 实际的 <code> 元素
+    if (!codeElement || !codeElement.props) return
+
+    const { props } = codeElement
+    let filePath: string // 文件路径
+    const fileHidden = false // 是否隐藏文件
+    const fileActive = false //
+
+    console.log(props, '123')
+
+    if (props.className === 'language-js' || props.className === 'language-javascript') {
+      filePath = AppJSPath
+    } else if (props.className === 'language-css') {
+      filePath = StylesCSSPath
+    } else {
+      // 默认作为 JS 文件处理
+      filePath = AppJSPath
+    }
+
+    if (result[filePath]) {
+      throw new Error(`文件 ${filePath} 被定义了多次。每个文件片段应该有唯一的路径名`)
+    }
+
+    result[filePath] = {
+      code: (props.children || '') as string,
+      hidden: fileHidden,
+      active: fileActive
+    }
+  })
+
+  return result
+}
+```
+
+然后把解析的代码传入 开源的 sandpack 组件，就可以展示在页面上
+
+```tsx
+const files = createFileMap(props.children)
+
+return <CodeSandbox template={props.template} customSetup={props.customSetup} files={files} />
+```
+
+开源的sandpack组件
+
+```tsx
+import { Sandpack } from '@codesandbox/sandpack-react'
+
+export function CodeSandbox({ files, template = 'react', customSetup }: CodeSandboxProps) {
+  return (
+    <Sandpack
+      template={template}
+      theme={'dark'}
+      files={files}
+      customSetup={customSetup}
+      options={{
+        editorWidthPercentage: 60 // 代码占的百分比
+      }}
+    />
+  )
+}
+```
 
 ### 仓库地址
 
