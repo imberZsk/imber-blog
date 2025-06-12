@@ -17,7 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="" suppressHydrationWarning>
       <body suppressHydrationWarning className="">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Header />
           {children}
           <ChatBot />

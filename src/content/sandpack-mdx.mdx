@@ -201,7 +201,7 @@ export const StylesCSSPath = `/styles.css`
 const createFileMap = (children: any): Record<string, SandpackFile> => {
   const result: Record<string, SandpackFile> = {}
 
-  const preElements = children
+  const preElements = Array.isArray(children) ? children : [children]
 
   preElements.forEach((codeSnippet: { props: { children: any } }) => {
     const codeElement = codeSnippet.props.children // 实际的 <code> 元素
@@ -210,9 +210,7 @@ const createFileMap = (children: any): Record<string, SandpackFile> => {
     const { props } = codeElement
     let filePath: string // 文件路径
     const fileHidden = false // 是否隐藏文件
-    const fileActive = false //
-
-    console.log(props, '123')
+    const fileActive = false // 当有多个文件时，决定哪个文件默认被选中和显示
 
     if (props.className === 'language-js' || props.className === 'language-javascript') {
       filePath = AppJSPath
