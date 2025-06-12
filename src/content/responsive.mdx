@@ -29,7 +29,7 @@ sm、md、lg、xl、2xl 是 Tailwind 的响应式断点，分别对应 640px、7
 min-[320px]:text-center 使用断点任意值，表示在 320px 及以上的屏幕上，text-center 类名生效
 
 container 类名表示内容区域被限制在容器内，不会超出容器边界，
-它表示容器，跟padding一起用断点的时候不会很生硬，外层也加一层元素会控制样式更加灵活
+它表示容器，跟 padding 一起用断点的时候不会很生硬，外层也加一层元素会控制样式更加灵活
 
 ```css
 .container {
@@ -73,6 +73,32 @@ Image 组件的 width 和 height 如果遇到响应式，不确定宽高的情�
 
 width 和 height 和图片真实宽高无关，所以只有比例关系有用
 
+<Sandpack template="customNextjs">
+
+```tsx
+const Responsive = () => {
+  return (
+    <div>
+      <div>测试nextjs image</div>
+    </div>
+  )
+}
+
+export default Responsive
+```
+
+```css
+html {
+  background-color: while;
+}
+```
+
+</Sandpack>
+
 ### 理想的响应式布局
 
 ### 自适应 + 响应式布局
+
+```
+
+```

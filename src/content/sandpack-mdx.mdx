@@ -12,7 +12,14 @@ import Image from 'next/image'
 
 对于文章的目录划分，可以参考下面的官方例子
 
-<Image src="/mdx-files.avif" height={1690} width={3200} className="h-full w-full object-cover" alt="mdx-files" />
+<Image
+  src="/mdx-files.avif"
+  height={1690}
+  width={3200}
+  priority
+  className="h-full w-full object-cover"
+  alt="mdx-files"
+/>
 
 每次新增文章的时候，手动去 [slug] 里增加 generateStaticParams 配置，这样就可以在 build 的时候生成静态页面
 
@@ -171,6 +178,9 @@ useEffect(() => {
 `sandpack`，一个在线编辑器，支持在浏览器在线编译和运行代码，做完达到的效果如下：
 
 <img src="/posts/sandpack-mdx/image5.png" alt="sandpack" />
+
+[下面图片 Demo 入口](https://imber.netlify.app/posts/adaptive)
+
 <img src="/posts/sandpack-mdx/image4.png" alt="sandpack" />
 
 ### MDX 里实现 Sandpack 组件
@@ -191,12 +201,11 @@ useEffect(() => {
 - 数据在 pre 同级的 props 的 children.props 里
 - 设置的 hidden active 参数属于 meta 信息
 
-目前只写了一段比较简单的，后续还应该处理更多
+> 这里有点坑，我默认用的是react,但有时候需要 nextjs，默认的 nextjs 模版很老，但是又暂时无法从 props 取到 meta 信息，根据 meta 信息来新建对应的文件。 所以我的方案是传入了一个 CustomNextjs 来表示我常用的 Nextjs 模板，自定义了一些版本来简单实现我要的功能
 
-```js
+```tsx
 export const AppJSPath = `/App.js`
 export const StylesCSSPath = `/styles.css`
-
 
 const createFileMap = (children: any): Record<string, SandpackFile> => {
   const result: Record<string, SandpackFile> = {}
