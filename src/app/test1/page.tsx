@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const Test = () => {
   return (
     <div className={cn(PADDING_TOP)}>
-      <Image src="/avatar.jpg" width={100} height={100} alt="test" />
+      <Image src="/avatar.jpg" width={100} height={100} fill alt="test" />
     </div>
   )
 }

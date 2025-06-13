@@ -6,7 +6,7 @@ import DemoImage from './images/avatar.jpg'
 const Test = () => {
   return (
     <div className={cn(PADDING_TOP)}>
-      <Image src={DemoImage} alt="test" />
+      <Image src={DemoImage} alt="test" placeholder="blur" />
     </div>
   )
 }

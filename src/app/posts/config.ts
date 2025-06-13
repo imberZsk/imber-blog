@@ -15,7 +15,7 @@ export const postsConfig = [
     views: 123
   },
   {
-    title: '基于 Tailwind 的响应式布局',
+    title: '基于 Tailwind 的响应式布局（含图片深入理解）',
     href: '/posts/responsive',
     date: '2025-02-09',
     tags: ['tailwind'],

@@ -1,4 +1,6 @@
-## 基于 Tailwind 的响应式布局
+import Image from 'next/image'
+
+## 基于 Tailwind 的响应式布局（含图片深入理解）
 
 - [Tailwind 响应式设计](https://tailwindcss.com/docs/responsive-design)
 - [Image Optimization](https://nextjs.org/docs/app/getting-started/images)
@@ -32,6 +34,8 @@ min-[320px]:text-center 使用断点任意值，表示在 320px 及以上的屏�
 container 类名表示内容区域被限制在容器内，不会超出容器边界，
 它表示容器，跟 padding 一起用断点的时候不会很生硬，外层也加一层元素会控制样式更加灵活
 
+![image](/posts/responsive/image12.png)
+
 ```css
 .container {
   width: 100%;
@@ -53,11 +57,11 @@ container 类名表示内容区域被限制在容器内，不会超出容器边�
 }
 ```
 
-### 图片的响应式(Nextjs)
+### Nextjs 图片
 
-Nextjs 中图片有三种存放的方式（Nextjs官网谈到两种）
+Nextjs 中图片有三种存放的方式（Nextjs官网谈到两种，但还是区分三种比较好）
 
-1、 第一种是放到 public 文件夹，使用的时候 `src='/demo.png'`
+1、 第一种本地图片：放到 public 文件夹，使用的时候 `src='/demo.png'`
 
 ```tsx
 <Image src="/avatar.jpg" alt="test" width={100} height={100} />
@@ -68,7 +72,7 @@ Nextjs 中图片有三种存放的方式（Nextjs官网谈到两种）
 - 必须要给 width 和 height，width 和 height 和图片真实宽高无关，所以只有比例关系有用，但是还是每个图片外都给一个 div 设置宽高，防止意外情况，比如 gsap 动画计算就一定需要宽高，(如果父级不加宽高，图片的显示大小就是设置的 width 和 height，但不要这样做)
 - 图片会自动转 webp 格式
   ![image](/posts/responsive/image4.png)
-- 自动设置 loading="lazy"
+- 自动设置 loading="lazy"，支持图片懒加载; decoding="async"，支持图片异步解码
 - 如果图片在首屏可见，nextjs 会提示添加 priority 属性，和不加的区别是没有 loading="lazy" 属性
   ![image](/posts/responsive/image2.png)
   ![image](/posts/responsive/image1.png)
@@ -81,7 +85,7 @@ srcset="/_next/image?url=%2Favatar.jpg&w=128&q=75 1x,
 
 ![image](/posts/responsive/image5.png)
 
-2、 第二种是放到 app 文件夹，通过模块导入使用，这种方式和第一种差不多，只是不需要给 width 和 height，nextjs 会自动计算
+2、 第二种是本地图片：放到 app 文件夹，通过模块导入使用，这种方式和第一种差不多，只是不需要给 width 和 height，nextjs 会获取原图的尺寸来自动设置
 
 ```tsx
 import DemoImage from './images/avatar.jpg'
@@ -94,16 +98,132 @@ export default Test
 ```
 
 ![image](/posts/responsive/image6.png)
+![image](/posts/responsive/image7.png)
 
-那什么时候用第一种，什么时候用第二种呢？
+这种方案还适合做图片渐进式加载，也就是可以加 placeholder="blur" 属性，在图片加载之前显示一个模糊的占位符，加载完成之后再显示真实的图片
 
-- 如果图片是本地图片，并且需要响应式，使用第一种
+```text
+<Image src={DemoImage} alt="test" placeholder="blur" />
+```
 
-3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`，为了安全，需要 [remotePatterns](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) 配置
+![image](/posts/responsive/image8.png)
+
+<video src="/posts/responsive/media9.mov" controls />
+
+3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`，为了安全，需要 [remotePatterns](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) 配置，也是必须设置 width 和 height，功能同第一种，远程图片也可以使用 `placeholder="blur"`，
+`blurDataURL=base64` 来做一个渐进加载，这种方案只会多加载一张图，不会像小红书一样多加载很多图片请求，因为小红书是把每张图都做对应渐进加载，而不是同一张图
+
+![image](/posts/responsive/image10.png)
+
+当远程图片（如下图） width height 不确定的时候，可以使用图片的 fill 属性，它使图像扩展到父元素的大小，并且可以看到图片会有个absolute属性，所以父元素必须 “relative”， “fixed”， “absolute”，然后图片可以设置 objectFit 属性，来控制图片的显示方式。
+
+```jsx
+<Image
+  src="https://img.res.meizu.com/img/download/uc/17/35/38/56/70/173538567/w200h200"
+  alt="test"
+  fill
+  sizes="100vw"
+  objectFit="cover"
+/>
+```
+
+还需要注意的是还设置了 sizes 和 srcset 属性，sizes 属性是用来设置图片的尺寸，srcset 属性是用来设置图片的源，这两个属性是用来控制图片的显示方式。
+
+注意 Nextjs 对图片处理缩小是可以的，但是放大不行，所以下面的比如匹配上了 3840，但是原图最大宽度只有 200，那也只是显示 200 的图，不会放大
+
+计算规则大约为视窗宽度（如 800px） \* DPR（如2） → 需要 1600px 物理宽度的图片，所以会匹配到 1920 的图片
+
+```text
+sizes="100vw"
+
+srcset="
+  /_next/image?url=...&w=640&q=75 640w,
+  /_next/image?url=...&w=750&q=75 750w,
+  /_next/image?url=...&w=828&q=75 828w,
+  /_next/image?url=...&w=1080&q=75 1080w,
+  /_next/image?url=...&w=1200&q=75 1200w,
+  /_next/image?url=...&w=1920&q=75 1920w,
+  /_next/image?url=...&w=2048&q=75 2048w,
+  /_next/image?url=...&w=3840&q=75 3840w
+"
+```
+
+![image](/posts/responsive/image14.png)
+
+思考：那什么时候用第一种，第二种，第三种呢？
+
+- 如果图片是本地图片，图片是静态资源，不需要经过打包处理，直接通过 URL 访问即可；适合做静态资源托管，比如 logo、icon、banner 等不会频繁变动的图片；适合需要 CDN 加速的场景，因为 public 下的文件会原样输出到最终的静态资源目录，便于 CDN 缓存和分发；适合 SEO 相关的图片，路径固定，容易被搜索引擎收录。
+- 需要利用 Next.js 的图片优化能力（如自动尺寸、渐进式加载、自动格式转换等）；图片和组件/页面强关联，属于组件私有资源（如头像、局部装饰图）；需要自动获取图片原始尺寸，减少手动维护宽高；需要用到 Next.js 的图片占位符（blurDataURL）等高级特性；
+- 如果图片是远程图片，使用第三种
+
+拓展：超有用的图片属性
+
+```ts
+const nextConfig = {
+  images: {
+    // 设置图片的下载方式，也就是只能下载，无法通过 url 打开，这样不会浪费自己服务器资源
+    contentDispositionType: 'attachment',
+    // 设置图片的 CSP，可以避免图片携带脚本攻击
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"
+  }
+}
+```
+
+因为本篇文章多数是用md语法，没有上面两个功能，所以下面这张图片使用的 nextjs 的 Image 组件来测试，右键在新标签中打开图片就可以看到效果，会直接下载图片
+
+<div className="w-full">
+  <Image src="/posts/responsive/image11.png" alt="test" width={1280} height={1280} />
+</div>
+
+记录遇到的坑：做营销活动海报的库 html2canvas 和 Image 标签一起使用可能会有兼容性问题
+
+### Webp 的兼容性
+
+方案一：在有服务端能力的情况下，比如阿里云 OSS，Nextjs，它们会根据 Accept 这个请求头来判断是否返回 webp（推荐）
+
+![image](/posts/responsive/image13.png)
+
+方案二：原生 picture 标签
+
+```html
+<picture>
+  <source srcset="image.webp" type="image/webp" />
+  <source srcset="image.png" type="image/png" />
+  <img src="image.png" alt="image" />
+</picture>
+```
+
+方案三：JS 脚本 （不推荐）
+
+```js
+function checkWebPSupport() {
+  let canvas = document.createElement('canvas')
+  if (canvas.toDataURL) {
+    return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
+  }
+  return false
+}
+```
+
+### 图片响应式
+
+背景：响应式的项目，在大屏的时候应该加载大图，小屏的时候应该加载小图，如果在小屏幕加载了一张很大的图，那会浪费资源
+
+在响应式的时候不确定宽高的情况，但是比例或者显示的尺寸是定的，提供一张大图，然后通过这种方式就能实现图片的响应式
+
+https://nextjs.org/docs/app/api-reference/components/image#sizes
+
+sizes fill & srcset media 属性
 
 ### 理想的响应式布局
 
-### 自适应 + 响应式布局
+grid
+
+grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+
+grid-template-columns: repeat(auto-fill, minmax(200px, auto));
+
+### 现实的响应式布局
 
 ```
 

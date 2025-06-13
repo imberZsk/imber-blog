@@ -6,10 +6,19 @@ const nextConfig = {
     mdxRs: true
   },
   images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'img.res.meizu.com',
+        port: '',
+        pathname: '/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'ssm.res.meizu.com',
         port: '',
         pathname: '/**'
       }
