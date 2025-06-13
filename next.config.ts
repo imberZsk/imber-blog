@@ -4,6 +4,16 @@ const nextConfig = {
   reactStrictMode: false,
   experimental: {
     mdxRs: true
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'img.res.meizu.com',
+        port: '',
+        pathname: '/**'
+      }
+    ]
   }
 }
 
