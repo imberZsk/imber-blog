@@ -55,7 +55,7 @@ container 类名表示内容区域被限制在容器内，不会超出容器边�
 
 ### 图片的响应式(Nextjs)
 
-Nextjs 中图片有三种存放的方式
+Nextjs 中图片有三种存放的方式（Nextjs官网谈到两种）
 
 1、 第一种是放到 public 文件夹，使用的时候 `src='/demo.png'`
 
@@ -81,7 +81,7 @@ srcset="/_next/image?url=%2Favatar.jpg&w=128&q=75 1x,
 
 ![image](/posts/responsive/image5.png)
 
-2、 第二种是放到 app 文件夹，通过模块导入使用
+2、 第二种是放到 app 文件夹，通过模块导入使用，这种方式和第一种差不多，只是不需要给 width 和 height，nextjs 会自动计算
 
 ```tsx
 import DemoImage from './images/avatar.jpg'
@@ -94,6 +94,10 @@ export default Test
 ```
 
 ![image](/posts/responsive/image6.png)
+
+那什么时候用第一种，什么时候用第二种呢？
+
+- 如果图片是本地图片，并且需要响应式，使用第一种
 
 3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`，为了安全，需要 [remotePatterns](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) 配置
 
