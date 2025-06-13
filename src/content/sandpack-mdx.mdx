@@ -201,7 +201,7 @@ useEffect(() => {
 - 数据在 pre 同级的 props 的 children.props 里
 - 设置的 hidden active 参数属于 meta 信息
 
-> 这里有点坑，我默认用的是react,但有时候需要 nextjs，默认的 nextjs 模版很老，但是又暂时无法从 props 取到 meta 信息，根据 meta 信息来新建对应的文件。 所以我的方案是传入了一个 CustomNextjs 来表示我常用的 Nextjs 模板，自定义了一些版本来简单实现我要的功能
+> 这里有点坑，我默认用的是react,但有时候需要 nextjs，默认的 nextjs 模版很老，但是又暂时无法从 props 取到 meta 信息，根据 meta 信息来新建对应的文件。而且覆盖 nextjs 模版或者完全自定义模版都不行，所以暂时 nextjs 就用 page router
 
 ```tsx
 export const AppJSPath = `/App.js`

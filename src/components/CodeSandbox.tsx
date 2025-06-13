@@ -20,11 +20,9 @@ type SandpackTemplate =
   | 'node'
   | 'test-ts'
 
-type CustomNextjsTemplate = 'customNextjs'
-
 interface CodeSandboxProps {
   files: Record<string, SandpackFile>
-  template?: SandpackTemplate | CustomNextjsTemplate
+  template?: SandpackTemplate
   customSetup?: SandpackSetup
 }
 
@@ -32,7 +30,7 @@ export function CodeSandbox({ files, template = 'react', customSetup }: CodeSand
   return (
     <div className="my-4">
       <Sandpack
-        template={template === 'customNextjs' ? 'nextjs' : template}
+        template={template}
         theme={'dark'}
         files={files}
         customSetup={customSetup}

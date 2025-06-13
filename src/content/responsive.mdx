@@ -1,7 +1,8 @@
 ## 基于 Tailwind 的响应式布局
 
 - [Tailwind 响应式设计](https://tailwindcss.com/docs/responsive-design)
-- [Nextjs Images](https://nextjs.org/docs/app/getting-started/images)
+- [Image Optimization](https://nextjs.org/docs/app/getting-started/images)
+- [Image](https://nextjs.org/docs/app/api-reference/components/image)
 
 ### 响应式布局
 
@@ -52,48 +53,70 @@ container 类名表示内容区域被限制在容器内，不会超出容器边�
 }
 ```
 
-### 图片的响应式
-
-先聊聊 Nextjs 的 Image 组件
+### 图片的响应式(Nextjs)
 
 Nextjs 中图片有三种存放的方式
 
-- 第一种是放到 public 文件夹，使用的时候 `src='/demo.png'`
-
-- 第二种是放到 app 文件夹，使用的时候 `import DemoImage from './demo.png'`，然后`src={DemoImage}`
-
-- 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`
-
-{/* TODO: */}
-
-对于本地图片，Next.js 将根据导入的文件自动确定图像的 width 和 height 。这些值用于防止在加载图像时出现累积布局偏移，
-Image 组件会给本地图片自动转 webp 格式，还会自动 loading="lazy" 来支持图片懒加载
-
-Image 组件的 width 和 height 如果遇到响应式，不确定宽高的情况咋办？
-
-width 和 height 和图片真实宽高无关，所以只有比例关系有用
-
-<Sandpack template="customNextjs">
+1、 第一种是放到 public 文件夹，使用的时候 `src='/demo.png'`
 
 ```tsx
-const Responsive = () => {
+<Image src="/avatar.jpg" alt="test" width={100} height={100} />
+```
+
+![image](/posts/responsive/image3.png)
+
+- 必须要给 width 和 height，width 和 height 和图片真实宽高无关，所以只有比例关系有用，但是还是每个图片外都给一个 div 设置宽高，防止意外情况，比如 gsap 动画计算就一定需要宽高，(如果父级不加宽高，图片的显示大小就是设置的 width 和 height，但不要这样做)
+- 图片会自动转 webp 格式
+  ![image](/posts/responsive/image4.png)
+- 自动设置 loading="lazy"
+- 如果图片在首屏可见，nextjs 会提示添加 priority 属性，和不加的区别是没有 loading="lazy" 属性
+  ![image](/posts/responsive/image2.png)
+  ![image](/posts/responsive/image1.png)
+- 图片的 srcset 属性，可以设置图片的响应式，在电脑上清晰度比较低的显示器才是 1，手机屏幕往往比较高，都会大于 2 ,这里的 w=256 跟我设置的 width={100} height={100} 有关，可以理解为二倍图，跟 [devicesizes](https://nextjs.org/docs/app/api-reference/components/image#devicesizes) 配置有关；w=256 表示图片的宽度是 256px，q=75 表示图片的质量是 75%，跟 [quality](https://nextjs.org/docs/app/api-reference/components/image#qualities) 配置有关
+
+```text
+srcset="/_next/image?url=%2Favatar.jpg&w=128&q=75 1x,
+        /_next/image?url=%2Favatar.jpg&w=256&q=75 2x"
+```
+
+![image](/posts/responsive/image5.png)
+
+2、 第二种是放到 app 文件夹，使用的时候 `import DemoImage from './demo.png'`，然后`src={DemoImage}`
+
+```tsx
+import DemoImage from './images/avatar.jpg'
+
+const Test = () => {
+  return <Image src={DemoImage} alt="test" />
+}
+
+export default Test
+```
+
+3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`
+
+<Sandpack template="nextjs">
+
+```jsx
+export default function Home({ data }) {
   return (
     <div>
-      <div>测试nextjs image</div>
+      <h1>Hello {data}</h1>
     </div>
   )
 }
 
-export default Responsive
-```
-
-```css
-html {
-  background-color: while;
+export function getServerSideProps() {
+  return {
+    props: { data: 'world' }
+  }
 }
 ```
 
 </Sandpack>
+
+对于本地图片，Next.js 将根据导入的文件自动确定图像的 width 和 height 。这些值用于防止在加载图像时出现累积布局偏移，
+Image 组件会给本地图片自动转 webp 格式，还会自动 loading="lazy" 来支持图片懒加载
 
 ### 理想的响应式布局
 

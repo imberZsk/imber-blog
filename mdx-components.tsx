@@ -22,9 +22,9 @@ const createFileMap = (children: any): Record<string, SandpackFile> => {
     // js 表示普通 react 项目
     if (props.className === 'language-js' || props.className === 'language-javascript') {
       filePath = AppJSPath
-    } else if (props.className === 'language-tsx') {
+    } else if (props.className === 'language-jsx') {
       // tsx 表示 nextjs 项目
-      filePath = '/app/page.tsx'
+      filePath = '/pages/index.js'
     } else if (props.className === 'language-css') {
       filePath = StylesCSSPath
     } else {
