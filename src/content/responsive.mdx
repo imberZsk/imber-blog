@@ -81,7 +81,7 @@ srcset="/_next/image?url=%2Favatar.jpg&w=128&q=75 1x,
 
 ![image](/posts/responsive/image5.png)
 
-2、 第二种是放到 app 文件夹，使用的时候 `import DemoImage from './demo.png'`，然后`src={DemoImage}`
+2、 第二种是放到 app 文件夹，通过模块导入使用
 
 ```tsx
 import DemoImage from './images/avatar.jpg'
@@ -93,7 +93,9 @@ const Test = () => {
 export default Test
 ```
 
-3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`
+![image](/posts/responsive/image6.png)
+
+3、 第三种是远程链接，使用的时候 `src='https://example.com/demo.png'`，为了安全，需要 [remotePatterns](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) 配置
 
 ### 理想的响应式布局
 
