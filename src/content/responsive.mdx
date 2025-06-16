@@ -237,7 +237,7 @@ srcset="
 ```js
 export default function App() {
   return (
-    <picture>
+    <picture style={{ width: '100px', height: '100px' }}>
       <source
         media="(max-width: 799px)"
         srcset="https://ssm.res.meizu.com/admin/2023/10/30/1277278717/zLSkr3lTD0.png"
@@ -254,12 +254,52 @@ export default function App() {
 
 </Sandpack>
 
-### 理想的响应式布局
+### 响应式布局
 
-grid
+1、规则的响应式布局
 
-grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+<video src="/posts/responsive/media2.mov" controls />
 
-grid-template-columns: repeat(auto-fill, minmax(200px, auto));
+对于规则的布局，可以使用 flex，grid 布局，来实现图片的响应式，上面的代码就是 grid 布局，注意的是外层有一个 container，里面的图片需要定好宽高比
 
-### 现实的响应式布局
+<Sandpack>
+
+```js
+export default function App() {
+  const arr = Array(6).fill({
+    src: 'https://ssm.res.meizu.com/admin/2022/10/18/1780834568/xfMvystede.jpg',
+    alt: '测试图片'
+  })
+
+  return (
+    <>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      <div
+        className="container mx-auto grid gap-4 xl:gap-6"
+        style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))' }}
+      >
+        <div className="aspect-square">
+          {arr.map((item, index) => (
+            <img key={index} src={item.src} className="h-full w-full object-cover" alt={item.alt} />
+          ))}
+        </div>
+        <div className="aspect-square bg-red-500"></div>
+      </div>
+    </>
+  )
+}
+```
+
+</Sandpack>
+
+```js
+<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6"></div>
+
+// 或者
+<div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-4 xl:gap-6"></div>
+```
+
+2、不规则的响应式布局
+
+有时候，h5 和 pc 相差太大，基本无法改变布局来实现，所以最好的方案是使用自适应布局 + 媒体查询，低于 768 或者 1024 或者 1280 使用自适应布局，大于1280px 使用 pc 布局
