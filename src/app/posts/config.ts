@@ -1,12 +1,18 @@
 export const postsConfig = [
   {
+    title: 'Cursor & MCP 实用功能',
+    href: '/posts/cursor-mcp',
+    date: '2025-02-09',
+    tags: ['cursor', 'mcp'],
+    views: 32
+  },
+  {
     title: '基于 Next MDX & Sandpack 的博客',
     href: '/posts/sandpack-mdx',
     date: '2025-02-09',
     tags: ['博客'],
     views: 32
   },
-
   {
     title: 'Web 安全：用 Nextjs 模拟 XSS & CSRF',
     href: '/posts/safe',

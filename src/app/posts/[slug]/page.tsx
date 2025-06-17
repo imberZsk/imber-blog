@@ -16,7 +16,8 @@ export function generateStaticParams() {
     { slug: 'react-write' },
     { slug: 'print' },
     { slug: 'responsive' },
-    { slug: 'adaptive' }
+    { slug: 'adaptive' },
+    { slug: 'cursor-mcp' }
   ]
 }
 
