@@ -1,6 +1,6 @@
 export const postsConfig = [
   {
-    title: 'Cursor & MCP 实用功能',
+    title: 'AI 编辑器 Cursor 从基础功能到手写 MCP',
     href: '/posts/cursor-mcp',
     date: '2025-02-09',
     tags: ['cursor', 'mcp'],
