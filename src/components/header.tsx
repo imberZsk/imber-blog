@@ -1,7 +1,7 @@
 // import { UserCircle2 } from 'lucide-react'
 
 import Link from 'next/link'
-// import Image from 'next/image'
+import Image from 'next/image'
 import MobileNav from './MobileNav'
 import { ModeToggle } from './ModeToggle'
 
@@ -15,9 +15,9 @@ const Header = () => {
 
           {/* 中间Logo */}
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:left-0 lg:translate-x-0">
-            {/* <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image src="/avatar.jpg" alt="Logo" width={32} height={32} priority className="rounded-full" />
-            </Link> */}
+            </Link>
           </div>
 
           {/* 中间导航 - 桌面端显示 */}
