@@ -58,7 +58,7 @@ const Header = () => {
                 </li>
                 <li>
                   <Link
-                    href="/more"
+                    href="/gallery"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     画廊

@@ -87,6 +87,10 @@ export const postsConfig = [
 
 export const navItems = [
   {
+    path: '/',
+    name: '首页'
+  },
+  {
     path: '/posts',
     name: '文集'
   },
@@ -99,7 +103,7 @@ export const navItems = [
     name: '朋友'
   },
   {
-    path: '/more',
+    path: '/gallery',
     name: '画廊'
   }
 ]
