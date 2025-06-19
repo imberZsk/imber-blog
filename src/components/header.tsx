@@ -26,6 +26,14 @@ const Header = () => {
               <ul className="flex items-center gap-6 text-sm">
                 <li>
                   <Link
+                    href="/"
+                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
+                  >
+                    首页
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/posts"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
@@ -53,7 +61,7 @@ const Header = () => {
                     href="/more"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    更多
+                    画廊
                   </Link>
                 </li>
               </ul>

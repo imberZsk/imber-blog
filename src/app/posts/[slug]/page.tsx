@@ -17,7 +17,8 @@ export function generateStaticParams() {
     { slug: 'print' },
     { slug: 'responsive' },
     { slug: 'adaptive' },
-    { slug: 'cursor-mcp' }
+    { slug: 'cursor-mcp' },
+    { slug: 'animate' }
   ]
 }
 

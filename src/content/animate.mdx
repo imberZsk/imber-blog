@@ -1,0 +1,61 @@
+### Framer Motion & GSAP
+
+- [Framer Motion](https://motion.dev/docs)
+- [GSAP](https://gsap.com/docs/v3/)
+
+GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大。
+
+越来越多的开源库，开源项目使用 Framer Motion 来实现动画效果，Framer Motion 变得越来越重要。
+
+### imber Animation
+
+[imber Animation](https://imber-animation.netlify.app/) 是我写的动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，网站分别用 GSAP 和 Framer Motion 实现了动画，只需要切换参数?type=gsap 或者 ?type=framer（默认） 即可。
+
+### 普通动画
+
+做一些简单有执行顺序的动画，GSAP 有 timeline 时间线，让动画依次执行，而 Framer Motion 可以设置 delay 或者 useAnimation，相比下 <strong>GSAP</strong> 更方便。
+
+[animation - base](https://imber-animation.netlify.app/animations/base-animation?type=gsap)
+
+<video src="/posts/animate/media1.mov" controls />
+
+### 退出动画（Exit animations）
+
+在 React 中，组件删除，通常被立即删除，而没有动画，但可以使用 Framer Motion 和 GSAP 来实现退出动画，比如做打开关闭弹层，这类动画用 <strong>Framer Motion</strong> 更方便，因为它封装了一个 <strong>AnimatePresence</strong> 组件，而 GSAP 需要用 requestAnimationFrame 来判断下一帧的时候等 DOM 渲染好了，再执行动画。
+
+[animation - exit](https://imber-animation.netlify.app/animations/exit-animation?type=gsap)
+
+<video src="/posts/animate/media2.mov" controls />
+
+### 手势动画
+
+这个是 Framer Motion 有的，GSAP 没有，hover, tap, drag, focus and inView，whileInView 和 viewport 比较重要，其它的用处不大。
+
+[animation - gesture](https://imber-animation.netlify.app/animations/gesture-animation)
+
+```jsx
+<motion.button
+  initial={{ opacity: 0 }}
+  whileHover={{ backgroundColor: 'rgba(220, 220, 220, 1)' }} // tailwind更方便
+  whileTap={{ backgroundColor: 'rgba(255, 255, 255, 1)' }} // 没场景
+  whileInView={{ opacity: 1 }}
+  viewport={{
+    margin: '-200px' // 元素进入视口 200px 后才触发
+    // once: true
+  }}
+/>
+```
+
+###
+
+- hover到头像，然后头像旋转
+- 封装淡入淡出
+- 文字的高斯模糊
+- 滚动动画
+- 视差动画
+- 数字递增动画
+- 页面进度条
+- 一个简易的进度条
+- tab切换
+- 删除元素支持动画
+- SVG 动画
