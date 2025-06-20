@@ -1,0 +1,33 @@
+.loader-ui {
+  display: block;
+  width: 160px;
+  height: 4px;
+  border-radius: 30px;
+  background-color: rgb(0 0 0 / 20%);
+  position: relative;
+}
+
+.loader-ui::before {
+  content: '';
+  position: absolute;
+  background: #fb933b;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  border-radius: 30px;
+  will-change: transform; /* 启用硬件加速 */
+  animation: moving 1s ease-in-out infinite;
+}
+
+@keyframes moving {
+  50% {
+    width: 100%;
+  }
+
+  100% {
+    width: 0;
+    right: 0;
+    left: unset;
+  }
+}
