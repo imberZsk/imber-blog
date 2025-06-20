@@ -23,7 +23,10 @@ export const fetchGitHubImages = async () => {
 
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`,
-      { headers }
+      {
+        next: { revalidate: 300 },
+        headers
+      }
     )
 
     if (!response.ok) {
