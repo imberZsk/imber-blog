@@ -109,7 +109,7 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
           return (
             <div
               key={index}
-              className="group absolute overflow-hidden rounded-lg bg-zinc-50 object-contain shadow-sm ring-1 ring-zinc-200 transition-all hover:shadow-lg hover:ring-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:ring-zinc-600"
+              className="group absolute overflow-hidden rounded-xs bg-zinc-50 object-contain shadow-sm ring-1 ring-zinc-200 transition-all hover:shadow-lg hover:ring-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:ring-zinc-600"
               style={{
                 top: `${positions[index].top}px`,
                 left: `${positions[index].left}px`,
