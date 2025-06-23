@@ -8,15 +8,15 @@ interface PostCategoriesProps {
 
 const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCategoriesProps) => {
   return (
-    <div className="mb-8">
-      <div className="flex flex-wrap gap-2">
+    <div className="mb-6">
+      <div className="flex flex-wrap gap-1.5">
         <button
           onClick={() => onCategoryChange('all')}
           className={cn(
-            'cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors',
+            'cursor-pointer rounded px-3 py-1 text-xs transition-colors',
             activeCategory === 'all'
-              ? 'bg-blue-500 text-white'
-              : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-300'
+              ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
+              : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'
           )}
         >
           全部
@@ -26,10 +26,10 @@ const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCa
             key={category}
             onClick={() => onCategoryChange(category)}
             className={cn(
-              'cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors',
+              'cursor-pointer rounded px-3 py-1 text-xs transition-colors',
               activeCategory === category
-                ? 'bg-blue-500 text-white'
-                : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-300'
+                ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
+                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'
             )}
           >
             {category}
