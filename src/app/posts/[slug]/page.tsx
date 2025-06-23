@@ -19,8 +19,7 @@ export function generateStaticParams() {
     { slug: 'adaptive' },
     { slug: 'cursor-mcp' },
     { slug: 'animate' },
-    { slug: 'gallery' },
-    { slug: 'todos' }
+    { slug: 'gallery' }
   ]
 }
 

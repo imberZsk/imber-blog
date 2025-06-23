@@ -46,8 +46,6 @@ export const fetchGitHubImages = async () => {
       .filter((file) => file.type === 'file' && isImageFile(file.name))
       .sort((a, b) => a.name.localeCompare(b.name)) // 按文件名排序
 
-    console.log(imageFiles, 'imageFiles')
-
     target.data = imageFiles
 
     // 计算分页信息
