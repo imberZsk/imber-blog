@@ -71,7 +71,7 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
     }
 
     // 延迟执行确保DOM已渲染
-    const timer = setTimeout(getPositions, 100)
+    const timer = setTimeout(getPositions, 1000)
 
     // 监听窗口大小变化
     const handleResize = () => {
