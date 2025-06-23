@@ -272,7 +272,7 @@ const Page = () => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,.heic,.heif"
+          accept="image/*"
           onChange={(e) => handleFileSelect(e.target.files)}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />

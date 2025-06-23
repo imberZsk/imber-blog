@@ -54,13 +54,14 @@ const Page = () => {
 
   // 加载数据
   useEffect(() => {
-    const savedNotes = localStorage.getItem('notes')
-    if (savedNotes) {
-      setNotes(JSON.parse(savedNotes))
-    } else {
-      setNotes(defaultNotes)
-      localStorage.setItem('notes', JSON.stringify(defaultNotes))
-    }
+    // const savedNotes = localStorage.getItem('notes')
+    // if (savedNotes) {
+    //   setNotes(JSON.parse(savedNotes))
+    // } else {
+    setNotes(defaultNotes)
+    //   localStorage.setItem('notes', JSON.stringify(defaultNotes))
+    // }
+    //   localStorage.setItem('notes', JSON.stringify(defaultNotes))
   }, [])
 
   const formatDate = (dateString: string) => {

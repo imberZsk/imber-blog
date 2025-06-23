@@ -82,7 +82,7 @@ const Page = () => {
               <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200 transition-all duration-300 hover:shadow-lg hover:ring-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:ring-zinc-600">
                 <div className="flex items-center gap-6">
                   {/* 头像 */}
-                  <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl ring-2 ring-zinc-100 dark:ring-zinc-700">
+                  <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md dark:ring-zinc-700">
                     <Image
                       src={friend.avatar}
                       alt={friend.name}

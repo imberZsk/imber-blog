@@ -1,0 +1,264 @@
+## 瀑布流 + 虚拟列表 实现博客画廊
+
+- github api
+- [jsdelivr](https://www.jsdelivr.com/?docs=gh)
+- [heic2any](https://github.com/alexcorvi/heic2any)
+
+### github 图床 & jsdelivr CDN
+
+首先要实现一个上传功能，上传到 github 图床，然后通过 jsdelivr CDN 加速展示到页面，这个展示的页面是公开的，但是上传的页面是私有链接，因为是个人展示专用。
+
+![页面截图 - 图片上传](/posts/gallery/image2.png)
+
+1、支持拖拽
+
+- dragover 事件中的 e.preventDefault() 阻止默认行为，允许在该元素上drop
+- drop 事件中的，浏览器默认会尝试导航到被拖拽文件，e.preventDefault() 防止页面跳转
+
+```tsx
+const handleDragOver = useCallback((e: React.DragEvent) => {
+  e.preventDefault()
+  setIsDragging(true)
+}, [])
+
+const handleDragLeave = useCallback((e: React.DragEvent) => {
+  e.preventDefault()// 不是必须的
+  setIsDragging(false)
+}, [])
+
+const handleDrop = useCallback(
+  (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    handleFileSelect(e.dataTransfer.files) // 通用上传方法
+  },
+  [handleFileSelect]
+)
+
+<div className={cn()} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+  <input
+    ref={fileInputRef}
+    type="file"
+    multiple
+    accept="image/*,.heic,.heif" // 可以不用单独指出heic
+    onChange={(e) => handleFileSelect(e.target.files)}
+  />
+</div>
+```
+
+2、heic转换
+
+图片很容易遇到 HEIC 格式（苹果手机拍摄，浏览器无法解析，无法渲染，无法触发 onload），所以需要一个转换工具，这里使用 heic2any 转换为 JPEG 格式。
+
+```tsx
+// 转换 HEIC 文件为 JPEG
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  try {
+    // 因为heic2any有window环境，无法直接使用，所以用动态引入或者用dynamic
+    const convertedBlob = (await import('heic2any').then((module) =>
+      module.default({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9
+      })
+    )) as Blob
+
+    // 创建新的 File 对象
+    const convertedFile = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg'), {
+      type: 'image/jpeg'
+    })
+
+    return convertedFile
+  } catch (error) {
+    console.error('HEIC 转换失败:', error)
+    throw error
+  }
+}
+```
+
+3、上传进度
+
+```tsx
+const handleFileSelect = useCallback(
+  async (files: FileList | null) => {
+    if (!files) return
+
+    const validFiles = Array.from(files).filter(
+      (file) => (file.type.startsWith('image/') || isHeicFile(file)) && file.size <= 10 * 1024 * 1024 // 10MB limit
+    )
+
+    if (validFiles.length === 0) return
+
+    // 处理文件并创建预览
+    const processedImages: UploadedImage[] = []
+
+    for (const file of validFiles) {
+      let previewUrl = ''
+      let convertedFile: File | undefined
+
+      if (isHeicFile(file)) {
+        try {
+          // 转换 HEIC 文件用于预览
+          convertedFile = await convertHeicToJpeg(file)
+          previewUrl = URL.createObjectURL(convertedFile)
+        } catch (error) {
+          console.error('HEIC 预览转换失败:', error)
+          // 如果转换失败，使用原文件（虽然可能不显示）
+          previewUrl = URL.createObjectURL(file)
+        }
+      } else {
+        previewUrl = URL.createObjectURL(file)
+      }
+
+      processedImages.push({
+        file,
+        url: previewUrl,
+        uploadStatus: 'uploading' as const,
+        progress: 0,
+        isHeic: isHeicFile(file),
+        convertedFile
+      })
+    }
+
+    setUploadedImages((prev) => [...prev, ...processedImages])
+
+    // 上传每个文件
+    for (let i = 0; i < processedImages.length; i++) {
+      const imageIndex = uploadedImages.length + i
+
+      try {
+        // 模拟进度更新
+        const progressInterval = setInterval(() => {
+          setUploadedImages((prev) =>
+            prev.map((img, idx) =>
+              idx === imageIndex && img.progress < 90
+                ? { ...img, progress: Math.min(img.progress + Math.random() * 20, 90) }
+                : img
+            )
+          )
+        }, 200)
+
+        const cdnUrl = await uploadImageToGitHub(processedImages[i].file)
+
+        clearInterval(progressInterval)
+
+        setUploadedImages((prev) =>
+          prev.map((img, idx) =>
+            idx === imageIndex
+              ? {
+                  ...img,
+                  cdnUrl: cdnUrl || undefined,
+                  uploadStatus: cdnUrl ? 'success' : 'error',
+                  progress: 100
+                }
+              : img
+          )
+        )
+      } catch {
+        setUploadedImages((prev) =>
+          prev.map((img, idx) => (idx === imageIndex ? { ...img, uploadStatus: 'error' as const, progress: 0 } : img))
+        )
+      }
+    }
+  },
+  [uploadedImages.length, uploadImageToGitHub]
+)
+```
+
+4、上传逻辑
+
+```tsx
+const uploadImageToGitHub = useCallback(async (file: File): Promise<string | null> => {
+  // 如果是 HEIC 文件，先转换为 JPEG
+  let fileToUpload = file
+  if (isHeicFile(file)) {
+    try {
+      fileToUpload = await convertHeicToJpeg(file)
+    } catch (error) {
+      console.error('HEIC 转换失败:', error)
+      return null
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const img = new window.Image()
+    const url = URL.createObjectURL(fileToUpload)
+
+    img.src = url
+
+    await new Promise((resolve) => {
+      img.onload = () => {
+        resolve(true)
+      }
+      // 添加错误处理
+      img.onerror = () => {
+        console.error('图片加载失败')
+        resolve(false)
+      }
+    })
+
+    // 这里我需要图片的宽高用于前台展示
+    const path = `gallery/${Date.now()}-${img.naturalWidth}x${img.naturalHeight}-${fileToUpload.name}`
+
+    // 释放内存
+    URL.revokeObjectURL(url)
+
+    // 将文件转换为 base64
+    const reader = new FileReader()
+
+    // github 需要base64上传
+    const base64Content = await new Promise<string>((resolve) => {
+      reader.onload = (e) => {
+        const base64 = (e.target?.result as string)?.split(',')[1]
+        resolve(base64)
+      }
+      reader.readAsDataURL(fileToUpload)
+    })
+
+    const { error } = await uploadImageToGitHubApi(fileToUpload, path, base64Content)
+
+    // 使用 jsDelivr CDN URL
+    const cdnUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${path}`
+
+    if (error) {
+      console.error(error)
+      return null
+    }
+
+    return cdnUrl
+  }
+
+  return null
+}, [])
+```
+
+5、github 接口
+
+```ts
+import { gitHubService } from '@/services'
+import { GITHUB_CONFIG } from './const'
+
+export const uploadImageToGitHubApi = async (file: File, path: string, base64Content: string) => {
+  // baseUrl 是 https://api.github.com
+  const { data, error } = await gitHubService.put(
+    `/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`,
+    {
+      message: `Upload product image: ${file.name}`,
+      content: base64Content
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${GITHUB_CONFIG.token}`
+      }
+    }
+  )
+
+  return { data, error }
+}
+```
+
+### 瀑布流
+
+![页面截图 - 图片上传](/posts/gallery/image1.png)
+
+### 虚拟列表

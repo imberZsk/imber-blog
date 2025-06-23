@@ -1,5 +1,12 @@
 export const postsConfig = [
   {
+    title: '瀑布流 + 虚拟列表 实现博客画廊',
+    href: '/posts/gallery',
+    date: '2025-02-09',
+    tags: ['画廊'],
+    views: 32
+  },
+  {
     title: 'Framer Motion & GSAP 实现酷炫动画',
     href: '/posts/animate',
     date: '2025-02-09',
@@ -93,6 +100,10 @@ export const navItems = [
   {
     path: '/posts',
     name: '文集'
+  },
+  {
+    path: '/tools',
+    name: '工具'
   },
   {
     path: '/notes',
