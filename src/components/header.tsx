@@ -42,18 +42,26 @@ const Header = () => {
                 </li>
                 <li>
                   <Link
-                    href="/tools"
+                    href="/notes"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    工具
+                    想法
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/notes"
+                    href="/gallery"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    手记
+                    画廊
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/todos"
+                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
+                  >
+                    清单
                   </Link>
                 </li>
                 <li>
@@ -66,10 +74,10 @@ const Header = () => {
                 </li>
                 <li>
                   <Link
-                    href="/gallery"
+                    href="/tools"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    画廊
+                    工具
                   </Link>
                 </li>
               </ul>

@@ -102,19 +102,23 @@ export const navItems = [
     name: '文集'
   },
   {
-    path: '/tools',
-    name: '工具'
+    path: '/notes',
+    name: '想法'
   },
   {
-    path: '/notes',
-    name: '手记'
+    path: '/gallery',
+    name: '画廊'
+  },
+  {
+    path: '/todos',
+    name: '清单'
   },
   {
     path: '/friends',
     name: '朋友'
   },
   {
-    path: '/gallery',
-    name: '画廊'
+    path: '/tools',
+    name: '工具'
   }
 ]
