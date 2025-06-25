@@ -3,7 +3,7 @@ export const postsConfig = [
     title: '瀑布流 + 虚拟列表 实现博客画廊',
     href: '/posts/gallery',
     date: '2025-02-09',
-    tags: ['画廊'],
+    tags: ['博客'],
     views: 32
   },
   {
@@ -25,6 +25,13 @@ export const postsConfig = [
     href: '/posts/sandpack-mdx',
     date: '2025-02-09',
     tags: ['博客'],
+    views: 32
+  },
+  {
+    title: '用 Supabase PostgreSQL 构建和部署 Strapi CMS',
+    href: '/posts/strapi-supabase',
+    date: '2025-06-24',
+    tags: ['Strapi', 'Supabase'],
     views: 32
   },
   {

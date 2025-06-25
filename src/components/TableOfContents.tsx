@@ -105,7 +105,7 @@ export function TableOfContents() {
         {headings.map((heading, index) => (
           <li
             key={`heading-${heading.id}-${index}`}
-            className={cn('rounded-l-xl px-2', selectedIndex === index ? 'bg-blue-50 dark:bg-blue-900/20' : null, {
+            className={cn('rounded-sm px-2', selectedIndex === index ? 'dark:bg-blue-900/20' : null, {
               'pl-4': heading.level === 3,
               hidden: heading.level > 3
             })}

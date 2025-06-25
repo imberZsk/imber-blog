@@ -1,0 +1,96 @@
+## 用 Supabase PostgreSQL 构建和部署 Strapi CMS
+
+- [Strapi CMS](https://docs.strapi.io/cms/intro)
+
+### 新建 Supabase 项目
+
+新建一个 Supabase 项目，选择 PostgreSQL 数据库，然后如下找到连接数据库信息，我连接的时候发现直接连接有问题，所以使用的下面事件池连接
+
+![Supabase 连接信息](/posts/strapi-supabase/image1.png)
+
+### 初始化 Strapi 项目
+
+数据库选 postgres
+
+先使用 VSCODE 插件测试本地连接下数据库，显示连接成功
+
+![Supabase 连接信息](/posts/strapi-supabase/image2.png)
+
+初始化项目并按提示选择 postgres 数据库
+
+```bash
+sudo npx create-strapi@latest my-strapi-project
+```
+
+启动项目
+
+```bash
+sudo npm run dev
+```
+
+启动项目后，注册一个管理员账号，然后登录
+
+![Supabase 连接信息](/posts/strapi-supabase/image3.jpeg)
+
+成功后可以在 supabase 中看到数据库表，说明当前的数据库已经和 Strapi 关联起来了
+
+![Supabase 连接信息](/posts/strapi-supabase/image4.png)
+
+### Strapi 设置中文
+
+为了方便使用，打开 src/admin/app.example.js，重命名为 app.tsx，在其中取消掉 'zh-Hans'的注释：
+
+```js
+const config = {
+  locales: ['zh-Hans']
+}
+
+const bootstrap = (app) => {
+  console.log(app)
+}
+
+export default {
+  config,
+  bootstrap
+}
+```
+
+需要点击左下角头像去设置选择中文再保存
+
+![页面截图 - 设置中文](/posts/strapi-supabase/image5.png)
+
+### 部署 Strapi
+
+[Strapi 部署文档](https://docs.strapi.io/cms/quick-start#%EF%B8%8F-part-c-deploy-to-strapi-cloud)
+
+一开始想部署到 netlify 上，但是发现 netlify 和 vercel 都是属于静态托管一类的，strapi 的 node 服务不能这样部署；所以先用 strapi cloud 部署下，然后发现 本地数据和 cloud 数据不能同步，strapi cloud 不能使用 supabase 数据库，只能暂时就数据存储在 strapi cloud 上，所以后续得买个服务器自己 Docker 部署 Strapi，然后数据存 supabase 上
+
+### Strapi 核心概念
+
+1、构建内容结构（[Content-Type Builder](https://docs.strapi.io/cms/features/content-type-builder)）
+
+定义数据结构和字段，相当于数据库建表操作，添加各种字段
+
+2、 内容管理器（[Content Manager](https://docs.strapi.io/cms/features/content-manager)）
+
+用于创建、编辑和删除内容类型。
+
+3、[REST API](https://docs.strapi.io/cms/api/rest)
+
+![页面截图 - REST API](/posts/strapi-supabase/image6.png)
+
+4、[token](https://docs.strapi.io/cms/features/api-tokens#creating-a-new-api-token)
+
+打开 Settings -> API Tokens，点击 Create new API Token，生成 API Token，该 Token 决定了权限范围和使用时间，生成之后，获取接口数据的时候就需要带上这个 token
+
+但是可能会想：“好麻烦，我调用个接口，还要用 token，能不能不用 token，至少获取列表和获取条目不需要？”。当然也是可以的，我们点击 Settings-> Roles，选择 Public 角色进行编辑：
+
+![页面截图 - 设置 Public 角色](/posts/strapi-supabase/image7.png)
+
+勾选集合类型中的 find 和 findOne，表示 /api/categories 和 /api/categories/1 不再需要鉴权。
+
+![页面截图 - 设置 Public 角色](/posts/strapi-supabase/image8.png)
+
+### 博客想法和清单接入 Strapi
+
+画廊使用的 Github 当作的数据库，jsdelivr 当作 CDN，就不用管了。目前先准备博客想法和清单使用 Strapi 来管理，至于后面的文章等接入 Tiptap 编辑器再考虑
