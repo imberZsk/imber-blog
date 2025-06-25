@@ -9,6 +9,7 @@ const Client = ({ ideas }: { ideas: Idea[] }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

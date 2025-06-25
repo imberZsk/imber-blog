@@ -19,7 +19,7 @@ export interface Idea {
 }
 
 const Page = async () => {
-  const data = await fetch('https://grounded-crystal-d6a5ec67a5.strapiapp.com/api/ideas')
+  const data = await fetch('https://grounded-crystal-d6a5ec67a5.strapiapp.com/api/ideas?sort=updatedAt:desc')
 
   const ideas = await data.json()
 
