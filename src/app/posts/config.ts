@@ -123,9 +123,9 @@ export const navItems = [
   {
     path: '/friends',
     name: '朋友'
-  },
-  {
-    path: '/tools',
-    name: '工具'
   }
+  // {
+  //   path: '/tools',
+  //   name: '工具'
+  // }
 ]

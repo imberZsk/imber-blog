@@ -72,14 +72,14 @@ const Header = () => {
                     朋友
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link
                     href="/tools"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     工具
                   </Link>
-                </li>
+                </li> */}
               </ul>
             </div>
           </nav>
