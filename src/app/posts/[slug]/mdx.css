@@ -89,37 +89,42 @@
 /* 优化行内代码样式 */
 .prose code {
   color: var(--tw-prose-code);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.875em;
   background-color: var(--tw-prose-code-bg);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  border: 1px solid var(--tw-prose-code-border);
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
 }
 
-/* 优化代码块样式 */
+/* 优化代码块样式 - 简约纯黑色系 */
 .prose pre {
   color: var(--tw-prose-pre-code);
-  background-color: var(--tw-prose-pre-bg);
+  background: var(--tw-prose-pre-bg);
+  border: 1px solid var(--tw-prose-pre-border);
   overflow-x: auto;
   font-weight: 400;
   font-size: 0.875em;
-  line-height: 1.7142857;
-  margin-top: 1.7142857em;
-  margin-bottom: 1.7142857em;
+  line-height: 1.7;
+  margin: 2rem 0;
   border-radius: 0.5rem;
-  padding: 1.25em 1.5em;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
+  padding: 1.5rem;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  box-shadow: var(--tw-prose-pre-shadow);
+  transition: all 0.2s ease;
+}
+
+.prose pre:hover {
+  box-shadow: var(--tw-prose-pre-shadow-hover);
 }
 
 /* 代码块内的代码样式 */
@@ -128,8 +133,10 @@
   background-color: transparent;
   padding: 0;
   border-radius: 0;
+  border: none;
   font-weight: inherit;
-  box-shadow: none;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .prose img {
@@ -154,10 +161,14 @@
   --tw-prose-bold: #111827;
   --tw-prose-quotes: #111827;
   --tw-prose-quote-borders: #e5e7eb;
-  --tw-prose-code: #111827;
-  --tw-prose-code-bg: #f3f4f6;
+  --tw-prose-code: #1f2937;
+  --tw-prose-code-bg: #f8fafc;
+  --tw-prose-code-border: #e2e8f0;
   --tw-prose-pre-code: #e5e7eb;
-  --tw-prose-pre-bg: #1f2937;
+  --tw-prose-pre-bg: #1a1a1a;
+  --tw-prose-pre-border: #333333;
+  --tw-prose-pre-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --tw-prose-pre-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
   --tw-prose-hr: #e5e7eb;
 }
 
@@ -170,9 +181,13 @@
   --tw-prose-bold: #fff;
   --tw-prose-quotes: #f3f4f6;
   --tw-prose-quote-borders: #374151;
-  --tw-prose-code: #fff;
-  --tw-prose-code-bg: #374151;
-  --tw-prose-pre-code: #fff;
-  --tw-prose-pre-bg: #1f2937;
+  --tw-prose-code: #e2e8f0;
+  --tw-prose-code-bg: #2a2a2a;
+  --tw-prose-code-border: #525252;
+  --tw-prose-pre-code: #f5f5f5;
+  --tw-prose-pre-bg: #0a0a0a;
+  --tw-prose-pre-border: #1f1f1f;
+  --tw-prose-pre-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --tw-prose-pre-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12);
   --tw-prose-hr: #374151;
 }

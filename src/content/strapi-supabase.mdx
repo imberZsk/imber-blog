@@ -94,3 +94,9 @@ export default {
 ### 博客想法和清单接入 Strapi
 
 画廊使用的 Github 当作的数据库，jsdelivr 当作 CDN，就不用管了。目前先准备博客想法和清单使用 Strapi 来管理，至于后面的文章等接入 Tiptap 编辑器再考虑
+
+1、本地 Content-Type Builder 新建字段，然后 `npm run strapi deploy` 上传到 strapi cloud，然后把线上的 Strapi 当作后台，上传数据，再 Rest API 中获取数据
+
+![页面截图 - 设置字段](/posts/strapi-supabase/image9.png)
+
+![页面截图 - 上传数据](/posts/strapi-supabase/image10.png)

@@ -94,12 +94,7 @@ export function TableOfContents() {
   }
 
   return (
-    <nav
-      className={cn(
-        'fixed right-[max(0px,calc(50%-45rem))] hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 xl:block',
-        PADDING_TOP
-      )}
-    >
+    <nav className={cn('fixed right-10 hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 2xl:block', PADDING_TOP)}>
       <h2 className="font-semibold dark:text-zinc-100">目录</h2>
       <ul className="mt-4 space-y-1 text-sm">
         {headings.map((heading, index) => (
