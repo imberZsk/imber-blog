@@ -42,10 +42,10 @@ const Header = () => {
                 </li>
                 <li>
                   <Link
-                    href="/notes"
+                    href="/ideas"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    想法
+                    思考
                   </Link>
                 </li>
                 <li>

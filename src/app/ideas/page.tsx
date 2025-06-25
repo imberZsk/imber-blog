@@ -120,7 +120,7 @@ const Page = () => {
     <div className={cn('mx-auto max-w-3xl px-6 py-12', PADDING_TOP)}>
       {/* 页面标题 */}
       <div className="mb-16">
-        <h1 className="text-3xl font-light tracking-wide text-zinc-100">想法</h1>
+        <h1 className="text-3xl font-light tracking-wide text-zinc-100">思考</h1>
         <p className="mt-2 text-sm text-zinc-500">记录瞬间的思考与灵感</p>
       </div>
 

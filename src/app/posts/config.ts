@@ -109,8 +109,8 @@ export const navItems = [
     name: '文集'
   },
   {
-    path: '/notes',
-    name: '想法'
+    path: '/ideas',
+    name: '思考'
   },
   {
     path: '/gallery',
