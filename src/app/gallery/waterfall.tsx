@@ -3,10 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { ExternalLink, Download } from 'lucide-react'
-import { GitHubFile } from './types'
 import { GITHUB_CONFIG } from '@/services/gallery/const'
 import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading'
+import { GitHubFile } from '@/services/gallery/types'
 
 // 生成图片 CDN URL
 const getImageCDNUrl = (file: GitHubFile) => {

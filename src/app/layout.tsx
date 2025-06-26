@@ -3,6 +3,7 @@ import './globals.css'
 import Header from '@/components/header'
 import { ChatBot } from '@/components/ChatBot'
 import { ThemeProvider } from 'next-themes'
+import { Toaster } from 'sonner'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -96,6 +97,7 @@ export default function RootLayout({
           <Header />
           {children}
           <ChatBot />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

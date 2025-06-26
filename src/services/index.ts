@@ -1,9 +1,3 @@
-// 简化的请求配置
-interface RequestConfig {
-  params?: Record<string, string>
-  headers?: Record<string, string>
-}
-
 // 简化的HTTP客户端
 class Http {
   private baseURL: string
@@ -12,81 +6,78 @@ class Http {
     this.baseURL = baseURL
   }
 
-  private async request(url: string, method: string = 'GET', data?: any, config: RequestConfig = {}) {
-    const target: {
-      data: any
-      error: Error | null
-    } = {
-      data: null,
-      error: null as unknown as Error
-    }
-
-    const { params, headers = {} } = config
-
-    // 构建URL
+  // 只保留 request 方法，直接抛异常，返回 response.json()
+  async request(resource: string, options: RequestInit & { params?: Record<string, string> } = {}) {
+    const { params, headers, method, ...restOptions } = options
     const queryString = params ? `?${new URLSearchParams(params)}` : ''
-    const fullUrl = `${this.baseURL}${url}${queryString}`
+    const fullUrl = `${this.baseURL}${resource}${queryString}`
 
-    // 构建headers
-    const finalHeaders: Record<string, string> = {
+    // 设置默认 method 和 headers，用户传入的优先生效
+    const finalMethod = method || 'GET'
+    const finalHeaders = {
       'Content-Type': 'application/json',
-      ...headers
+      ...(headers || {})
     }
 
+    const response = await fetch(fullUrl, {
+      ...restOptions,
+      method: finalMethod,
+      headers: finalHeaders
+    })
+
+    // 先判断 response.ok
+    if (!response.ok) {
+      let errorMsg = `HTTP错误: ${response.status}`
+      try {
+        const errorBody = await response.json()
+        if (errorBody?.message) {
+          errorMsg += ` - ${errorBody.message}`
+        } else if (errorBody?.error) {
+          errorMsg += ` - ${errorBody.error}`
+        }
+      } catch {}
+      throw new Error(errorMsg)
+    }
+
+    // 正常返回
     try {
-      const response = await fetch(fullUrl, {
-        method,
-        headers: finalHeaders,
-        body: data ? JSON.stringify(data) : null
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP错误: ${response.status}`)
-      }
-
-      target.data = await response.json()
-      target.error = null
-    } catch (error) {
-      console.error('请求失败:', error)
-      target.error = error instanceof Error ? error : new Error(String(error))
+      return await response.json()
+    } catch {
+      return response
     }
-    return target
   }
 
-  get(url: string, config?: RequestConfig) {
-    return this.request(url, 'GET', null, config)
-  }
-
-  post(url: string, data?: any, config?: RequestConfig) {
-    return this.request(url, 'POST', data, config)
-  }
-
-  put(url: string, data?: any, config?: RequestConfig) {
-    return this.request(url, 'PUT', data, config)
-  }
-
-  delete(url: string, config?: RequestConfig) {
-    return this.request(url, 'DELETE', null, config)
-  }
+  // 移除 get/post/put/delete 快捷方法，只保留 request
 }
 
 // 创建实例
 export const gitHubService = new Http(process.env.NEXT_PUBLIC_API_BASE_URL)
 
+export const strapiService = new Http('https://grounded-crystal-d6a5ec67a5.strapiapp.com')
+
 // 使用示例:
 /*
 // GET 请求
 const getUser = async (id: string) => {
-  return await http.get(`/users/${id}`)
+  return await gitHubService.request(`/users/${id}`, {
+    method: 'GET'
+  })
 }
 
 // POST 请求
 const createUser = async (userData: any) => {
-  return await http.post('/users', userData)
+  return await gitHubService.request('/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  })
 }
 
 // 带参数的GET请求
 const getUsers = async (page: number) => {
-  return await http.get('/users', { params: { page: page.toString() } })
+  return await gitHubService.request('/users', {
+    method: 'GET',
+    params: { page: page.toString() }
+  })
 }
 */

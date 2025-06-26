@@ -1,71 +1,105 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PADDING_TOP } from '../../const'
+import { fetchTodos, addTodo, updateTodo, deleteTodo } from '@/services/todos'
 
 interface Todo {
   id: string
-  text: string
-  completed: boolean
+  documentId: string
+  title: string
+  taskStatus: 'todo' | 'doing' | 'done'
+  priority: 'low' | 'medium' | 'high'
   createdAt: Date
+  updatedAt: Date
+  publishedAt: Date
 }
 
 const AdminTodoPage = () => {
-  const [todos, setTodos] = useState<Todo[]>([])
   const [inputValue, setInputValue] = useState('')
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all')
-
-  // 从 localStorage 加载数据
-  useEffect(() => {
-    const savedTodos = localStorage.getItem('todos')
-    if (savedTodos) {
-      const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
-        ...todo,
-        createdAt: new Date(todo.createdAt)
-      }))
-      setTodos(parsedTodos)
+  const { data, isLoading } = useSWR('admin-todos', fetchTodos, {
+    onError: (err) => {
+      toast.error(err?.message || '获取任务失败')
     }
-  }, [])
+  })
 
-  // 保存到 localStorage
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos))
-  }, [todos])
+  const todos: Todo[] = data?.data || []
 
-  const addTodo = () => {
+  const addTodoHandler = async () => {
     if (inputValue.trim()) {
-      const newTodo: Todo = {
-        id: crypto.randomUUID(),
-        text: inputValue.trim(),
-        completed: false,
-        createdAt: new Date()
+      try {
+        await addTodo({
+          title: inputValue.trim(),
+          taskStatus: 'todo',
+          priority: 'low'
+        })
+        setInputValue('')
+        mutate('admin-todos')
+      } catch (e: any) {
+        toast.error(e?.message || '添加失败')
       }
-      setTodos((prev) => [newTodo, ...prev])
-      setInputValue('')
     }
   }
 
-  const toggleTodo = (id: string) => {
-    setTodos((prev) => prev.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)))
+  const toggleTodo = async (id: string) => {
+    const todo = todos.find((t) => t.id === id)
+    if (!todo) return
+
+    let nextStatus: Todo['taskStatus']
+    if (todo.taskStatus === 'todo') nextStatus = 'doing'
+    else if (todo.taskStatus === 'doing') nextStatus = 'done'
+    else nextStatus = 'todo'
+
+    try {
+      await updateTodo(todo.documentId, {
+        taskStatus: nextStatus
+      })
+      mutate('admin-todos')
+    } catch (e: any) {
+      toast.error(e?.message || '更新失败')
+    }
   }
 
-  const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id))
+  const deleteTodoHandler = async (documentId: string) => {
+    try {
+      await deleteTodo(documentId)
+      mutate('admin-todos')
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
   }
 
-  const clearCompleted = () => {
-    setTodos((prev) => prev.filter((todo) => !todo.completed))
-  }
+  // const clearCompleted = async () => {
+  //   const completed = todos.filter((todo) => todo.taskStatus === 'done')
+  //   try {
+  //     await Promise.all(completed.map((todo) => deleteTodo(todo.documentId)))
+  //     mutate('admin-todos')
+  //   } catch (e: any) {
+  //     toast.error(e?.message || '清除失败')
+  //   }
+  // }
 
   const filteredTodos = todos.filter((todo) => {
-    if (filter === 'active') return !todo.completed
-    if (filter === 'completed') return todo.completed
+    if (filter === 'active') return todo.taskStatus === 'todo'
+    if (filter === 'completed') return todo.taskStatus === 'done'
     return true
   })
 
-  const activeTodosCount = todos.filter((todo) => !todo.completed).length
-  const completedTodosCount = todos.filter((todo) => todo.completed).length
+  const notStartedCount = todos.filter((todo) => todo.taskStatus === 'todo').length
+  const doingCount = todos.filter((todo) => todo.taskStatus === 'doing').length
+  const doneCount = todos.filter((todo) => todo.taskStatus === 'done').length
+
+  if (isLoading) {
+    return (
+      <div className={cn('mx-auto max-w-4xl px-4', PADDING_TOP)}>
+        <div className="py-20 text-center text-zinc-400">加载中...</div>
+      </div>
+    )
+  }
 
   return (
     <div className={cn('mx-auto max-w-4xl px-4', PADDING_TOP)}>
@@ -89,12 +123,12 @@ const AdminTodoPage = () => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+              onKeyPress={(e) => e.key === 'Enter' && addTodoHandler()}
               placeholder="添加新任务..."
               className="flex-1 border-none bg-transparent text-sm text-white placeholder-zinc-500 outline-none"
             />
             <button
-              onClick={addTodo}
+              onClick={addTodoHandler}
               className="rounded-lg bg-white px-4 py-2 text-sm text-black transition-all duration-200 hover:bg-zinc-200"
             >
               添加
@@ -103,13 +137,17 @@ const AdminTodoPage = () => {
         </div>
 
         {/* 统计信息 */}
-        <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="mb-6 grid grid-cols-4 gap-4">
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{activeTodosCount}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">待完成</div>
+            <div className="mb-1 text-xl font-semibold text-white">{notStartedCount}</div>
+            <div className="text-xs tracking-wider text-zinc-400 uppercase">未开始</div>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{completedTodosCount}</div>
+            <div className="mb-1 text-xl font-semibold text-white">{doingCount}</div>
+            <div className="text-xs tracking-wider text-zinc-400 uppercase">进行中</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
+            <div className="mb-1 text-xl font-semibold text-white">{doneCount}</div>
             <div className="text-xs tracking-wider text-zinc-400 uppercase">已完成</div>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
@@ -136,14 +174,14 @@ const AdminTodoPage = () => {
               {filterType === 'completed' && '已完成'}
             </button>
           ))}
-          {completedTodosCount > 0 && (
+          {/* {doneCount > 0 && (
             <button
               onClick={clearCompleted}
               className="ml-auto rounded-lg bg-zinc-700 px-3 py-2 text-sm text-white transition-all duration-200 hover:bg-zinc-600"
             >
               清除已完成
             </button>
-          )}
+          )} */}
         </div>
 
         {/* 任务列表 */}
@@ -173,33 +211,42 @@ const AdminTodoPage = () => {
                 className={cn(
                   'flex items-center gap-3 rounded-lg border p-3 transition-all duration-200',
                   'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/50',
-                  todo.completed && 'opacity-60'
+                  todo.taskStatus === 'done' && 'opacity-60'
                 )}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <button
                   onClick={() => toggleTodo(todo.id)}
                   className={cn(
-                    'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200',
-                    todo.completed ? 'border-white bg-white' : 'border-zinc-600 hover:border-zinc-400 hover:bg-zinc-800'
+                    'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
+                    todo.taskStatus === 'done'
+                      ? 'border-zinc-700 bg-zinc-900'
+                      : todo.taskStatus === 'doing'
+                        ? 'border-zinc-700 bg-zinc-800'
+                        : 'border-zinc-700 bg-black',
+                    'hover:border-zinc-400'
                   )}
                 >
-                  {todo.completed && (
-                    <svg className="h-3 w-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <polyline points="20,6 9,17 4,12" strokeWidth={3}></polyline>
+                  {todo.taskStatus === 'done' && (
+                    <svg className="h-3 w-3 text-white" fill="none" stroke="white" strokeWidth={2} viewBox="0 0 24 24">
+                      <polyline points="20,6 9,17 4,12" />
                     </svg>
+                  )}
+                  {todo.taskStatus === 'doing' && <span className="block h-3 w-3 rounded-full bg-white"></span>}
+                  {todo.taskStatus === 'todo' && (
+                    <span className="block h-3 w-3 rounded-full border border-zinc-500"></span>
                   )}
                 </button>
                 <span
                   className={cn(
                     'flex-1 text-sm transition-all duration-200',
-                    todo.completed ? 'text-zinc-500 line-through' : 'text-white'
+                    todo.taskStatus === 'done' ? 'text-zinc-400 line-through' : 'text-white'
                   )}
                 >
-                  {todo.text}
+                  {todo.title}
                 </span>
                 <button
-                  onClick={() => deleteTodo(todo.id)}
+                  onClick={() => deleteTodoHandler(todo.documentId)}
                   className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-2 text-zinc-400 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-700/50 hover:text-zinc-300"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

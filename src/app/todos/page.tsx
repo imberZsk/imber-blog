@@ -1,57 +1,51 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import useSWR from 'swr'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PADDING_TOP } from '../const'
+import { fetchTodos } from '@/services/todos'
 
 interface Todo {
   id: string
-  text: string
-  completed: boolean
+  title: string
+  taskStatus: 'todo' | 'doing' | 'done'
+  priority: string
   createdAt: Date
 }
 
 const TodoDisplay = () => {
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all')
-
-  // 从 localStorage 加载数据
-  useEffect(() => {
-    const loadTodos = () => {
-      const savedTodos = localStorage.getItem('todos')
-      if (savedTodos) {
-        try {
-          const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
-            ...todo,
-            createdAt: new Date(todo.createdAt)
-          }))
-          setTodos(parsedTodos)
-        } catch (error) {
-          console.error('Error loading todos:', error)
-        }
-      }
+  const [filter, setFilter] = useState<'all' | 'active' | 'doing' | 'completed'>('all')
+  const { data, isLoading } = useSWR('todos', fetchTodos, {
+    onError: (err) => {
+      toast.error(err?.message || '获取任务失败')
     }
-
-    loadTodos()
-
-    // 定期更新数据以反映管理端的变化
-    const interval = setInterval(loadTodos, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  })
+  const todos: Todo[] = data?.data || []
+  if (isLoading) {
+    return (
+      <div className={cn('mx-auto max-w-5xl px-4', PADDING_TOP)}>
+        <div className="py-20 text-center text-zinc-400">加载中...</div>
+      </div>
+    )
+  }
 
   const filteredTodos = todos.filter((todo) => {
-    if (filter === 'active') return !todo.completed
-    if (filter === 'completed') return todo.completed
+    if (filter === 'active') return todo.taskStatus === 'todo'
+    if (filter === 'doing') return todo.taskStatus === 'doing'
+    if (filter === 'completed') return todo.taskStatus === 'done'
     return true
   })
 
-  const activeTodosCount = todos.filter((todo) => !todo.completed).length
-  const completedTodosCount = todos.filter((todo) => todo.completed).length
-  const completionRate = todos.length > 0 ? Math.round((completedTodosCount / todos.length) * 100) : 0
+  const todoCount = todos.length
+  const notStartedCount = todos.filter((todo) => todo.taskStatus === 'todo').length
+  const doingCount = todos.filter((todo) => todo.taskStatus === 'doing').length
+  const doneCount = todos.filter((todo) => todo.taskStatus === 'done').length
+  const completionRate = todoCount > 0 ? Math.round((doneCount / todoCount) * 100) : 0
 
   return (
-    <div className={cn('mx-auto max-w-4xl px-4', PADDING_TOP)}>
+    <div className={cn('mx-auto max-w-5xl px-4', PADDING_TOP)}>
       <div className="rounded-xl border border-zinc-800 bg-black/90 p-6 backdrop-blur-sm">
         {/* 头部信息 */}
         <div className="mb-6 text-center">
@@ -62,17 +56,21 @@ const TodoDisplay = () => {
         </div>
 
         {/* 统计概览 */}
-        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-2xl font-semibold text-white">{todos.length}</div>
+            <div className="mb-1 text-2xl font-semibold text-white">{todoCount}</div>
             <div className="text-xs tracking-wider text-zinc-400 uppercase">总任务</div>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-2xl font-semibold text-white">{activeTodosCount}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">待完成</div>
+            <div className="mb-1 text-2xl font-semibold text-white">{notStartedCount}</div>
+            <div className="text-xs tracking-wider text-zinc-400 uppercase">未开始</div>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-2xl font-semibold text-white">{completedTodosCount}</div>
+            <div className="mb-1 text-2xl font-semibold text-white">{doingCount}</div>
+            <div className="text-xs tracking-wider text-zinc-400 uppercase">进行中</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
+            <div className="mb-1 text-2xl font-semibold text-white">{doneCount}</div>
             <div className="text-xs tracking-wider text-zinc-400 uppercase">已完成</div>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
@@ -99,19 +97,20 @@ const TodoDisplay = () => {
 
         {/* 过滤器 */}
         <div className="mb-6 flex justify-center gap-2">
-          {(['all', 'active', 'completed'] as const).map((filterType) => (
+          {(['all', 'active', 'doing', 'completed'] as const).map((filterType) => (
             <button
               key={filterType}
               onClick={() => setFilter(filterType)}
               className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
+                'cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
                 filter === filterType
                   ? 'bg-white text-black'
                   : 'border border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 hover:text-white'
               )}
             >
               {filterType === 'all' && '全部'}
-              {filterType === 'active' && '待完成'}
+              {filterType === 'active' && '未开始'}
+              {filterType === 'doing' && '进行中'}
               {filterType === 'completed' && '已完成'}
             </button>
           ))}
@@ -138,27 +137,23 @@ const TodoDisplay = () => {
               </p>
             </div>
           ) : (
-            filteredTodos.map((todo, index) => (
+            filteredTodos.map((todo) => (
               <div
                 key={todo.id}
                 className={cn(
                   'flex items-center gap-3 rounded-lg border p-4 transition-all duration-200',
                   'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/50',
-                  todo.completed && 'opacity-60'
+                  todo.taskStatus === 'done' && 'opacity-60'
                 )}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                  animation: 'fadeInUp 0.3s ease forwards'
-                }}
               >
                 {/* 状态指示器 */}
                 <div
                   className={cn(
                     'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2',
-                    todo.completed ? 'border-white bg-white' : 'border-zinc-600'
+                    todo.taskStatus === 'done' ? 'border-white bg-white' : 'border-zinc-600'
                   )}
                 >
-                  {todo.completed && (
+                  {todo.taskStatus === 'done' && (
                     <svg className="h-3 w-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <polyline points="20,6 9,17 4,12" strokeWidth={3}></polyline>
                     </svg>
@@ -169,10 +164,10 @@ const TodoDisplay = () => {
                 <span
                   className={cn(
                     'flex-1 text-sm transition-all duration-200',
-                    todo.completed ? 'text-zinc-500 line-through' : 'text-white'
+                    todo.taskStatus === 'done' ? 'text-zinc-400 line-through' : 'text-white'
                   )}
                 >
-                  {todo.text}
+                  {todo.title}
                 </span>
 
                 {/* 创建时间 */}
@@ -189,44 +184,18 @@ const TodoDisplay = () => {
                 <div
                   className={cn(
                     'flex-shrink-0 rounded-full px-2 py-1 text-xs font-medium',
-                    todo.completed
+                    todo.taskStatus === 'done'
                       ? 'border border-zinc-600 bg-zinc-800 text-zinc-300'
                       : 'border border-zinc-700 bg-zinc-800 text-zinc-300'
                   )}
                 >
-                  {todo.completed ? '已完成' : '进行中'}
+                  {todo.taskStatus === 'done' ? '已完成' : todo.taskStatus === 'doing' ? '进行中' : '未开始'}
                 </div>
               </div>
             ))
           )}
         </div>
-
-        {/* 底部链接 */}
-        {/* <div className="mt-8 border-t border-zinc-800 pt-6 text-center">
-          <a
-            href="/admin/todos"
-            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition-all duration-200 hover:bg-zinc-200"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            管理任务
-          </a>
-        </div> */}
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   )
 }

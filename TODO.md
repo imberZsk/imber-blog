@@ -1,5 +1,3 @@
-- 熟悉 framer motion
-- 优化样式 & 完善其它基础页面
 - react-write leetcode metric 文章
 - 接入 TipTap
 - 手写一个更实用的 MCP
