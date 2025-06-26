@@ -19,8 +19,6 @@ export const uploadImageToGitHubApi = async (file: File, path: string, base64Con
 
 // 服务端请求，服务端的时候返回data和error
 export const fetchGitHubImages = async () => {
-  'use server'
-
   const target: {
     data: GitHubFile[]
     error: Error | null
