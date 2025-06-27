@@ -122,7 +122,7 @@ export const navItems = [
   },
   {
     path: '/friends',
-    name: '朋友'
+    name: '友链'
   }
   // {
   //   path: '/tools',
