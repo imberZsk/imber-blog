@@ -50,7 +50,7 @@ const Client = ({ ideas }: { ideas: Idea[] }) => {
               <div className="prose prose-invert prose-zinc max-w-none">
                 <p
                   className="leading-relaxed text-zinc-400 transition-colors duration-200 group-hover:text-zinc-300"
-                  dangerouslySetInnerHTML={{ __html: idea.content[0].children[0].text }}
+                  dangerouslySetInnerHTML={{ __html: idea.idea_content }}
                 ></p>
               </div>
 

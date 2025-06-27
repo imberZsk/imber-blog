@@ -5,11 +5,7 @@ import { IdeaCategory } from './const'
 
 export interface Idea {
   title: string
-  content: {
-    children: {
-      text: string
-    }[]
-  }[]
+  idea_content: string
   createdAt: string
   updatedAt: string
   category: string

@@ -261,4 +261,82 @@ export const uploadImageToGitHubApi = async (file: File, path: string, base64Con
 
 ![页面截图 - 图片上传](/posts/gallery/image1.png)
 
+前提是需要提供图片视频的宽高，根据宽度和宽高比，可以计算出 item 元素的显示宽高；核心逻辑是计算出根据最小宽度、间隙、容器宽度，计算出列数和 itemWidth，根据列数初始化一个数组用于存每一列的高度，在遍历的时候，累加这个高度，计算元素的 left 偏移值 = 最小列数的索引 \* itemWidth + 最小列数的索引 \* gap；计算 top 偏移值 = 数组中最小列数的高度；
+
+```tsx
+const gap = 20 // 间隙
+const minWidth = 300 // 最小宽度
+
+const [positions, setPositions] = useState<{ top: number; left: number; width: number; height: number }[]>([])
+const [containerHeight, setContainerHeight] = useState(0)
+
+useEffect(() => {
+  const getPositions = () => {
+    // 容器的宽度
+    const containerWidth = document.querySelector('.waterfall-container')?.clientWidth
+
+    if (!containerWidth) return
+
+    // 1. 计算理论列数
+    let columns = Math.floor(containerWidth / minWidth)
+
+    // 2. 计算理论宽度
+    let itemWidth = (containerWidth - (columns - 1) * gap) / columns
+
+    // 3. 如果宽度小于最小值，减少列数
+    while (itemWidth < minWidth && columns > 1) {
+      columns--
+      itemWidth = (containerWidth - (columns - 1) * gap) / columns
+    }
+
+    // 4. 初始化列高度数组
+    const columnsArr = Array(columns).fill(0)
+    const newPositions: { top: number; left: number; width: number; height: number }[] = []
+
+    // 5. 计算每个图片的位置
+    data.forEach((file) => {
+      const fileName = getImageCDNUrl(file)
+
+      // 获取宽高比
+      const aspectRatio = getAspectRatio(fileName)
+
+      // 计算高度
+      const height = Math.floor(itemWidth * aspectRatio)
+
+      // 找到最短的列
+      const minIndex = columnsArr.indexOf(Math.min(...columnsArr))
+      const top = columnsArr[minIndex]
+      const left = minIndex * itemWidth + minIndex * gap
+
+      // 添加位置信息
+      newPositions.push({ top, left, width: itemWidth, height })
+
+      // 更新该列的高度
+      columnsArr[minIndex] = top + height + gap
+    })
+
+    // 6. 一次性设置所有位置
+    setPositions(newPositions)
+    setContainerHeight(Math.max(...columnsArr))
+  }
+
+  // 延迟执行确保DOM已渲染
+  const timer = setTimeout(getPositions, 500)
+
+  // 监听窗口大小变化
+  const handleResize = () => {
+    getPositions()
+  }
+
+  window.addEventListener('resize', handleResize)
+
+  return () => {
+    clearTimeout(timer)
+    window.removeEventListener('resize', handleResize)
+  }
+}, [data, gap, minWidth])
+```
+
+对于 CLS 优化，可以使用 `{positions.length !== data.length && <Loading />}` 来保证每个元素的宽高都计算完成后再渲染，避免出现闪烁。
+
 ### 虚拟列表
