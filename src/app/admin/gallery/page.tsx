@@ -16,6 +16,7 @@ interface UploadedImage {
   uploadStatus: 'uploading' | 'success' | 'error'
   progress: number
   isHeic?: boolean
+  isVideo?: boolean
   convertedFile?: File
 }
 
@@ -72,26 +73,71 @@ const Page = () => {
     }
 
     if (typeof window !== 'undefined') {
-      const img = new window.Image()
-      const url = URL.createObjectURL(fileToUpload)
+      console.log(fileToUpload.type)
 
-      img.src = url
+      let width = 0
+      let height = 0
+      let path = ''
 
-      await new Promise((resolve) => {
-        img.onload = () => {
-          resolve(true)
-        }
-        // 添加错误处理
-        img.onerror = () => {
-          console.error('图片加载失败')
-          resolve(false)
-        }
-      })
+      if (fileToUpload.type.startsWith('video/')) {
+        // 处理视频文件
+        const video = document.createElement('video')
+        const url = URL.createObjectURL(fileToUpload)
+        video.src = url
 
-      const path = `gallery/${Date.now()}-${img.naturalWidth}x${img.naturalHeight}-${fileToUpload.name}`
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            width = video.videoWidth
+            height = video.videoHeight
+            resolve(true)
+          }
+          video.onerror = () => {
+            console.error('视频加载失败')
+            resolve(false)
+          }
+        })
 
-      // 释放内存
-      URL.revokeObjectURL(url)
+        path = `gallery/${Date.now()}-${width}x${height}-${fileToUpload.name}`
+        URL.revokeObjectURL(url)
+      } else {
+        // 处理图片文件
+        const img = new window.Image()
+        const url = URL.createObjectURL(fileToUpload)
+        img.src = url
+
+        await new Promise((resolve) => {
+          img.onload = () => {
+            width = img.naturalWidth
+            height = img.naturalHeight
+            resolve(true)
+          }
+          img.onerror = () => {
+            console.error('图片加载失败')
+            resolve(false)
+          }
+        })
+
+        path = `gallery/${Date.now()}-${width}x${height}-${fileToUpload.name}`
+        URL.revokeObjectURL(url)
+      }
+
+      // 检查文件大小限制
+      const fileSizeMB = fileToUpload.size / (1024 * 1024)
+      const base64SizeMB = fileSizeMB * 1.33 // Base64编码增加约33%的大小
+
+      // GitHub API 限制：100MB for base64 content
+      if (base64SizeMB > 100) {
+        console.error(
+          `文件太大: ${fileSizeMB.toFixed(2)}MB (编码后: ${base64SizeMB.toFixed(2)}MB)，超过GitHub API 100MB限制`
+        )
+        return null
+      }
+
+      // 对于视频文件，建议使用更小的限制（如25MB）因为通常更大
+      if (fileToUpload.type.startsWith('video/') && fileSizeMB > 25) {
+        console.error(`视频文件太大: ${fileSizeMB.toFixed(2)}MB，建议小于25MB以确保稳定上传`)
+        return null
+      }
 
       // 将文件转换为 base64
       const reader = new FileReader()
@@ -124,9 +170,15 @@ const Page = () => {
     async (files: FileList | null) => {
       if (!files) return
 
-      const validFiles = Array.from(files).filter(
-        (file) => (file.type.startsWith('image/') || isHeicFile(file)) && file.size <= 10 * 1024 * 1024 // 10MB limit
-      )
+      const validFiles = Array.from(files).filter((file) => {
+        const isValidType = file.type.startsWith('image/') || isHeicFile(file) || file.type.startsWith('video/')
+        const fileSizeMB = file.size / (1024 * 1024)
+
+        // 图片文件最大100MB，视频文件建议最大25MB
+        const sizeLimit = file.type.startsWith('video/') ? 25 : 100
+
+        return isValidType && fileSizeMB <= sizeLimit
+      })
 
       if (validFiles.length === 0) return
 
@@ -157,6 +209,7 @@ const Page = () => {
           uploadStatus: 'uploading' as const,
           progress: 0,
           isHeic: isHeicFile(file),
+          isVideo: file.type.startsWith('video/'),
           convertedFile
         })
       }
@@ -252,8 +305,12 @@ const Page = () => {
           <ArrowLeft className="h-4 w-4" />
           返回图库
         </Link>
-        <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-100">上传图片</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">支持 JPG、PNG、GIF、HEIC 等格式，单个文件不超过 10MB</p>
+        <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-100">上传文件</h1>
+        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+          支持 JPG、PNG、GIF、HEIC、MP4 等格式
+          <br />
+          图片文件：不超过 100MB，视频文件：建议不超过 25MB
+        </p>
       </div>
 
       {/* 上传区域 */}
@@ -272,7 +329,7 @@ const Page = () => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,video/*"
           onChange={(e) => handleFileSelect(e.target.files)}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
@@ -281,7 +338,7 @@ const Page = () => {
           <div className="mb-4 inline-flex rounded-full bg-zinc-200 p-4 dark:bg-zinc-700">
             <Upload className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
           </div>
-          <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">拖拽图片到这里上传</h3>
+          <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">拖拽文件到这里上传</h3>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">或者</p>
           <button
             onClick={openFileDialog}
@@ -303,15 +360,34 @@ const Page = () => {
                 key={index}
                 className="group relative overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700"
               >
-                {/* 图片预览 */}
+                {/* 文件预览 */}
                 <div className="relative aspect-square">
-                  <Image
-                    src={image.url}
-                    alt={image.file.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                  {image.isVideo ? (
+                    <video
+                      src={image.url}
+                      className="h-full w-full object-cover"
+                      controls={false}
+                      muted
+                      loop
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => e.currentTarget.pause()}
+                    />
+                  ) : (
+                    <Image
+                      src={image.url}
+                      alt={image.file.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  )}
+
+                  {/* 视频标识 */}
+                  {image.isVideo && (
+                    <div className="absolute top-2 left-8 rounded bg-purple-500 px-2 py-1 text-xs text-white">
+                      VIDEO
+                    </div>
+                  )}
 
                   {/* HEIC 标识 */}
                   {image.isHeic && (
@@ -357,6 +433,7 @@ const Page = () => {
                   <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{image.file.name}</p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {(image.file.size / 1024 / 1024).toFixed(2)} MB
+                    {image.isVideo && <span className="ml-1 text-purple-500">(视频)</span>}
                     {image.isHeic && <span className="ml-1 text-blue-500">(HEIC → JPEG)</span>}
                   </p>
 
@@ -393,7 +470,7 @@ const Page = () => {
       {uploadedImages.length === 0 && (
         <div className="py-12 text-center">
           <FileImage className="mx-auto h-12 w-12 text-zinc-400 dark:text-zinc-600" />
-          <p className="mt-4 text-zinc-600 dark:text-zinc-400">还没有上传任何图片</p>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">还没有上传任何文件</p>
         </div>
       )}
     </div>

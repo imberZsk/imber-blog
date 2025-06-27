@@ -71,7 +71,7 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
     }
 
     // 延迟执行确保DOM已渲染
-    const timer = setTimeout(getPositions, 1000)
+    const timer = setTimeout(getPositions, 500)
 
     // 监听窗口大小变化
     const handleResize = () => {
@@ -105,6 +105,34 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
       {positions.length === data.length &&
         data.map((file, index) => {
           const fileName = getImageCDNUrl(file)
+
+          if (file.name.endsWith('.mp4')) {
+            return (
+              <div
+                key={index}
+                className="group absolute overflow-hidden rounded-xs bg-zinc-50 object-contain shadow-sm ring-1 ring-zinc-200 transition-all hover:shadow-lg hover:ring-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:ring-zinc-600"
+                style={{
+                  top: `${positions[index].top}px`,
+                  left: `${positions[index].left}px`,
+                  width: `${positions[index].width}px`,
+                  height: `${positions[index].height}px`
+                }}
+              >
+                <video
+                  src={fileName}
+                  controls
+                  preload="metadata"
+                  width={positions[index].width}
+                  height={positions[index].height}
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    width: '100%',
+                    height: '100%'
+                  }}
+                />
+              </div>
+            )
+          }
 
           return (
             <div

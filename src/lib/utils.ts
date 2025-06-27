@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 // 支持的图片格式
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.avif', '.heic', '.HEIC']
 
-// 检查是否为图片文件
-export const isImageFile = (filename: string) => {
-  return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext))
+// 检查是否为图片文件或者视频
+export const isImageFileOrVideo = (filename: string) => {
+  return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext)) || filename.toLowerCase().endsWith('.mp4')
 }
