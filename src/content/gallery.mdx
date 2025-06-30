@@ -340,3 +340,7 @@ useEffect(() => {
 对于 CLS 优化，可以使用 `{positions.length !== data.length && <Loading />}` 来保证每个元素的宽高都计算完成后再渲染，避免出现闪烁。
 
 ### 虚拟列表
+
+虚拟列表有两种，一种是定高，一种是不定高。对于定高来说比较简单，核心逻辑是计算 starIndex 和 endIndex，然后根据这两个值给数据 slice。计算 starIndex 的时候通过 scrollTop 和 itemHeight 计算出，（endIndex 根据 containerHeight 和 itemHeight） + starIndex 计算出。
+
+对于不定高，也就是瀑布流需要采取的方案
