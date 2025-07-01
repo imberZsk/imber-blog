@@ -20,7 +20,8 @@ export function generateStaticParams() {
     { slug: 'cursor-mcp' },
     { slug: 'animate' },
     { slug: 'gallery' },
-    { slug: 'strapi-supabase' }
+    { slug: 'strapi-supabase' },
+    { slug: 'skill' }
   ]
 }
 

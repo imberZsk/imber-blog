@@ -97,6 +97,13 @@ export const postsConfig = [
     tags: ['面试题'],
     views: 32
   }
+  // {
+  //   title: '简历 - 专业技能',
+  //   href: '/posts/skill',
+  //   date: '2025-02-09',
+  //   tags: ['面试题'],
+  //   views: 32
+  // }
 ]
 
 export const navItems = [
