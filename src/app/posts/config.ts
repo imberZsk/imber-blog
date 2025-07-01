@@ -7,13 +7,6 @@ export const postsConfig = [
     views: 32
   },
   {
-    title: 'Framer Motion & GSAP 实现酷炫动画',
-    href: '/posts/animate',
-    date: '2025-02-09',
-    tags: ['动画'],
-    views: 32
-  },
-  {
     title: 'AI 编辑器 Cursor 从基础功能到手写 MCP',
     href: '/posts/cursor-mcp',
     date: '2025-02-09',
@@ -35,11 +28,11 @@ export const postsConfig = [
     views: 32
   },
   {
-    title: 'Web 安全：用 Nextjs 模拟 XSS & CSRF',
-    href: '/posts/safe',
+    title: 'Framer Motion & GSAP 实现酷炫动画',
+    href: '/posts/animate',
     date: '2025-02-09',
-    tags: ['Nextjs'],
-    views: 123
+    tags: ['动画'],
+    views: 32
   },
   {
     title: '基于 Tailwind 的响应式布局（含图片深入理解）',
@@ -53,6 +46,13 @@ export const postsConfig = [
     href: '/posts/adaptive',
     date: '2025-02-09',
     tags: ['Tailwind'],
+    views: 123
+  },
+  {
+    title: 'Web 安全：用 Nextjs 模拟 XSS & CSRF',
+    href: '/posts/safe',
+    date: '2025-02-09',
+    tags: ['Nextjs'],
     views: 123
   },
   // {
