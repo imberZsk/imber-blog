@@ -1,0 +1,1 @@
+export const DEFAULT_ESTIMATED_ITEM_SIZE = 300

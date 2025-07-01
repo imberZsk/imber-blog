@@ -343,4 +343,91 @@ useEffect(() => {
 
 虚拟列表有两种，一种是定高，一种是不定高。对于定高来说比较简单，核心逻辑是计算 starIndex 和 endIndex，然后根据这两个值给数据 slice。计算 starIndex 的时候通过 scrollTop 和 itemHeight 计算出，（endIndex 根据 containerHeight 和 itemHeight） + starIndex 计算出。
 
-对于不定高，也就是瀑布流需要采取的方案
+对于不定高，也就是瀑布流需要采取的方案，核心逻辑也是计算 startIndex 和 endIndex，然后设置 buffer = 5 缓冲区避免滚动快的时候白屏过多；计算 startIndex 遍历数组，如果当前元素的 top 加上高度大于 scrollTop，则返回当前索引；计算 endIndex 遍历数组，如果当前元素的 top 大于 scrollTop + viewportHeight（可见区域底部），则返回当前索引。
+
+```tsx
+// 缓冲区
+const buffer = 5
+
+// 虚拟列表获取开始的索引
+const getStartIndex = (scrollTop: number, newPositions: Position[]) => {
+  for (let i = 0; i < newPositions.length; i++) {
+    // 如果当前元素的 top 加上高度大于 scrollTop，则返回当前索引
+    if (newPositions[i].top + newPositions[i].height > scrollTop) {
+      return i
+    }
+  }
+  return 0
+}
+
+// 虚拟列表获取结束的索引
+const getEndIndex = (scrollTop: number, viewportHeight: number, newPositions: Position[]) => {
+  // 可见区域底部
+  const visibleBottom = scrollTop + viewportHeight
+  // 遍历每个元素，如果当前元素的 top 大于可见区域底部，则返回当前索引
+  for (let i = 0; i < newPositions.length; i++) {
+    if (newPositions[i].top > visibleBottom) {
+      return i
+    }
+  }
+  return newPositions.length - 1
+}
+
+const Waterfall = ({ data }: { data: GitHubFile[] }) => {
+  const [scrollTop, setScrollTop] = useState(0)
+  const [startIndex, setStartIndex] = useState(0)
+  const [endIndex, setEndIndex] = useState(0)
+
+  // 滚动事件
+  const onScroll = useCallback(() => {
+    setScrollTop(window.scrollY)
+  }, [])
+
+  // 监听全局滚动
+  useEffect(() => {
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [onScroll])
+
+  // 独立的 useEffect 处理滚动时的虚拟列表计算
+  useEffect(() => {
+    if (positions.length === 0) return
+
+    const viewportHeight = window.innerHeight
+
+    const start = Math.max(0, getStartIndex(scrollTop, positions) - buffer)
+    const end = Math.min(positions.length - 1, getEndIndex(scrollTop, viewportHeight, positions) + buffer)
+
+    setStartIndex(start)
+    setEndIndex(end)
+  }, [scrollTop, positions])
+
+  return (
+    <div className="waterfall-container relative mx-auto w-full max-w-[1920px]">
+      {/* 撑开滚动条的容器 */}
+      <div className="relative w-full" style={{ height: `${containerHeight}px` }}>
+        {positions.length !== data.length && <Loading />}
+
+        {positions.length === data.length &&
+          Array.from({ length: endIndex - startIndex + 1 }, (_, i) => {
+            const realIndex = startIndex + i
+            const file = data[realIndex]
+            const fileName = getImageCDNUrl(file)
+
+            return (
+              <div
+                key={realIndex}
+                style={{
+                  top: `${positions[realIndex].top}px`,
+                  left: `${positions[realIndex].left}px`,
+                  width: `${positions[realIndex].width}px`,
+                  height: `${positions[realIndex].height}px`
+                }}
+              ></div>
+            )
+          })}
+      </div>
+    </div>
+  )
+}
+```
