@@ -180,6 +180,73 @@ export default BlurTextGsap
 
 ### 数字递增动画（Add）
 
+GSAP 的 textContent 和 roundProps，可以很方便实现这个效果，Framer Motion 同样简单。
+
+[animation - add](https://imber-animation.netlify.app/animations/text/add)
+
+<video src="/posts/animate/add.mov" controls />
+
+组件代码 GSAP
+
+```tsx
+'use client'
+
+import React, { useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+const AddTextGsap = ({ from, to, className }: { from: number; to: number; className: string }) => {
+  const ref = useRef<HTMLHeadingElement>(null)
+  useGSAP(() => {
+    gsap.to(ref.current, {
+      textContent: to,
+      duration: 1,
+      ease: 'power2.inOut',
+      roundProps: 'textContent'
+    })
+  })
+
+  return (
+    <h1 ref={ref} className={className}>
+      {from}
+    </h1>
+  )
+}
+
+export default AddTextGsap
+```
+
+组件代码 Framer Motion
+
+```tsx
+'use client'
+
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { useEffect } from 'react'
+
+const AddTextFramer = ({ from, to, className }: { from: number; to: number; className: string }) => {
+  const count = useMotionValue(from)
+  const rounded = useTransform(count, (latest) => Math.round(latest))
+
+  useEffect(() => {
+    const animation = animate(count, to, {
+      duration: 1,
+      ease: 'easeInOut'
+    })
+
+    return animation.stop
+  }, [count, to])
+
+  return (
+    <motion.h1 transition={{ duration: 1, ease: 'easeInOut' }} className={className}>
+      <motion.span>{rounded}</motion.span>
+    </motion.h1>
+  )
+}
+
+export default AddTextFramer
+```
+
 ### 时间轴动画（Timeline）
 
 - 应用：入场动画，各种有顺序动画
@@ -300,10 +367,8 @@ const Framer = () => {
 
 - hover到头像，然后头像旋转
 - 封装淡入淡出
-- 文字的高斯模糊
 - 滚动动画
 - 视差动画
-- 数字递增动画
 - 页面进度条
 - 一个简易的进度条
 - tab切换
