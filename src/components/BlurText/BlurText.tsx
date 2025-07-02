@@ -14,7 +14,6 @@ interface BlurTextGsapProps {
   delay?: number
   className?: string
   animateBy?: 'words' | 'chars'
-  direction?: 'top' | 'bottom'
   onAnimationComplete?: () => void
   ease?: string
 }
@@ -25,15 +24,18 @@ const BlurTextGsap = ({
   delay = 50, // 默认更快的delay，像React Spring版本
   className = '',
   animateBy = 'words',
-  direction = 'top',
   onAnimationComplete,
   ease = 'none' // 使用linear ease让动画更匀速
 }: BlurTextGsapProps) => {
   const containerRef = useRef<HTMLParagraphElement>(null)
   const splitRef = useRef<SplitText | null>(null)
+  const hasAnimated = useRef(false) // 添加标记防止重复动画
 
   useGSAP(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || hasAnimated.current) return
+
+    // 标记动画已执行
+    hasAnimated.current = true
 
     // 使用SplitText拆分文字
     splitRef.current = new SplitText(containerRef.current, {
@@ -79,7 +81,7 @@ const BlurTextGsap = ({
       // 清理SplitText实例
       splitRef.current?.revert()
     }
-  }, [text, children, delay, animateBy, direction, onAnimationComplete, ease])
+  }, []) // 移除所有依赖项，只在组件首次挂载时执行
 
   return (
     <p ref={containerRef} className={`${className}`}>

@@ -15,9 +15,34 @@ const buffer = 5
 const gap = 20 // 间隙
 const minWidth = 300 // 最小宽度
 
-// 生成图片 CDN URL
+// 估计文件大小是否可能超过 20MB (基于文件名中的分辨率信息粗略估算)
+const isLikelyLargeFile = (fileName: string) => {
+  // 如果是视频文件，且分辨率较高，很可能超过 20MB
+  if (fileName.endsWith('.mp4')) {
+    const dimensions = fileName.match(/(\d+)x(\d+)/)
+    if (dimensions) {
+      const width = parseInt(dimensions[1])
+      const height = parseInt(dimensions[2])
+      // 1080p 以上的视频很可能超过 20MB
+      return width >= 1080 || height >= 1080
+    }
+  }
+  return false
+}
+
+// 生成图片 CDN URL - 智能选择 CDN
 const getImageCDNUrl = (file: GitHubFile) => {
+  // 对于可能的大文件，直接使用 GitHub Raw URL
+  if (isLikelyLargeFile(file.name)) {
+    return `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/main/${file.path}`
+  }
+  // 小文件使用 jsdelivr CDN (更快)
   return `https://cdn.jsdelivr.net/gh/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${file.path}`
+}
+
+// 获取备用 URL
+const getFallbackUrl = (file: GitHubFile) => {
+  return `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/main/${file.path}`
 }
 
 // 获取宽高比，用于计算元素高度
@@ -61,6 +86,9 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
   const [scrollTop, setScrollTop] = useState(0)
   const [startIndex, setStartIndex] = useState(0)
   const [endIndex, setEndIndex] = useState(0)
+
+  // 记录视频加载失败的文件，用于切换到备用 URL
+  const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set())
 
   // 滚动事件
   const onScroll = useCallback(() => {
@@ -166,6 +194,9 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
             const fileName = getImageCDNUrl(file)
 
             if (file.name.endsWith('.mp4')) {
+              // 智能选择视频 URL：如果主 URL 失败，使用备用 URL
+              const videoSrc = failedVideos.has(file.path) ? getFallbackUrl(file) : fileName
+
               return (
                 <div
                   key={realIndex}
@@ -178,7 +209,7 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
                   }}
                 >
                   <video
-                    src={fileName}
+                    src={videoSrc}
                     controls
                     preload="metadata"
                     width={positions[realIndex].width}
@@ -188,7 +219,21 @@ const Waterfall = ({ data }: { data: GitHubFile[] }) => {
                       width: '100%',
                       height: '100%'
                     }}
+                    onError={() => {
+                      console.error('视频加载失败:', videoSrc)
+                      // 如果当前使用的是主 URL 且失败了，标记失败并重试
+                      if (!failedVideos.has(file.path)) {
+                        setFailedVideos((prev) => new Set([...prev, file.path]))
+                      }
+                    }}
                   />
+
+                  {/* 显示加载状态提示 */}
+                  {failedVideos.has(file.path) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <span className="text-sm text-white">使用备用链接加载中...</span>
+                    </div>
+                  )}
                 </div>
               )
             }

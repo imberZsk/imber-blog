@@ -145,14 +145,13 @@ export default function HomePage() {
                     text="Hi, I'm Imber 👋"
                     delay={50}
                     animateBy="chars"
-                    direction="top"
                     ease="none"
                     className="inline-block"
                   />
                 </h1>
                 <div className="mb-8 space-y-2">
                   <div className="text-xl">
-                    <BlurTextGsap delay={50} animateBy="chars" direction="top" ease="none" className="inline-block">
+                    <BlurTextGsap delay={50} animateBy="chars" ease="none" className="inline-block">
                       A NodeJS Full Stack{' '}
                       <span className="font-mono text-yellow-600 dark:text-yellow-500">&lt;Developer /&gt;</span>
                     </BlurTextGsap>
@@ -162,7 +161,6 @@ export default function HomePage() {
                       text="An independent developer coding with love"
                       delay={50}
                       animateBy="chars"
-                      direction="bottom"
                       ease="none"
                       className="inline-block"
                     />
@@ -212,7 +210,6 @@ export default function HomePage() {
               text="我既无法了解宇宙，也无法看透未来，一个简单的自我"
               delay={200}
               animateBy="words"
-              direction="bottom"
               ease="none"
               className="inline-block"
             />

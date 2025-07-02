@@ -19,63 +19,166 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销。
 
-[animation - split](https://imber-animation.netlify.app/animations/text?tab=split)
+[animation - split](https://imber-animation.netlify.app/animations/text/split)
 
 <video src="/posts/animate/split.mov" controls />
 
-核心逻辑
+组件代码
 
 ```tsx
-import { useGSAP } from '@gsap/react'
+'use client'
+
 import { gsap } from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { SplitText } from 'gsap/SplitText'
+import { useRef } from 'react'
 
 gsap.registerPlugin(SplitText)
 
-useGSAP(() => {
-  if (gsapTextRef.current) {
-    let split = new SplitText('.split-text', { type: 'words, chars' })
+interface SplitTextGsapProps {
+  text: string
+  className?: string
+}
 
-    gsap.from(split.chars, {
-      duration: 1,
-      y: '50%',
-      autoAlpha: 0,
-      stagger: 0.05,
-      onComplete: () => {
-        split.revert()
-      }
-    })
+const SplitTextGsap = ({ text, className }: SplitTextGsapProps) => {
+  const gsapTextRef = useRef<HTMLDivElement>(null)
+  useGSAP(() => {
+    if (gsapTextRef.current) {
+      let split = new SplitText(gsapTextRef.current, { type: 'chars,words' })
 
-    let split2 = SplitText.create('.split-text2', { type: 'chars,words' })
+      gsap.from(split.chars, {
+        autoAlpha: 0,
+        yPercent: 'random([-100,100])',
+        rotation: 'random([-30,30])',
+        ease: 'back.out',
+        // repeat: -1,
+        // yoyo: true,
+        stagger: {
+          amount: 0.5,
+          from: 'random'
+        },
+        onComplete: () => {
+          split.revert()
+        }
+      })
+    }
+  })
 
-    gsap.from(split2.chars, {
-      autoAlpha: 0,
-      yPercent: 'random([-100,100])',
-      rotation: 'random([-30,30])',
-      ease: 'back.out',
-      // repeat: -1,
-      // yoyo: true,
-      stagger: {
-        amount: 0.5,
-        from: 'random'
-      },
-      onComplete: () => {
-        split2.revert()
-      }
-    })
-  }
-})
+  return (
+    <div className={`${className}`} ref={gsapTextRef}>
+      {text}
+    </div>
+  )
+}
+
+export default SplitTextGsap
 ```
 
-- 文字高斯模糊
+### 文字高斯模糊动画（Blur）
 
-博客首页的文字高斯模糊动画，也是使用 GSAP 的 SplitText 插件实现，核心逻辑和上面差不多，就不贴代码了。
+博客首页的文字高斯模糊动画，也是使用 GSAP 的 SplitText 插件实现，核心逻辑和上面差不多，主要使用 blur 去做每个字的效果。
 
-[animation - blur](https://imber-animation.netlify.app/animations/text?tab=blur)
+[animation - blur](https://imber-animation.netlify.app/animations/text/blur)
 
 <video src="/posts/animate/blur.mov" controls />
 
-- 文字渐
+组件代码
+
+```tsx
+'use client'
+
+import React, { useRef } from 'react'
+import { gsap } from 'gsap'
+import { useGSAP } from '@gsap/react'
+import { SplitText } from 'gsap/SplitText'
+
+// 注册SplitText插件
+gsap.registerPlugin(SplitText)
+
+interface BlurTextGsapProps {
+  text?: string
+  children?: React.ReactNode
+  delay?: number
+  className?: string
+  animateBy?: 'words' | 'chars'
+  direction?: 'top' | 'bottom'
+  onAnimationComplete?: () => void
+  ease?: string
+}
+
+const BlurTextGsap = ({
+  text = '',
+  children,
+  delay = 50, // 默认更快的delay，像React Spring版本
+  className = '',
+  animateBy = 'words',
+  direction = 'top',
+  onAnimationComplete,
+  ease = 'none' // 使用linear ease让动画更匀速
+}: BlurTextGsapProps) => {
+  const containerRef = useRef<HTMLParagraphElement>(null)
+  const splitRef = useRef<SplitText | null>(null)
+
+  useGSAP(() => {
+    if (!containerRef.current) return
+
+    // 使用SplitText拆分文字
+    splitRef.current = new SplitText(containerRef.current, {
+      type: animateBy
+    })
+
+    const elements = splitRef.current[animateBy] as HTMLElement[]
+
+    // 设置初始状态 - 更接近React Spring版本
+    gsap.set(elements, {
+      filter: 'blur(10px)',
+      opacity: 0,
+      y: 0, // 移除y轴移动，更专注于模糊效果
+      willChange: 'transform, filter, opacity'
+    })
+
+    // 创建时间线动画
+    const tl = gsap.timeline({
+      onComplete: onAnimationComplete
+    })
+
+    // 第一阶段：从完全模糊到半模糊
+    tl.to(elements, {
+      filter: 'blur(5px)',
+      opacity: 0.5,
+      y: 0,
+      stagger: {
+        amount: (elements.length * delay) / 1000, // 使用amount而不是each来控制总时间
+        ease: 'none' // stagger也使用linear
+      },
+      ease: ease
+    }).to(elements, {
+      filter: 'blur(0px)',
+      opacity: 1,
+      stagger: {
+        amount: (elements.length * delay) / 1000,
+        ease: 'none'
+      },
+      ease: ease
+    })
+
+    return () => {
+      // 清理SplitText实例
+      splitRef.current?.revert()
+    }
+  }, [text, children, delay, animateBy, direction, onAnimationComplete, ease])
+
+  return (
+    <p ref={containerRef} className={`${className}`}>
+      {children || text}
+    </p>
+  )
+}
+
+export default BlurTextGsap
+```
+
+### 数字递增动画（Add）
 
 ### 时间轴动画（Timeline）
 
