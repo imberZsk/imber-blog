@@ -14,7 +14,7 @@ export const postsConfig = [
     views: 32
   },
   {
-    title: '基于 Next MDX & Sandpack 的博客',
+    title: '基于 Next MDX & Sandpack 的博客文章实现',
     href: '/posts/sandpack-mdx',
     date: '2025-02-09',
     tags: ['博客'],

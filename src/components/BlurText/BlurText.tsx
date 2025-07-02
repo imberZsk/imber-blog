@@ -1,111 +1,91 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
-import { useSprings, animated, SpringValue } from '@react-spring/web'
+import React, { useRef } from 'react'
+import { gsap } from 'gsap'
+import { useGSAP } from '@gsap/react'
+import { SplitText } from 'gsap/SplitText'
 
-const AnimatedSpan = animated.span as React.FC<React.HTMLAttributes<HTMLSpanElement>>
+// 注册SplitText插件
+gsap.registerPlugin(SplitText)
 
-interface BlurTextProps {
+interface BlurTextGsapProps {
   text?: string
+  children?: React.ReactNode
   delay?: number
   className?: string
-  animateBy?: 'words' | 'letters'
+  animateBy?: 'words' | 'chars'
   direction?: 'top' | 'bottom'
-  threshold?: number
-  rootMargin?: string
-  animationFrom?: Record<string, any>
-  animationTo?: Record<string, any>[]
-  easing?: (t: number) => number | string
   onAnimationComplete?: () => void
+  ease?: string
 }
 
-const BlurText: React.FC<BlurTextProps> = ({
+const BlurTextGsap = ({
   text = '',
-  delay = 200,
+  children,
+  delay = 50, // 默认更快的delay，像React Spring版本
   className = '',
   animateBy = 'words',
   direction = 'top',
-  threshold = 0.1,
-  rootMargin = '0px',
-  animationFrom,
-  animationTo,
-  easing = 'easeOutCubic',
-  onAnimationComplete
-}) => {
-  const elements = animateBy === 'words' ? text.split(' ') : text.split('')
-  const [inView, setInView] = useState(false)
-  const ref = useRef<HTMLParagraphElement>(null)
-  const animatedCount = useRef(0)
+  onAnimationComplete,
+  ease = 'none' // 使用linear ease让动画更匀速
+}: BlurTextGsapProps) => {
+  const containerRef = useRef<HTMLParagraphElement>(null)
+  const splitRef = useRef<SplitText | null>(null)
 
-  // Default animations based on direction
-  const defaultFrom: Record<string, any> =
-    direction === 'top'
-      ? { filter: 'blur(10px)', opacity: 0, transform: 'translate3d(0,0px,0)' }
-      : { filter: 'blur(10px)', opacity: 0, transform: 'translate3d(0,0px,0)' }
+  useGSAP(() => {
+    if (!containerRef.current) return
 
-  const defaultTo: Record<string, any>[] = [
-    {
+    // 使用SplitText拆分文字
+    splitRef.current = new SplitText(containerRef.current, {
+      type: animateBy
+    })
+
+    const elements = splitRef.current[animateBy] as HTMLElement[]
+
+    // 设置初始状态 - 更接近React Spring版本
+    gsap.set(elements, {
+      filter: 'blur(10px)',
+      opacity: 0,
+      y: 0, // 移除y轴移动，更专注于模糊效果
+      willChange: 'transform, filter, opacity'
+    })
+
+    // 创建时间线动画
+    const tl = gsap.timeline({
+      onComplete: onAnimationComplete
+    })
+
+    // 第一阶段：从完全模糊到半模糊
+    tl.to(elements, {
       filter: 'blur(5px)',
       opacity: 0.5,
-      transform: direction === 'top' ? 'translate3d(0,0px,0)' : 'translate3d(0,0px,0)'
-    },
-    { filter: 'blur(0px)', opacity: 1, transform: 'translate3d(0,0,0)' }
-  ]
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true)
-          if (ref.current) {
-            observer.unobserve(ref.current)
-          }
-        }
+      y: 0,
+      stagger: {
+        amount: (elements.length * delay) / 1000, // 使用amount而不是each来控制总时间
+        ease: 'none' // stagger也使用linear
       },
-      { threshold, rootMargin }
-    )
+      ease: ease
+    }).to(elements, {
+      filter: 'blur(0px)',
+      opacity: 1,
+      stagger: {
+        amount: (elements.length * delay) / 1000,
+        ease: 'none'
+      },
+      ease: ease
+    })
 
-    if (ref.current) {
-      observer.observe(ref.current)
+    return () => {
+      // 清理SplitText实例
+      splitRef.current?.revert()
     }
-
-    return () => observer.disconnect()
-  }, [threshold, rootMargin])
-
-  const springs = useSprings(
-    elements.length,
-    elements.map((_, i) => ({
-      from: animationFrom || defaultFrom,
-      to: inView
-        ? async (next: (arg: Record<string, SpringValue<any>>) => Promise<void>) => {
-            for (const step of animationTo || defaultTo) {
-              await next(step)
-            }
-            animatedCount.current += 1
-            if (animatedCount.current === elements.length && onAnimationComplete) {
-              onAnimationComplete()
-            }
-          }
-        : animationFrom || defaultFrom,
-      delay: i * delay,
-      config: { easing: easing as any }
-    }))
-  )
+  }, [text, children, delay, animateBy, direction, onAnimationComplete, ease])
 
   return (
-    <p ref={ref} className={`blur-text ${className} flex flex-wrap`}>
-      {springs.map((props, index) => (
-        <AnimatedSpan
-          key={index}
-          style={props}
-          className="inline-block transition-transform will-change-[transform,filter,opacity]"
-        >
-          {elements[index] === ' ' ? '\u00A0' : elements[index]}
-          {animateBy === 'words' && index < elements.length - 1 && '\u00A0'}
-        </AnimatedSpan>
-      ))}
+    <p ref={containerRef} className={`${className}`}>
+      {children || text}
     </p>
   )
 }
 
-export default BlurText
+export default BlurTextGsap
