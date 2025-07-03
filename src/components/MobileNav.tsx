@@ -4,10 +4,10 @@ import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { navItems } from '../app/posts/config'
 
-const menuVariants = {
+const menuVariants: Variants = {
   closed: {
     opacity: 0,
     y: -4,
@@ -27,7 +27,7 @@ const menuVariants = {
   }
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   closed: {
     opacity: 0,
     x: -16
@@ -37,7 +37,7 @@ const itemVariants = {
     x: 0,
     transition: {
       duration: 0.4,
-      ease: [0.23, 1, 0.32, 1]
+      ease: [0.23, 1, 0.32, 1] as const
     }
   }
 }
