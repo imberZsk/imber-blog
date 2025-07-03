@@ -19,13 +19,14 @@ const minWidth = 300 // 最小宽度
 const isLikelyLargeFile = (fileName: string) => {
   // 如果是视频文件，且分辨率较高，很可能超过 20MB
   if (fileName.endsWith('.mp4')) {
-    const dimensions = fileName.match(/(\d+)x(\d+)/)
-    if (dimensions) {
-      const width = parseInt(dimensions[1])
-      const height = parseInt(dimensions[2])
-      // 1080p 以上的视频很可能超过 20MB
-      return width >= 1080 || height >= 1080
-    }
+    // const dimensions = fileName.match(/(\d+)x(\d+)/)
+    // if (dimensions) {
+    //   const width = parseInt(dimensions[1])
+    //   const height = parseInt(dimensions[2])
+    //   // 1080p 以上的视频很可能超过 20MB
+    //   return true
+    // }
+    return true
   }
   return true
 }
