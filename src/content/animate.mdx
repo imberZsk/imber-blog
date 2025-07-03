@@ -11,13 +11,17 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 ### imber Animation
 
-[imber Animation](https://imber-animation.netlify.app/) 是我写的动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，并且封装实现方便开箱即用，封装的组件在项目的 [components](https://github.com/imberZsk/animation/tree/main/src/components) 目录下，网站大部分动画都用 GSAP 和 Framer Motion 实现过。
+[imber Animation](https://imber-animation.netlify.app/) 是动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，动画的右上角有查看源码功能，并且封装实现方便开箱即用，封装的组件在项目的 [components](https://github.com/imberZsk/animation/tree/main/src/components) 目录下，网站大部分动画都用 GSAP 和 Framer Motion 实现过。
+
+<a href="https://imber-animation.netlify.app/" target="_blank" rel="noopener noreferrer" alt="imber Animation">
+  <img src="/posts/animate/screenshot.png" alt="imber Animation" />
+</a>
 
 ### 文字拆分动画（Split）
 
 GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销。
 
-[animation - split](https://imber-animation.netlify.app/animations/text/split)
+[animation - split](https://imber-animation.netlify.app/animations/split)
 
 <video src="/posts/animate/split.mov" controls />
 
@@ -76,7 +80,7 @@ export default SplitTextGsap
 
 博客首页的文字高斯模糊动画，也是使用 GSAP 的 SplitText 插件实现，核心逻辑和上面差不多，主要使用 blur 去做每个字的效果。
 
-[animation - blur](https://imber-animation.netlify.app/animations/text/blur)
+[animation - blur](https://imber-animation.netlify.app/animations/blur)
 
 <video src="/posts/animate/blur.mov" controls />
 
@@ -180,7 +184,7 @@ export default BlurTextGsap
 
 GSAP 的 textContent 和 roundProps，可以很方便实现这个效果，Framer Motion 同样简单。
 
-[animation - add](https://imber-animation.netlify.app/animations/text/add)
+[animation - add](https://imber-animation.netlify.app/animations/add)
 
 <video src="/posts/animate/add.mov" controls />
 
@@ -440,6 +444,7 @@ export function ModeToggle() {
 
   return (
     <button
+      // 这里切换 justify-end 和 justify-start
       className={`relative box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
         isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'
       } ${isTransitioning ? 'pointer-events-none' : ''}`}
@@ -473,16 +478,55 @@ export function ModeToggle() {
 }
 ```
 
-### TODO
+### 布局动画 - Tab切换（Tab）
 
-- hover到头像，然后头像旋转
-- 封装淡入淡出
-- 滚动动画
-- 视差动画
-- 页面进度条
-- tab切换
-- 删除元素支持动画
-- SVG 动画
+不同元素之间的切换状态，这里使用官方的 Demo，正常这个下划线是没有动画效果，加上 layoutId 和 id 后，可以实现动画过渡效果。
+
+[animation - tab](https://imber-animation.netlify.app/animations/tab)
+
+<video src="/posts/animate/tab.mov" controls />
+
+核心逻辑
+
+```tsx
+{
+  item === selectedTab ? (
+    <motion.div
+      className="absolute right-0 -bottom-0.5 left-0 h-0.5 bg-[#ff4132]"
+      layoutId="underline"
+      id="underline"
+    />
+  ) : null
+}
+```
+
+### 基础滚动动画（Scroll）
+
+GSAP 是基于 ScrollTrigger 插件来滚动动画，Framer Motion 是基于 useScroll 钩子，两者都可以实现滚动动画。
+
+[animation - scroll](https://imber-animation.netlify.app/animations/scroll)
+
+<video src="/posts/animate/scroll.mov" controls />
+
+```tsx
+
+```
+
+核心逻辑
+
+```tsx
+
+```
+
+### 滚动动画 + 淡入淡出（Fade）
+
+### 滚动动画 + 钉在页面（Pin）
+
+### 滚动动画 + 视差效果（Parallax）
+
+也就是产生不同速率滚动效果，比如背景图片滚动速度不一样，或者文字滚动速度不一样。
+
+### SVG 动画（SVG）
 
 ### 动画参考
 

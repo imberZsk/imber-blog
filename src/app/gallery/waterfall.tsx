@@ -27,7 +27,7 @@ const isLikelyLargeFile = (fileName: string) => {
       return width >= 1080 || height >= 1080
     }
   }
-  return false
+  return true
 }
 
 // 生成图片 CDN URL - 智能选择 CDN
