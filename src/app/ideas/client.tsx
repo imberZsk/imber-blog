@@ -25,7 +25,6 @@ const Client = ({ ideas }: { ideas: Idea[] }) => {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
             className="group relative"
           >

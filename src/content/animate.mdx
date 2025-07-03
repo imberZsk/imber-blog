@@ -11,11 +11,9 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 ### imber Animation
 
-[imber Animation](https://imber-animation.netlify.app/) 是我写的动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，并且全部封装实现方便开箱即用，封装的组件在项目的 [components](https://github.com/imberZsk/animation/tree/main/src/components) 目录下，网站大部分动画都用 GSAP 和 Framer Motion 实现过，只需要切换参数?type=gsap 或者 ?type=framer（默认） 即可；另外该项目使用了 [Parallel Routes](https://nextjs.org/docs/app/api-reference/file-conventions/parallel-routes) 在[首页](https://imber-animation.netlify.app/)点击弹层出来的时候可以刷新直接进入具体页面。
+[imber Animation](https://imber-animation.netlify.app/) 是我写的动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，并且封装实现方便开箱即用，封装的组件在项目的 [components](https://github.com/imberZsk/animation/tree/main/src/components) 目录下，网站大部分动画都用 GSAP 和 Framer Motion 实现过。
 
 ### 文字拆分动画（Split）
-
-- 应用：文字拆分动画
 
 GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销。
 
@@ -247,13 +245,45 @@ const AddTextFramer = ({ from, to, className }: { from: number; to: number; clas
 export default AddTextFramer
 ```
 
+### 错开动画（Stagger）
+
+gsap 使用 stagger 错开动画，framer motion 使用 transition 的 delay 错开动画。
+
+[animation - stagger](https://imber-animation.netlify.app/animations/stagger/framer)
+
+<video src="/posts/animate/stagger.mov" controls />
+
+核心逻辑
+
+```tsx
+// gsap
+gsap.from('.stagger-item', {
+  opacity: 0,
+  y: 15,
+  stagger: 0.1,
+  duration: 0.4
+})
+
+// framer motion
+{
+  postsConfig.map((post, index) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+    ></motion.div>
+  ))
+}
+```
+
 ### 时间轴动画（Timeline）
 
 - 应用：入场动画，各种有顺序动画
 
-做一些简单有执行顺序的动画，比如入场动画片，GSAP 有 timeline 时间线，让动画依次执行，而 Framer Motion 可以设置 delay 或者 useAnimation，相比下 <strong>GSAP</strong> 更方便。
+做一些简单有执行顺序的动画，比如入场动画片，GSAP 有 timeline 时间线，让动画依次执行，而 Framer Motion 可以设置 delay。
 
-[animation - timeline](https://imber-animation.netlify.app/animations/timeline?type=gsap)
+[animation - timeline](https://imber-animation.netlify.app/animations/timeline/gsap)
 
 <video src="/posts/animate/timeline.mov" controls />
 
@@ -309,7 +339,7 @@ export default Framer
 
 在 React 中，组件删除，通常被立即删除，而没有动画，但可以使用 Framer Motion 和 GSAP 来实现退出动画，比如做打开关闭弹层，这类动画用 <strong>Framer Motion</strong> 更方便，因为它封装了一个 <strong>AnimatePresence</strong> 组件，而 GSAP 需要用 requestAnimationFrame 来判断下一帧的时候等 DOM 渲染好了，再执行动画。
 
-[animation - exit](https://imber-animation.netlify.app/animations/exit-animation?type=gsap)
+[animation - exit](https://imber-animation.netlify.app/animations/exit/gsap)
 
 <video src="/posts/animate/exit.mov" controls />
 
@@ -363,6 +393,86 @@ const Framer = () => {
 }
 ```
 
+### 布局动画（Layout）
+
+这个动画经常使用到，比如博客的主题切换按钮，正常的 flex 布局的切换是没有过渡效果的，使用 Framer Motion 提供的 layout 参数，可以实现布局切换的过渡效果。
+
+[animation - layout](https://imber-animation.netlify.app/animations/layout)
+
+<video src="/posts/animate/layout.mov" controls />
+
+```tsx
+'use client'
+
+import { useTheme } from 'next-themes'
+import { motion } from 'framer-motion'
+import { Moon, Sun } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+
+export function ModeToggle() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // 避免水合不匹配
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const isDark = theme === 'dark'
+
+  const handleToggle = useCallback(() => {
+    // 防止快速连击
+    if (isTransitioning) return
+
+    setIsTransitioning(true)
+    setTheme(isDark ? 'light' : 'dark')
+
+    // 重置防抖状态
+    setTimeout(() => {
+      setIsTransitioning(false)
+    }, 300)
+  }, [isDark, setTheme, isTransitioning])
+
+  if (!mounted) {
+    return null
+  }
+
+  return (
+    <button
+      className={`relative box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
+        isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'
+      } ${isTransitioning ? 'pointer-events-none' : ''}`}
+      onClick={handleToggle}
+      disabled={isTransitioning}
+      aria-label={`切换到${isDark ? '浅色' : '深色'}模式`}
+      role="switch"
+      aria-checked={isDark}
+    >
+      <motion.div
+        className={`flex h-[20px] w-[20px] items-center justify-center rounded-full text-2xl transition-colors duration-300 ${
+          isDark ? 'bg-gray-800 text-yellow-200 shadow-lg' : 'bg-yellow-400 text-orange-600 shadow-lg'
+        }`}
+        // 自动处理布局变化
+        layout
+        transition={{
+          // 指定动画类型为弹簧动画
+          type: 'spring',
+          // 设置动画的视觉感知持续时间为 0.2 秒
+          visualDuration: 0.2,
+          // 控制弹簧的弹跳强度
+          bounce: 0.2
+        }}
+        // 确保这个元素不会阻挡点击事件
+        style={{ pointerEvents: 'none' }}
+      >
+        {isDark ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+      </motion.div>
+    </button>
+  )
+}
+```
+
 ### TODO
 
 - hover到头像，然后头像旋转
@@ -370,7 +480,6 @@ const Framer = () => {
 - 滚动动画
 - 视差动画
 - 页面进度条
-- 一个简易的进度条
 - tab切换
 - 删除元素支持动画
 - SVG 动画
