@@ -3,7 +3,7 @@
 - [Framer Motion](https://motion.dev/docs) v12.22.0
 - [GSAP](https://gsap.com/docs/v3/) v3.13.0
 
-GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最近把付费的插件什么的开源了，目前依旧是最好的选择。
+GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最近开源了更多插件，目前依旧是最好的选择，更喜欢它的文档和使用方式。
 
 越来越多的开源库，开源项目使用 Framer Motion 来实现动画效果，Framer Motion 变得越来越重要。
 
@@ -21,6 +21,8 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销。
 
+标题，logo 等地方可以使用这个动画
+
 [animation - split](https://imber-animation.netlify.app/animations/split)
 
 <video src="/posts/animate/split.mov" controls />
@@ -37,12 +39,7 @@ import { useRef } from 'react'
 
 gsap.registerPlugin(SplitText)
 
-interface SplitTextGsapProps {
-  text: string
-  className?: string
-}
-
-const SplitTextGsap = ({ text, className }: SplitTextGsapProps) => {
+const SplitTextGsap = ({ text, className }: { text: string; className?: string }) => {
   const gsapTextRef = useRef<HTMLDivElement>(null)
   useGSAP(() => {
     if (gsapTextRef.current) {
@@ -80,6 +77,8 @@ export default SplitTextGsap
 
 博客首页的文字高斯模糊动画，也是使用 GSAP 的 SplitText 插件实现，核心逻辑和上面差不多，主要使用 blur 去做每个字的效果。
 
+标题，logo 等地方可以使用这个动画
+
 [animation - blur](https://imber-animation.netlify.app/animations/blur)
 
 <video src="/posts/animate/blur.mov" controls />
@@ -97,17 +96,6 @@ import { SplitText } from 'gsap/SplitText'
 // 注册SplitText插件
 gsap.registerPlugin(SplitText)
 
-interface BlurTextGsapProps {
-  text?: string
-  children?: React.ReactNode
-  delay?: number
-  className?: string
-  animateBy?: 'words' | 'chars'
-  direction?: 'top' | 'bottom'
-  onAnimationComplete?: () => void
-  ease?: string
-}
-
 const BlurTextGsap = ({
   text = '',
   children,
@@ -117,7 +105,7 @@ const BlurTextGsap = ({
   direction = 'top',
   onAnimationComplete,
   ease = 'none' // 使用linear ease让动画更匀速
-}: BlurTextGsapProps) => {
+}) => {
   const containerRef = useRef<HTMLParagraphElement>(null)
   const splitRef = useRef<SplitText | null>(null)
 
@@ -183,6 +171,8 @@ export default BlurTextGsap
 ### 数字递增动画（Add）
 
 GSAP 的 textContent 和 roundProps，可以很方便实现这个效果，Framer Motion 同样简单。
+
+有数字的时候可以考虑这个动画。
 
 [animation - add](https://imber-animation.netlify.app/animations/add)
 
@@ -253,9 +243,15 @@ export default AddTextFramer
 
 gsap 使用 stagger 错开动画，framer motion 使用 transition 的 delay 错开动画。
 
+列表，网格布局 等地方可以使用这个动画。
+
 [animation - stagger](https://imber-animation.netlify.app/animations/stagger/framer)
 
 <video src="/posts/animate/stagger.mov" controls />
+
+同理，这种小方块的布局也是列表形式的，也比较适合 stagger 动画。
+
+<video src="/posts/animate/stagger2.mov" controls />
 
 核心逻辑
 
@@ -283,13 +279,27 @@ gsap.from('.stagger-item', {
 
 ### 时间轴动画（Timeline）
 
-- 应用：入场动画，各种有顺序动画
-
 做一些简单有执行顺序的动画，比如入场动画片，GSAP 有 timeline 时间线，让动画依次执行，而 Framer Motion 可以设置 delay。
+
+使用 GSAP 的时候这些控制时间轴的 API 比较重要，首先默认是 0.5s
+
+- +=1 - 时间轴末尾后 1 秒（产生间隙）
+
+- -=1 - 时间轴结束前 1 秒（重叠）
+
+- myLabel+=2 - 标签myLabel后 2 秒
+
+- \<+=3 - 上一个动画开始后 3 秒
+
+- \<3 - 与\<+=3 相同（\<或\>后面隐含+=）
+
+- \> -0.5 - 上一个动画结束前 0.5 秒。这就像说上一个动画的结束加上 -0.5
+
+适合入场动画，各种有顺序动画，甚至左右布局的模块，可以依次从透明到显示。
 
 [animation - timeline](https://imber-animation.netlify.app/animations/timeline/gsap)
 
-<video src="/posts/animate/timeline.mov" controls />
+<video src="/posts/animate/timeline.mp4" controls />
 
 核心逻辑
 
@@ -339,9 +349,9 @@ export default Framer
 
 ### React 退出动画（Exit）
 
-- 应用：弹层，有切换关闭效果的动画
-
 在 React 中，组件删除，通常被立即删除，而没有动画，但可以使用 Framer Motion 和 GSAP 来实现退出动画，比如做打开关闭弹层，这类动画用 <strong>Framer Motion</strong> 更方便，因为它封装了一个 <strong>AnimatePresence</strong> 组件，而 GSAP 需要用 requestAnimationFrame 来判断下一帧的时候等 DOM 渲染好了，再执行动画。
+
+适合弹层，有切换关闭效果的动画。
 
 [animation - exit](https://imber-animation.netlify.app/animations/exit/gsap)
 
@@ -351,136 +361,74 @@ export default Framer
 
 ```tsx
 import { AnimatePresence, motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
-
-const Framer = () => {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 bg-black/60"
-          onClick={() => setOpen(false)}
-        >
-          <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95,
-              x: '-50%',
-              y: '-48%'
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: '-50%',
-              y: '-50%'
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95,
-              x: '-50%',
-              y: '-48%'
-            }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
-          ></motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
+;<AnimatePresence>
+  {true && (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+      <motion.div
+        initial={{
+          opacity: 0,
+          scale: 0.95,
+          x: '-50%',
+          y: '-48%'
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          x: '-50%',
+          y: '-50%'
+        }}
+        exit={{
+          opacity: 0,
+          scale: 0.95,
+          x: '-50%',
+          y: '-48%'
+        }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+      ></motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 ```
 
 ### 布局动画（Layout）
 
 这个动画经常使用到，比如博客的主题切换按钮，正常的 flex 布局的切换是没有过渡效果的，使用 Framer Motion 提供的 layout 参数，可以实现布局切换的过渡效果。
 
+适合布局切换，比如 flex 的 flex-start 和 flex-end 切换。
+
 [animation - layout](https://imber-animation.netlify.app/animations/layout)
 
 <video src="/posts/animate/layout.mov" controls />
 
+核心逻辑
+
 ```tsx
-'use client'
-
-import { useTheme } from 'next-themes'
-import { motion } from 'framer-motion'
-import { Moon, Sun } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
-
-export function ModeToggle() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
-
-  // 避免水合不匹配
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const isDark = theme === 'dark'
-
-  const handleToggle = useCallback(() => {
-    // 防止快速连击
-    if (isTransitioning) return
-
-    setIsTransitioning(true)
-    setTheme(isDark ? 'light' : 'dark')
-
-    // 重置防抖状态
-    setTimeout(() => {
-      setIsTransitioning(false)
-    }, 300)
-  }, [isDark, setTheme, isTransitioning])
-
-  if (!mounted) {
-    return null
-  }
-
-  return (
-    <button
-      // 这里切换 justify-end 和 justify-start
-      className={`relative box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
-        isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'
-      } ${isTransitioning ? 'pointer-events-none' : ''}`}
-      onClick={handleToggle}
-      disabled={isTransitioning}
-      aria-label={`切换到${isDark ? '浅色' : '深色'}模式`}
-      role="switch"
-      aria-checked={isDark}
-    >
-      <motion.div
-        className={`flex h-[20px] w-[20px] items-center justify-center rounded-full text-2xl transition-colors duration-300 ${
-          isDark ? 'bg-gray-800 text-yellow-200 shadow-lg' : 'bg-yellow-400 text-orange-600 shadow-lg'
-        }`}
-        // 自动处理布局变化
-        layout
-        transition={{
-          // 指定动画类型为弹簧动画
-          type: 'spring',
-          // 设置动画的视觉感知持续时间为 0.2 秒
-          visualDuration: 0.2,
-          // 控制弹簧的弹跳强度
-          bounce: 0.2
-        }}
-        // 确保这个元素不会阻挡点击事件
-        style={{ pointerEvents: 'none' }}
-      >
-        {isDark ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
-      </motion.div>
-    </button>
-  )
-}
+// 核心是这里的 justify-end justify-start 切换
+<button className={` ${isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'} }`}>
+  <motion.div
+    // 自动处理布局变化
+    layout
+    transition={{
+      // 指定动画类型为弹簧动画
+      type: 'spring',
+      // 设置动画的视觉感知持续时间为 0.2 秒
+      visualDuration: 0.2,
+      // 控制弹簧的弹跳强度
+      bounce: 0.2
+    }}
+    // 确保这个元素不会阻挡点击事件
+    style={{ pointerEvents: 'none' }}
+  >
+    {isDark ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+  </motion.div>
+</button>
 ```
 
 ### 布局动画 - Tab切换（Tab）
 
 不同元素之间的切换状态，这里使用官方的 Demo，正常这个下划线是没有动画效果，加上 layoutId 和 id 后，可以实现动画过渡效果。
+
+适合布局切换，比如 tab 切换。
 
 [animation - tab](https://imber-animation.netlify.app/animations/tab)
 
@@ -502,34 +450,169 @@ export function ModeToggle() {
 
 ### 基础滚动动画（Scroll）
 
-GSAP 是基于 ScrollTrigger 插件来滚动动画，Framer Motion 是基于 useScroll 钩子，两者都可以实现滚动动画。
-
-[animation - scroll](https://imber-animation.netlify.app/animations/scroll)
-
-<video src="/posts/animate/scroll.mov" controls />
+使用 GSAP 的时候，这些 scrollTrigger 的 API 配置很关键
 
 ```tsx
+useGSAP(() => {
+  const t1 = gsap.timeline({
+    scrollTrigger: {
+      markers: true, // 显示标记，方便开发时调试动画触发时机
+      trigger: '.box', // 触发动画的元素
+      start: 'top center', // 元素相对自身的位置 和 视口的位置，两者重合即触发动画开始
+      end: 'bottom 40%', // 元素相对自身的位置 和 视口的位置，两者重合即触发动画结束
+      toggleActions: 'play none none reverse', // 动画触发时机，常用的值是 play none reverse，对应 onEnter, onLeave, onEnterBack, and onLeaveBack
+      onEnter: () => {
+        console.log('onEnter')
+      },
+      onLeave: () => {
+        console.log('onLeave')
+      },
+      onEnterBack: () => {
+        console.log('onEnterBack')
+      },
+      onLeaveBack: () => {
+        console.log('onLeaveBack')
+      },
+      onComplete: () => {
+        console.log('onComplete')
+      }
+      // scrub: true // 动画与滚动条绑定，也就是不会直接执行完动画，会跟着滚动条执行
+    }
+  })
 
+  t1.from('.box', {
+    y: 50,
+    duration: 0.5, // 默认 0.5s
+    autoAlpha: 0, // 透明度
+    ease: 'power1.inOut' // 默认 power1.inOut
+  })
+})
 ```
+
+> 注意 scrollTrigger 是有顺序的，并且对于图片一定要给个父级和父亲给宽高，否则会计算出问题
+
+GSAP 是基于 ScrollTrigger 插件来滚动动画，Framer Motion 是基于 useScroll 钩子，两者都可以实现滚动动画。
+
+适合滚动动画，比如滚动到某个位置时，出现某个元素。
+
+[animation - scroll](https://imber-animation.netlify.app/animations/scroll/gsap)
+
+<video src="/posts/animate/scroll.mp4" controls />
 
 核心逻辑
 
 ```tsx
+useGSAP(() => {
+  // 通用的 scrollTrigger 配置
+  const commonScrollTriggerConfig = {
+    markers: true, // 显示标记，方便开发时调试动画触发时机
+    start: 'center 90%', // 元素相对自身的位置 和 视口的位置，两者重合即触发动画开始
+    toggleActions: 'play none none reverse', // 动画触发时机
+    onEnter: () => console.log('onEnter'),
+    onLeave: () => console.log('onLeave'),
+    onEnterBack: () => console.log('onEnterBack'),
+    onLeaveBack: () => console.log('onLeaveBack')
+  }
 
+  // 通用的动画配置
+  const commonAnimationConfig = {
+    duration: 0.5,
+    autoAlpha: 0,
+    ease: 'power1.inOut'
+  }
+
+  // 为每一对 box 创建动画（0-1, 2-3）
+  for (let i = 0; i < 4; i += 2) {
+    const timeline = gsap.timeline({
+      scrollTrigger: {
+        ...commonScrollTriggerConfig,
+        trigger: `.box${i}` // 以每对的第一个元素作为触发器
+      }
+    })
+
+    // 第一个 box 从左进入
+    timeline.from(`.box${i}`, {
+      ...commonAnimationConfig,
+      x: '-10%'
+    })
+
+    // 第二个 box 从右进入，与第一个动画重叠
+    timeline.from(
+      `.box${i + 1}`,
+      {
+        ...commonAnimationConfig,
+        x: '10%'
+      },
+      '-=0.5'
+    )
+  }
+})
 ```
 
-### 滚动动画 + 淡入淡出（Fade）
+还可以设置文字的滚动动画，比如边滚动边高亮。
 
-### 滚动动画 + 钉在页面（Pin）
+<video src="/posts/animate/scroll2.mp4" controls />
+
+核心逻辑
+
+```tsx
+gsap
+  .timeline({
+    scrollTrigger: {
+      trigger: ref.current,
+      start: 'top 90%',
+      end: '+=1000',
+      scrub: 1, // 慢 1s 跟上滚动条
+      toggleActions: 'play none none reverse'
+    }
+  })
+
+  .to('.section2_line', {
+    stagger: 0.1,
+    y: -40,
+    keyframes: {
+      '0%': { color: '#4c4c4c' },
+      '25%': { color: '#4c4c4c' },
+      '50%': { color: '#ffffff' },
+      '75%': { color: '#4c4c4c' },
+      '100%': { color: '#4c4c4c' }
+    }
+  })
+```
+
+### 滚动动画 + scrub 效果（Scrub）
+
+gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直接执行完动画，会跟着滚动条执行。
+
+[animation - scrub](https://imber-animation.netlify.app/animations/scrub)
+
+<video src="/posts/animate/scrub.mp4" controls />
+
+### 滚动动画 + pin 效果（Pin）
+
+gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页面不动。
+
+[animation - pin](https://imber-animation.netlify.app/animations/pin)
+
+<video src="/posts/animate/pin.mp4" controls />
 
 ### 滚动动画 + 视差效果（Parallax）
 
 也就是产生不同速率滚动效果，比如背景图片滚动速度不一样，或者文字滚动速度不一样。
 
+### 滚动动画 + 叠层效果（Horizontal）
+
+叠层效果，pinSpacing 为 false，左右滚动效果，snap 配置是啥
+
+### 滚动动画 + 垂直叠层效果（Vertical）
+
+### 滚动动画 + 裁剪（Clip）
+
 ### SVG 动画（SVG）
 
 ### 动画参考
 
+- [GSAP 官方 Demo](https://gsap.com/demos/)
 - [魅族 20infinity](https://www.meizu.com/20infinity/summary)
 - [魅族 21pro](https://www.meizu.com/21pro/summary)
 - [魅族 领克Z10 starbuff](https://www.xjmzstarauto.com/starbuff)
