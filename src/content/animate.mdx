@@ -11,7 +11,7 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 ### imber Animation
 
-[imber Animation](https://imber-animation.netlify.app/) 是动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，动画的右上角有查看源码功能，并且封装实现方便开箱即用，封装的组件在项目的 [components](https://github.com/imberZsk/animation/tree/main/src/components) 目录下，网站大部分动画都用 GSAP 和 Framer Motion 实现过。
+[imber Animation](https://imber-animation.netlify.app/) 是动画 Demo 展示，里面有各种动画效果可以参考，文章下面的所有动画效果，都可以在 [Github 源码仓库](https://github.com/imberZsk/animation) 找到，动画的右上角有查看源码功能，网站部分动画用 GSAP 和 Framer Motion 实现过。
 
 <a href="https://imber-animation.netlify.app/" target="_blank" rel="noopener noreferrer" alt="imber Animation">
   <img src="/posts/animate/screenshot.png" alt="imber Animation" />
@@ -590,6 +590,27 @@ gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直�
 
 <video src="/posts/animate/scrub.mp4" controls />
 
+核心逻辑
+
+```tsx
+useGSAP(() => {
+  const t1 = gsap.timeline({
+    scrollTrigger: {
+      trigger: containerRef.current,
+      markers: true,
+      start: 'center bottom',
+      end: 'top top',
+      scrub: 1,
+      toggleActions: 'play none none reverse'
+    }
+  })
+
+  t1.to(containerRef.current, {
+    right: '0'
+  })
+})
+```
+
 ### 滚动动画 + pin 效果（Pin）
 
 gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页面不动。
@@ -597,6 +618,64 @@ gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页�
 [animation - pin](https://imber-animation.netlify.app/animations/pin/gsap)
 
 <video src="/posts/animate/pin.mp4" controls />
+
+核心逻辑
+
+```tsx
+useGSAP(() => {
+  const t1 = gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: '.section-block',
+        start: 'center center',
+        end: '+=2000',
+        toggleActions: 'play none reverse none',
+        pin: true,
+        scrub: 1,
+        markers: true
+      }
+    })
+    .addLabel('spin')
+
+  t1.to(
+    '.section-video ',
+    {
+      width: '50px',
+      height: '50px',
+      left: 23,
+      top: 265
+    },
+    'spin'
+  )
+
+  t1.to(
+    '.section-img',
+    {
+      autoAlpha: 1
+    },
+    'spin'
+  )
+
+  // 第一组气泡从右侧依次进入
+  t1.to(['.bubble1', '.bubble2', '.bubble3'], {
+    x: '0%',
+    autoAlpha: 1,
+    stagger: 0.5 // 每个元素间隔0.5秒
+  })
+
+  // 第二组气泡在第一组完成后从左侧依次进入
+  t1.to(
+    ['.bubble4', '.bubble5', '.bubble6'],
+    {
+      x: '0%',
+      autoAlpha: 1,
+      stagger: 0.5, // 每个元素间隔0.5秒
+      duration: 0.6
+    },
+    '+=0.3'
+  ) // 在上一个动画完成后延迟0.3秒开始
+})
+```
 
 ### 滚动动画 + 垂直叠层效果（Vertical）
 
@@ -638,20 +717,74 @@ useGSAP(() => {
 
 <video src="/posts/animate/horizontal.mp4" controls />
 
+核心逻辑
+
+```tsx
+useGSAP(() => {
+  const t1 = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#container',
+      start: 'top top',
+      end: `+=${window.innerHeight}`,
+      pin: true,
+      markers: true,
+      scrub: 1
+    }
+  })
+
+  t1.set('.box1', {
+    visibility: 'visible'
+  })
+
+  t1.from('.box1', {
+    height: window.innerHeight,
+    width: window.innerWidth,
+    transform: `translateX(calc(240px + 50vw))` // 按情况计算
+  })
+
+  t1.to('#other-container', {
+    x: 0
+  })
+
+  t1.to('#inner-container', {
+    right: 0
+  })
+})
+```
+
 ### 滚动动画 + 视差效果（Parallax）
+
+- data-speed 表示比正常滚动慢多少，对于图片来说，可以在父元素上 overflow hidden，然后内层图片添加 data-speed
+
+- data-lag 表示延迟多少秒开始滚动，需要一定时间赶上
+
+[animation - parallax](https://imber-animation.netlify.app/animations/parallax/gsap)
+
+<video src="/posts/animate/parallax.mp4" controls />
 
 也就是产生不同速率滚动效果，比如背景图片滚动速度不一样，或者文字滚动速度不一样。
 
-### 滚动动画 + 裁剪（Clip）
+核心逻辑
 
-### SVG 动画（SVG）
+```tsx
+useGSAP(() => {
+  ScrollSmoother.create({
+    smooth: 1, //需要多长时间（以秒为单位）才能“赶上”原始滚动位置
+    effects: true, //查找元素上的数据速度和数据滞后属性
+    wrapper: '#smooth-wrapper',
+    content: '#smooth-content'
+  })
+})
+```
+
+{/* ### SVG 动画（SVG） */}
 
 ### 动画参考
 
 - [GSAP 官方 Demo](https://gsap.com/demos/)
-- [魅族 20infinity](https://www.meizu.com/20infinity/summary)
-- [魅族 21pro](https://www.meizu.com/21pro/summary)
-- [魅族 领克Z10 starbuff](https://www.xjmzstarauto.com/starbuff)
+- [meizu 21pro](https://www.meizu.com/21pro/summary)
 - [oppo find n5](https://www.oppo.com/cn/smartphones/series-find-n/find-n5/)
 - [uiverse](https://uiverse.io/)
 - [reactbits](https://www.reactbits.dev/)
+- [图片消失效果](https://codepen.io/dev_loop/pen/mdVWRMv)
+- [多个图片视差效果](https://codepen.io/GreenSock/pen/OJyPmgX)
