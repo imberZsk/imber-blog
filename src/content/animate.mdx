@@ -392,13 +392,16 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 ### 布局动画（Layout）
 
-这个动画经常使用到，比如博客的主题切换按钮，正常的 flex 布局的切换是没有过渡效果的，使用 Framer Motion 提供的 layout 参数，可以实现布局切换的过渡效果。
+这个动画经常使用到，比如博客的主题切换按钮，正常的 flex 布局的切换是没有过渡效果的，使用 Framer Motion 提供的 layout 参数，可以实现布局切换的过渡效果，如果是 GSAP 的话，需要用 Flip 插件实现。
 
 适合布局切换，比如 flex 的 flex-start 和 flex-end 切换。
 
 [animation - layout](https://imber-animation.netlify.app/animations/layout)
 
+[animation - flip](https://imber-animation.netlify.app/animations/flip)
+
 <video src="/posts/animate/layout.mov" controls />
+<video src="/posts/animate/flip.mp4" controls />
 
 核心逻辑
 
