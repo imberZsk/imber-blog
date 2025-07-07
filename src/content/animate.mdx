@@ -452,6 +452,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 使用 GSAP 的时候，这些 scrollTrigger 的 API 配置很关键
 
+[animation - scroll](https://imber-animation.netlify.app/animations/scroll/gsap)
+
 ```tsx
 useGSAP(() => {
   const t1 = gsap.timeline({
@@ -592,19 +594,53 @@ gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直�
 
 gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页面不动。
 
-[animation - pin](https://imber-animation.netlify.app/animations/pin)
+[animation - pin](https://imber-animation.netlify.app/animations/pin/gsap)
 
 <video src="/posts/animate/pin.mp4" controls />
+
+### 滚动动画 + 垂直叠层效果（Vertical）
+
+也就是固定对应的屏，之前写的项目用这个也比较好看，如 [领克Z10 starbuff](https://www.xjmzstarauto.com/starbuff)，此外除了下面这种，还有种 [snap](https://codepen.io/GreenSock/pen/YzygYvM) 的效果在一些网页里也挺常见
+
+[animation - vertical](https://imber-animation.netlify.app/animations/vertical/gsap)
+
+<video src="/posts/animate/vertical.mp4" controls />
+
+```tsx
+useGSAP(() => {
+  ScrollTrigger.create({
+    trigger: '.box1',
+    start: 'top top',
+    end: `+=${window.innerHeight}`,
+    pin: '.box1',
+    markers: true,
+    pinSpacing: false
+    // anticipatePin: 1，
+  })
+
+  ScrollTrigger.create({
+    trigger: '.box2',
+    start: 'top top',
+    end: `+=${window.innerHeight}`,
+    pin: '.box2',
+    markers: true,
+    pinSpacing: false
+    // anticipatePin: 1
+  })
+})
+```
+
+### 滚动动画 + 水平叠层效果（Horizontal）
+
+这里麻烦的地方是一个位置计算和 FOUC 问题，暂时用 invisible 优化
+
+[animation - horizontal](https://imber-animation.netlify.app/animations/horizontal/gsap)
+
+<video src="/posts/animate/horizontal.mp4" controls />
 
 ### 滚动动画 + 视差效果（Parallax）
 
 也就是产生不同速率滚动效果，比如背景图片滚动速度不一样，或者文字滚动速度不一样。
-
-### 滚动动画 + 叠层效果（Horizontal）
-
-叠层效果，pinSpacing 为 false，左右滚动效果，snap 配置是啥
-
-### 滚动动画 + 垂直叠层效果（Vertical）
 
 ### 滚动动画 + 裁剪（Clip）
 
