@@ -19,7 +19,7 @@ GSAP 一个老牌的动画库，兼容性好，方便易用，功能强大，最
 
 ### 文字拆分动画（Split）
 
-GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销。
+GSAP 开源后的 SplitText 插件，实现文字拆分动画非常方便，注意在完成时 revert，减少后续性能开销，framer motion 的 SplitText 没有开源，需要钱使用它的 Motion+ ，只能自己实现会麻烦很多。
 
 标题，logo 等地方可以使用这个动画
 
@@ -453,7 +453,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 ### 基础滚动动画（Scroll）
 
-使用 GSAP 的时候，这些 scrollTrigger 的 API 配置很关键
+使用 GSAP 的时候，这些 scrollTrigger 的 API 配置很关键，对于 Framer Motion 来说，用 whileInView 来做这种动画，不能用 useScroll 和 useTransform 因为无法删掉它们的链接到滚动条效果。
 
 [animation - scroll](https://imber-animation.netlify.app/animations/scroll/gsap)
 
@@ -496,7 +496,7 @@ useGSAP(() => {
 
 > 注意 scrollTrigger 是有顺序的，并且对于图片一定要给个父级和父亲给宽高，否则会计算出问题
 
-GSAP 是基于 ScrollTrigger 插件来滚动动画，Framer Motion 是基于 useScroll 钩子，两者都可以实现滚动动画。
+GSAP 是基于 ScrollTrigger 插件来滚动动画，Framer Motion 是基于 useScroll 和useTransform 钩子，两者都可以实现滚动动画。
 
 适合滚动动画，比如滚动到某个位置时，出现某个元素。
 
@@ -587,7 +587,7 @@ gsap
 
 ### 滚动动画 + scrub 效果（Scrub）
 
-gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直接执行完动画，会跟着滚动条执行。
+gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直接执行完动画，会跟着滚动条执行，对于 Framer Motion 来说，用 useScroll 和 useTransform 是默认就有这个效果，而且默认会有 reverse。
 
 [animation - scrub](https://imber-animation.netlify.app/animations/scrub)
 
@@ -616,7 +616,7 @@ useGSAP(() => {
 
 ### 滚动动画 + pin 效果（Pin）
 
-gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页面不动。
+gsap 的 pin 效果，也就是滚动到某个位置时，元素会固定在页面不动，对于 Framer Motion 来说，比较难做和难理解这个效果，方案可以用 paddingBottom 撑开或者给个很高的高度，暂时不做深入研究，还是 GSAP 方便。
 
 [animation - pin](https://imber-animation.netlify.app/animations/pin/gsap)
 
@@ -791,3 +791,4 @@ useGSAP(() => {
 - [reactbits](https://www.reactbits.dev/)
 - [图片消失效果](https://codepen.io/dev_loop/pen/mdVWRMv)
 - [多个图片视差效果](https://codepen.io/GreenSock/pen/OJyPmgX)
+- [framer motion 的 Reorder 拖拽动画](https://motion.dev/docs/react-reorder)
