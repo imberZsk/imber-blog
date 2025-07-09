@@ -34,13 +34,7 @@ export const postsConfig = [
     tags: ['动画'],
     views: 32
   },
-  {
-    title: '优雅的使用 Tailwind',
-    href: '/posts/tailwind',
-    date: '2025-02-09',
-    tags: ['Tailwind'],
-    views: 123
-  },
+
   {
     title: '基于 Tailwind 的响应式布局（含图片深入理解）',
     href: '/posts/responsive',
@@ -60,6 +54,20 @@ export const postsConfig = [
     href: '/posts/safe',
     date: '2025-02-09',
     tags: ['Nextjs'],
+    views: 123
+  },
+  // {
+  //   title: '优雅的使用 TypeScript',
+  //   href: '/posts/typescript',
+  //   date: '2025-02-09',
+  //   tags: ['TypeScript'],
+  //   views: 123
+  // },
+  {
+    title: '优雅的使用 Tailwind',
+    href: '/posts/tailwind',
+    date: '2025-02-09',
+    tags: ['Tailwind'],
     views: 123
   },
   // {

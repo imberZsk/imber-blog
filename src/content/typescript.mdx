@@ -1,0 +1,35 @@
+## 优雅的使用 TypeScript
+
+- [Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Typescript 入门教程](https://juejin.cn/book/7288482920602271802/section/7288665243814658107)
+- [TypeScript 类型体操](https://github.com/type-challenges/type-challenges/tree/main)
+
+## 前言
+
+提前知道变量的类型，而不用去打印才知道
+
+类型安全，减少运行时错误，比如有个值是 undefined，没有 TS 可能导致线上报错花不少时间才找到问题
+
+### 配置编辑器
+
+typescript inlay hints
+
+![typescript inlay hints](./images/typescript/image1.png)
+
+--strictNullChecks 严格检查 null 和 undefined
+
+--noEmitOnError 错误时，不生成文件
+
+--target es2015 目标版本
+
+--noImplicitAny 禁止隐式 any
+
+type 和 interface 的区别关键在于，type 是别名不能扩展，interface 是可扩展的，interface + extends 性能更好
+
+类型断言
+
+document.getElementById，TypeScript 只知道这将返回某种 HTMLElement，但你可能知道你的页面将始终具有具有给定 ID 的 HTMLCanvasElement
+
+```ts
+const myCanvas = document.getElementById('main_canvas') as HTMLCanvasElement
+```

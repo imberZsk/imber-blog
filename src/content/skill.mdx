@@ -2,35 +2,45 @@
 
 > 简历的内容写了不少，但是必须对这些知识点都有一个深入的理解在面试中才能脱颖而出
 
-`1. 熟练掌握 TailwindCSS、TypeScript 类型体操、HTTP 协议、Web 安全（XSS、CSRF）、移动端自适应布局、响应式布局`
+`1. 熟练掌握 TailwindCSS、TypeScript 类型体操、Web 安全（XSS、CSRF）、移动端自适应布局、响应式布局`
 
-1.1. TailwindCSS ✅
+1.1 TailwindCSS ✅
 
-1.2. TypeScript
+用 tailwind 做了很多项目，从一开始的滥用[]，到现在的优雅的无 CSS 复用，它有很多好处，比如原子化，减小 CSS 体积，提高 CSS 复用性，提高开发效率，规范化 UI 开发
 
-需要完善
-
-1.3. HTTP 协议
+1.2 TypeScript ❌
 
 需要完善
 
-1.4. XSS、CSRF
+1.3. XSS、CSRF ✅
 
-XSS 的转换算法
+做魅族社区，魅族商城发帖评论会遇到这些问题，也手写过这两种攻击来模拟效果，所以对这两种攻击有一定的了解
 
-1.5. 自适应 & 响应式 ✅
+XSS 主要出现在输入类型的需求，需要查找 dangerousSetInnerHTML/v-html/innerHTML 这种可能会出现的地方，防范的方案有 httpOnlyCookie/secure/CSP，字符转义
 
-`2. 熟练掌握 GSAP、Framer Motion，github，封装 20+ 动画组件在 Github 开箱即用`
+CSRF 首先后端应该遵循 Rust 的规范，get 不能改变数据状态，防范的方案有 samesite / csrfToken / 验证 Referer
 
-- 各种动画
-- GSAP 的常见插件，svg 动画
-- Framer Motion 的 API
-- 动画的性能，动画的FPS
-- 常见的项目里可以加哪些动画？
-- 动画的封装
-- 如果判断动画的性能
+XSS 的转换：比如遇到过文本里有图片的，需要正则匹配单独渲染
 
-`3. 熟练掌握 React 及其相关生态，深入研究过 React、Zustand、Immer 底层源码；熟悉 Vue，调试过 Vue 响应式源码`
+1.4. 自适应 & 响应式 ✅
+
+做过很多魅族的营销活动，对于自适应和响应式有比较深入的研究
+
+自适应使用 Rem + VW + Tailwind 比较方便，原理是比例关系，响应式则要看情况，简单的响应式用 flex/grid/百分比 + 媒体查询就可以实现，复杂的不方便过渡的需要自适应 + 媒体查询
+
+需要特别注意的是图片的响应式，对于相同的图片使用 sizes + srcset 来实现，对于不同的图片使用 picture + media + srcset 来实现
+
+`2. 熟练掌握 GSAP、Framer Motion，实现多种动画效果并整理到 Github https://imber-animation.netlify.app/`
+
+2.1 动画 ✅
+
+我做的项目中手机的产品页有非常多的动画效果，所有对动画开发有很多经验，并且可以自己在项目中加入一些动画来优化用户体验
+
+对于这两种动画库，我都有比较深入的研究，我会根据效率选择框架，正常来说简单动画使用 Framer Motion，复杂动画用 GSAP，两者会一起使用，提高开发效率
+
+比如一些文字的入场动画，滚动动画，视差动画这些都很容易加入到项目
+
+`3. 熟练掌握 React 及其相关生态，RN，expo 深入研究过 React、Zustand、Immer 底层源码；熟悉 Vue，调试过 Vue 响应式源码`
 
 `4. 熟练掌握 Nextjs，擅长C端项目，对 SEO、服务端渲染（SSR/SSG/ISR）、国际化、性能优化有较多从零到一落地实践 `
 
