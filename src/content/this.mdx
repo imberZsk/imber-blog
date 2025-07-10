@@ -1,10 +1,6 @@
 import { CodeSandbox } from '@/components/CodeSandbox'
 
-## this 指向
-
-- 在严格模式下（React 默认严格模式），普通函数的 this 是 undefined，在非严格模式下，普通函数的 this 指向全局对象（浏览器中是 window）
-- 箭头函数没有 this，会继承外层作用域的 this，如果用 call 或者 apply 改变 this 指向也没用
-- 方法作为回掉的时候，其实也是指向了全局this 丢失了绑定
+## 复习面试题 - 打印题 - this 指向
 
 ### 题目 1：全局环境中的 this
 
@@ -355,3 +351,10 @@ export default function ComplexThisDemo() {
 ```
 
 </Sandpack>
+
+### 总结
+
+- 在严格模式下（React 默认严格模式），普通函数的 this 是 undefined，在非严格模式下，普通函数的 this 指向全局对象（浏览器中是 window）
+- 箭头函数没有 this，会继承外层作用域的 this，如果用 call 或者 apply 改变 this 指向也没用
+- 方法作为回调函数传递时，会丢失原有的 this 绑定，this 会指向全局对象
+- 对象方法调用时，this 指向实际调用该方法的对象

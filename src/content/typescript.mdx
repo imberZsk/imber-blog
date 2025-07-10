@@ -1,35 +1,547 @@
-## 优雅的使用 TypeScript
+### 优雅的使用 TypeScript
 
 - [Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
 - [Typescript 入门教程](https://juejin.cn/book/7288482920602271802/section/7288665243814658107)
 - [TypeScript 类型体操](https://github.com/type-challenges/type-challenges/tree/main)
 
-## 前言
+> 本文档基于 v5.8.3 版本
 
-提前知道变量的类型，而不用去打印才知道
+### 前言
 
-类型安全，减少运行时错误，比如有个值是 undefined，没有 TS 可能导致线上报错花不少时间才找到问题
+Typescript 的好处：
 
-### 配置编辑器
+- 提前在编辑器知道变量的类型，而不用去打印才知道
 
-typescript inlay hints
+- 类型安全，减少运行时错误，比如有个值是 undefined，没有 TS 可能导致线上报错花不少时间才找到问题
 
-![typescript inlay hints](./images/typescript/image1.png)
+### 编辑器 typescript 配置提示
 
---strictNullChecks 严格检查 null 和 undefined
+配置后，编辑器会自动提示变量的类型，方便及时发现问题
 
---noEmitOnError 错误时，不生成文件
+![typescript inlay hints](/posts/typescript/image1.png)
 
---target es2015 目标版本
+![页面截图 - 提示变量类型](/posts/typescript/image2.png)
 
---noImplicitAny 禁止隐式 any
+### tsconfig.json 配置
 
-type 和 interface 的区别关键在于，type 是别名不能扩展，interface 是可扩展的，interface + extends 性能更好
+[tsconfig](https://www.typescriptlang.org/tsconfig/)
 
-类型断言
+下面是当前博客 Nextjs 项目的 tsconfig.json 配置，我查阅了文档，给配置增加了注释，方便理解 TS 在项目中的使用
 
-document.getElementById，TypeScript 只知道这将返回某种 HTMLElement，但你可能知道你的页面将始终具有具有给定 ID 的 HTMLCanvasElement
+```json
+{
+  "compilerOptions": {
+    // 编译选项
+    "target": "ES2017", // 目标版本
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true, // 允许在项目中导入 JavaScript 文件，而不仅仅是 .ts 和 .tsx 文件。例如，此 JS 文件：
+    "skipLibCheck": true, // 跳过库文件的类型检查
+    "strict": true, // 开启所有严格检查，默认 strictNullChecks noImplicitAny
+    "noEmit": true, // 不编译出文件
+    "esModuleInterop": true, // https://www.typescriptlang.org/tsconfig/#esModuleInterop
+    "module": "esnext", // 模块
+    "moduleResolution": "bundler", // 模块解析策略
+    "resolveJsonModule": true, // 允许导入 JSON 模块
+    "isolatedModules": true, // 每个文件被视为一个模块
+    "jsx": "preserve", // 保留 JSX 语法
+    "incremental": true, // 增量编译
+    "plugins": [
+      // 插件
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      // 路径别名
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], // 包含的文件
+  "exclude": ["node_modules"] // 排除的文件
+}
+```
+
+### type 和 interface 的区别
+
+[type 和 interface 的区别](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces)
+
+type 是别名不能扩展，interface 是可扩展的，interface + extends 性能更好，也就是用来继承
+
+1、在 TypeScript 版本 4.2 之前，type 可能会出现在错误消息中 ，有时会代替等效的匿名类型（这可能是可取的，也可能不可取的）。interface 将始终在错误消息中命名。
+
+2、type 不能参与声明合并，但 interface 可以 。
+
+```ts
+interface Mammal {
+  genus: string
+}
+
+interface Mammal {
+  breed?: string
+}
+
+const animal: Mammal = {
+  genus: '1234',
+  breed: 1
+}
+
+type Reptile = {
+  genus: string
+}
+
+// 不能这样 ❌
+type Reptile = {
+  breed?: string
+}
+```
+
+3、接口只能用于声明对象的形状，而不能用于重命名基元 。
+
+```ts
+// Interface 方式
+interface AnObject1 {
+  value: string
+}
+
+// Type 方式
+type AnObject2 = {
+  value: string
+}
+
+// 两种方式都可以用来描述对象的结构，功能基本相同。
+
+// ✅ type 可以为现有的基础类型创建别名
+type SanitizedString = string
+type EvenNumber = number
+
+// ❌ interface 不能这样做
+interface X extends string {
+  // 这会报错！interface 不能继承基础类型
+}
+```
+
+4、interface 将始终以其原始形式显示在错误消息中，但前提是它们按 name 使用。
+
+```ts
+interface Mammal {
+  name: string
+}
+
+function echoMammal(m: Mammal) {
+  console.log(m.name)
+}
+
+// 错误信息会明确提到 "Mammal" 这个接口名称
+echoMammal({ name: 12343 })
+
+// m 的类型和上面的 Mammal 完全相同，但没有被直接命名
+function echoAnimal(m: { name: string }) {
+  console.log(m.name)
+}
+
+echoAnimal({ name: 12345 })
+
+// 错误信息类似：
+// 类型 'number' 不能赋值给类型 'string'。
+// 参数类型 '{ name: number }' 不能赋值给参数类型 '{ name: string }'。
+// 当对象类型很复杂时，这个区别就非常明显
+```
+
+5、对于编译器来说，使用带有 extends 的接口通常比使用带有交集的类型别名性能更高
+
+[preferring-interfaces-over-intersections](https://github.com/microsoft/TypeScript/wiki/Performance#preferring-interfaces-over-intersections)
+
+大概是说交集的 type 会递归合并，而 interface 不会只会 flat，然后 interface 会缓存
+
+### 类型断言
+
+如使用 document.getElementById 的时候，TypeScript 只知道这将返回某种 HTMLElement，但你可能知道你的页面将始终具有具有给定 ID 的 HTMLCanvasElement
 
 ```ts
 const myCanvas = document.getElementById('main_canvas') as HTMLCanvasElement
 ```
+
+### 泛型
+
+泛型允许我们在定义函数、接口或类的时候，不预先指定具体的类型，而在使用的时候再指定类型。这样可以让我们写出更加通用和类型安全的代码。
+
+#### 基本语法
+
+```ts
+// 泛型函数
+function identity<T>(arg: T): T {
+  return arg
+}
+
+// 使用时指定类型
+const result1 = identity<string>('hello')
+const result2 = identity<number>(42)
+
+// 类型推断，TS 会自动推断类型
+const result3 = identity('hello') // 推断为 string
+const result4 = identity(42) // 推断为 number
+```
+
+#### 泛型接口和类型
+
+```ts
+// 泛型接口
+interface GenericIdentityFn<T> {
+  (arg: T): T
+}
+
+// 泛型类型别名
+type Container<T> = {
+  value: T
+  getValue(): T
+}
+
+// 使用
+const stringContainer: Container<string> = {
+  value: 'hello',
+  getValue() {
+    return this.value
+  }
+}
+```
+
+#### 泛型约束
+
+使用 `extends` 关键字来约束泛型类型：
+
+```ts
+// 约束 T 必须有 length 属性
+interface Lengthwise {
+  length: number
+}
+
+function loggingIdentity<T extends Lengthwise>(arg: T): T {
+  console.log(arg.length) // 现在我们知道 arg 有 length 属性
+  return arg
+}
+
+// ✅ 正确使用
+loggingIdentity('hello') // string 有 length
+loggingIdentity([1, 2, 3]) // array 有 length
+
+// ❌ 错误使用
+// loggingIdentity(3) // number 没有 length 属性
+```
+
+#### 映射类型与泛型
+
+```ts
+// 将所有属性变为可选
+type MyPartial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+// 将所有属性变为只读
+type MyReadonly<T> = {
+  readonly [P in keyof T]: T[P]
+}
+
+interface User {
+  name: string
+  age: number
+}
+
+type PartialUser = MyPartial<User> // { name?: string; age?: number }
+type ReadonlyUser = MyReadonly<User> // { readonly name: string; readonly age: number }
+```
+
+#### 实际应用场景
+
+```ts
+// API 响应类型
+interface ApiResponse<T> {
+  data: T
+  success: boolean
+  message: string
+}
+
+// 使用
+type UserResponse = ApiResponse<User>
+type UsersResponse = ApiResponse<User[]>
+
+// 异步函数返回类型
+async function fetchUser(id: string): Promise<ApiResponse<User>> {
+  // 实现...
+}
+
+// 异步函数返回类型
+async function fetchUsers(): Promise<ApiResponse<User[]>> {
+  // 实现...
+}
+```
+
+#### 泛型默认类型
+
+```ts
+// 为泛型提供默认类型
+interface Container<T = string> {
+  value: T
+}
+
+const stringContainer: Container = { value: 'hello' } // 默认为 string
+const numberContainer: Container<number> = { value: 42 }
+
+// 函数默认泛型
+function createArray<T = string>(length: number, value: T): T[] {
+  return Array(length).fill(value)
+}
+
+const strings = createArray(3, 'hello') // string[]
+const numbers = createArray<number>(3, 42) // number[]
+```
+
+### 函数重载
+
+函数重载允许为同一个函数提供多个类型签名，让 TypeScript 能够根据参数类型推断出正确的返回类型。
+
+#### 基本语法
+
+```ts
+// 重载签名（只有类型声明）
+function process(value: string): string
+function process(value: number): number
+function process(value: boolean): string
+
+// 实现签名（具体实现）
+function process(value: string | number | boolean): string | number {
+  if (typeof value === 'string') {
+    return value.toUpperCase()
+  }
+  if (typeof value === 'number') {
+    return value * 2
+  }
+  return value.toString()
+}
+
+// 使用时 TypeScript 会根据参数类型推断返回类型
+const result1 = process('hello') // string
+const result2 = process(42) // number
+const result3 = process(true) // string
+```
+
+#### 实际应用场景
+
+```ts
+// DOM 元素获取
+function getElement(selector: string): HTMLElement | null
+function getElement(element: HTMLElement): HTMLElement
+function getElement(input: string | HTMLElement): HTMLElement | null {
+  if (typeof input === 'string') {
+    return document.querySelector(input)
+  }
+  return input
+}
+
+// API 请求
+function fetchData(id: number): Promise<User>
+function fetchData(ids: number[]): Promise<User[]>
+function fetchData(input: number | number[]): Promise<User | User[]> {
+  if (Array.isArray(input)) {
+    return Promise.all(input.map((id) => fetchUser(id)))
+  }
+  return fetchUser(input)
+}
+
+// 类型安全的事件处理
+function addEventListener(type: 'click', handler: (e: MouseEvent) => void): void
+function addEventListener(type: 'keydown', handler: (e: KeyboardEvent) => void): void
+function addEventListener(type: string, handler: (e: Event) => void): void {
+  document.addEventListener(type, handler)
+}
+```
+
+#### 与联合类型的对比
+
+```ts
+// ❌ 联合类型 - 返回类型不够精确
+function parseValue(input: string | number): string | number {
+  return typeof input === 'string' ? input.toUpperCase() : input * 2
+}
+const result = parseValue('hello') // string | number（不够精确）
+
+// ✅ 函数重载 - 返回类型精确
+function parseValueOverload(input: string): string
+function parseValueOverload(input: number): number
+function parseValueOverload(input: string | number): string | number {
+  return typeof input === 'string' ? input.toUpperCase() : input * 2
+}
+const result = parseValueOverload('hello') // string（精确）
+```
+
+#### 注意事项
+
+- 重载签名必须在实现签名之前
+- 实现签名必须兼容所有重载签名
+- 重载签名越具体越优先匹配
+- 避免过度使用，简单场景优先考虑泛型或联合类型
+
+### 内置工具类型
+
+[内置工具类型](https://www.typescriptlang.org/docs/handbook/utility-types.html)
+
+```ts
+// 可选
+Partial<T>
+
+// 必选
+Required<T>
+
+// 只读
+Readonly<T>
+
+// 将 K 中的每个属性值映射到 V，返回一个对象类型，可以使用 Record 类型来声明属性名还未确定的接口类型
+Record<K, V>
+
+// 从 T 中选择一组属性 K，返回一个新类型
+Pick<T, K>
+
+// 从 T 中排除一组属性 K，返回一个新类型
+Omit<T, K>
+
+// 从 T 中提取 U 中的类型，返回一个新类型
+Extract<T, U>
+
+// 从 T 中排除 U 中的类型，返回一个新类型
+Exclude<T, U>
+
+// 从 T 中排除 null 和 undefined，返回一个新类型
+NonNullable<T>
+
+// 返回函数返回值的类型
+ReturnType<T>
+
+// 返回函数参数的类型
+Parameters<T>
+```
+
+Pick 与 Omit 类型是类型编程中相当重要的一个部分，举例来说，我们可以先声明一个代表全局所有状态的大型接口类型：
+
+```ts
+type User = {
+  name: string
+  age: number
+  email: string
+  phone: string
+  address: string
+  gender: string
+  occupation: string
+  education: string
+  hobby: string
+  bio: string
+}
+```
+
+然后在我们的子组件中，可能只用到了其中一部分的类型，此时就可以使用 Pick 类型将我们需要的部分择出来：
+
+```ts
+type UserBasicInfo = Pick<User, 'name' | 'age' | 'email'>
+```
+
+反之，如果我们用到了大部分类型，只有数个类型需要移除，就可以使用 Omit 类型来减少一些代码量：
+
+```ts
+type UserDetailedInfo = Omit<User, 'name' | 'age' | 'email'>
+```
+
+### 逆变和协变
+
+### infer
+
+`infer` 关键字用于在条件类型中推断类型，可以从复杂类型中提取我们需要的部分。
+
+#### 基本语法
+
+```ts
+// 基本模式：T extends SomeType<infer U> ? U : never
+type GetArrayType<T> = T extends (infer U)[] ? U : never
+
+type StringArray = GetArrayType<string[]> // string
+type NumberArray = GetArrayType<number[]> // number
+type NotArray = GetArrayType<string> // never
+```
+
+#### 提取函数类型
+
+```ts
+// 提取函数参数类型
+type Parameters<T> = T extends (...args: infer P) => any ? P : never
+type MyFuncParams = Parameters<(a: string, b: number) => void> // [string, number]
+
+// 提取函数返回值类型
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never
+type MyFuncReturn = ReturnType<() => string> // string
+
+// 提取第一个参数类型
+type FirstParameter<T> = T extends (first: infer F, ...rest: any[]) => any ? F : never
+type FirstParam = FirstParameter<(name: string, age: number) => void> // string
+```
+
+#### 提取 Promise 类型
+
+```ts
+// 提取 Promise 的值类型
+type Awaited<T> = T extends Promise<infer U> ? U : T
+
+type PromiseString = Awaited<Promise<string>> // string
+type PromiseNumber = Awaited<Promise<number>> // number
+type NotPromise = Awaited<string> // string
+
+// 处理嵌套 Promise
+type DeepAwaited<T> = T extends Promise<infer U> ? DeepAwaited<U> : T
+type NestedPromise = DeepAwaited<Promise<Promise<string>>> // string
+```
+
+#### 提取对象属性类型
+
+```ts
+// 提取对象的值类型
+type ValueOf<T> = T[keyof T]
+type UserValues = ValueOf<{ name: string; age: number }> // string | number
+
+// 提取特定属性类型
+type GetProperty<T, K> = K extends keyof T ? T[K] : never
+type UserName = GetProperty<{ name: string; age: number }, 'name'> // string
+
+// 提取数组元素类型
+type ArrayElement<T> = T extends readonly (infer U)[] ? U : never
+type Element = ArrayElement<string[]> // string
+```
+
+#### 实际应用场景
+
+```ts
+// API 响应类型提取
+type ApiData<T> = T extends { data: infer D } ? D : never
+type UserData = ApiData<{ data: User; success: boolean }> // User
+
+// 事件处理器类型提取
+type EventHandler<T> = T extends `on${infer E}` ? E : never
+type ClickEvent = EventHandler<'onClick'> // Click
+type KeyEvent = EventHandler<'onKeyDown'> // KeyDown
+
+// 字符串操作
+type FirstChar<T> = T extends `${infer F}${string}` ? F : never
+type LastChar<T> = T extends `${string}${infer L}` ? L : never
+
+type First = FirstChar<'hello'> // 'h'
+type Last = LastChar<'hello'> // 'o'
+
+// 实用工具类型
+type NonEmptyArray<T> = T extends readonly [any, ...infer Rest] ? [T[0], ...Rest] : never
+type HasElements = NonEmptyArray<[1, 2, 3]> // [1, 2, 3]
+type Empty = NonEmptyArray<[]> // never
+```
+
+#### 注意事项
+
+- `infer` 只能在条件类型的 `extends` 子句中使用
+- 推断的类型会自动进行联合类型合并
+- 适合用于提取复杂类型中的特定部分
+- 常与内置工具类型结合使用
+
+### 总结

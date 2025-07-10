@@ -1,11 +1,6 @@
 import { CodeSandbox } from '@/components/CodeSandbox'
 
-## Promise 打印执行顺序
-
-- await 后面是微任务
-- resolve 不会影响同步执行
-- then都会执行，默认是return undefined
-- 事件循环，先清空微任务，再执行宏任务
+## 复习面试题 - 打印题 - Promise 执行顺序
 
 ### 题目 1：async/await
 
@@ -297,3 +292,10 @@ export default function EventLoopDemo() {
 ```
 
 </Sandpack>
+
+### 总结
+
+- await 会暂停 async 函数执行，await 之后的代码会作为微任务加入队列
+- resolve 不会影响同步执行
+- then 都会执行，默认是 return undefined
+- 事件循环，先清空微任务，再执行宏任务

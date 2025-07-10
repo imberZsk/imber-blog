@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2017", // 目标版本
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
+    "allowJs": true, // 允许在项目中导入 JavaScript 文件，而不仅仅是 .ts 和 .tsx 文件。例如，此 JS 文件：
+    "skipLibCheck": true, // 跳过库文件的类型检查
+    "strict": true, // 开启所有严格检查，默认 strictNullChecks noImplicitAny
+    "noEmit": true, // 不编译出文件
+    "esModuleInterop": true, // https://www.typescriptlang.org/tsconfig/#esModuleInterop
+    "module": "esnext", // 模块
+    "moduleResolution": "bundler", // 模块解析策略
+    "resolveJsonModule": true, // 允许导入 JSON 模块
+    "isolatedModules": true, // 每个文件被视为一个模块
+    "jsx": "preserve", // 保留 JSX 语法
+    "incremental": true, // 增量编译
     "plugins": [
       {
         "name": "next"

@@ -1,5 +1,7 @@
 import { CodeSandbox } from '@/components/CodeSandbox'
 
+[LeetCode 热题 100](https://leetcode.cn/studyplan/top-100-liked/)
+
 ## 数组相关
 
 ### 1 两数之和
@@ -976,3 +978,110 @@ export default function ClimbStairsDemo() {
 ```
 
 </Sandpack>
+
+### LRU 缓存
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function LRUCacheDemo() {
+  const [result, setResult] = useState('')
+
+  class LRUCache {
+    constructor(capacity) {
+      this.capacity = capacity // 缓存容量
+      this.cache = new Map() // 缓存
+    }
+    get(key) {
+      // 如果缓存中没有该key，返回-1
+      if (!this.cache.has(key)) return -1
+      const value = this.cache.get(key)
+      // 删除该key
+      this.cache.delete(key)
+      // 将该key重新插入到缓存中
+      this.cache.set(key, value)
+      // 返回该key的值
+      return value
+    }
+    put(key, value) {
+      // 如果缓存中已经存在该key，删除该key
+      if (this.cache.has(key)) {
+        this.cache.delete(key)
+      } else if (this.cache.size >= this.capacity) {
+        // 如果缓存容量已满，删除最久未使用的key
+        this.cache.delete(this.cache.keys().next().value)
+      }
+      // 将该key插入到缓存中
+      this.cache.set(key, value)
+    }
+  }
+
+  function handleClick() {
+    const lru = new LRUCache(2)
+    lru.put(1, 1)
+    lru.put(2, 2)
+    lru.get(1)
+    lru.put(3, 3)
+    setResult(JSON.stringify(Array.from(lru.cache.entries())))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试 LRUCache</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+总结：
+
+### 字符串相加
+
+<Sandpack>
+
+```js
+import { useState } from 'react'
+
+export default function AddStringsDemo() {
+  const [result, setResult] = useState('')
+
+  function addStrings(num1, num2) {
+    const len = Math.max(num1.length, num2.length)
+    num1 = num1.padStart(len, '0')
+    num2 = num2.padStart(len, '0')
+    // 进位
+    let carry = 0
+    // 结果
+    let result = ''
+    for (let i = len - 1; i >= 0; i--) {
+      // 当前位相加
+      const sum = +num1[i] + +num2[i] + carry
+      // 当前位相加结果
+      result = (sum % 10) + result
+      // 进位
+      carry = sum >= 10 ? 1 : 0
+    }
+    return carry ? '1' + result : result
+  }
+
+  function handleClick() {
+    setResult(addStrings('123456789123456789', '987654321987654321'))
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>测试大数相加</button>
+      <div>结果：{result}</div>
+    </div>
+  )
+}
+```
+
+</Sandpack>
+
+总结：

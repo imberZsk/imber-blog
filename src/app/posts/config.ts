@@ -56,13 +56,13 @@ export const postsConfig = [
     tags: ['Nextjs'],
     views: 123
   },
-  // {
-  //   title: '优雅的使用 TypeScript',
-  //   href: '/posts/typescript',
-  //   date: '2025-02-09',
-  //   tags: ['TypeScript'],
-  //   views: 123
-  // },
+  {
+    title: '复习 TypeScript',
+    href: '/posts/typescript',
+    date: '2025-02-09',
+    tags: ['TypeScript'],
+    views: 123
+  },
   {
     title: '优雅的使用 Tailwind',
     href: '/posts/tailwind',
@@ -92,22 +92,22 @@ export const postsConfig = [
     views: 32
   },
   {
-    title: '复习面试题 - 经典打印题',
-    href: '/posts/print',
+    title: '复习面试题 - 打印题 - Promise 执行顺序',
+    href: '/posts/promise',
     date: '2025-02-09',
     tags: ['面试题'],
     views: 32
   },
   {
-    title: '复习面试题 - this 指向',
+    title: '复习面试题 - 打印题  - this 指向',
     href: '/posts/this',
     date: '2025-02-09',
     tags: ['面试题'],
     views: 32
   },
   {
-    title: '复习面试题 - Promise 执行顺序',
-    href: '/posts/promise',
+    title: '复习面试题 - 打印题 - 闭包/变量提升/作用域链',
+    href: '/posts/print',
     date: '2025-02-09',
     tags: ['面试题'],
     views: 32
