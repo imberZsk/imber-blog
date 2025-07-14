@@ -3,6 +3,7 @@
 - [Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
 - [Typescript 入门教程](https://juejin.cn/book/7288482920602271802/section/7288665243814658107)
 - [TypeScript 类型体操](https://github.com/type-challenges/type-challenges/tree/main)
+- [TypeScript 全面进阶指南](https://juejin.cn/book/7086408430491172901?utm_source=course_list)
 
 > 本文档基于 v5.8.3 版本
 
@@ -21,6 +22,10 @@ Typescript 的好处：
 ![typescript inlay hints](/posts/typescript/image1.png)
 
 ![页面截图 - 提示变量类型](/posts/typescript/image2.png)
+
+- vscode 插件 typescript imports 可以自动导入模块
+- ts-node 可以运行 ts 文件
+- ts-node-dev 可以热更新 ts 文件
 
 ### tsconfig.json 配置
 
@@ -165,47 +170,7 @@ const myCanvas = document.getElementById('main_canvas') as HTMLCanvasElement
 
 泛型允许我们在定义函数、接口或类的时候，不预先指定具体的类型，而在使用的时候再指定类型。这样可以让我们写出更加通用和类型安全的代码。
 
-#### 基本语法
-
-```ts
-// 泛型函数
-function identity<T>(arg: T): T {
-  return arg
-}
-
-// 使用时指定类型
-const result1 = identity<string>('hello')
-const result2 = identity<number>(42)
-
-// 类型推断，TS 会自动推断类型
-const result3 = identity('hello') // 推断为 string
-const result4 = identity(42) // 推断为 number
-```
-
-#### 泛型接口和类型
-
-```ts
-// 泛型接口
-interface GenericIdentityFn<T> {
-  (arg: T): T
-}
-
-// 泛型类型别名
-type Container<T> = {
-  value: T
-  getValue(): T
-}
-
-// 使用
-const stringContainer: Container<string> = {
-  value: 'hello',
-  getValue() {
-    return this.value
-  }
-}
-```
-
-#### 泛型约束
+#### 泛型约束 🔥
 
 使用 `extends` 关键字来约束泛型类型：
 
@@ -231,14 +196,23 @@ loggingIdentity([1, 2, 3]) // array 有 length
 #### 映射类型与泛型
 
 ```ts
-// 将所有属性变为可选
-type MyPartial<T> = {
-  [P in keyof T]?: T[P]
+type MyPick<T, K extends keyof T> = {
+  [P in K]: T[P]
 }
 
 // 将所有属性变为只读
 type MyReadonly<T> = {
   readonly [P in keyof T]: T[P]
+}
+
+// 将所有属性变为可选
+type MyPartial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+// 将数组中的每个元素转换为对象的键
+type TupleToObject<T extends readonly (string | number | symbol)[]> = {
+  [P in T[number]]: P
 }
 
 interface User {
@@ -273,26 +247,6 @@ async function fetchUser(id: string): Promise<ApiResponse<User>> {
 async function fetchUsers(): Promise<ApiResponse<User[]>> {
   // 实现...
 }
-```
-
-#### 泛型默认类型
-
-```ts
-// 为泛型提供默认类型
-interface Container<T = string> {
-  value: T
-}
-
-const stringContainer: Container = { value: 'hello' } // 默认为 string
-const numberContainer: Container<number> = { value: 42 }
-
-// 函数默认泛型
-function createArray<T = string>(length: number, value: T): T[] {
-  return Array(length).fill(value)
-}
-
-const strings = createArray(3, 'hello') // string[]
-const numbers = createArray<number>(3, 42) // number[]
 ```
 
 ### 函数重载
@@ -336,49 +290,7 @@ function getElement(input: string | HTMLElement): HTMLElement | null {
   }
   return input
 }
-
-// API 请求
-function fetchData(id: number): Promise<User>
-function fetchData(ids: number[]): Promise<User[]>
-function fetchData(input: number | number[]): Promise<User | User[]> {
-  if (Array.isArray(input)) {
-    return Promise.all(input.map((id) => fetchUser(id)))
-  }
-  return fetchUser(input)
-}
-
-// 类型安全的事件处理
-function addEventListener(type: 'click', handler: (e: MouseEvent) => void): void
-function addEventListener(type: 'keydown', handler: (e: KeyboardEvent) => void): void
-function addEventListener(type: string, handler: (e: Event) => void): void {
-  document.addEventListener(type, handler)
-}
 ```
-
-#### 与联合类型的对比
-
-```ts
-// ❌ 联合类型 - 返回类型不够精确
-function parseValue(input: string | number): string | number {
-  return typeof input === 'string' ? input.toUpperCase() : input * 2
-}
-const result = parseValue('hello') // string | number（不够精确）
-
-// ✅ 函数重载 - 返回类型精确
-function parseValueOverload(input: string): string
-function parseValueOverload(input: number): number
-function parseValueOverload(input: string | number): string | number {
-  return typeof input === 'string' ? input.toUpperCase() : input * 2
-}
-const result = parseValueOverload('hello') // string（精确）
-```
-
-#### 注意事项
-
-- 重载签名必须在实现签名之前
-- 实现签名必须兼容所有重载签名
-- 重载签名越具体越优先匹配
-- 避免过度使用，简单场景优先考虑泛型或联合类型
 
 ### 内置工具类型
 
@@ -417,6 +329,9 @@ ReturnType<T>
 
 // 返回函数参数的类型
 Parameters<T>
+
+// 返回 Promise 的值类型
+Awaited<T>
 ```
 
 Pick 与 Omit 类型是类型编程中相当重要的一个部分，举例来说，我们可以先声明一个代表全局所有状态的大型接口类型：
@@ -448,7 +363,31 @@ type UserBasicInfo = Pick<User, 'name' | 'age' | 'email'>
 type UserDetailedInfo = Omit<User, 'name' | 'age' | 'email'>
 ```
 
-### 逆变和协变
+### 模版字符串类型
+
+此前使用字面量类型来提供精确的类型定义时，会面临的一个问题就是当可用的字面量类型过多，自己一个个写会非常的头痛，可能就直接选择用 string 类型了。而现在，假设这些字面量类型满足一定的规律，我们就可以通过模板字符串类型的自动分发特性，来实现由排列组合自动生成联合类型了！
+
+```ts
+type Version = `${number}.${number}.${number}`
+
+const v1: Version = '1.1.0'
+const v2: Version = '1.0' // 报错：类型 "1.0" 不能赋值给类型 `${number}.${number}.${number}`
+const v3: Version = 'a.0.0' // 报错：类型 "a.0" 不能赋值给类型 `${number}.${number}.${number}`
+```
+
+```ts
+type Brand = 'iphone' | 'xiaomi' | 'honor'
+
+type SKU = `${Brand}` // "iphone" | "xiaomi" | "honor"
+
+type SKU = `${Brand}-latest` // "iphone-latest" | "xiaomi-latest" | "honor-latest"
+
+type Brand2 = 'iphone' | 'xiaomi' | 'honor'
+type Memory = '16G' | '64G'
+type ItemType = 'official' | 'second-hand'
+
+type SKU2 = `${Brand2}-${Memory}-${ItemType}` // 多种排列组合
+```
 
 ### infer
 
@@ -463,85 +402,11 @@ type GetArrayType<T> = T extends (infer U)[] ? U : never
 type StringArray = GetArrayType<string[]> // string
 type NumberArray = GetArrayType<number[]> // number
 type NotArray = GetArrayType<string> // never
+
+// 提取第一个数组第一个类型
+type First<T extends unknown[]> = T extends [infer A, ...unknown[]] ? A : never
 ```
 
-#### 提取函数类型
+{/* ### 逆变和协变 */}
 
-```ts
-// 提取函数参数类型
-type Parameters<T> = T extends (...args: infer P) => any ? P : never
-type MyFuncParams = Parameters<(a: string, b: number) => void> // [string, number]
-
-// 提取函数返回值类型
-type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never
-type MyFuncReturn = ReturnType<() => string> // string
-
-// 提取第一个参数类型
-type FirstParameter<T> = T extends (first: infer F, ...rest: any[]) => any ? F : never
-type FirstParam = FirstParameter<(name: string, age: number) => void> // string
-```
-
-#### 提取 Promise 类型
-
-```ts
-// 提取 Promise 的值类型
-type Awaited<T> = T extends Promise<infer U> ? U : T
-
-type PromiseString = Awaited<Promise<string>> // string
-type PromiseNumber = Awaited<Promise<number>> // number
-type NotPromise = Awaited<string> // string
-
-// 处理嵌套 Promise
-type DeepAwaited<T> = T extends Promise<infer U> ? DeepAwaited<U> : T
-type NestedPromise = DeepAwaited<Promise<Promise<string>>> // string
-```
-
-#### 提取对象属性类型
-
-```ts
-// 提取对象的值类型
-type ValueOf<T> = T[keyof T]
-type UserValues = ValueOf<{ name: string; age: number }> // string | number
-
-// 提取特定属性类型
-type GetProperty<T, K> = K extends keyof T ? T[K] : never
-type UserName = GetProperty<{ name: string; age: number }, 'name'> // string
-
-// 提取数组元素类型
-type ArrayElement<T> = T extends readonly (infer U)[] ? U : never
-type Element = ArrayElement<string[]> // string
-```
-
-#### 实际应用场景
-
-```ts
-// API 响应类型提取
-type ApiData<T> = T extends { data: infer D } ? D : never
-type UserData = ApiData<{ data: User; success: boolean }> // User
-
-// 事件处理器类型提取
-type EventHandler<T> = T extends `on${infer E}` ? E : never
-type ClickEvent = EventHandler<'onClick'> // Click
-type KeyEvent = EventHandler<'onKeyDown'> // KeyDown
-
-// 字符串操作
-type FirstChar<T> = T extends `${infer F}${string}` ? F : never
-type LastChar<T> = T extends `${string}${infer L}` ? L : never
-
-type First = FirstChar<'hello'> // 'h'
-type Last = LastChar<'hello'> // 'o'
-
-// 实用工具类型
-type NonEmptyArray<T> = T extends readonly [any, ...infer Rest] ? [T[0], ...Rest] : never
-type HasElements = NonEmptyArray<[1, 2, 3]> // [1, 2, 3]
-type Empty = NonEmptyArray<[]> // never
-```
-
-#### 注意事项
-
-- `infer` 只能在条件类型的 `extends` 子句中使用
-- 推断的类型会自动进行联合类型合并
-- 适合用于提取复杂类型中的特定部分
-- 常与内置工具类型结合使用
-
-### 总结
+{/* ### 总结 */}
