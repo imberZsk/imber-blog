@@ -315,10 +315,10 @@ Pick<T, K>
 // 从 T 中排除一组属性 K，返回一个新类型
 Omit<T, K>
 
-// 从 T 中提取 U 中的类型，返回一个新类型
+// 从 T 中提取 U 中的类型，T是联合类型，返回一个新类型
 Extract<T, U>
 
-// 从 T 中排除 U 中的类型，返回一个新类型
+// 从 T 中排除 U 中的类型，T是联合类型，返回一个新类型
 Exclude<T, U>
 
 // 从 T 中排除 null 和 undefined，返回一个新类型
@@ -407,6 +407,118 @@ type NotArray = GetArrayType<string> // never
 type First<T extends unknown[]> = T extends [infer A, ...unknown[]] ? A : never
 ```
 
-{/* ### 逆变和协变 */}
+### 逆变和协变
+
+函数参数的逆变性，在 TypeScript 中，函数参数位置是逆变的
+
+```ts
+// 如果 A extends B，那么：
+(x: B) => void extends (x: A) => void  // true
+```
+
+函数返回值的协变性，在 TypeScript 中，函数返回值位置是协变的
+
+```ts
+// 如果 A extends B，那么：
+(x: A) => void extends (x: B) => void  // true
+```
+
+这种方法最重要的特性是能正确处理 any 类型：
+
+```ts
+// 如果是普通方法
+type SimpleEqual<T, U> = T extends U ? (U extends T ? true : false) : false
+
+type Test = SimpleEqual<string, any> // boolean 而不是 false，因为受 any 影响转成了联合类型
+
+// 更好的方案
+type IsEqual<T, U> = (<G>() => G extends T ? 1 : 2) extends <G>() => G extends U ? 1 : 2 ? true : false
+
+type Test = IsEqual<string, any> // false 而不是true
+```
+
+### 手写内置工具类型
+
+#### 手写 Partial
+
+```ts
+
+```
+
+#### 手写 Required
+
+```ts
+
+```
+
+#### 手写 Readonly
+
+```ts
+
+```
+
+#### 手写 Pick
+
+```ts
+
+```
+
+#### 手写 Omit
+
+```ts
+
+```
+
+#### 手写 Record
+
+```ts
+
+```
+
+#### 手写 Extract
+
+```ts
+
+```
+
+#### 手写 Exclude
+
+```ts
+
+```
+
+#### 手写 NonNullable
+
+```ts
+
+```
+
+#### 手写 ReturnType
+
+```ts
+
+```
+
+#### 手写 Parameters
+
+```ts
+
+```
+
+#### 手写 Awaited
+
+```ts
+
+```
+
+#### 手写 PromiseType
+
+```ts
+
+```
 
 {/* ### 总结 */}
+
+### 类型体操练习
+
+[type-challenges](https://github.com/imberZsk/type-challenges)
