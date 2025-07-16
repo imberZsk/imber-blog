@@ -57,7 +57,7 @@ export const postsConfig = [
     views: 123
   },
   {
-    title: '复习 TypeScript',
+    title: 'TypeScript 基础知识到类型体操',
     href: '/posts/typescript',
     date: '2025-02-09',
     tags: ['TypeScript'],

@@ -1,13 +1,11 @@
-### 优雅的使用 TypeScript
+### TypeScript 基础知识到类型体操
 
 - [Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
 - [Typescript 入门教程](https://juejin.cn/book/7288482920602271802/section/7288665243814658107)
 - [TypeScript 类型体操](https://github.com/type-challenges/type-challenges/tree/main)
 - [TypeScript 全面进阶指南](https://juejin.cn/book/7086408430491172901?utm_source=course_list)
 
-> 本文档基于 v5.8.3 版本
-
-### 前言
+> 文章基于 v5.8.3 版本
 
 Typescript 的好处：
 
@@ -297,6 +295,9 @@ function getElement(input: string | HTMLElement): HTMLElement | null {
 [内置工具类型](https://www.typescriptlang.org/docs/handbook/utility-types.html)
 
 ```ts
+// 返回 Promise 的值类型
+Awaited<T>
+
 // 可选
 Partial<T>
 
@@ -315,23 +316,17 @@ Pick<T, K>
 // 从 T 中排除一组属性 K，返回一个新类型
 Omit<T, K>
 
-// 从 T 中提取 U 中的类型，T是联合类型，返回一个新类型
-Extract<T, U>
-
-// 从 T 中排除 U 中的类型，T是联合类型，返回一个新类型
+// 从 UnionType T 中排除 U 中的类型，T是联合类型，返回一个新类型
 Exclude<T, U>
 
-// 从 T 中排除 null 和 undefined，返回一个新类型
-NonNullable<T>
-
-// 返回函数返回值的类型
-ReturnType<T>
+// 从 UnionType T 中提取 U 中的类型，T是联合类型，返回一个新类型
+Extract<T, U>
 
 // 返回函数参数的类型
 Parameters<T>
 
-// 返回 Promise 的值类型
-Awaited<T>
+// 返回函数返回值的类型
+ReturnType<T>
 ```
 
 Pick 与 Omit 类型是类型编程中相当重要的一个部分，举例来说，我们可以先声明一个代表全局所有状态的大型接口类型：
@@ -409,21 +404,268 @@ type First<T extends unknown[]> = T extends [infer A, ...unknown[]] ? A : never
 
 ### 逆变和协变
 
-函数参数的逆变性，在 TypeScript 中，函数参数位置是逆变的
+协变，子类型可以赋值给父类型
 
 ```ts
-// 如果 A extends B，那么：
-(x: B) => void extends (x: A) => void  // true
+interface Person {
+  name: string
+}
+
+interface Son {
+  name: string
+  hobbies: string[]
+}
+
+let person: Person = {
+  name: ''
+}
+
+let son: Son = {
+  name: '111',
+  hobbies: ['play game', 'writing']
+}
+
+person = son // ✅
+
+son = person // ❌
 ```
 
-函数返回值的协变性，在 TypeScript 中，函数返回值位置是协变的
+函数的参数有逆变的性质，而返回值是协变的，也就是返回值的子类型可以赋值给父类型
 
 ```ts
-// 如果 A extends B，那么：
-(x: A) => void extends (x: B) => void  // true
+interface Person {
+  name: string
+}
+
+interface Son {
+  name: string
+  hobbies: string[]
+}
+
+let printHobbies: (son: Son) => void
+
+printHobbies = (son) => {
+  console.log(son.hobbies)
+}
+
+let printName: (person: Person) => void
+
+printName = (person) => {
+  console.log(person.name)
+}
+
+// 父类型参数赋值给子
+printHobbies = printName // ✅
+
+printName = printHobbies // ❌
 ```
 
-这种方法最重要的特性是能正确处理 any 类型：
+函数的参数有逆变（父类型赋值给子类型）的性质
+
+- 这是函数类型，函数的参数有逆变的特性，所以父类型赋值给子类型是允许的
+- 下面是函数参数 hello 子类型赋值给父类型所以报错
+- 返回值的位置是协变的，也就是赋值的函数的返回值是被赋值的函数的返回值的子类型
+
+```ts
+// 前置只是 undefined 是 void子类型
+
+type A = undefined
+type B = void
+
+type C = A extends B ? true : false // true
+type D = B extends A ? true : false // false
+
+//
+
+type Func = (a: string) => void
+
+// func 会报错
+// 不能将类型“(a: "hello") => undefined”分配给类型“Func”。
+//   参数“a”和“a” 的类型不兼容。
+//     不能将类型“string”分配给类型“"hello"”
+const func: Func = (a: 'hello') => undefined
+```
+
+### 手写内置工具类型
+
+#### 手写 Awaited
+
+```ts
+type MyAwaited<T> = T extends Promise<infer Value> ? Value : never
+
+type A = MyAwaited<Promise<string>>
+```
+
+#### 手写 Partial
+
+```ts
+type MyPartial<T> = {
+  [Key in keyof T]?: T[Key]
+}
+
+interface Todo {
+  title: string
+  description: string
+}
+
+type A = MyPartial<Todo>
+```
+
+#### 手写 Required
+
+```ts
+type MyRequired<T> = {
+  [Key in keyof T]-?: T[Key]
+}
+
+interface Props {
+  a?: number
+  b?: string
+}
+
+// 报错
+const obj2: MyRequired<Props> = { a: 5 }
+```
+
+#### 手写 Readonly
+
+```ts
+type MyReadonly<T> = {
+  readonly [Key in keyof T]: T[Key]
+}
+
+interface Todo {
+  title: string
+}
+
+const todo: MyReadonly<Todo> = {
+  title: 'Delete inactive users'
+}
+
+// 报错
+todo.title = 'Hello'
+```
+
+#### 手写 Record
+
+```ts
+type MyRecord<T extends keyof any, K> = {
+  [P in T]: K
+}
+
+type CatName = 'miffy' | 'boris' | 'mordred'
+
+interface CatInfo {
+  age: number
+  breed: string
+}
+
+const cats: MyRecord<CatName, CatInfo> = {
+  miffy: { age: 10, breed: 'Persian' },
+  boris: { age: 5, breed: 'Maine Coon' },
+  mordred: { age: 16, breed: 'British Shorthair' }
+}
+
+cats.boris
+```
+
+#### 手写 Pick
+
+```ts
+// 遍历联合类型用in
+type MyPick<T, K extends keyof T> = {
+  [Key in K]: T[Key]
+}
+
+interface Todo {
+  title: string
+  description: string
+  completed: boolean
+}
+
+type TodoPreview = MyPick<Todo, 'title' | 'completed'>
+
+const todo: TodoPreview = {
+  title: 'Clean room',
+  completed: false
+}
+```
+
+#### 手写 Omit
+
+```ts
+type MyOmit<T, K extends keyof T> = {
+  [Key in keyof T as Key extends K ? never : Key]: T[Key]
+}
+
+interface Todo {
+  title: string
+  description: string
+  completed: boolean
+}
+
+type TodoPreview = MyOmit<Todo, 'description' | 'title'>
+
+const todo: TodoPreview = {
+  completed: false
+}
+```
+
+#### 手写 Exclude
+
+```ts
+type MyExclude<T, U> = T extends U ? never : T
+
+type ExcludeResult = MyExclude<'a' | 'b' | 'c', 'a'> // 'b' | 'c'
+
+// 解释
+
+// 当 T 是联合类型时，TypeScript 会自动对每个成员进行分发操作：
+
+// 分发到每个联合成员
+('a' extends 'a' ? never : 'a') |
+('b' extends 'a' ? never : 'b') |
+('c' extends 'a' ? never : 'c')
+
+// 计算结果
+never | 'b' | 'c'
+
+// never 在联合类型中被忽略
+'b' | 'c'
+```
+
+#### 手写 Extract
+
+```ts
+type MyExtract<T, U> = T extends U ? T : never
+
+type T0 = MyExtract<'a' | 'b' | 'c', 'a' | 'f'> // a
+```
+
+#### 手写 Parameters
+
+```ts
+type MyParameters<T extends (...args: any[]) => any> = T extends (...any: infer S) => any ? S : any
+
+const foo = (arg1: string, arg2: number): void => {}
+
+type FunctionParamsType = MyParameters<typeof foo> // [arg1: string, arg2: number]
+```
+
+#### 手写 ReturnType
+
+```ts
+type MyReturnType<T extends Function> = T extends (...args: any) => infer Value ? Value : never
+
+const fn = (v: boolean) => {
+  if (v) return 1
+  else return 2
+}
+
+type a = MyReturnType<typeof fn> // 应推导出 "1 | 2"
+```
+
+### 实现 isEqual
 
 ```ts
 // 如果是普通方法
@@ -437,88 +679,11 @@ type IsEqual<T, U> = (<G>() => G extends T ? 1 : 2) extends <G>() => G extends U
 type Test = IsEqual<string, any> // false 而不是true
 ```
 
-### 手写内置工具类型
-
-#### 手写 Partial
-
-```ts
-
-```
-
-#### 手写 Required
-
-```ts
-
-```
-
-#### 手写 Readonly
-
-```ts
-
-```
-
-#### 手写 Pick
-
-```ts
-
-```
-
-#### 手写 Omit
-
-```ts
-
-```
-
-#### 手写 Record
-
-```ts
-
-```
-
-#### 手写 Extract
-
-```ts
-
-```
-
-#### 手写 Exclude
-
-```ts
-
-```
-
-#### 手写 NonNullable
-
-```ts
-
-```
-
-#### 手写 ReturnType
-
-```ts
-
-```
-
-#### 手写 Parameters
-
-```ts
-
-```
-
-#### 手写 Awaited
-
-```ts
-
-```
-
-#### 手写 PromiseType
-
-```ts
-
-```
-
-{/* ### 总结 */}
-
 ### 类型体操练习
 
 [type-challenges](https://github.com/imberZsk/type-challenges)
+
+### 总结
+
+- TS静态类型检查，在编辑器中提前发现错误，减少生产环境问题，但是只做业务的话还是不要用太深入，权衡开发成本和维护成本
+- 为什么 TS 可以叫类型体操，因为图灵完备的​，递归、条件判断、循环（映射类型）、变量（泛型）​，甚至能实现 ​加减乘除运算​
