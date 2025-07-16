@@ -36,7 +36,7 @@ Typescript 的好处：
   "compilerOptions": {
     // 编译选项
     "target": "ES2017", // 目标版本
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext"], // 内置类型，配置下就能用
     "allowJs": true, // 允许在项目中导入 JavaScript 文件，而不仅仅是 .ts 和 .tsx 文件。例如，此 JS 文件：
     "skipLibCheck": true, // 跳过库文件的类型检查
     "strict": true, // 开启所有严格检查，默认 strictNullChecks noImplicitAny
@@ -686,4 +686,4 @@ type Test = IsEqual<string, any> // false 而不是true
 ### 总结
 
 - TS静态类型检查，在编辑器中提前发现错误，减少生产环境问题，但是只做业务的话还是不要用太深入，权衡开发成本和维护成本
-- 为什么 TS 可以叫类型体操，因为图灵完备的​，递归、条件判断、循环（映射类型）、变量（泛型）​，甚至能实现 ​加减乘除运算​
+- 为什么 TS 类型编程可以叫类型体操，因为它是图灵完备的​，递归、条件判断、循环（映射类型）、变量（泛型）​，甚至能实现 ​加减乘除运算​
