@@ -164,6 +164,12 @@ echoAnimal({ name: 12345 })
 const myCanvas = document.getElementById('main_canvas') as HTMLCanvasElement
 ```
 
+### object、Object 以及 { }
+
+- Object 包含了所有的类型，避免使用
+- object 表示所有非原始类型的类型，即数组、对象与函数类型
+- {} 表示空对象类型，任何非 null / undefined 的值，不可赋值，避免使用
+
 ### 泛型
 
 泛型允许我们在定义函数、接口或类的时候，不预先指定具体的类型，而在使用的时候再指定类型。这样可以让我们写出更加通用和类型安全的代码。
