@@ -2,1086 +2,557 @@ import { CodeSandbox } from '@/components/CodeSandbox'
 
 [LeetCode 热题 100](https://leetcode.cn/studyplan/top-100-liked/)
 
-## 数组相关
-
-### 1 两数之和
-
-<Sandpack>
+### 哈希-001两数之和
 
 ```js
-import { useState } from 'react'
+var twoSum = function (nums, target) {
+  const map = new Map()
+  for (let i = 0; i < nums.length; i++) {
+    const item = nums[i]
+    const diff = target - item // 转为差值
+    if (map.has(diff)) {
+      return [map.get(diff), i]
+    }
+    map.set(item, i)
+  }
+}
 
-export default function TwoSumDemo() {
-  const [result, setResult] = useState('')
+console.log(twoSum([2, 7, 11, 15], 9))
+```
 
-  function twoSum(nums, target) {
-    const diffs = {}
-    const len = nums.length
-    for (let i = 0; i < len; i++) {
-      if (diffs[target - nums[i]] !== undefined) {
-        return [diffs[target - nums[i]], i]
+### 哈希-049字母异位分组
+
+排序，map 存数组，然后 map.values() 取答案
+
+```js
+var groupAnagrams = function (strs) {
+  // map
+  const map = new Map()
+
+  // 遍历数组
+  for (let str of strs) {
+    // 转为数组
+    let array = Array.from(str)
+    // 排序
+    array.sort()
+    // 转为字符串
+    let key = array.toString()
+    // value list
+    let list = map.get(key) ? map.get(key) : []
+    // 放进。value list 里
+    list.push(str)
+    // 放进 map
+    map.set(key, list)
+  }
+
+  // 返回 map 的值
+  return Array.from(map.values())
+}
+
+groupAnagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])
+```
+
+### 哈希-128最长连续序列
+
+放 nums 进 set，右边没有元素 !numSet.has(num - 1) 开始遍历 set
+
+numSet.has(currentNum + 1) 就一直 set 里找有没有下一个，然后 currentNum++ countLength++
+
+有可能多段 length，再比较取最大的
+
+放进 set 里，然后没有左边的情况开始遍历，中间计数，可能出现多段长度，对比找最大长度
+
+时间复杂度On，空间复杂度On
+
+```js
+var longestConsecutive = function (nums) {
+  if (nums.length === 0) return 0
+  const numSet = new Set(nums)
+  let maxLength = 0
+
+  for (const num of numSet) {
+    // 没有当前项 - 1 才是起点
+    if (!numSet.has(num - 1)) {
+      let currentNum = num
+      let countLength = 1
+      while (numSet.has(currentNum + 1)) {
+        currentNum++
+        countLength++
       }
-      diffs[nums[i]] = i
+
+      maxLength = Math.max(maxLength, countLength) // cur不再有右邻居，检查count是否最大
     }
   }
 
-  function handleClick() {
-    setResult(JSON.stringify(twoSum([2, 7, 11, 15], 9)))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试两数之和</button>
-      <div>结果：{result}</div>
-      88{' '}
-    </div>
-  )
+  return maxLength
 }
+
+console.log(longestConsecutive([0, 1, 2, 3, 5, 6, 7]))
 ```
 
-</Sandpack>
+### 双指针-283移动零
 
-### 88 合并两个有序数组
-
-<Sandpack>
+跟双指针没关系，用的栈，记录size，不是 0 则依次赋值，最后补 0
 
 ```js
-import { useState } from 'react'
-
-export default function MergeArrayDemo() {
-  const [result, setResult] = useState('')
-
-  function merge(nums1, m, nums2, n) {
-    let i = m - 1,
-      j = n - 1,
-      k = m + n - 1
-    while (i >= 0 && j >= 0) {
-      if (nums1[i] >= nums2[j]) {
-        nums1[k] = nums1[i]
-        i--
-        k--
-      } else {
-        nums1[k] = nums2[j]
-        j--
-        k--
-      }
+var moveZeroes = function (nums) {
+  // 栈长度
+  let size = 0
+  // 遍历数组
+  for (let num of nums) {
+    // 如果不是0
+    if (num !== 0) {
+      // 重新赋值
+      nums[size] = num
+      size = size + 1
     }
-    while (j >= 0) {
-      nums1[k] = nums2[j]
-      k--
-      j--
-    }
-    return nums1
   }
-
-  function handleClick() {
-    setResult(JSON.stringify(merge([1, 2, 3, 0, 0, 0], 3, [2, 5, 6], 3)))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试合并有序数组</button>
-      <div>结果：{result}</div>
-    </div>
-  )
+  // 补 0
+  return nums.fill(0, size)
 }
+
+console.log(moveZeroes([0, 1, 0, 3, 12]))
 ```
 
-</Sandpack>
+### 双指针-011盛最多水的容器
 
-### 三数之和
-
-<Sandpack>
+左右两边双指针，每次比较左右两边的高度，取小的那个，然后计算面积，然后移动小的那个指针，直到两个指针相遇
 
 ```js
-import { useState } from 'react'
-
-export default function ThreeSumDemo() {
-  const [result, setResult] = useState('')
-
-  function threeSum(nums) {
-    let res = []
-    nums = nums.sort((a, b) => a - b)
-    const len = nums.length
-    for (let i = 0; i < len - 2; i++) {
-      let j = i + 1
-      let k = len - 1
-      if (i > 0 && nums[i] === nums[i - 1]) continue
-      while (j < k) {
-        if (nums[i] + nums[j] + nums[k] < 0) {
-          j++
-          while (j < k && nums[j] === nums[j - 1]) j++
-        } else if (nums[i] + nums[j] + nums[k] > 0) {
-          k--
-          while (j < k && nums[k] === nums[k + 1]) k--
-        } else {
-          res.push([nums[i], nums[j], nums[k]])
-          j++
-          k--
-          while (j < k && nums[j] === nums[j - 1]) j++
-          while (j < k && nums[k] === nums[k + 1]) k--
-        }
-      }
+var maxArea = function (height) {
+  let left = 0
+  let right = height.length - 1
+  let containerLength = height.length - 1
+  let max = 0
+  while (left < right) {
+    max = Math.max(max, containerLength * Math.min(height[left], height[right]))
+    if (height[left] < height[right]) {
+      left++
+    } else {
+      right--
     }
-    return res
+    containerLength--
   }
-
-  function handleClick() {
-    setResult(JSON.stringify(threeSum([-1, 0, 1, 2, -1, -4])))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试三数之和</button>
-      <div>结果：{result}</div>
-    </div>
-  )
+  return max
 }
+
+console.log(maxArea([8, 7, 2, 1]))
 ```
 
-</Sandpack>
+### 双指针-015三数之和
 
-### 长度最小的子数组
-
-```js
-
-```
-
-## 字符串操作
-
-### 验证回文字符串 {/* validate-palindrome */}
-
-<Sandpack>
+排序，然后遍历，每次遍历一个数，然后左右指针找另外两个数，如果三个数之和为 0，则加入结果，如果大于 0，则右指针左移，如果小于 0，则左指针右移
 
 ```js
-import { useState } from 'react'
-
-export default function PalindromeDemo() {
-  const [result, setResult] = useState('')
-
-  function isPalindrome(str) {
-    const len = str.length
-    for (let i = 0; i < len / 2; i++) {
-      if (str[i] !== str[len - i - 1]) {
-        return false
-      }
-    }
-    return true
-  }
-
-  function handleClick() {
-    setResult(isPalindrome('abccba') ? '是回文' : '不是回文')
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试回文字符串</button>
-      <div>结果：{result}</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 最多删除一个字符。判断是否能成为回文字符串 {/* valid-palindrome-ii */}
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function ValidPalindromeDemo() {
-  const [result, setResult] = useState('')
-
-  function validPalindrome(s) {
-    const len = s.length
-    let i = 0,
-      j = len - 1
-    while (i < j && s[i] === s[j]) {
-      i++
-      j--
-    }
-    if (isPalindrome(i + 1, j)) return true
-    if (isPalindrome(i, j - 1)) return true
-    function isPalindrome(st, ed) {
-      while (st < ed) {
-        if (s[st] !== s[ed]) return false
-        st++
-        ed--
-      }
-      return true
-    }
-    return false
-  }
-
-  function handleClick() {
-    setResult(validPalindrome('abca') ? '可以' : '不可以')
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试最多删除一个字符回文</button>
-      <div>结果：{result}</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-## 链表问题
-
-### 合并两个有序链表
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class ListNode {
-  constructor(val, next) {
-    this.val = val === undefined ? 0 : val
-    this.next = next === undefined ? null : next
-  }
-}
-
-export default function MergeTwoListsDemo() {
-  const [result, setResult] = useState('')
-
-  function mergeTwoLists(l1, l2) {
-    const dummy = new ListNode(0)
-    // 穿针引线，也有点像双指针
-    let curr = dummy
-    while (l1 && l2) {
-      if (l1.val < l2.val) {
-        curr.next = l1
-        l1 = l1.next
-      } else {
-        curr.next = l2
-        l2 = l2.next
-      }
-      curr = curr.next
-    }
-    curr.next = l1 || l2
-    return dummy.next
-  }
-
-  function arrayToList(arr) {
-    if (!arr.length) return null
-    const head = new ListNode(arr[0])
-    let curr = head
-    for (let i = 1; i < arr.length; i++) {
-      curr.next = new ListNode(arr[i])
-      curr = curr.next
-    }
-    return head
-  }
-
-  function listToArray(head) {
-    const result = []
-    while (head) {
-      result.push(head.val)
-      head = head.next
-    }
-    return result
-  }
-
-  function handleClick() {
-    const l1 = arrayToList([1, 2, 4])
-    const l2 = arrayToList([1, 3, 4])
-    const merged = mergeTwoLists(l1, l2)
-    setResult(JSON.stringify(listToArray(merged)))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试合并两个有序链表</button>
-      <div>结果：{result}</div>
-      <div>测试用例：[1,2,4] 和 [1,3,4]</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 删除链表倒数第 N 个节点
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class ListNode {
-  constructor(val, next) {
-    this.val = val === undefined ? 0 : val
-    this.next = next === undefined ? null : next
-  }
-}
-
-export default function RemoveNthFromEndDemo() {
-  const [result, setResult] = useState('')
-
-  function removeNthFromEnd(head, n) {
-    const dummy = new ListNode(0)
-    dummy.next = head
-    let fast = dummy
-    let slow = dummy
-
-    // 快指针先走n+1步
-    for (let i = 0; i <= n; i++) {
-      fast = fast.next
-    }
-
-    // 快慢指针一起走
-    while (fast) {
-      fast = fast.next
-      slow = slow.next
-    }
-    slow.next = slow.next.next
-    return dummy.next
-  }
-
-  function arrayToList(arr) {
-    if (!arr.length) return null
-    const head = new ListNode(arr[0])
-    let curr = head
-    for (let i = 1; i < arr.length; i++) {
-      curr.next = new ListNode(arr[i])
-      curr = curr.next
-    }
-    return head
-  }
-
-  function listToArray(head) {
-    const result = []
-    while (head) {
-      result.push(head.val)
-      head = head.next
-    }
-    return result
-  }
-
-  function handleClick() {
-    const head = arrayToList([1, 2, 3, 4, 5])
-    const newHead = removeNthFromEnd(head, 2)
-    setResult(JSON.stringify(listToArray(newHead)))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试删除链表倒数第N个节点</button>
-      <div>结果：{result}</div>
-      <div>测试用例：[1,2,3,4,5] 删除倒数第2个节点</div>
-      <div>解释：使用快慢指针，快指针先走n+1步</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 反转链表
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class ListNode {
-  constructor(val, next) {
-    this.val = val === undefined ? 0 : val
-    this.next = next === undefined ? null : next
-  }
-}
-
-export default function ReverseListDemo() {
-  const [result, setResult] = useState('')
-
-  function reverseList(head) {
-    let prev = null
-    let curr = head
-    while (curr) {
-      const next = curr.next // 记录下一个节点
-      curr.next = prev
-      prev = curr
-      curr = next
-    }
-    return prev
-  }
-
-  function arrayToList(arr) {
-    if (!arr.length) return null
-    const head = new ListNode(arr[0])
-    let curr = head
-    for (let i = 1; i < arr.length; i++) {
-      curr.next = new ListNode(arr[i])
-      curr = curr.next
-    }
-    return head
-  }
-
-  function listToArray(head) {
-    const result = []
-    while (head) {
-      result.push(head.val)
-      head = head.next
-    }
-    return result
-  }
-
-  function handleClick() {
-    const head = arrayToList([1, 2, 3, 4, 5])
-    const reversed = reverseList(head)
-    setResult(JSON.stringify(listToArray(reversed)))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试反转链表</button>
-      <div>结果：{result}</div>
-      <div>测试用例：[1,2,3,4,5]</div>
-      <div>解释：使用三个指针（prev, curr, next）记录状态</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 环形链表检测
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class ListNode {
-  constructor(val, next) {
-    this.val = val === undefined ? 0 : val
-    this.next = next === undefined ? null : next
-  }
-}
-
-export default function HasCycleDemo() {
-  const [result, setResult] = useState('')
-
-  function hasCycle(head) {
-    let slow = head
-    let fast = head
-    while (fast && fast.next) {
-      slow = slow.next
-      fast = fast.next.next
-      if (slow === fast) return true
-    }
-    return false
-  }
-
-  function createCycleList() {
-    const node1 = new ListNode(3)
-    const node2 = new ListNode(2)
-    const node3 = new ListNode(0)
-    const node4 = new ListNode(-4)
-
-    node1.next = node2
-    node2.next = node3
-    node3.next = node4
-    node4.next = node2 // 形成环
-
-    return node1
-  }
-
-  function createNormalList() {
-    const node1 = new ListNode(1)
-    const node2 = new ListNode(2)
-    const node3 = new ListNode(3)
-
-    node1.next = node2
-    node2.next = node3
-
-    return node1
-  }
-
-  function handleCycleTest() {
-    const cycleList = createCycleList()
-    setResult(`有环链表：${hasCycle(cycleList)}`)
-  }
-
-  function handleNormalTest() {
-    const normalList = createNormalList()
-    setResult(`无环链表：${hasCycle(normalList)}`)
-  }
-
-  return (
-    <div>
-      <button onClick={handleCycleTest}>测试有环链表</button>
-      <button onClick={handleNormalTest}>测试无环链表</button>
-      <div>结果：{result}</div>
-      <div>解释：使用快慢指针，如果有环快指针会追上慢指针</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-## 栈
-
-### 有效的括号
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function ValidParenthesesDemo() {
-  const [result, setResult] = useState('')
-  const [input, setInput] = useState('()[]{}')
-
-  function isValid(s) {
-    const stack = []
-    const map = {
-      '(': ')',
-      '[': ']',
-      '{': '}'
-    }
-
-    for (let char of s) {
-      if (map[char]) {
-        // 左括号入栈
-        stack.push(char)
-      } else {
-        // 右括号时检查匹配
-        if (stack.length === 0 || map[stack.pop()] !== char) {
-          return false
-        }
-      }
-    }
-    return stack.length === 0
-  }
-
-  function handleTest() {
-    setResult(`"${input}" 是${isValid(input) ? '有效' : '无效'}的括号`)
-  }
-
-  function testCase(testStr) {
-    setInput(testStr)
-    setResult(`"${testStr}" 是${isValid(testStr) ? '有效' : '无效'}的括号`)
-  }
-
-  return (
-    <div>
-      <div>
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="输入括号字符串" />
-        <button onClick={handleTest}>测试</button>
-      </div>
-      <div>
-        <button onClick={() => testCase('()')}>测试: ()</button>
-        <button onClick={() => testCase('()[]{}')}>测试: ()[]&#123;&#125;</button>
-        <button onClick={() => testCase('(]')}>测试: (]</button>
-        <button onClick={() => testCase('([)]')}>测试: ([)]</button>
-      </div>
-      <div>结果：{result}</div>
-      <div>解释：使用栈，左括号入栈，右括号时检查是否匹配</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-## 队列
-
-### 滑动窗口
-
-```js
-
-```
-
-## 树相关
-
-### 二叉树的前序遍历
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class TreeNode {
-  constructor(val, left, right) {
-    this.val = val === undefined ? 0 : val
-    this.left = left === undefined ? null : left
-    this.right = right === undefined ? null : right
-  }
-}
-
-export default function PreorderTraversalDemo() {
-  const [result, setResult] = useState('')
-
-  function preorderTraversal(root) {
-    const result = []
-    function traverse(node) {
-      if (!node) return
-      result.push(node.val) // 访问根节点
-      traverse(node.left) // 遍历左子树
-      traverse(node.right) // 遍历右子树
-    }
-    traverse(root)
-    return result
-  }
-
-  function createBinaryTree() {
-    // 构建测试树：     1
-    //               /   \
-    //             null   2
-    //                   /
-    //                  3
-    const root = new TreeNode(1)
-    root.right = new TreeNode(2)
-    root.right.left = new TreeNode(3)
-    return root
-  }
-
-  function handleClick() {
-    const root = createBinaryTree()
-    const traversalResult = preorderTraversal(root)
-    setResult(JSON.stringify(traversalResult))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试前序遍历</button>
-      <div>结果：{result}</div>
-      <div>测试树结构： 1 -> null, 2 -> 3, null</div>
-      <div>前序遍历顺序：根 -> 左 -> 右</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 二叉树的层序遍历
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-class TreeNode {
-  constructor(val, left, right) {
-    this.val = val === undefined ? 0 : val
-    this.left = left === undefined ? null : left
-    this.right = right === undefined ? null : right
-  }
-}
-
-export default function LevelOrderDemo() {
-  const [result, setResult] = useState('')
-
-  function levelOrder(root) {
-    if (!root) return []
-    const result = []
-    const queue = [root]
-
-    while (queue.length) {
-      const level = []
-      const size = queue.length
-
-      // 处理当前层的所有节点
-      for (let i = 0; i < size; i++) {
-        const node = queue.shift()
-        level.push(node.val)
-
-        // 将下一层的节点加入队列
-        if (node.left) queue.push(node.left)
-        if (node.right) queue.push(node.right)
-      }
-      result.push(level)
-    }
-    return result
-  }
-
-  function createBinaryTree() {
-    //       3
-    //      / \
-    //     9   20
-    //        /  \
-    //       15   7
-    const root = new TreeNode(3)
-    root.left = new TreeNode(9)
-    root.right = new TreeNode(20)
-    root.right.left = new TreeNode(15)
-    root.right.right = new TreeNode(7)
-    return root
-  }
-
-  function handleClick() {
-    const root = createBinaryTree()
-    const traversalResult = levelOrder(root)
-    setResult(JSON.stringify(traversalResult))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试层序遍历</button>
-      <div>结果：{result}</div>
-      <div>测试树结构：</div>
-      <pre>
-        {`      3
-     / \\
-    9   20
-       /  \\
-      15   7`}
-      </pre>
-      <div>层序遍历：逐层从左到右访问节点</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-## 排序和搜索
-
-### 快速排序
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function QuickSortDemo() {
-  const [result, setResult] = useState('')
-  const [input, setInput] = useState('64,34,25,12,22,11,90')
-
-  function quickSort(arr) {
-    if (arr.length <= 1) return arr
-
-    const pivot = arr[0] // 选择第一个元素作为基准
-    const left = []
-    const right = []
-
-    // 分区：小于基准的放左边，大于等于的放右边
-    for (let i = 1; i < arr.length; i++) {
-      if (arr[i] < pivot) {
-        left.push(arr[i])
-      } else {
-        right.push(arr[i])
-      }
-    }
-
-    // 递归排序左右两部分，然后合并
-    return [...quickSort(left), pivot, ...quickSort(right)]
-  }
-
-  function handleSort() {
-    try {
-      const arr = input
-        .split(',')
-        .map((num) => parseInt(num.trim()))
-        .filter((num) => !isNaN(num))
-      const sorted = quickSort([...arr])
-      setResult(`原数组: [${arr.join(', ')}]\n排序后: [${sorted.join(', ')}]`)
-    } catch (error) {
-      setResult('请输入有效的数字，用逗号分隔')
-    }
-  }
-
-  function testCase(testArr) {
-    const arrStr = testArr.join(',')
-    setInput(arrStr)
-    const sorted = quickSort([...testArr])
-    setResult(`原数组: [${testArr.join(', ')}]\n排序后: [${sorted.join(', ')}]`)
-  }
-
-  return (
-    <div>
-      <div>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="输入数字，用逗号分隔"
-          style={{ width: '200px' }}
-        />
-        <button onClick={handleSort}>快速排序</button>
-      </div>
-      <div>
-        <button onClick={() => testCase([64, 34, 25, 12, 22, 11, 90])}>测试用例1</button>
-        <button onClick={() => testCase([3, 1, 4, 1, 5, 9, 2, 6])}>测试用例2</button>
-        <button onClick={() => testCase([5, 4, 3, 2, 1])}>测试用例3</button>
-      </div>
-      <pre>结果：{result}</pre>
-      <div>算法思想：分治法，选择基准元素，分区，递归排序</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-### 二分查找
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function BinarySearchDemo() {
-  const [result, setResult] = useState('')
-  const [target, setTarget] = useState('9')
-
-  function binarySearch(nums, target) {
-    let left = 0
+var threeSum = function (nums) {
+  nums.sort((a, b) => a - b) // 排序
+  let target = [] // 排序后[-2,0,1,1,2]
+
+  for (let i = 0; i < nums.length - 2; i++) {
+    const item = nums[i]
+    let left = i + 1
     let right = nums.length - 1
 
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2)
-
-      if (nums[mid] === target) {
-        return mid // 找到目标，返回索引
-      }
-
-      if (nums[mid] < target) {
-        left = mid + 1 // 目标在右半部分
-      } else {
-        right = mid - 1 // 目标在左半部分
-      }
+    if (i > 0 && nums[i] === nums[i - 1]) {
+      continue
     }
 
-    return -1 // 未找到
+    while (left < right) {
+      let sum = item + nums[right] + nums[left]
+
+      if (sum === 0) {
+        target.push([item, nums[left], nums[right]])
+
+        while (nums[left] === nums[left + 1]) {
+          left++
+        }
+
+        while (nums[right] === nums[right - 1]) {
+          right--
+        }
+
+        left++
+        right--
+      }
+
+      if (sum > 0) {
+        right--
+      }
+
+      if (sum < 0) {
+        left++
+      }
+    }
   }
 
-  function handleSearch() {
-    const nums = [-1, 0, 3, 5, 9, 12]
-    const targetNum = parseInt(target)
-    const index = binarySearch(nums, targetNum)
+  return target
+}
 
-    if (index !== -1) {
-      setResult(`在数组 [${nums.join(', ')}] 中找到 ${targetNum}，索引为: ${index}`)
+console.log(threeSum([-1, 0, 1, 2, -1, -4]))
+```
+
+### 双指针-042接雨水
+
+左右两边双指针，每次比较左右两边的高度，取大的那个，然后计算面积，然后移动小的那个指针，直到两个指针相遇
+
+```js
+var trap = function (height) {
+  let ans = 0
+  let left = 0,
+    right = height.length - 1 // 双指针：左右两端
+  let leftMax = 0,
+    rightMax = 0 // 记录左右两边的最高值
+
+  while (left < right) {
+    // 更新左右两边见过的最高值
+    leftMax = Math.max(leftMax, height[left])
+    rightMax = Math.max(rightMax, height[right])
+
+    if (height[left] < height[right]) {
+      // 左边更低，处理左边的积水
+      ans += leftMax - height[left] // 积水 = 左边最高 - 当前高度
+      left++
     } else {
-      setResult(`在数组 [${nums.join(', ')}] 中未找到 ${targetNum}`)
+      // 右边更低，处理右边的积水
+      ans += rightMax - height[right] // 积水 = 右边最高 - 当前高度
+      right--
     }
   }
+  return ans
+}
 
-  function testCase(arr, targetNum) {
-    const index = binarySearch(arr, targetNum)
-    if (index !== -1) {
-      setResult(`在数组 [${arr.join(', ')}] 中找到 ${targetNum}，索引为: ${index}`)
+console.log(trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]))
+```
+
+### 滑动窗口-003无重复字符的最长子串
+
+滑动窗口，维护一个窗口，窗口内没有重复字符，如果有重复字符，则缩小窗口，直到没有重复字符，关键是 ans 这个值一直保留最大值
+
+```js
+var lengthOfLongestSubstring = function (s) {
+  let ans = 0
+  let left = 0
+  const window = new Set() // 维护从下标 left 到下标 right 的字符
+  for (let right = 0; right < s.length; right++) {
+    const c = s[right]
+    // 如果窗口内已经包含 c，那么再加入一个 c 会导致窗口内有重复元素
+    // 所以要在加入 c 之前，先移出窗口内的 c
+    while (window.has(c)) {
+      // 窗口内有 c
+      window.delete(s[left])
+      left++ // 缩小窗口
+    }
+    window.add(c) // 加入 c
+    ans = Math.max(ans, right - left + 1) // 更新窗口长度最大值
+  }
+  return ans
+}
+
+console.log(lengthOfLongestSubstring('abcabcbb'))
+```
+
+### 滑动窗口-438找到字符串中所有字母异位词
+
+这个解法超时了，但是容易看懂
+
+双指针，先排序，然后遍历，每次遍历一个字符串，然后比较是否相等，相等则加入结果，不相等则继续遍历
+
+```js
+const toOrder = (str) => Array.from(str).sort().join('')
+
+var findAnagrams = function (s, p) {
+  if (s.length < p.length) {
+    return []
+  }
+
+  let left = 0
+  const result = new Set()
+
+  let key = toOrder(p)
+
+  let pLen = p.length
+
+  let sLen = s.length + 1
+
+  for (let right = pLen; right < sLen; right++) {
+    let str = s.slice(left, right)
+    let sub = toOrder(str)
+    if (sub === key) {
+      result.add(left)
+    }
+    left++
+  }
+
+  return Array.from(result.values())
+}
+```
+
+### 子串-560和为K的子数组
+
+暴力解法，两层循环，第一层循环是子数组的起始位置，第二层循环是子数组的结束位置(因为要求子数组是连续的)，然后计算子数组的和，如果和为 k，则计数加一
+
+还有一种解法是用 Set，转差值，然后判断差值是否在 Set 中，在则计数加一，不在则加入 Set
+
+```js
+var subarraySum = function (nums, k) {
+  let count = 0
+  for (let i = 0; i < nums.length; i++) {
+    let sum = 0
+    for (let j = i; j < nums.length; j++) {
+      sum += nums[j]
+      if (sum === k) count++
+    }
+  }
+  return count
+}
+```
+
+### 子串-239滑动窗口最大值
+
+这是一个超时的解法
+
+双指针，左指针是窗口的起始位置，右指针是窗口的结束位置，每次计算窗口内的最大值，然后左指针右移，右指针右移
+
+```js
+// 缓存数组的长度
+const len = nums.length
+// 定义结果数组
+const res = []
+// 初始化左指针
+let left = 0
+// 初始化右指针
+let right = k - 1
+// 当数组没有被遍历完时，执行循环体内的逻辑
+while (right < len) {
+  // 计算当前窗口内的最大值
+  const max = Math.max(...nums.slice(left, right + 1))
+  // 将最大值推入结果数组
+  res.push(max)
+  // 左指针前进一步
+  left++
+  // 右指针前进一步
+  right++
+}
+// 返回结果数组
+return res
+```
+
+### 字串-076最小覆盖子串
+
+困难题，略过了～
+
+### 普通数组-053最大子数组和
+
+动态规划暂时还不太理解，先略过
+
+```js
+var maxSubArray = function (nums) {
+  // 表示以当前元素结尾的最大子数组和
+  let pre = 0
+  // 记录到目前为止遇到的全局最大值
+  let maxAns = nums[0]
+
+  nums.forEach((item) => {
+    // 如果 pre + item 大于 item，则说明 pre + item 是当前元素结尾的最大子数组和
+    pre = Math.max(pre + item, item)
+    // 更新全局最大值
+    maxAns = Math.max(maxAns, pre)
+  })
+  return maxAns
+}
+
+console.log(maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
+```
+
+### 普通数组-056合并区间
+
+排序，然后遍历，如果当前元素的左边界小于等于上一个元素的右边界，则合并，否则直接加入结果
+
+```js
+var merge = function (intervals) {
+  let res = []
+  intervals.sort((a, b) => a[0] - b[0])
+
+  let prev = intervals[0]
+
+  for (let i = 1; i < intervals.length; i++) {
+    let cur = intervals[i]
+    if (prev[1] >= cur[0]) {
+      // 有重合
+      prev[1] = Math.max(cur[1], prev[1])
     } else {
-      setResult(`在数组 [${arr.join(', ')}] 中未找到 ${targetNum}`)
+      // 不重合，prev推入res数组
+      res.push(prev)
+      prev = cur // 更新 prev
     }
   }
 
-  return (
-    <div>
-      <div>
-        <input
-          value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          placeholder="输入要查找的数字"
-          style={{ width: '150px' }}
-        />
-        <button onClick={handleSearch}>在 [-1,0,3,5,9,12] 中查找</button>
-      </div>
-      <div>
-        <button onClick={() => testCase([-1, 0, 3, 5, 9, 12], 9)}>查找 9</button>
-        <button onClick={() => testCase([-1, 0, 3, 5, 9, 12], 2)}>查找 2</button>
-        <button onClick={() => testCase([1, 3, 5, 7, 9, 11], 7)}>查找 7</button>
-      </div>
-      <div>结果：{result}</div>
-      <div>算法思想：在有序数组中，每次排除一半元素，时间复杂度 O(log n)</div>
-    </div>
-  )
+  res.push(prev)
+  return res
+}
+
+console.log(
+  merge([
+    [1, 3],
+    [2, 6],
+    [8, 10],
+    [15, 18]
+  ])
+)
+```
+
+### 普通数组-189轮转数组
+
+暴力解，超时了，前面加一个后面删一个
+
+```js
+var rotate = function (nums, k) {
+  const len = nums.length
+
+  let temp = nums[len - 1]
+  let count = 0
+  for (let i = 0; i < k; i++) {
+    temp = nums[len - i - 1 + count]
+    nums.unshift(temp)
+    nums.pop()
+    count++
+  }
+  return nums
+}
+
+console.log(rotate([1, 2, 3, 4, 5], 3))
+```
+
+取余，然后直接赋值
+
+```js
+var rotate = function (nums, k) {
+  const n = nums.length
+  const newArr = new Array(n)
+  for (let i = 0; i < n; ++i) {
+    newArr[(i + k) % n] = nums[i] // 重点
+  }
+  for (let i = 0; i < n; ++i) {
+    nums[i] = newArr[i]
+  }
+}
+
+console.log(rotate([1, 2, 3, 4, 5], 3))
+```
+
+### 普通数组-238除自身以外数组的乘积
+
+左右乘积列表，L 和 R 分别表示左右两侧的乘积列表，然后遍历，L[i] 为索引 i 左侧所有元素的乘积，R[i] 为索引 i 右侧所有元素的乘积，然后遍历，answer[i] = L[i] \* R[i]
+
+```js
+var productExceptSelf = function (nums) {
+  const length = nums.length
+
+  // L 和 R 分别表示左右两侧的乘积列表
+  const L = new Array(length)
+  const R = new Array(length)
+
+  const answer = new Array(length)
+
+  // L[i] 为索引 i 左侧所有元素的乘积
+  // 对于索引为 '0' 的元素，因为左侧没有元素，所以 L[0] = 1
+  L[0] = 1
+  for (let i = 1; i < length; i++) {
+    L[i] = nums[i - 1] * L[i - 1] // 重点 L[i] 和 L[i - 1]可以表示为前面的累乘
+  }
+
+  // R[i] 为索引 i 右侧所有元素的乘积
+  // 对于索引为 'length-1' 的元素，因为右侧没有元素，所以 R[length-1] = 1
+  R[length - 1] = 1
+  for (let i = length - 2; i >= 0; i--) {
+    R[i] = nums[i + 1] * R[i + 1]
+  }
+
+  // 对于索引 i，除 nums[i] 之外其余各元素的乘积就是左侧所有元素的乘积乘以右侧所有元素的乘积
+  for (let i = 0; i < length; i++) {
+    answer[i] = L[i] * R[i]
+  }
+
+  return answer
+}
+
+console.log(productExceptSelf([1, 2, 3, 4]))
+```
+
+### 普通数组-041缺失的第一个正数
+
+暴力解法，超时了
+
+```js
+var firstMissingPositive = function (nums) {
+  const len = nums.length
+  let result = 1
+  while (true) {
+    if (nums.includes(result)) {
+      result++
+    } else {
+      return result
+    }
+  }
+}
+
+console.log(firstMissingPositive([1, 2, 0]))
+```
+
+### 链表-160相交链表
+
+用 set 存一个链表，然后遍历另一个链表，如果 set 中包含当前节点，则返回当前节点
+
+```js
+var getIntersectionNode = function (headA, headB) {
+  const set = new Set()
+  let temp = headA
+  while (temp !== null) {
+    set.add(temp)
+    temp = temp.next
+  }
+
+  temp = headB
+  while (temp !== null) {
+    if (set.has(temp)) {
+      return temp
+    }
+    temp = temp.next
+  }
+  return null
 }
 ```
 
-</Sandpack>
+### 链表-206反转链表
 
-## 动态规划
-
-### 爬楼梯问题
-
-<Sandpack>
+pre 是前一个节点，cur 是当前节点，next 是下一个节点，每次将当前节点指向前一个节点，然后前一个节点向后移动，当前节点向后移动
 
 ```js
-import { useState } from 'react'
-
-export default function ClimbStairsDemo() {
-  const [result, setResult] = useState('')
-  const [stairs, setStairs] = useState('5')
-
-  function climbStairs(n) {
-    if (n <= 2) return n
-
-    let dp = [1, 2] // dp[0] = 1, dp[1] = 2
-
-    // 从第3级台阶开始计算
-    for (let i = 2; i < n; i++) {
-      dp[i] = dp[i - 1] + dp[i - 2] // 状态转移方程
-    }
-
-    return dp[n - 1]
+var reverseList = function (head) {
+  let pre = null
+  let cur = head
+  while (cur !== null) {
+    let next = cur.next
+    // 当前节点指向前一个节点
+    cur.next = pre // 重点，每次下一个指向前一个
+    // 前一个节点向后移动
+    pre = cur
+    // 当前节点向后移动
+    cur = next
   }
-
-  function handleCalculate() {
-    const n = parseInt(stairs)
-    if (isNaN(n) || n <= 0) {
-      setResult('请输入有效的正整数')
-      return
-    }
-
-    const ways = climbStairs(n)
-    setResult(`爬 ${n} 级台阶共有 ${ways} 种方法`)
-  }
-
-  function testCase(n) {
-    setStairs(n.toString())
-    const ways = climbStairs(n)
-    setResult(`爬 ${n} 级台阶共有 ${ways} 种方法`)
-  }
-
-  function showSteps(n) {
-    if (n <= 0) return '无效输入'
-    if (n === 1) return '1种方法: [1]'
-    if (n === 2) return '2种方法: [1,1] 或 [2]'
-
-    const ways = climbStairs(n)
-    return `${ways} 种方法（每次可以爬1或2级台阶）`
-  }
-
-  return (
-    <div>
-      <div>
-        <input
-          value={stairs}
-          onChange={(e) => setStairs(e.target.value)}
-          placeholder="输入台阶数"
-          style={{ width: '100px' }}
-        />
-        <button onClick={handleCalculate}>计算方法数</button>
-      </div>
-      <div>
-        <button onClick={() => testCase(1)}>1级台阶</button>
-        <button onClick={() => testCase(2)}>2级台阶</button>
-        <button onClick={() => testCase(3)}>3级台阶</button>
-        <button onClick={() => testCase(5)}>5级台阶</button>
-        <button onClick={() => testCase(10)}>10级台阶</button>
-      </div>
-      <div>结果：{result}</div>
-      <div>规律：{stairs && !isNaN(parseInt(stairs)) ? showSteps(parseInt(stairs)) : ''}</div>
-      <div>状态转移：到达第n级台阶 = 到达第(n-1)级台阶的方法数 + 到达第(n-2)级台阶的方法数</div>
-    </div>
-  )
+  return pre
 }
-```
 
-</Sandpack>
-
-### LRU 缓存
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function LRUCacheDemo() {
-  const [result, setResult] = useState('')
-
-  class LRUCache {
-    constructor(capacity) {
-      this.capacity = capacity // 缓存容量
-      this.cache = new Map() // 缓存
-    }
-    get(key) {
-      // 如果缓存中没有该key，返回-1
-      if (!this.cache.has(key)) return -1
-      const value = this.cache.get(key)
-      // 删除该key
-      this.cache.delete(key)
-      // 将该key重新插入到缓存中
-      this.cache.set(key, value)
-      // 返回该key的值
-      return value
-    }
-    put(key, value) {
-      // 如果缓存中已经存在该key，删除该key
-      if (this.cache.has(key)) {
-        this.cache.delete(key)
-      } else if (this.cache.size >= this.capacity) {
-        // 如果缓存容量已满，删除最久未使用的key
-        this.cache.delete(this.cache.keys().next().value)
+console.log(
+  reverseList({
+    value: 1,
+    next: {
+      value: 2,
+      next: {
+        value: 3,
+        next: null
       }
-      // 将该key插入到缓存中
-      this.cache.set(key, value)
     }
-  }
-
-  function handleClick() {
-    const lru = new LRUCache(2)
-    lru.put(1, 1)
-    lru.put(2, 2)
-    lru.get(1)
-    lru.put(3, 3)
-    setResult(JSON.stringify(Array.from(lru.cache.entries())))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试 LRUCache</button>
-      <div>结果：{result}</div>
-    </div>
-  )
-}
+  })
+)
 ```
-
-</Sandpack>
-
-总结：
-
-### 字符串相加
-
-<Sandpack>
-
-```js
-import { useState } from 'react'
-
-export default function AddStringsDemo() {
-  const [result, setResult] = useState('')
-
-  function addStrings(num1, num2) {
-    const len = Math.max(num1.length, num2.length)
-    num1 = num1.padStart(len, '0')
-    num2 = num2.padStart(len, '0')
-    // 进位
-    let carry = 0
-    // 结果
-    let result = ''
-    for (let i = len - 1; i >= 0; i--) {
-      // 当前位相加
-      const sum = +num1[i] + +num2[i] + carry
-      // 当前位相加结果
-      result = (sum % 10) + result
-      // 进位
-      carry = sum >= 10 ? 1 : 0
-    }
-    return carry ? '1' + result : result
-  }
-
-  function handleClick() {
-    setResult(addStrings('123456789123456789', '987654321987654321'))
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>测试大数相加</button>
-      <div>结果：{result}</div>
-    </div>
-  )
-}
-```
-
-</Sandpack>
-
-总结：

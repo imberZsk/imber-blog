@@ -23,7 +23,8 @@ export function generateStaticParams() {
     { slug: 'strapi-supabase' },
     { slug: 'skill' },
     { slug: 'tailwind' },
-    { slug: 'typescript' }
+    { slug: 'typescript' },
+    { slug: 'react' }
   ]
 }
 

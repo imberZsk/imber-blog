@@ -71,19 +71,19 @@ export const postsConfig = [
     views: 123
   },
   // {
-  //   title: '复习面试题 - 算法题',
-  //   href: '/posts/leetcode',
-  //   date: '2025-02-09',
-  //   tags: ['算法'],
-  //   views: 32
-  // },
-  // {
   //   title: '复习面试题 - react 手写题',
   //   href: '/posts/react-write',
   //   date: '2025-02-09',
   //   tags: ['react', '面试题'],
   //   views: 32
   // },
+  {
+    title: '复习面试题 - 算法题',
+    href: '/posts/leetcode',
+    date: '2025-02-09',
+    tags: ['算法'],
+    views: 32
+  },
   {
     title: '复习面试题 - 手写题',
     href: '/posts/write',
