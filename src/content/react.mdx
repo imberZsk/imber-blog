@@ -7,7 +7,9 @@
 - [React 进阶实践指南](https://juejin.cn/book/6945998773818490884?scrollMenuIndex=1)
 - [React 技术揭秘](https://react.iamkasong.com/)
 - [从0实现 React18](https://appjiz2zqrn2142.xet-pc.citv.cn/p/t_pc/goods_pc_detail/goods_detail/p_638035c1e4b07b05581d25db?fromH5=true&type=3)
+- [源码流程图](https://www.processon.com/view/link/63bcef8cf27176074bb81a21)
 - [深入浅出 React19](https://blog.xiguadev.com/)
+- [我的源码调试 Demo](https://github.com/imberZsk/react/tree/main/debugger)
 
 ### 手写 Context 主题切换
 
@@ -86,6 +88,10 @@ const ContextTheme = () => {
 export default ContextTheme
 ```
 
-### React 优化 抽离变与不变
+### React 优化将变的部分与不变部分分离
+
+普通的性能优化有 React.memo 和 useMemo 和 useCallback，React.lazy 等
+
+将变的部分与不变部分分离，这种思路可以减少父组件更新，子组件也更新，减少不必要的渲染
 
 ### 手写 KeepAlive
