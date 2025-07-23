@@ -1,7 +1,91 @@
+### 文档
+
+- [React 官网](https://react.docschina.org/)
+- [React 通关秘籍](https://juejin.cn/book/7294082310658326565?scrollMenuIndex=1)
+- [玩转 React Hooks](https://juejin.cn/book/7230622711905517605?scrollMenuIndex=1)
+- [Build Your Own React](https://pomb.us/build-your-own-react/)
+- [React 进阶实践指南](https://juejin.cn/book/6945998773818490884?scrollMenuIndex=1)
+- [React 技术揭秘](https://react.iamkasong.com/)
+- [从0实现 React18](https://appjiz2zqrn2142.xet-pc.citv.cn/p/t_pc/goods_pc_detail/goods_detail/p_638035c1e4b07b05581d25db?fromH5=true&type=3)
+- [深入浅出 React19](https://blog.xiguadev.com/)
+
 ### 手写 Context 主题切换
 
+Theme-context.tsx 通过 createContext 创建一个 Context 对象，传入默认值，同事封装一个 hook 用于获取 Context 对象
+
+```tsx
+import { createContext, useContext } from 'react'
+
+export type Theme = 'light' | 'dark'
+
+type ThemeContextType = {
+  theme: Theme
+  setTheme: (theme: Theme) => void
+}
+
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: 'dark',
+  setTheme: () => {}
+})
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext)
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider')
+  }
+  return context
+}
+```
+
+Theme-provider.tsx，通过 value 属性`提供` Context 对象
+
+```tsx
+import { useState } from 'react'
+import { ThemeContext, type Theme } from './theme-context'
+
+export const ThemeProvider = ({ children }: { children: React.ReactElement }) => {
+  const [theme, setTheme] = useState<Theme>('dark')
+
+  const value = {
+    theme,
+    setTheme
+  }
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+}
+```
+
+Consumer.tsx，Consumer 组件，用于`消费` Context 对象， useContext 在前面已经封装好了
+
+```tsx
+import { ThemeContext } from './theme-context'
+import { ThemeProvider } from './theme-provider'
+import { useContext } from 'react'
+
+const InnerContext = () => {
+  const { theme, setTheme } = useContext(ThemeContext)
+
+  return (
+    <div className="size-40 bg-gray-200">
+      <button className="cursor-pointer" onClick={() => setTheme('light')}>
+        切换主题
+      </button>
+      <p>当前主题: {theme}</p>
+    </div>
+  )
+}
+
+const ContextTheme = () => {
+  return (
+    <ThemeProvider>
+      <InnerContext />
+    </ThemeProvider>
+  )
+}
+
+export default ContextTheme
+```
+
+### React 优化 抽离变与不变
+
 ### 手写 KeepAlive
-
-### React优化 抽离变与不变
-
-### 调试源码
