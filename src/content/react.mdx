@@ -10,6 +10,9 @@
 - [源码流程图](https://www.processon.com/view/link/63bcef8cf27176074bb81a21)
 - [深入浅出 React19](https://blog.xiguadev.com/)
 - [我的源码调试 Demo](https://github.com/imberZsk/react/tree/main/debugger)
+- [我的 React 学习 Demo](https://github.com/imberZsk/demos/tree/main/003react-learn)
+
+学习源码推荐看一遍 Build Your Own React，了解基本流程，再边调试源码边看源码流程图
 
 ### 手写 Context 主题切换
 
@@ -93,5 +96,66 @@ export default ContextTheme
 普通的性能优化有 React.memo 和 useMemo 和 useCallback，React.lazy 等
 
 将变的部分与不变部分分离，这种思路可以减少父组件更新，子组件也更新，减少不必要的渲染
+
+父组件（父组件更新，子组件也更新）
+
+```tsx
+import { useState } from 'react'
+import Expensive from './Expensive'
+
+const Index = () => {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div>
+      <div>count: {count}</div>
+      <br />
+      <button className="cursor-pointer rounded-md bg-blue-500 p-2 text-white" onClick={() => setCount(count + 1)}>
+        点击加1
+      </button>
+      <br />
+      <br />
+      <Expensive />
+    </div>
+  )
+}
+
+export default Index
+```
+
+子组件（耗时组件）
+
+```tsx
+const Expensive = () => {
+  console.log('Expensive 组件渲染')
+
+  const now = performance.now()
+
+  while (performance.now() - now < 1000) {
+    // 模拟耗时操作
+  }
+
+  return (
+    <div>
+      <div>Expensive</div>
+    </div>
+  )
+}
+
+export default Expensive
+```
+
+可以把父组件需要更新的部分，也就是下面这段代码单独抽离成一个组件
+
+```jsx
+<div>count: {count}</div>
+<br />
+<button
+  className="bg-blue-500 text-white p-2 rounded-md cursor-pointer"
+  onClick={() => setCount(count + 1)}
+>
+  点击加1
+</button>
+```
 
 ### 手写 KeepAlive
