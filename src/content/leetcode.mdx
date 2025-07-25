@@ -676,3 +676,32 @@ var mergeTwoLists = function (list1, list2) {
   return head.next
 }
 ```
+
+### 链表-002两数相加
+
+迭代，哨兵节点，进位，累加
+
+```js
+var addTwoNumbers = function (l1, l2) {
+  const dummy = new ListNode() // 哨兵节点
+  let cur = dummy
+  let carry = 0 // 进位
+  while (l1 || l2 || carry) {
+    if (l1) {
+      carry += l1.val // 节点值和进位加在一起
+      l1 = l1.next // 下一个节点
+    }
+    if (l2) {
+      carry += l2.val // 节点值和进位加在一起
+      l2 = l2.next // 下一个节点
+    }
+    // cur = cur.next = new ListNode(carry % 10) // 每个节点保存一个数位
+    let newNode = new ListNode(carry % 10) // 创建新节点
+    cur.next = newNode // 连接到当前节点后面
+    cur = newNode // 移动指针
+
+    carry = Math.floor(carry / 10) // 新的进位
+  }
+  return dummy.next // 哨兵节点的下一个节点就是头节点
+}
+```
