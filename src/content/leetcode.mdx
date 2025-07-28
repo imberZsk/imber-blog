@@ -705,3 +705,31 @@ var addTwoNumbers = function (l1, l2) {
   return dummy.next // 哨兵节点的下一个节点就是头节点
 }
 ```
+
+### 链表-019删除链表的倒数第N个节点
+
+快慢指针，先走n步，然后同时走到底，这是snow指针就是n的地方
+
+```js
+var removeNthFromEnd = function (head, n) {
+  let dummy = new ListNode()
+  dummy.next = head
+
+  let snow = dummy
+  let fast = dummy
+
+  while (n !== 0) {
+    fast = fast.next
+    n--
+  }
+
+  while (fast.next) {
+    snow = snow.next
+    fast = fast.next
+  }
+
+  snow.next = snow.next.next
+
+  return dummy.next
+}
+```
