@@ -13,7 +13,6 @@ export function generateStaticParams() {
     { slug: 'safe' },
     { slug: 'sandpack-mdx' },
     { slug: 'promise' },
-    { slug: 'react-write' },
     { slug: 'print' },
     { slug: 'responsive' },
     { slug: 'adaptive' },
