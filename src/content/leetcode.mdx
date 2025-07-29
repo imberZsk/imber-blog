@@ -733,3 +733,22 @@ var removeNthFromEnd = function (head, n) {
   return dummy.next
 }
 ```
+
+### 链表-024两两交换链表中的节点
+
+```js
+var swapPairs = function (head) {
+  if (head === null || head.next === null) {
+    return head
+  }
+
+  const node1 = head
+  const node2 = head.next
+  const node3 = node2.next
+
+  node1.next = swapPairs(node3) // 1 指向递归返回的链表头
+  node2.next = node1 // 2 指向 1
+
+  return node2 // 返回交换后的链表头节点
+}
+```
