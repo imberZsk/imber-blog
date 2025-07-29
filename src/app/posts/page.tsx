@@ -15,7 +15,13 @@ const Page = () => {
   // 从所有文章中提取唯一的标签作为分类
   const categories = useMemo(() => {
     const allTags = postsConfig.flatMap((post) => post.tags)
-    return Array.from(new Set(allTags))
+    const uniqueTags = Array.from(new Set(allTags))
+    // 将 'others' 标签放在最后面
+    return uniqueTags.sort((a, b) => {
+      if (a === 'others') return 1
+      if (b === 'others') return -1
+      return 0
+    })
   }, [])
 
   // 根据选中的分类筛选文章

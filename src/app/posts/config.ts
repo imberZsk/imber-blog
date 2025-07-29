@@ -1,9 +1,16 @@
 export const postsConfig = [
   {
+    title: '基于 tiptap3.x 的富文本编辑器',
+    href: '/posts/editor',
+    date: '2025-07-29',
+    tags: ['editor'],
+    views: 32
+  },
+  {
     title: '瀑布流 + 虚拟列表 实现博客画廊',
     href: '/posts/gallery',
     date: '2025-02-09',
-    tags: ['博客'],
+    tags: ['others'],
     views: 32
   },
   {
@@ -17,21 +24,21 @@ export const postsConfig = [
     title: '基于 Next MDX & Sandpack 的博客文章实现',
     href: '/posts/sandpack-mdx',
     date: '2025-02-09',
-    tags: ['博客'],
+    tags: ['others'],
     views: 32
   },
   {
     title: '用 Supabase PostgreSQL 构建和部署 Strapi CMS',
     href: '/posts/strapi-supabase',
     date: '2025-06-24',
-    tags: ['Strapi', 'Supabase'],
+    tags: ['others'],
     views: 32
   },
   {
     title: 'Framer Motion & GSAP 实现酷炫动画',
     href: '/posts/animate',
     date: '2025-02-09',
-    tags: ['动画'],
+    tags: ['animation'],
     views: 32
   },
 
@@ -81,35 +88,35 @@ export const postsConfig = [
     title: '复习面试题 - 算法题',
     href: '/posts/leetcode',
     date: '2025-02-09',
-    tags: ['算法'],
+    tags: ['others'],
     views: 32
   },
   {
     title: '复习面试题 - 手写题',
     href: '/posts/write',
     date: '2025-02-09',
-    tags: ['面试题'],
+    tags: ['others'],
     views: 32
   },
   {
     title: '复习面试题 - 打印题 - Promise 执行顺序',
     href: '/posts/promise',
     date: '2025-02-09',
-    tags: ['面试题'],
+    tags: ['others'],
     views: 32
   },
   {
     title: '复习面试题 - 打印题  - this 指向',
     href: '/posts/this',
     date: '2025-02-09',
-    tags: ['面试题'],
+    tags: ['others'],
     views: 32
   },
   {
     title: '复习面试题 - 打印题 - 闭包/变量提升/作用域链',
     href: '/posts/print',
     date: '2025-02-09',
-    tags: ['面试题'],
+    tags: ['others'],
     views: 32
   }
   // {
