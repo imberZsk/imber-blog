@@ -77,13 +77,6 @@ export const postsConfig = [
     tags: ['Tailwind'],
     views: 123
   },
-  // {
-  //   title: '复习面试题 - react 手写题',
-  //   href: '/posts/react-write',
-  //   date: '2025-02-09',
-  //   tags: ['react', '面试题'],
-  //   views: 32
-  // },
   {
     title: '复习面试题 - 算法题',
     href: '/posts/leetcode',
@@ -153,8 +146,4 @@ export const navItems = [
     path: '/friends',
     name: '友链'
   }
-  // {
-  //   path: '/tools',
-  //   name: '工具'
-  // }
 ]
