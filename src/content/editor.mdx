@@ -58,7 +58,7 @@ H1-H3 组件间距 16px
 
 相关 demo 中用到的颜色，直接使用 tiptap template 中的颜色。
 
-文章可编辑区的宽度最小 320 最大 720。
+文章可编辑区的宽度最小 320 最大 720。✅
 
 ### 背景
 
@@ -81,6 +81,16 @@ H1-H3 组件间距 16px
 [starterKit 文档](https://tiptap.dev/docs/editor/extensions/functionality/starterkit#included-extensions)
 
 - Tiptap 如何自定义样式？
+
+tiptap 有 demo 是使用 @tailwindcss/typography 来实现编辑器样式，但是它的样式适合英文，不适合中文，需要想一套自定义方案，而且我觉得无 CSS 方案更优雅，所以我的方案应该全用 tailwind 来实现。
+
+明确一下是整个页面切换主题，还是编辑器切换主题。页面一般只有黑白主题，但是编辑器有可能需要更多主题。
+
+那我需要考虑的是，页面切换主题时，编辑器内的主题也应该随着切换，也就是编辑器的每一套主题其实都应该对应黑白色两种。
+
+做主题的时候，我应该先把整个页面的黑白主题先做了，也就是 next-themes 来做，这个很简单。
+
+然后编辑器主题的时候，怎么架构？怎么隔离？是否能支持不用的主题就不编译呢？
 
 - Tiptap 有哪些自定义 extension 配置？
 
