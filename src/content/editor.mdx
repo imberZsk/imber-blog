@@ -30,21 +30,21 @@ tiptap Demo
 
 组件：
 
-正文：16 1.6 2%，组件间距 16px
+正文：16 1.6 2%，组件间距 16px ✅
 
 标题组件：H1-H6，但只启用 h1-h3，样式如下：
-H1 22 1.5 2%（字本大小、行高、字间距）
-H2 19 1.5 2%
-H3 17 1.6 2%
+H1 22 1.5 2%（字本大小、行高、字间距）✅
+H2 19 1.5 2% ✅
+H3 17 1.6 2% ✅
 H1-H3 组件间距 16px
 
-粗体、斜体、删除线、下划线、代码。
+粗体、斜体、删除线、下划线、代码。✅
 
-段落对齐方式：左、中、右、两端。
+段落对齐方式：左、中、右、两端。✅
 
-分割线 hr。
+分割线 hr。✅
 
-超链接。
+超链接。✅
 
 字体颜色：提供5种颜色。
 
@@ -68,19 +68,21 @@ H1-H3 组件间距 16px
 - tiptap 扩展最佳实践和规范
 - 深入了解自定义开发插件的实现思路
 
-### 思考
+### 知识点
 
-- Tiptap 有哪些 extension & 快速集成?
-
-[编辑器 示例](https://tiptap.dev/docs/examples)
+- Tiptap extension & 快速集成
 
 [extension 文档](https://tiptap.dev/docs/editor/extensions/overview)
 
-- starterKit 中包含哪些 extension?
+- starterKit 中包含的 extension
 
 [starterKit 文档](https://tiptap.dev/docs/editor/extensions/functionality/starterkit#included-extensions)
 
-- Tiptap 如何自定义样式？
+- Tiptap 官方编辑器 Demo
+
+[tiptap-templates](https://github.com/ueberdosis/tiptap-templates?tab=readme-ov-file)
+
+### 思考如何自定义编辑器样式
 
 tiptap 有 demo 是使用 @tailwindcss/typography 来实现编辑器样式，但是它的样式适合英文，不适合中文，需要想一套自定义方案，而且我觉得无 CSS 方案更优雅，所以我的方案应该全用 tailwind 来实现。
 
@@ -91,6 +93,8 @@ tiptap 有 demo 是使用 @tailwindcss/typography 来实现编辑器样式，但
 做主题的时候，我应该先把整个页面的黑白主题先做了，也就是 next-themes 来做，这个很简单。
 
 然后编辑器主题的时候，怎么架构？怎么隔离？是否能支持不用的主题就不编译呢？
+
+### TODO
 
 - Tiptap 有哪些自定义 extension 配置？
 
