@@ -798,3 +798,26 @@ LRUCache.prototype.put = function (key, value) {
   this.map.set(key, value)
 }
 ```
+
+### 树-094二叉树的中序遍历
+
+```js
+var inorderTraversal = function (root) {
+  let arr = []
+  function inorder(root) {
+    if (!root) {
+      return
+    }
+
+    inorder(root.left)
+
+    arr.push(root.val)
+
+    inorder(root.right)
+  }
+
+  inorder(root)
+
+  return arr
+}
+```
