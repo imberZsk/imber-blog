@@ -799,7 +799,9 @@ LRUCache.prototype.put = function (key, value) {
 }
 ```
 
-### 树-094二叉树的中序遍历
+### 二叉树-094二叉树的中序遍历
+
+普通就是递归，迭代的话使用栈解决
 
 ```js
 var inorderTraversal = function (root) {
@@ -819,5 +821,35 @@ var inorderTraversal = function (root) {
   inorder(root)
 
   return arr
+}
+```
+
+### 二叉树-102二叉树的层序遍历
+
+层序遍历，使用队列，每次遍历一层，然后下一层入队，然后 cur 和 next 指针调换
+
+```js
+var levelOrder = function (root) {
+  if (!root) {
+    return []
+  }
+  const ret = []
+  let cur = [root]
+  while (cur.length) {
+    let next = []
+    const vals = []
+    for (let i = 0; i < cur.length; i++) {
+      vals.push(cur[i].val)
+      if (cur[i].left) {
+        next.push(cur[i].left)
+      }
+      if (cur[i].right) {
+        next.push(cur[i].right)
+      }
+    }
+    cur = next
+    ret.push(vals)
+  }
+  return ret
 }
 ```
