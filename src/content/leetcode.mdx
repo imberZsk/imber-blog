@@ -864,3 +864,20 @@ var maxDepth = function (root) {
   return Math.max(maxDepth(root.left), maxDepth(root.right)) + 1
 }
 ```
+
+### 二叉树-226翻转二叉树
+
+递归解法
+
+```js
+var invertTree = function (root) {
+  if (root === null) {
+    return null
+  }
+  let left = invertTree(root.left)
+  let right = invertTree(root.right)
+  root.right = left
+  root.left = right
+  return root
+}
+```
