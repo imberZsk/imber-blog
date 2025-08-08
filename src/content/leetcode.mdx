@@ -905,3 +905,24 @@ var isSymmetric = function (root) {
   return isMirror(root.left, root.right)
 }
 ```
+
+### 二叉树-543二叉树的直径
+
+递归解法
+
+```js
+var diameterOfBinaryTree = function (root) {
+  let ans = 0
+  function dfs(node) {
+    if (node === null) {
+      return -1 // 对于叶子节点，链长就是-1+1=0
+    }
+    const lLen = dfs(node.left) + 1
+    const rLen = dfs(node.right) + 1
+    ans = Math.max(lLen, lLen + rLen)
+    return Math.max(lLen, rLen)
+  }
+  dfs(root)
+  return ans
+}
+```
