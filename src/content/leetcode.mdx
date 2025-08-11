@@ -926,3 +926,20 @@ var diameterOfBinaryTree = function (root) {
   return ans
 }
 ```
+
+### 二叉树-108将有序数组转换为二叉搜索树
+
+递归解法
+
+```js
+var sortedArrayToBST = function (nums) {
+  function dfs(left, right) {
+    if (left === right) {
+      return null
+    }
+    const m = Math.floor((left + right) / 2)
+    return new TreeNode(nums[m], dfs(left, m), dfs(m + 1, right))
+  }
+  return dfs(0, nums.length)
+}
+```
