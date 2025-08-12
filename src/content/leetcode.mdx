@@ -943,3 +943,23 @@ var sortedArrayToBST = function (nums) {
   return dfs(0, nums.length)
 }
 ```
+
+### 二叉树-098验证二叉搜索树
+
+递归解法
+
+```js
+const helper = (root, lower, upper) => {
+  if (root === null) {
+    return true
+  }
+  if (root.val <= lower || root.val >= upper) {
+    return false
+  }
+  return helper(root.left, lower, root.val) && helper(root.right, root.val, upper)
+}
+
+var isValidBST = function (root) {
+  return helper(root, -Infinity, Infinity)
+}
+```
