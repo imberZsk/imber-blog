@@ -962,4 +962,26 @@ const helper = (root, lower, upper) => {
 var isValidBST = function (root) {
   return helper(root, -Infinity, Infinity)
 }
+
+中序遍历解法
+
+var isValidBST = function (root) {
+  let prev = -Infinity
+
+  function inorder(node) {
+    if (!node) return true
+
+    // 遍历左子树
+    if (!inorder(node.left)) return false
+
+    // 检查当前节点
+    if (node.val <= prev) return false
+    prev = node.val
+
+    // 遍历右子树
+    return inorder(node.right)
+  }
+
+  return inorder(root)
+}
 ```
