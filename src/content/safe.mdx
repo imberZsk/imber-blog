@@ -211,7 +211,7 @@ export default Page
 
 1. 首先要发现问题，避免使用 dangerousHTML/v-html/innerHTML 的地方，react 对其它的变量都会转译
 2. CSP，指定哪些源的代码可以执行，可以降低风险
-3. cookie 指定 httponly 和 secure，防止 js 访问 cookie，可以降低风险
+3. cookie 指定 http-only 和 secure，防止 js 访问 cookie，可以降低风险
 4. 服务器验证输入，前端验证不可信
 
 如果你项目没有用到用户输入 或者 `dangerousHTML/v-html/innerHTML`，那就不用考虑 XSS
@@ -339,3 +339,7 @@ export default function Home() {
 ## 仓库地址
 
 [github 地址](https://github.com/imberZsk/demos/tree/main/004nextjs%E6%A8%A1%E6%8B%9Fxss%E5%92%8Ccsrf)
+
+## 总结
+
+<ImageModal src="/posts/safe/next-safe-8.png" alt="总结" width={500} height={300} />

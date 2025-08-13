@@ -19,7 +19,7 @@ TS静态类型检查，在编辑器中提前发现错误，减少生产环境问
 
 XSS 主要出现在输入类型的需求，需要查找 dangerousSetInnerHTML/v-html/innerHTML 这种可能会出现的地方，防范的方案有 httpOnlyCookie/secure/CSP，字符转义
 
-CSRF 首先后端应该遵循 Rest 的规范，get 不能改变数据状态，防范的方案有 samesite / csrfToken / 验证 Referer
+CSRF 首先后端应该遵循 Rest 的规范，因为普通情况下 Samesite cookie 为 lax ，post 不会携带 cookie，所以主要是避免 get 不能改变数据状态，防范的方案有 samesite / csrfToken / 验证 Referer
 
 XSS 的转换：比如遇到过文本里有图片的，需要正则匹配单独渲染
 
