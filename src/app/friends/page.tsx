@@ -48,6 +48,14 @@ const projects: Project[] = [
     tech: ['Tiptap', 'Next.js'],
     link: 'http://imber-editor.netlify.app',
     image: '/posts/friends/editor.png' // 占位符，等用户提供图片
+  },
+  {
+    id: '4',
+    name: '面试题',
+    description: 'ProcessOn 记录的面试题脑图',
+    tech: ['面试题'],
+    link: 'https://www.processon.com/mindmap/62ce8cea1efad406ff8300bf',
+    image: '/posts/friends/ProcessOn.png'
   }
 ]
 
