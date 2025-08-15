@@ -465,7 +465,7 @@ useGSAP(() => {
       trigger: '.box', // 触发动画的元素
       start: 'top center', // 元素相对自身的位置 和 视口的位置，两者重合即触发动画开始
       end: 'bottom 40%', // 元素相对自身的位置 和 视口的位置，两者重合即触发动画结束
-      toggleActions: 'play none none reverse', // 动画触发时机，常用的值是 play none reverse，对应 onEnter, onLeave, onEnterBack, and onLeaveBack
+      toggleActions: 'play none none reverse', // 动画触发时机，常用的值是 play none none reverse，对应 onEnter, onLeave, onEnterBack, and onLeaveBack
       onEnter: () => {
         console.log('onEnter')
       },
