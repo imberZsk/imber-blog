@@ -377,3 +377,46 @@ export default function ArrayToTreeDemo() {
 总结：
 
 ### 题目 8：大文件上传
+
+### 题目 9：Call
+
+```js
+Function.prototype.myCall = function (context, ...args) {
+  context = context || window
+  const fnKey = Symbol()
+  context[fnKey] = this
+  const res = context[fnKey](...args) // 相当于谁调用，this就指向谁
+  delete context[fnKey]
+  return res
+}
+
+// 测试示例
+function greet(greeting, other) {
+  return `${greeting}, ${this.name}${other}`
+}
+
+const person = { name: 'Alice' }
+greet.myCall(person, 'Hello', '!') // 输出: Hello, Alice!
+```
+
+### 题目 10：Apply
+
+```js
+Function.prototype.myApply = function (context, argsArray) {
+  context = context || window
+  const fnKey = Symbol()
+  context[fnKey] = this
+  const args = Array.isArray(argsArray) ? argsArray : []
+  const res = context[fnKey](...args) // 相当于谁调用，this就指向谁
+  delete context[fnKey]
+  return res
+}
+
+// 测试示例
+function greet(greeting, other) {
+  return `${greeting}, ${this.name}${other}`
+}
+
+const person = { name: 'Alice' }
+greet.myApply(person, ['Hello', '!']) // 输出: Hello, Alice!
+```
