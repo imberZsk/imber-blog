@@ -589,6 +589,8 @@ gsap
 
 gsap 的 scrub 效果，也就是动画与滚动条绑定，也就是不会直接执行完动画，会跟着滚动条执行，对于 Framer Motion 来说，用 useScroll 和 useTransform 是默认就有这个效果，而且默认会有 reverse。
 
+还可以用来做局部视差动画
+
 [animation - scrub](https://imber-animation.netlify.app/animations/scrub)
 
 <video src="/posts/animate/scrub.mp4" controls />
@@ -757,6 +759,8 @@ useGSAP(() => {
 
 ### 滚动动画 + 视差效果（Parallax）
 
+注意这种动画主要是全屏视差，如果需要局部视差，可以参考用scrub + ScrollTrigger
+
 - data-speed 表示比正常滚动慢多少，对于图片来说，可以在父元素上 overflow hidden，然后内层图片添加 data-speed
 
 - data-lag 表示延迟多少秒开始滚动，需要一定时间赶上
@@ -781,6 +785,8 @@ useGSAP(() => {
 ```
 
 {/* ### SVG 动画（SVG） */}
+
+### 改变浏览器窗口，动画卡顿问题/重置动画问题
 
 ### 动画参考
 
