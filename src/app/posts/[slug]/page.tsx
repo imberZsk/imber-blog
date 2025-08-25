@@ -24,7 +24,8 @@ export function generateStaticParams() {
     { slug: 'tailwind' },
     { slug: 'typescript' },
     { slug: 'react' },
-    { slug: 'editor' }
+    { slug: 'editor' },
+    { slug: 'webpack' }
   ]
 }
 

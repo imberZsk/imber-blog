@@ -35,6 +35,13 @@ export const postsConfig = [
     views: 32
   },
   {
+    title: '深入理解 Webpack 5',
+    href: '/posts/webpack',
+    date: '2025-08-25',
+    tags: ['工程化'],
+    views: 32
+  },
+  {
     title: 'Framer Motion & GSAP 实现酷炫动画',
     href: '/posts/animate',
     date: '2025-02-09',

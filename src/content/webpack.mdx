@@ -1,6 +1,62 @@
+## assets module
+
+assets module 可以处理图片、字体等资源，不需要使用 url-loader 和 file-loader
+
+一般配置 type:asset，在 10kb 以下时会切换成 type:asset/inline
+
+type:asset/resource 意思是将资源拷贝到输出目录；type:asset/inline 意思是将资源转换为 base64 编码
+
+## 兼容性
+
+配置 babel-loader
+
+配置 postcss-loader 和 配置 browserslist
+
+## 代码压缩
+
+css 压缩：配置 css-minimizer-webpack-plugin
+
+html 和 js 压缩： 生产模式默认压缩
+
+## 提升开发体验
+
+### sourcemap
+
+开发模式使用 eval-cheap-source-map，只生成行映射，不生成列映射
+
+生产模式使用 source-map，生成行映射和列映射，打包速度更慢
+
+## 提升打包构建速度
+
+### HMR
+
+配置 devServer.hot 为 true，开启 HMR，React 默认不会刷新，会使用 React Refresh 插件
+
+### OneOf
+
+匹配上一个 loader 就不匹配了
+
+### Include/Exclude
+
+主要是处理 JS 的时候，比如 babel-loader 里可以排除 node_modules（默认） 目录，只包括 src 目录
+
+### Cache
+
+因为打包 JS 比例比较大，所以 ESlint 检查 和 Babel 编译的缓存非常重要
+
+### Thread
+
+thread-loader 多进程打包，比如 babel-loader 里可以开启多进程打包
+
+terser-webpack-plugin Webpack5 自带有，但是可以自定义配置 thread-loader 的线程数来多线程压缩
+
+## 减小代码体积
+
+## 优化代码运行性能
+
 ## 参考
 
-[尚硅谷 Webpack5 入门到原理](https://www.bilibili.com/video/BV14T4y1z7sw/?spm_id_from=333.337.search-card.all.click&vd_source=3546a6d686c6ab04b1fb7358b1862ece)
-[秒码学院 Webpack5 进阶与原理](https://www.bilibili.com/video/BV1g7Q3YQENb/?spm_id_from=333.1387.homepage.video_card.click&vd_source=3546a6d686c6ab04b1fb7358b1862ece)
-[催学社 mini-webpack](https://www.bilibili.com/video/BV1oL411V7BQ/?spm_id_from=333.337.search-card.all.click)
-[掘金小册 Webpack5 核心原理与应用实践](https://juejin.cn/book/7115598540721618944?enter_from=course_center&utm_source=course_center)
+- [尚硅谷 Webpack5 入门到原理](https://www.bilibili.com/video/BV14T4y1z7sw/?spm_id_from=333.337.search-card.all.click&vd_source=3546a6d686c6ab04b1fb7358b1862ece)
+- [秒码学院 Webpack5 进阶与原理](https://www.bilibili.com/video/BV1g7Q3YQENb/?spm_id_from=333.1387.homepage.video_card.click&vd_source=3546a6d686c6ab04b1fb7358b1862ece)
+- [催学社 mini-webpack](https://www.bilibili.com/video/BV1oL411V7BQ/?spm_id_from=333.337.search-card.all.click)
+- [掘金小册 Webpack5 核心原理与应用实践](https://juejin.cn/book/7115598540721618944?enter_from=course_center&utm_source=course_center)
