@@ -60,3 +60,7 @@ terser-webpack-plugin Webpack5 自带有，但是可以自定义配置 thread-lo
 - [秒码学院 Webpack5 进阶与原理](https://www.bilibili.com/video/BV1g7Q3YQENb/?spm_id_from=333.1387.homepage.video_card.click&vd_source=3546a6d686c6ab04b1fb7358b1862ece)
 - [催学社 mini-webpack](https://www.bilibili.com/video/BV1oL411V7BQ/?spm_id_from=333.337.search-card.all.click)
 - [掘金小册 Webpack5 核心原理与应用实践](https://juejin.cn/book/7115598540721618944?enter_from=course_center&utm_source=course_center)
+
+## 微前端 ModuleFederationPlugin
+
+Webpack 实现微前端，使用 ModuleFederationPlugin 插件，导出方需要使用插件的 exposes 声明导出哪些模块，使用 filename 声明入口文件；导入方需要使用插件的 remotes 声明远程模块地址，之前使用异步导入语法 import("module") 导入
