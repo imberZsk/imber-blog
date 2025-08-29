@@ -1,63 +1,66 @@
 ## 专业技能
 
-> 简历的内容写了不少，但是必须对这些知识点都有一个深入的理解在面试中才能脱颖而出
+1、熟练掌握 TailwindCSS、ES6、TypeScript 常见类型体操、HTTP协议、Web安全（XSS、CSRF）、浏览器渲染原理 ✅
+2、熟练掌握 Webpack、Vite，熟悉 Webpack 打包构建原理，并能手写 loader 和 plugin
+3、熟练掌握 React，调试过 React 源码，熟悉相关生态如：Redux Toolkit、Zustand、SWR、Shadcn
+4、熟练掌握 NextJS，熟悉服务端渲染、SSR/SSG/ISR 、Technology SEO、C 端项目性能优化
+5、熟练掌握 GSAP，熟悉 Framer Motion，开源动画作品：https://imber-animation.netlify.app
+6、熟练掌握 TipTap 编辑器开发，开源编辑器作品：https://imber-editor.netlify.app/editor（5个自定义extension）
+7、熟悉 Vue2/Vue3 及相关生态，了解 ThreeJS 3D 模型渲染，微信小程序开发，NodeJS，NestJS
 
-## 熟练掌握 TailwindCSS ✅
+## 项目经历
 
-用 tailwind 做了很多项目，从一开始的滥用[]，到现在的优雅的无 CSS 复用，它有很多好处，比如原子化，减小 CSS 体积，提高 CSS 复用性，提高开发效率，规范化 UI 开发
+### 星纪魅族集团官网系列
 
-## 熟练掌握 TypeScript ✅
+负责内容：魅族海外官网（https://www.meizu.com/global）、集团官网（https://www.dreamsmart.com）、魅族社区（https://www.meizu.cn）、领克Z10官网（https://www.xjmzstarauto.com/starbuff）技术选型，架构设计，协调工作分配
+技术选型：Next.js（15 App Router）、React、Vite、Typescript、i18n、TailwindCSS、GSAP、ThreeJS、响应式
+项目亮点：
 
-TS静态类型检查，在编辑器中提前发现错误，减少生产环境问题，但是只做业务的话还是不要用太深入，权衡开发成本和维护成本
+1. Nextjs ISR 结合 Headless CMS 生成 15 个国家 1000+ 静态 页面；基于 middleware 和 tailwind-merge & clsx 实现国际化
+2. 较完善的 SEO，如：robots.txt & sitemap 站点地图分片，网址规范化，OG，Twitter Card，TDK，服务端渲染，语义化标签
+3. 魅族社区实现响应式瀑布流布局、懒加载、主题切换，Webpack 迁移到 Vite 、性能优化（ FCP 优化到 2s ，CLS 优化至 0）
 
-为什么 TS 类型编程可以叫类型体操，因为它是图灵完备的​，递归、条件判断、循环（映射类型）、变量（泛型）​，甚至能实现 ​加减乘除运算​
+## 魅族商城
 
-## Web 安全（XSS、CSRF） ✅
+负责内容：维护核心模块，重构部份模块，手机、AR 眼镜产品页动画开发，营销活动 H5 Hybrid 开发
+技术选型：老商城模块为 Jquery、Vue2，重构部分为 TurboRepo Monorepo、TS、TailwindCSS、NextJS14、Pnpm
+项目亮点：
 
-做魅族社区，魅族商城发帖评论会遇到这些问题，也手写过这两种攻击来模拟效果，所以对这两种攻击有一定的了解
+1. 商城部分重构，基于 TurboRepo Monorepo 将重构页面集中管理，NextJS SSR 提高渲染速度
+2. 从 Webpack1 升级 Webpack5，并提高 Webpack 构建速度，减少代码体积，优化代码运行性能
+3. 基于 GSAP，Framer Motion 实现手机、AR 眼镜新品画报页， 时间轴动画，滚动动画，视差动画等复杂 Web 动画开发
 
-XSS 主要出现在输入类型的需求，需要查找 dangerousSetInnerHTML/v-html/innerHTML 这种可能会出现的地方，防范的方案有 httpOnlyCookie/secure/CSP，字符转义
+## 魅族社区编辑器
 
-CSRF 首先后端应该遵循 Rest 的规范，因为普通情况下 Samesite cookie 为 lax ，post 不会携带 cookie，所以主要是避免 get 不能改变数据状态，防范的方案有 samesite / csrfToken / 验证 Referer
+负责内容：独立负责项目从零到一，编辑器技术选型，编辑器 P0 级功能实现，实现编辑器结合 AIGC 功能
+技术选型：TipTap、Next.js、React、Typescript、TailwindCSS、通义千问
+项目亮点：
 
-## 移动端自适应布局、响应式布局 ✅
+1. 基于 TipTap 实现富文本编辑器 P0 级功能，全部功能：https://imber-docs.netlify.app/editor/editor-all/editor-all.html
+2. 自定义编辑器插件如：slash commands、image、column、bubble、table、ai
+3. AI 功能支持 AI 润色， AI 扩写，文生图
 
-做过很多魅族的营销活动，对于自适应和响应式有比较深入的研究
+### meizu-metric 性能监控平台（全栈）
 
-自适应使用 Rem + VW + Tailwind 比较方便，原理是比例关系，响应式则要看情况，简单的响应式用 flex/grid/百分比 + 媒体查询就可以实现，复杂的不方便过渡的需要自适应 + 媒体查询
+负责内容：独立负责项目从零到一，技术选型
+技术选型：NextJS、Prisma、Mysql、Docker
+项目亮点：
 
-需要特别注意的是图片的响应式，对于相同的图片使用 sizes + srcset 来实现，对于不同的图片使用 picture + media + srcset 来实现
+1. 数据清理，过滤 Google 爬虫等垃圾数据
+2. 基于 RequestIdleCallback 实现空闲时间上报性能指标，并统计多次性能指标取平均值，超过阀值，飞书自动报警
+3. 实现 CI/CD， 优化 Docker 镜像从 200mb 优化到 70 mb
 
-## 熟练掌握 GSAP、Framer Motion，实现多种动画效果并部分整理到 https://imber-animation.netlify.app/ ✅
+### imber-cli（个人项目）
 
-做的项目中手机的产品页有非常多的动画效果，所有对动画开发有很多经验，并且可以自己在项目中加入一些动画来优化用户体验
+负责内容：独立负责项目从零到一，技术选型
+技术选型：、NestJS、Prisma、Mysql、Docker、NextJS
+项目亮点：
 
-对于这两种动画库，我都有比较深入的研究，我会根据效率选择框架，正常来说简单动画使用 Framer Motion，复杂动画用 GSAP，两者会一起使用，提高开发效率
+1. 数据清理，过滤 Google 爬虫等垃圾数据
+2. 基于 RequestIdleCallback 实现空闲时间上报性能指标，并统计多次性能指标取平均值，超过阀值，飞书自动报警
+3. 实现 CI/CD， 优化 Docker 镜像从 200mb 优化到 70 mb
 
-比如一些文字的入场动画，滚动动画，视差动画这些都很容易加入到项目
+### 自我介绍
 
-## 熟悉构建工具 Webpack/Vite，能手写 plugin 和 loader
-
-## 熟练掌握 React
-
-## 深入研究过 React 底层源码
-
-## 深入研究过 Zustand 底层源码
-
-## 熟练掌握 Nextjs 服务端渲染（SSR/SSG/ISR）
-
-## 熟练掌握 SEO
-
-## 熟练掌握国际化
-
-## 熟练掌握性能监控 & 优化
-
-## 熟练掌握 Tiptap 编辑器开发
-
-## 熟悉 Vue2/Vue3
-
-## 熟悉 ThreeJS 3D 模型渲染
-
-## 熟悉 React Native
-
-## 熟悉 AI
+1. 善于沉淀，为部门产出了项目规范、项目优化、技术调研、项目预研方面的技术文档，了解和学习新技术并发表技术文章
+2. 热爱学习， 掘金人气作者，创作者等级LV4；博客 https://imber.netlify.app，技术文档 https://imber-docs.netlify.app
