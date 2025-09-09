@@ -125,7 +125,7 @@ root.render(<AppJsx />)
 
 
 
-先看 FiberRootNode，一个带了很多属性的对象
+先看 FiberRootNode，一个带了很多属性的对象，因为目前没有用到，暂时不管它
 
 ```js
 function FiberRootNode(
@@ -183,7 +183,7 @@ js const root = ReactDOM.createRoot(document.getElementById('root'))
 console.log('root', root)
 ```
 
-先关注几个属性，后续会用到
+这几个属性，是常见的，容器，current 正在处理的树指向 alternate 树，render 方法
 
 
 
@@ -224,17 +224,62 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
 
 ## 4.React事件机制是怎么样的？
 
-上面的 creatRoot 里有一个 listenToAllSupportedEvents 函数，它跟事件机制有关。
+上面的 creatRoot 里有一个 listenToAllSupportedEvents 函数，说明初始化阶段，初始化了事件机制，接下来探究这部分代码。
 
 
 
 都知道 React 是通过冒泡来自定义事件机制，那最终绑定在哪儿呢？有些事件没有事件冒泡，那React 怎么知道触发事件了呢？
 
-```js
 
+
+先看看原生的事件，原生里的 capture 和 passive，React 也处理了很简单，对于wheel/touchStart/touchmove 默认加上 passive 告诉浏览器先执行默认事件，不会 e.preventDefault，这样不会有 listener 卡顿问题，就不细说了
+
+```js
+// 这就是该函数内部大概做的事情
+element.addEventListener(eventType, listener, {
+  capture: true,   // 捕获阶段
+  passive: true,   // 被动模式
+  once: false      // 不是一次性
+});
+```
+
+在这之前，ReactDOMEventListener.js 这个文件顶部有注册事件，也就是之前的 allNativeEvent 的事件其实是这里注册的，也就是收集到所有事件，方便后续遍历，这样处理
+
+
+
+![image-20250910001532459](/../../../Library/Application Support/typora-user-images/image-20250910001532459.png)
+
+
+
+如下图，在源码中可以看到，绑定在了 root 上，但是对于 selectionChange 绑定在了 document 上，selectionChange 在编辑器里有比较多的时候，比如监听选中的内容，然后在选中内容上增加一个弹层 tooltip 组件
+
+
+
+![image-20250909232137990](/../../../Library/Application Support/typora-user-images/image-20250909232137990.png)
+
+
+
+里面还有用到按位或 | 和按位与 & 和左移位运算符`<<` ,它们通过排列组合比较容易区分是哪种事件，这种方案还可以用在权限管理
+
+
+
+```js
+// 分配标识
+export const IS_CAPTURE_PHASE = 1 << 2; // 0b0100 (4)
+export const IS_BUBBLE_PHASE  = 1 << 3; // 0b1000 (8)
+
+// 组合标识
+const flags = IS_CAPTURE_PHASE | IS_BUBBLE_PHASE; // 0b1100 (12)
+
+// 检查某个标识
+if (flags & IS_CAPTURE_PHASE) {
+  console.log("捕获阶段已启用");
+}
 ```
 
 
+
+遍历给 root 绑定事件这部分比较简单，也就是点击一个元素然后 root 就能收到事件，重点是 listener，也就是 `createEventListenerWrapperWithPriority` 方法，方法名可以看出它带有优先级，那它为什么需要优先级呢？优先级是怎么样的？它是怎么处理收到事件呢？e.currentTarget 是指向触发元素，那 React 中会不会全都成了 root ?
 
 
 
