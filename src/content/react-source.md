@@ -247,7 +247,7 @@ element.addEventListener(eventType, listener, {
 
 
 
-![image-20250910001532459](/../../../Library/Application Support/typora-user-images/image-20250910001532459.png)
+![image-20250910001532459](/posts/react-source/image-20250910001532459.png)
 
 
 
@@ -255,7 +255,7 @@ element.addEventListener(eventType, listener, {
 
 
 
-![image-20250909232137990](/../../../Library/Application Support/typora-user-images/image-20250909232137990.png)
+![image-20250909232137990](/posts/react-source/image-20250909232137990.png)
 
 
 
@@ -279,9 +279,124 @@ if (flags & IS_CAPTURE_PHASE) {
 
 
 
-遍历给 root 绑定事件这部分比较简单，也就是点击一个元素然后 root 就能收到事件，重点是 listener，也就是 `createEventListenerWrapperWithPriority` 方法，方法名可以看出它带有优先级，那它为什么需要优先级呢？优先级是怎么样的？它是怎么处理收到事件呢？e.currentTarget 是指向触发元素，那 React 中会不会全都成了 root ?
+遍历给 root 绑定事件这部分比较简单，也就是点击一个元素然后 root 就能收到事件，重点是 listener，也就是 `createEventListenerWrapperWithPriority` 方法，方法名可以看出它带有优先级，那它为什么需要优先级呢？事件优先级是怎么样的？它是怎么处理收到事件呢？e.currentTarget 是指向触发元素，那 React 中会不会全都成了 root ?
 
 
+
+如下图，事件优先级肯定是同时触发的时候，让更高优先级的事情先触发，下面的 getEventPriority 方法可以看到，事件的优先级分为四类有：
+
+
+
+- ####  DiscreteEventPriority (离散事件优先级)	
+
+  - 由用户**离散**触发的、不需要频繁执行的事件。这些事件需要立即响应，体验上不能有延迟。
+  - **例子：** `click`、`keydown`、`keyup`、`mousedown`、`mouseup`、`focusin`、`focusout` 等。
+
+- #### ContinuousEventPriority (连续事件优先级)
+
+  - **对应事件：** 由用户**连续**触发的、会高频执行的事件。为了防止阻塞渲染，React 会对这些事件进行**节流（throttle）** 处理。
+  - **例子：** `drag`、`mousemove`、`mouseover`、`mouseout`、`scroll`、`touchmove`、`wheel` 等。
+
+- #### DefaultEventPriority (默认事件优先级)
+
+  - **对应事件：** 不属于上述两类的其他事件，或者没有明确指定优先级的更新（如 `setTimeout`、`Promise` 回调中的 `setState`）。
+  - **例子：** `load`、`animationend` 等。
+
+
+
+![image-20250911215151672](/posts/react-source/image-20250911215151672.png)
+
+
+
+这些优先级  lane  车道模型对应，如下代码，我看的这里是 .old 文件，也就是在`react/packages/shared/ReactFeatureFlags.js`文件 的字段 `export const enableNewReconciler = false; ` 判断是.old.js 的车道模型，不过不影响，主要是思想
+
+```js
+export const DiscreteEventPriority: EventPriority = SyncLane;
+export const ContinuousEventPriority: EventPriority = InputContinuousLane;
+export const DefaultEventPriority: EventPriority = DefaultLane;
+export const IdleEventPriority: EventPriority = IdleLane;
+
+let currentUpdatePriority: EventPriority = NoLane;
+
+export const TotalLanes = 31;
+
+export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
+export const NoLane: Lane = /*                          */ 0b0000000000000000000000000000000;
+
+export const SyncLane: Lane = /*                        */ 0b0000000000000000000000000000001;
+
+export const InputContinuousHydrationLane: Lane = /*    */ 0b0000000000000000000000000000010;
+export const InputContinuousLane: Lane = /*             */ 0b0000000000000000000000000000100;
+
+export const DefaultHydrationLane: Lane = /*            */ 0b0000000000000000000000000001000;
+export const DefaultLane: Lane = /*          
+// ...
+```
+
+了解事件优先级后，具体看里面的事件，也就是 createEventListenerWrapperWithPriority 里的 dispatchDiscreteEvent 、dispatchContinuousEvent 、 dispatchEvent 三个方法，只看一个 dispatchDiscreteEvent 来学习，也就是一个点击事件，其中很多边界和 SSR 水合方面的问题不用理会，关注核心逻辑
+
+
+
+![image-20250911232209637](/posts/react-source/image-20250911232209637.png)
+
+
+
+上图走到了一个批处理事件 batchedUpdates 和派发事件 dispatchEventsForPlugins，那事件的批处理是什么意思呢？大约是这个意思,：
+
+
+
+```js
+// 1. 全局状态
+let isBatching = false;
+let pendingUpdates = [];
+
+// 2. 简化的批处理函数
+function batchedUpdates(fn) {
+  if (isBatching) {
+    // 如果已经在批处理中，直接执行
+    return fn();
+  }
+  
+  // 开始批处理
+  isBatching = true;
+  try {
+    return fn();
+  } finally {
+    // 结束批处理，执行所有待更新的状态
+    isBatching = false;
+    flushPendingUpdates();
+  }
+}
+
+// 3. 简化的 setState
+function setState(newState) {
+  if (isBatching) {
+    // 在批处理中，只收集状态更新，不立即渲染
+    pendingUpdates.push(newState);
+  } else {
+    // 不在批处理中，立即渲染
+    render(newState);
+  }
+}
+```
+
+
+
+这样一个 onclick 事件里多次 setState，就只会更新一次，这个 isBatching 在现在的源码中是 isInsideEventHandler
+
+
+
+
+
+![image-20250912000353880](/posts/react-source/image-20250912000353880.png)
+
+
+
+接下来是看具体怎么分发事件，分发事件干啥呢？
+
+
+
+这里涉及插件系统，并且核心函数是 extractEvents，它提取事件监听器并创建合成事件对象，然后填充到 dispatchQueue 队列中。
 
 ## 5.fiber 是什么？
 
