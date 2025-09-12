@@ -402,6 +402,14 @@ function setState(newState) {
 
 这里涉及插件系统，并且核心函数是 extractEvents，它提取事件监听器并创建合成事件对象，然后填充到 dispatchQueue 队列中。那合成对象是什么吗，为什么要有事件合成对象，有什么用？如下图，合成对象就是 e，event，就是常用的 e.taget，上面这部分逻辑，主要是创建事件对象，放入 dispatchQueue 中，里面还有个核心逻辑 `accumulateSinglePhaseListeners` 函数直接返回的 listeners 和事件插件系统创建的 event 传入 `dispatchQueue`，然后在后续的  `processDispatchQueue`(dispatchQueue, eventSystemFlags) 中调用
 
+
+
+![image-20250913002403725](/posts/react-source/image-20250913002403725.png)
+
+
+
+如上图：ccumulateSinglePhaseListeners 函数逻辑比较单一，就是根据传入的 fiber，向上遍历整棵 fiber 树，收集所有的冒泡事件，比如 click 了一个 div，那它收集的就是所有父级上的 click 事件，并且放到 dispathchQueue
+
 ## 5.fiber 是什么？
 
 ```js
