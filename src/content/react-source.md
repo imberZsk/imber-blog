@@ -408,9 +408,25 @@ function setState(newState) {
 
 
 
-如上图：ccumulateSinglePhaseListeners 函数逻辑比较单一，就是根据传入的 fiber，向上遍历整棵 fiber 树，收集所有的冒泡事件，比如 click 了一个 div，那它收集的就是所有父级上的 click 事件，并且放到 dispathchQueue
+如上图：ccumulateSinglePhaseListeners 函数逻辑比较单一，就是根据传入的 fiber，向上遍历整棵 fiber 树，收集所有的冒泡事件，比如 click 了一个 div，那它收集的就是所有父级上的 click 事件，并且放到 dispathchQueue，接下来是 `processDispatchQueue`，如下图，其实就是看冒泡还是捕获，捕获就倒序执行，冒泡就顺序执行
+
+
+
+![image-20250916232647562](/../../../Library/Application Support/typora-user-images/image-20250916232647562.png)
+
+
+
+小结：
 
 ## 5.fiber 是什么？
+
+先来看 FiberNode 这个构造函数，这个构造函数源码中有三个注释，翻译过来就是 实例，Fiber，副作用，再参考 React 技术中的理念
+
+
+
+- 作为静态数据结构来说，保存了下面实例的数据
+- 作为架构来说，React 的 Reconciler 基于 Fiber 节点实现，被称为 Fiber Reconciler，它使用到了下面的 return child sibling 来构成链表，这是实现异步可打断更新的基础
+- 作为动态工作单元来说，每个 Fiber 节点保存了更新的状态，要执行的工作等信息
 
 ```js
 function FiberNode(
@@ -419,14 +435,14 @@ function FiberNode(
   key: null | string,
   mode: TypeOfMode,
 ) {
-  // 实例
+  // 实例： 作为静态数据结构的属性
   this.tag = tag;
   this.key = key;
   this.elementType = null;
   this.type = null;
   this.stateNode = null;
 
-  // Fiber
+  // Fiber ：用于连接其他Fiber节点形成Fiber树
   this.return = null;
   this.child = null;
   this.sibling = null;
@@ -442,21 +458,19 @@ function FiberNode(
 
   this.mode = mode;
 
-  // 副作用
+  // 副作用 ：作为动态的工作单元的属性
   this.flags = NoFlags;
   this.subtreeFlags = NoFlags;
   this.deletions = null;
 
+  // 调度优先级相关
   this.lanes = NoLanes;
   this.childLanes = NoLanes;
 
+  // 指向该fiber在另一次更新时对应的fiber
   this.alternate = null;
 }
 
 ```
 
-
-
-FiberRootNode 和 fiber 有什么区别？
-
-fiber 是树还是单链表？
+## 6.React 渲染流程：root.render(\</APP>) 
