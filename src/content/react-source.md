@@ -474,3 +474,5 @@ function FiberNode(
 ```
 
 ## 6.React 渲染流程：root.render(\</APP>) 
+
+![image-20250917233007619](/posts/react-source/image-20250917233007619.png)
