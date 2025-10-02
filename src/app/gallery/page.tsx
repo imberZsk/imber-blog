@@ -8,7 +8,7 @@ const Page = async () => {
   return (
     <div className={cn('mx-auto px-5 pt-32')}>
       {/* 错误状态 */}
-      {error && <div>请求失败</div>}
+      {error && <div>请求失败{JSON.stringify(error)}</div>}
 
       {/* 图片网格 */}
       {!error && (
