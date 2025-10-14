@@ -137,14 +137,14 @@ export const navItems = [
     path: '/posts',
     name: '文集'
   },
-  {
-    path: '/ideas',
-    name: '思考'
-  },
-  {
-    path: '/gallery',
-    name: '画廊'
-  },
+  // {
+  //   path: '/ideas',
+  //   name: '思考'
+  // },
+  // {
+  //   path: '/gallery',
+  //   name: '画廊'
+  // },
   {
     path: '/todos',
     name: '清单'

@@ -102,9 +102,9 @@ const Page = async () => {
       {/* 极简标题 */}
       <div className="mb-12">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-medium tracking-wide text-zinc-200">Friends</h1>
+          <h1 className="text-xl font-medium tracking-wide text-zinc-800 dark:text-zinc-200">Friends</h1>
         </div>
-        <p className="mt-3 text-xs text-zinc-500">海内存知己，天涯若比邻</p>
+        <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-500">海内存知己，天涯若比邻</p>
       </div>
 
       <Client friends={friends.data} />
@@ -113,18 +113,18 @@ const Page = async () => {
       <div className="mt-20">
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-medium tracking-wide text-zinc-200">Projects</h2>
+            <h2 className="text-xl font-medium tracking-wide text-zinc-800 dark:text-zinc-200">Projects</h2>
           </div>
-          <p className="mt-3 text-xs text-zinc-500">一些个人作品和技术实践</p>
+          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-500">一些个人作品和技术实践</p>
         </div>
 
         {/* 作品网格 */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {projects.map((project) => (
             <Link key={project.id} href={project.link} className="group block">
-              <div className="relative overflow-hidden rounded-lg border border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm transition-all duration-300 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:shadow-xl hover:shadow-black/30">
+              <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-xl hover:shadow-zinc-200/50 dark:border-zinc-800/50 dark:bg-zinc-900/50 dark:hover:border-zinc-700/60 dark:hover:bg-zinc-800/60 dark:hover:shadow-black/30">
                 {/* 项目截图 */}
-                <div className="relative aspect-video w-full overflow-hidden bg-zinc-800/50">
+                <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800/50">
                   <Image
                     src={project.image}
                     alt={project.name}
@@ -163,12 +163,12 @@ const Page = async () => {
                 {/* 项目信息 */}
                 <div className="p-5">
                   {/* 项目名称 */}
-                  <h3 className="mb-2 text-lg font-medium text-zinc-200 transition-colors duration-200 group-hover:text-white">
+                  <h3 className="mb-2 text-lg font-medium text-zinc-800 transition-colors duration-200 group-hover:text-zinc-900 dark:text-zinc-200 dark:group-hover:text-white">
                     {project.name}
                   </h3>
 
                   {/* 项目描述 */}
-                  <p className="mb-4 line-clamp-2 text-sm text-zinc-400 transition-colors duration-200 group-hover:text-zinc-300">
+                  <p className="mb-4 line-clamp-2 text-sm text-zinc-600 transition-colors duration-200 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">
                     {project.description}
                   </p>
 
@@ -177,7 +177,7 @@ const Page = async () => {
                     {project.tech.map((tech) => (
                       <span
                         key={tech}
-                        className="rounded-full bg-zinc-800/70 px-3 py-1 text-xs text-zinc-400 transition-colors duration-200 group-hover:bg-zinc-700/70 group-hover:text-zinc-300"
+                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600 transition-colors duration-200 group-hover:bg-zinc-200 group-hover:text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-400 dark:group-hover:bg-zinc-700/70 dark:group-hover:text-zinc-300"
                       >
                         {tech}
                       </span>
@@ -197,18 +197,18 @@ const Page = async () => {
       <div className="mt-20">
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-medium tracking-wide text-zinc-200">Projects</h2>
+            <h2 className="text-xl font-medium tracking-wide text-zinc-800 dark:text-zinc-200">Company Projects</h2>
           </div>
-          <p className="mt-3 text-xs text-zinc-500">一些公司项目</p>
+          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-500">一些公司项目</p>
         </div>
 
         {/* 作品网格 */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {companyProjects.map((project) => (
             <Link key={project.id} href={project.link} className="group block">
-              <div className="relative overflow-hidden rounded-lg border border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm transition-all duration-300 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:shadow-xl hover:shadow-black/30">
+              <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-xl hover:shadow-zinc-200/50 dark:border-zinc-800/50 dark:bg-zinc-900/50 dark:hover:border-zinc-700/60 dark:hover:bg-zinc-800/60 dark:hover:shadow-black/30">
                 {/* 项目截图 */}
-                <div className="relative aspect-video w-full overflow-hidden bg-zinc-800/50">
+                <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800/50">
                   <Image
                     src={project.image}
                     alt={project.name}
@@ -247,12 +247,12 @@ const Page = async () => {
                 {/* 项目信息 */}
                 <div className="p-5">
                   {/* 项目名称 */}
-                  <h3 className="mb-2 text-lg font-medium text-zinc-200 transition-colors duration-200 group-hover:text-white">
+                  <h3 className="mb-2 text-lg font-medium text-zinc-800 transition-colors duration-200 group-hover:text-zinc-900 dark:text-zinc-200 dark:group-hover:text-white">
                     {project.name}
                   </h3>
 
                   {/* 项目描述 */}
-                  <p className="mb-4 line-clamp-2 text-sm text-zinc-400 transition-colors duration-200 group-hover:text-zinc-300">
+                  <p className="mb-4 line-clamp-2 text-sm text-zinc-600 transition-colors duration-200 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">
                     {project.description}
                   </p>
 
@@ -261,7 +261,7 @@ const Page = async () => {
                     {project.tech.map((tech) => (
                       <span
                         key={tech}
-                        className="rounded-full bg-zinc-800/70 px-3 py-1 text-xs text-zinc-400 transition-colors duration-200 group-hover:bg-zinc-700/70 group-hover:text-zinc-300"
+                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600 transition-colors duration-200 group-hover:bg-zinc-200 group-hover:text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-400 dark:group-hover:bg-zinc-700/70 dark:group-hover:text-zinc-300"
                       >
                         {tech}
                       </span>
@@ -280,9 +280,9 @@ const Page = async () => {
       {/* 底部装饰 */}
       <div className="mt-16 flex justify-center">
         <div className="flex gap-1">
-          <div className="h-1 w-1 rounded-full bg-zinc-700"></div>
-          <div className="h-1 w-1 rounded-full bg-zinc-800"></div>
-          <div className="h-1 w-1 rounded-full bg-zinc-700"></div>
+          <div className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+          <div className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-800"></div>
+          <div className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
         </div>
       </div>
     </div>

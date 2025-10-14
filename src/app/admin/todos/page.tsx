@@ -96,21 +96,21 @@ const AdminTodoPage = () => {
   if (isLoading) {
     return (
       <div className={cn('mx-auto max-w-4xl px-4', PADDING_TOP)}>
-        <div className="py-20 text-center text-zinc-400">加载中...</div>
+        <div className="py-20 text-center text-zinc-600 dark:text-zinc-400">加载中...</div>
       </div>
     )
   }
 
   return (
     <div className={cn('mx-auto max-w-4xl px-4', PADDING_TOP)}>
-      <div className="rounded-xl border border-zinc-800 bg-black/90 p-6">
+      <div className="rounded-xl border border-zinc-200 bg-white/90 p-6 dark:border-zinc-800 dark:bg-black/90">
         {/* 标题 */}
         <div className="mb-6 text-center">
-          <h1 className="mb-2 text-2xl font-light text-white">
-            Todo <span className="font-medium text-zinc-400">管理</span>
+          <h1 className="mb-2 text-2xl font-light text-zinc-800 dark:text-white">
+            Todo <span className="font-medium text-zinc-600 dark:text-zinc-400">管理</span>
           </h1>
-          <div className="flex justify-center gap-4 text-sm text-zinc-400">
-            <a href="/todos" className="transition-colors hover:text-white">
+          <div className="flex justify-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
+            <a href="/todos" className="transition-colors hover:text-zinc-900 dark:hover:text-white">
               查看展示页面 →
             </a>
           </div>
@@ -118,18 +118,18 @@ const AdminTodoPage = () => {
 
         {/* 输入框 */}
         <div className="mb-6">
-          <div className="flex gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+          <div className="flex gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addTodoHandler()}
               placeholder="添加新任务..."
-              className="flex-1 border-none bg-transparent text-sm text-white placeholder-zinc-500 outline-none"
+              className="flex-1 border-none bg-transparent text-sm text-zinc-800 placeholder-zinc-500 outline-none dark:text-white dark:placeholder-zinc-500"
             />
             <button
               onClick={addTodoHandler}
-              className="rounded-lg bg-white px-4 py-2 text-sm text-black transition-all duration-200 hover:bg-zinc-200"
+              className="rounded-lg bg-zinc-800 px-4 py-2 text-sm text-white transition-all duration-200 hover:bg-zinc-700 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               添加
             </button>
@@ -138,21 +138,21 @@ const AdminTodoPage = () => {
 
         {/* 统计信息 */}
         <div className="mb-6 grid grid-cols-4 gap-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{notStartedCount}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">未开始</div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="mb-1 text-xl font-semibold text-zinc-800 dark:text-white">{notStartedCount}</div>
+            <div className="text-xs tracking-wider text-zinc-600 uppercase dark:text-zinc-400">未开始</div>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{doingCount}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">进行中</div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="mb-1 text-xl font-semibold text-zinc-800 dark:text-white">{doingCount}</div>
+            <div className="text-xs tracking-wider text-zinc-600 uppercase dark:text-zinc-400">进行中</div>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{doneCount}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">已完成</div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="mb-1 text-xl font-semibold text-zinc-800 dark:text-white">{doneCount}</div>
+            <div className="text-xs tracking-wider text-zinc-600 uppercase dark:text-zinc-400">已完成</div>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center">
-            <div className="mb-1 text-xl font-semibold text-white">{todos.length}</div>
-            <div className="text-xs tracking-wider text-zinc-400 uppercase">总计</div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="mb-1 text-xl font-semibold text-zinc-800 dark:text-white">{todos.length}</div>
+            <div className="text-xs tracking-wider text-zinc-600 uppercase dark:text-zinc-400">总计</div>
           </div>
         </div>
 
@@ -165,8 +165,8 @@ const AdminTodoPage = () => {
               className={cn(
                 'rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                 filter === filterType
-                  ? 'bg-white text-black'
-                  : 'border border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                  ? 'bg-zinc-800 text-white dark:bg-white dark:text-black'
+                  : 'border border-zinc-300 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white'
               )}
             >
               {filterType === 'all' && '全部'}
@@ -188,7 +188,7 @@ const AdminTodoPage = () => {
         <div className="space-y-2">
           {filteredTodos.length === 0 ? (
             <div className="py-12 text-center">
-              <div className="mb-4 text-zinc-600">
+              <div className="mb-4 text-zinc-500 dark:text-zinc-600">
                 <svg className="mx-auto h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -198,7 +198,7 @@ const AdminTodoPage = () => {
                   />
                 </svg>
               </div>
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-600 dark:text-zinc-500">
                 {filter === 'active' && '没有待完成的任务'}
                 {filter === 'completed' && '没有已完成的任务'}
                 {filter === 'all' && '还没有任务，开始添加吧！'}
@@ -210,7 +210,7 @@ const AdminTodoPage = () => {
                 key={todo.id}
                 className={cn(
                   'flex items-center gap-3 rounded-lg border p-3 transition-all duration-200',
-                  'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/50',
+                  'border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100/50 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:bg-zinc-800/50',
                   todo.taskStatus === 'done' && 'opacity-60'
                 )}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -220,34 +220,44 @@ const AdminTodoPage = () => {
                   className={cn(
                     'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
                     todo.taskStatus === 'done'
-                      ? 'border-zinc-700 bg-zinc-900'
+                      ? 'border-zinc-400 bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-900'
                       : todo.taskStatus === 'doing'
-                        ? 'border-zinc-700 bg-zinc-800'
-                        : 'border-zinc-700 bg-black',
-                    'hover:border-zinc-400'
+                        ? 'border-zinc-400 bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800'
+                        : 'border-zinc-400 bg-zinc-100 dark:border-zinc-700 dark:bg-black',
+                    'hover:border-zinc-500 dark:hover:border-zinc-400'
                   )}
                 >
                   {todo.taskStatus === 'done' && (
-                    <svg className="h-3 w-3 text-white" fill="none" stroke="white" strokeWidth={2} viewBox="0 0 24 24">
+                    <svg
+                      className="h-3 w-3 text-zinc-800 dark:text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
                       <polyline points="20,6 9,17 4,12" />
                     </svg>
                   )}
-                  {todo.taskStatus === 'doing' && <span className="block h-3 w-3 rounded-full bg-white"></span>}
+                  {todo.taskStatus === 'doing' && (
+                    <span className="block h-3 w-3 rounded-full bg-zinc-800 dark:bg-white"></span>
+                  )}
                   {todo.taskStatus === 'todo' && (
-                    <span className="block h-3 w-3 rounded-full border border-zinc-500"></span>
+                    <span className="block h-3 w-3 rounded-full border border-zinc-500 dark:border-zinc-500"></span>
                   )}
                 </button>
                 <span
                   className={cn(
                     'flex-1 text-sm transition-all duration-200',
-                    todo.taskStatus === 'done' ? 'text-zinc-400 line-through' : 'text-white'
+                    todo.taskStatus === 'done'
+                      ? 'text-zinc-500 line-through dark:text-zinc-400'
+                      : 'text-zinc-800 dark:text-white'
                   )}
                 >
                   {todo.title}
                 </span>
                 <button
                   onClick={() => deleteTodoHandler(todo.documentId)}
-                  className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-2 text-zinc-400 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-700/50 hover:text-zinc-300"
+                  className="rounded-lg border border-zinc-300 bg-zinc-100 p-2 text-zinc-600 transition-all duration-200 hover:border-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-300"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <polyline points="3,6 5,6 21,6"></polyline>

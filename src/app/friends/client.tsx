@@ -19,7 +19,7 @@ const client = ({ friends }: { friends: any[] }) => {
               className="group cursor-pointer"
               onClick={() => friend.link && window.open(friend.link, '_blank')}
             >
-              <div className="relative overflow-hidden rounded-md border border-zinc-800/50 bg-zinc-900/50 p-4 backdrop-blur-sm transition-all duration-300 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:shadow-lg hover:shadow-black/20">
+              <div className="relative overflow-hidden rounded-md border border-zinc-200 bg-white/80 p-4 backdrop-blur-sm transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-lg hover:shadow-zinc-200/50 dark:border-zinc-800/50 dark:bg-zinc-900/50 dark:hover:border-zinc-700/60 dark:hover:bg-zinc-800/60 dark:hover:shadow-black/20">
                 {/* 头像 */}
                 <div className="relative mx-auto mb-3 h-12 w-12 overflow-hidden rounded-md">
                   <Image
@@ -33,12 +33,12 @@ const client = ({ friends }: { friends: any[] }) => {
                 </div>
 
                 {/* 名字 */}
-                <h3 className="mb-1 text-center text-sm font-medium text-zinc-300 transition-colors duration-200 group-hover:text-white">
+                <h3 className="mb-1 text-center text-sm font-medium text-zinc-800 transition-colors duration-200 group-hover:text-zinc-900 dark:text-zinc-300 dark:group-hover:text-white">
                   {friend.name}
                 </h3>
 
                 {/* 描述 */}
-                <p className="line-clamp-2 text-center text-xs text-zinc-500 transition-colors duration-200 group-hover:text-zinc-400">
+                <p className="line-clamp-2 text-center text-xs text-zinc-600 transition-colors duration-200 group-hover:text-zinc-700 dark:text-zinc-500 dark:group-hover:text-zinc-400">
                   {friend.description}
                 </p>
 
@@ -48,7 +48,12 @@ const client = ({ friends }: { friends: any[] }) => {
                 {/* 链接指示器 */}
                 {friend.link && (
                   <div className="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-60">
-                    <svg className="h-3 w-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      className="h-3 w-3 text-zinc-600 dark:text-zinc-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -71,8 +76,13 @@ const client = ({ friends }: { friends: any[] }) => {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-24"
         >
-          <div className="mb-4 rounded-full bg-zinc-900/50 p-6">
-            <svg className="h-8 w-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mb-4 rounded-full bg-zinc-100 p-6 dark:bg-zinc-900/50">
+            <svg
+              className="h-8 w-8 text-zinc-500 dark:text-zinc-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -81,8 +91,8 @@ const client = ({ friends }: { friends: any[] }) => {
               />
             </svg>
           </div>
-          <h3 className="mb-1 text-sm font-medium text-zinc-400">暂无朋友</h3>
-          <p className="text-xs text-zinc-600">还没有添加任何朋友</p>
+          <h3 className="mb-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">暂无朋友</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-600">还没有添加任何朋友</p>
         </motion.div>
       )}
     </>

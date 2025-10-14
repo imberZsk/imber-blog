@@ -95,12 +95,12 @@ export function TableOfContents() {
 
   return (
     <nav className={cn('fixed right-10 hidden w-[19rem] overflow-y-auto pr-4 pb-16 pl-8 2xl:block', PADDING_TOP)}>
-      <h2 className="font-semibold dark:text-zinc-100">目录</h2>
+      <h2 className="font-semibold text-zinc-800 dark:text-zinc-100">目录</h2>
       <ul className="mt-4 space-y-1 text-sm">
         {headings.map((heading, index) => (
           <li
             key={`heading-${heading.id}-${index}`}
-            className={cn('rounded-sm px-2', selectedIndex === index ? 'dark:bg-blue-900/20' : null, {
+            className={cn('rounded-sm px-2', selectedIndex === index ? 'bg-blue-50 dark:bg-blue-900/20' : null, {
               'pl-4': heading.level === 3,
               hidden: heading.level > 3
             })}
@@ -110,7 +110,7 @@ export function TableOfContents() {
               className={cn(
                 selectedIndex === index
                   ? 'font-semibold text-blue-600 dark:text-blue-400'
-                  : 'text-zinc-500 dark:text-zinc-400',
+                  : 'text-zinc-600 dark:text-zinc-400',
                 'block py-2 leading-normal transition-colors hover:text-blue-600 dark:hover:text-blue-400'
               )}
               onClick={() => {

@@ -203,7 +203,7 @@ export default function ChatBot() {
           >
             {/* 聊天头部 */}
             <div className="flex items-center justify-between border-b border-gray-200 bg-blue-600 px-4 py-2 text-white">
-              <h3 className="font-medium">通义千问助手</h3>
+              <h3 className="font-medium">AI 知识库</h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={clearChatHistory}

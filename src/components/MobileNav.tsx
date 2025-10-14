@@ -49,7 +49,7 @@ const MobileNav = () => {
   return (
     <div className="lg:hidden">
       <motion.button
-        className="rounded-full p-2 text-zinc-300 transition-colors hover:bg-white/5 hover:text-zinc-100"
+        className="rounded-full p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-100"
         onClick={() => setIsOpen(!isOpen)}
         whileTap={{ scale: 0.95 }}
       >
@@ -68,7 +68,7 @@ const MobileNav = () => {
             variants={menuVariants}
           >
             <motion.div
-              className="h-[calc(100vh-72px)] bg-[#1a1a1a]/95 backdrop-blur-xl"
+              className="h-[calc(100vh-72px)] border-b border-zinc-200/50 bg-white/95 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-[#1a1a1a]/95"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
@@ -81,8 +81,8 @@ const MobileNav = () => {
                         href={item.path}
                         className={`block rounded-lg px-3 py-2 text-base font-medium transition-colors ${
                           pathname === item.path
-                            ? 'bg-white/10 text-zinc-100'
-                            : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
+                            ? 'bg-zinc-100 text-zinc-800 dark:bg-white/10 dark:text-zinc-100'
+                            : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100'
                         }`}
                         onClick={() => setIsOpen(false)}
                       >

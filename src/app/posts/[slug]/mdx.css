@@ -162,13 +162,13 @@
   --tw-prose-quotes: #111827;
   --tw-prose-quote-borders: #e5e7eb;
   --tw-prose-code: #1f2937;
-  --tw-prose-code-bg: #f8fafc;
+  --tw-prose-code-bg: #f1f5f9;
   --tw-prose-code-border: #e2e8f0;
-  --tw-prose-pre-code: #e5e7eb;
-  --tw-prose-pre-bg: #1a1a1a;
-  --tw-prose-pre-border: #333333;
-  --tw-prose-pre-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --tw-prose-pre-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --tw-prose-pre-code: #1f2937;
+  --tw-prose-pre-bg: #f8fafc;
+  --tw-prose-pre-border: #e2e8f0;
+  --tw-prose-pre-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --tw-prose-pre-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
   --tw-prose-hr: #e5e7eb;
 }
 
