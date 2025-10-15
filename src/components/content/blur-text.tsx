@@ -34,6 +34,9 @@ const BlurTextGsap = ({
   useGSAP(() => {
     if (!containerRef.current || hasAnimated.current) return
 
+    // 处理 FOUC
+    gsap.set(containerRef.current, { opacity: 1 })
+
     // 标记动画已执行
     hasAnimated.current = true
 
@@ -84,7 +87,7 @@ const BlurTextGsap = ({
   }, []) // 移除所有依赖项，只在组件首次挂载时执行
 
   return (
-    <p ref={containerRef} className={`${className}`}>
+    <p ref={containerRef} className={`${className} opacity-0`}>
       {children || text}
     </p>
   )
