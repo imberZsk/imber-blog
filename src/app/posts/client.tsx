@@ -12,7 +12,7 @@ interface Post {
   href: string
   date: string
   tags: string[]
-  views: number
+  views?: number
 }
 
 interface ClientProps {
