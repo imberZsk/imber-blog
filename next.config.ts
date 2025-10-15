@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
   reactStrictMode: false,
-  experimental: {
-    mdxRs: true
-  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
@@ -50,5 +47,4 @@ const nextConfig = {
   }
 }
 
-const withMDX = require('@next/mdx')()
-module.exports = withMDX(nextConfig)
+module.exports = nextConfig

@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import MobileNav from './MobileNav'
-import { ModeToggle } from './ModeToggle'
+import { MobileNav } from '@/components/layout'
+import { ModeToggle } from '@/components/common'
 
 const Header = () => {
   return (

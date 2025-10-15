@@ -1,6 +1,6 @@
-import './mdx.css'
-import { TableOfContents } from '@/components/TableOfContents'
-import { MDXContent } from '@/components/MDXContent'
+// import './mdx.css'
+// import { TableOfContents } from '@/components/TableOfContents'
+// import { MDXContent } from '@/components/MDXContent'
 
 export default function RootLayout({
   children
@@ -37,8 +37,9 @@ export default function RootLayout({
         }
       ></div>
       <div className="relative mx-auto max-w-7xl">
-        <TableOfContents />
-        <MDXContent>{children}</MDXContent>
+        {/* <TableOfContents /> */}
+        {/* <MDXContent>{children}</MDXContent> */}
+        {children}
       </div>
     </div>
   )

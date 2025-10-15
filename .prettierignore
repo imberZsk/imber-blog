@@ -1,0 +1,10 @@
+# 忽略 components README
+src/components/README.md
+
+# 其他常见的忽略文件
+node_modules/
+dist/
+build/
+.next/
+*.min.js
+*.min.css

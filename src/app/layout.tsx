@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import Header from '@/components/header'
-import { ChatBot } from '@/components/ChatBot'
+import { Header } from '@/components/layout'
+import { ChatBot } from '@/components/common'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 

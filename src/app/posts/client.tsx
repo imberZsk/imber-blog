@@ -5,7 +5,7 @@ import { Calendar, Tag, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
-import PostCategories from '@/components/PostCategories'
+import { PostCategories } from '@/components/content'
 
 interface Post {
   title: string

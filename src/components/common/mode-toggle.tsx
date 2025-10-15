@@ -1,9 +1,9 @@
 'use client'
 
+import React, { useState, useEffect, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
 
 export function ModeToggle() {
   const { theme, setTheme } = useTheme()

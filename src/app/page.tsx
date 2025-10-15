@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 // import Aurora from '@/components/Aurora/Aurora'
 import { JuejinSvg } from '@/components/icons'
-import BlurTextGsap from '@/components/BlurText/BlurText'
+import { BlurText } from '@/components/content'
 
 export const metadata: Metadata = {
   title: 'Imber | NodeJS Full Stack Developer',
@@ -141,23 +141,17 @@ export default function HomePage() {
               {/* Text Content */}
               <div className="mt-20 text-center lg:mt-0 lg:flex-1 lg:text-left">
                 <h1 className="mb-4 text-4xl font-bold">
-                  <BlurTextGsap
-                    text="Hi, I'm Imber 👋"
-                    delay={50}
-                    animateBy="chars"
-                    ease="none"
-                    className="inline-block"
-                  />
+                  <BlurText text="Hi, I'm Imber 👋" delay={50} animateBy="chars" ease="none" className="inline-block" />
                 </h1>
                 <div className="mb-8 space-y-2">
                   <div className="text-xl">
-                    <BlurTextGsap delay={50} animateBy="chars" ease="none" className="inline-block">
+                    <BlurText delay={50} animateBy="chars" ease="none" className="inline-block">
                       A NodeJS Full Stack{' '}
                       <span className="font-mono text-yellow-600 dark:text-yellow-500">&lt;Developer /&gt;</span>
-                    </BlurTextGsap>
+                    </BlurText>
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                    <BlurTextGsap
+                    <BlurText
                       text="An independent developer coding with love"
                       delay={50}
                       animateBy="chars"
@@ -206,7 +200,7 @@ export default function HomePage() {
 
           {/* Footer */}
           <div className="absolute bottom-0 left-1/2 mx-auto w-full -translate-x-1/2 px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-500">
-            <BlurTextGsap
+            <BlurText
               text="我既无法了解宇宙，也无法看透未来，一个简单的自我"
               delay={200}
               animateBy="words"

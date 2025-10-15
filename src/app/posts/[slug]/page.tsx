@@ -1,33 +1,11 @@
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const { default: Post } = await import(`@/content/${slug}.mdx`)
 
-  return <Post />
+  return <div>Hello {slug}</div>
 }
 
 export function generateStaticParams() {
-  return [
-    { slug: 'write' },
-    { slug: 'this' },
-    { slug: 'leetcode' },
-    { slug: 'safe' },
-    { slug: 'sandpack-mdx' },
-    { slug: 'promise' },
-    { slug: 'print' },
-    { slug: 'responsive' },
-    { slug: 'adaptive' },
-    { slug: 'cursor-mcp' },
-    { slug: 'animate' },
-    { slug: 'gallery' },
-    { slug: 'strapi-supabase' },
-    { slug: 'skill' },
-    { slug: 'tailwind' },
-    { slug: 'typescript' },
-    { slug: 'react' },
-    { slug: 'react-source' },
-    { slug: 'editor' },
-    { slug: 'webpack' }
-  ]
+  return [{ slug: 'editor' }]
 }
 
 export const dynamicParams = false
