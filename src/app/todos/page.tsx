@@ -16,7 +16,7 @@ const Page = async () => {
   const todos: Todo[] = todosData?.data || []
 
   return (
-    <div className={cn('mx-auto max-w-5xl px-4', PADDING_TOP)}>
+    <div className={cn('mx-auto max-w-5xl px-4 pb-10', PADDING_TOP)}>
       <Client todos={todos} />
     </div>
   )

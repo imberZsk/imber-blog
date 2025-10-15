@@ -1,0 +1,17 @@
+/* CSS 变量定义 */
+:root {
+  --placeholder: #adb5bd;
+}
+
+.dark {
+  --placeholder: #6b7280;
+}
+
+/* editor placeholder */
+.tiptap p.is-empty::before {
+  color: var(--placeholder);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

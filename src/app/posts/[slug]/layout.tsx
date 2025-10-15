@@ -8,7 +8,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="relative mx-auto h-full w-full bg-white dark:bg-[#191a1a]">
+    <div className="relative mx-auto min-h-screen w-full bg-white dark:bg-[#191a1a]">
       <div
         className="fixed top-0 left-0 mx-auto h-screen w-full"
         style={
@@ -38,7 +38,6 @@ export default function RootLayout({
       ></div>
       <div className="relative mx-auto max-w-7xl">
         {/* <TableOfContents /> */}
-        {/* <MDXContent>{children}</MDXContent> */}
         {children}
       </div>
     </div>

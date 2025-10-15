@@ -1,7 +1,11 @@
+import { Tiptap } from '@/components/editor'
+
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  return <div>Hello {slug}</div>
+  console.log(slug)
+
+  return <Tiptap></Tiptap>
 }
 
 export function generateStaticParams() {
