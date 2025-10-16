@@ -1,8 +1,8 @@
 .tiptap.ProseMirror {
-  --horizontal-rule-color: var(--tt-gray-light-a-200);
+  --horizontal-rule-color: var(--tt-gray-light-a-500);
 
   .dark & {
-    --horizontal-rule-color: var(--tt-gray-dark-a-200);
+    --horizontal-rule-color: var(--tt-gray-dark-a-500);
   }
 }
 
@@ -16,7 +16,7 @@
     background-color: var(--horizontal-rule-color);
   }
 
-  [data-type="horizontalRule"] {
+  [data-type='horizontalRule'] {
     margin-top: 2.25em;
     margin-bottom: 2.25em;
     padding-top: 0.75rem;

@@ -1,3 +1,75 @@
+export const postsConfig = [
+  {
+    title: 'TipTap 编辑器（5）- 兼容性',
+    href: '/posts/tiptap-compat',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（4）- 插件开发',
+    href: '/posts/tiptap-plugin',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（3）- 菜单栏',
+    href: '/posts/tiptap-menu',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（2）- 样式隔离',
+    href: '/posts/tiptap-style',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（1）- 入门指南',
+    href: '/posts/tiptap-starter',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（0）- 功能测试',
+    href: '/posts/tiptap-base',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  }
+]
+
+export const navItems = [
+  {
+    path: '/',
+    name: '首页'
+  },
+  {
+    path: '/posts',
+    name: '文集'
+  },
+  // {
+  //   path: '/ideas',
+  //   name: '思考'
+  // },
+  // {
+  //   path: '/gallery',
+  //   name: '画廊'
+  // },
+  {
+    path: '/todos',
+    name: '清单'
+  },
+  {
+    path: '/friends',
+    name: '友链'
+  }
+]
+
 // export const postsConfig = [
 //   {
 //     title: '基于 tiptap3.x 的富文本编辑器',
@@ -127,68 +199,3 @@
 //   //   views: 32
 //   // }
 // ]
-
-export const postsConfig = [
-  {
-    title: 'TipTap 编辑器（4）- 兼容性',
-    href: '/posts/editor4',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  },
-  {
-    title: 'TipTap 编辑器（3）- 插件开发',
-    href: '/posts/editor3',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  },
-  {
-    title: 'TipTap 编辑器（2）- 样式隔离',
-    href: '/posts/editor2',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  },
-  {
-    title: 'TipTap 编辑器（1）- 入门指南',
-    href: '/posts/editor1',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  },
-  {
-    title: 'TipTap 编辑器（0）- 功能测试',
-    href: '/posts/editor0',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  }
-]
-
-export const navItems = [
-  {
-    path: '/',
-    name: '首页'
-  },
-  {
-    path: '/posts',
-    name: '文集'
-  },
-  // {
-  //   path: '/ideas',
-  //   name: '思考'
-  // },
-  // {
-  //   path: '/gallery',
-  //   name: '画廊'
-  // },
-  {
-    path: '/todos',
-    name: '清单'
-  },
-  {
-    path: '/friends',
-    name: '友链'
-  }
-]

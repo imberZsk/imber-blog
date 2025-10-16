@@ -72,6 +72,14 @@ const Header = () => {
                     友链
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/simple"
+                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
+                  >
+                    编辑器
+                  </Link>
+                </li>
                 {/* <li>
                   <Link
                     href="/tools"

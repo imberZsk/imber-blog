@@ -92,8 +92,7 @@ export default Tiptap
 ### 2. prosemirror-devtools
 
 然后按谷歌插件，prosemirror-devtools，来依次写样式，这样可以知道编辑器已经有哪些扩展，也避免某些扩展没有写到样式，对于不需要样式的我们也写个空串，cn 函数会帮我们优化类名问题
-
-![prosemirror-devtools](/Users/meizu/Desktop/imber-blog/public/md/prosemirror-devtools.png)
+![prosemirror-devtools](/md/prosemirror-devtools.png)
 
 ```ts
 import { clsx, type ClassValue } from 'clsx'

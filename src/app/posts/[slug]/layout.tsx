@@ -36,10 +36,8 @@ export default function RootLayout({
           } as React.CSSProperties
         }
       ></div>
-      <div className="relative mx-auto max-w-7xl">
-        {/* <TableOfContents /> */}
-        {children}
-      </div>
+      {/* <TableOfContents /> */}
+      {children}
     </div>
   )
 }

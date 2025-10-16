@@ -3,6 +3,7 @@ import { remark } from 'remark'
 import html from 'remark-html'
 import fs from 'node:fs'
 import { join } from 'node:path'
+import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -24,16 +25,12 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     content = '<h1>文件未找到</h1><p>请检查文件路径是否正确。</p>'
   }
 
-  console.log(content)
-
-  return <div></div>
+  return <SimpleEditor content={content}></SimpleEditor>
 }
 
 export function generateStaticParams() {
   // 读取所有文章
   const posts = fs.readdirSync(join(process.cwd(), 'src', 'content', 'editor'))
-
-  console.log(posts)
 
   return posts.map((post) => ({ slug: post.replace('.md', '') }))
 }

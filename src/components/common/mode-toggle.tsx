@@ -36,7 +36,7 @@ export function ModeToggle() {
 
   return (
     <button
-      className={`relative box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
+      className={`relative !box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
         isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'
       } ${isTransitioning ? 'pointer-events-none' : ''}`}
       onClick={handleToggle}

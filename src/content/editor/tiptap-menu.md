@@ -4,6 +4,10 @@
 
 TipTap 编辑器提供了强大的菜单栏系统，让用户可以方便地访问各种编辑功能。本文将介绍如何创建和自定义 TipTap 编辑器的菜单栏，包括工具栏按钮、下拉菜单、快捷键等功能的实现。
 
+simple editor 里没有选中文本出现菜单，需要自己写
+
+`pnpm install @tiptap/extension-bubble-menu`
+
 ## 菜单栏基础架构
 
 ### 1. 菜单栏组件结构
