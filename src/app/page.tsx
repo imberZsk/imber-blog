@@ -21,7 +21,6 @@ export const metadata: Metadata = {
     'TypeScript',
     'React',
     'Next.js',
-    '独立开发者',
     '个人博客',
     '技术分享',
     '编程'
@@ -169,8 +168,10 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     aria-label="访问Imber的GitHub主页"
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                    title="访问Imber的GitHub主页"
                   >
                     <Github className="h-5 w-5" />
+                    <span className="hidden text-sm">GitHub</span>
                   </Link>
                   <Link
                     href="https://juejin.cn/user/3378167164966920/posts"
@@ -178,8 +179,10 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     aria-label="访问Imber的掘金主页"
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                    title="访问Imber的掘金主页"
                   >
                     <JuejinSvg className="h-5 w-5" />
+                    <span className="hidden text-sm">掘金</span>
                   </Link>
                 </div>
               </div>

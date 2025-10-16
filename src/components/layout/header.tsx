@@ -15,8 +15,9 @@ const Header = () => {
 
           {/* 中间Logo */}
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:left-0 lg:translate-x-0">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2" title="首页">
               <Image src="/avatar.jpg" alt="Logo" width={32} height={32} priority className="rounded-full" />
+              <span className="hidden text-lg font-semibold sm:block">Imber</span>
             </Link>
           </div>
 
@@ -28,6 +29,7 @@ const Header = () => {
                   <Link
                     href="/"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
+                    title="首页"
                   >
                     首页
                   </Link>
@@ -35,6 +37,7 @@ const Header = () => {
                 <li>
                   <Link
                     href="/posts"
+                    title="文集"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     文集
@@ -43,6 +46,7 @@ const Header = () => {
                 {/* <li>
                   <Link
                     href="/ideas"
+                    title='思考'
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     思考
@@ -50,6 +54,7 @@ const Header = () => {
                 </li> */}
                 {/* <li>
                   <Link
+                    title='画廊'
                     href="/gallery"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
@@ -59,6 +64,7 @@ const Header = () => {
                 <li>
                   <Link
                     href="/todos"
+                    title="清单"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     清单
@@ -67,6 +73,7 @@ const Header = () => {
                 <li>
                   <Link
                     href="/friends"
+                    title="友链"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     友链
@@ -75,6 +82,7 @@ const Header = () => {
                 <li>
                   <Link
                     href="/simple"
+                    title="编辑器"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
                     编辑器
