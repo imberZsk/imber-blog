@@ -1,264 +1,491 @@
-# TipTap 编辑器（3）- 插件开发
+# TipTap 编辑器（3）- 标题和菜单栏
 
 ## 前言
 
-[TipTap](https://tiptap.dev/docs/editor/getting-started/overview) 是一个基于 ProseMirror 的现代富文本编辑器，它提供了强大的插件系统，让开发者可以轻松扩展编辑器的功能。
+TipTap 编辑器提供了强大的菜单栏系统，让用户可以方便地访问各种编辑功能。本文将介绍如何创建和自定义 TipTap 编辑器的菜单栏，包括工具栏按钮、下拉菜单、快捷键等功能的实现。
 
-## 插件系统架构
+## 菜单栏基础架构
 
-TipTap 的插件系统基于 ProseMirror 的插件架构，每个插件都可以：
+### 1. 菜单栏组件结构
 
-- 扩展编辑器的功能
-- 修改文档结构
-- 添加自定义命令
-- 处理用户交互
-- 管理编辑器状态
+```tsx
+import { Editor } from '@tiptap/react'
+import {
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Undo,
+  Redo
+} from 'lucide-react'
 
-## 创建自定义插件
+interface MenuBarProps {
+  editor: Editor | null
+}
 
-### 基础插件结构
+const MenuBar = ({ editor }: MenuBarProps) => {
+  if (!editor) return null
 
-```javascript
-import { Plugin, PluginKey } from '@tiptap/pm/state'
+  return (
+    <div className="flex flex-wrap gap-1 border-b border-gray-200 p-2">
+      {/* 文本格式化按钮 */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
+        >
+          <Bold size={16} />
+        </button>
 
-const CustomPluginKey = new PluginKey('customPlugin')
+        <button
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
+        >
+          <Italic size={16} />
+        </button>
 
-export const customPlugin = () => {
-  return new Plugin({
-    key: CustomPluginKey,
-    state: {
-      init() {
-        return {
-          // 初始状态
-        }
-      },
-      apply(tr, value) {
-        // 状态更新逻辑
-        return value
-      }
-    },
-    props: {
-      // 处理 DOM 事件
-      handleDOMEvents: {
-        click: (view, event) => {
-          // 处理点击事件
-          return false
-        }
-      }
-    }
-  })
+        <button
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
+        >
+          <Underline size={16} />
+        </button>
+      </div>
+    </div>
+  )
 }
 ```
 
-### 添加插件到编辑器
+### 2. 编辑器集成
 
-```javascript
-import { Editor } from '@tiptap/core'
-import { StarterKit } from '@tiptap/starter-kit'
-import { customPlugin } from './customPlugin'
+```tsx
+'use client'
 
-const editor = new Editor({
-  extensions: [StarterKit, customPlugin()]
-})
-```
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import { MenuBar } from './MenuBar'
 
-## 常用插件类型
-
-### 1. 命令插件
-
-```javascript
-import { Extension } from '@tiptap/core'
-
-export const CustomCommand = Extension.create({
-  name: 'customCommand',
-
-  addCommands() {
-    return {
-      insertCustomContent:
-        () =>
-        ({ commands }) => {
-          return commands.insertContent('<p>自定义内容</p>')
-        }
+const TiptapEditor = () => {
+  const editor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: '<p>Hello World! 🌎️</p>',
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'focus:outline-none min-h-80 p-4'
+      }
     }
-  }
-})
+  })
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200">
+      <MenuBar editor={editor} />
+      <EditorContent editor={editor} />
+    </div>
+  )
+}
+
+export default TiptapEditor
 ```
 
-### 2. 节点插件
+## 菜单按钮组件
 
-```javascript
-import { Node } from '@tiptap/core'
+### 1. 基础按钮组件
 
-export const CustomNode = Node.create({
-  name: 'customNode',
+```tsx
+interface MenuButtonProps {
+  onClick: () => void
+  isActive?: boolean
+  disabled?: boolean
+  children: React.ReactNode
+  title?: string
+}
 
-  group: 'block',
-  content: 'inline*',
-
-  parseHTML() {
-    return [{ tag: 'div[data-custom]' }]
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return ['div', { ...HTMLAttributes, 'data-custom': '' }, 0]
-  }
-})
+const MenuButton = ({ onClick, isActive = false, disabled = false, children, title }: MenuButtonProps) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`rounded p-2 transition-colors hover:bg-gray-100 ${isActive ? 'bg-gray-200 text-gray-900' : 'text-gray-600'} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} `}
+    >
+      {children}
+    </button>
+  )
+}
 ```
 
-### 3. 标记插件
+### 2. 文本格式化按钮
 
-```javascript
-import { Mark } from '@tiptap/core'
+```tsx
+const TextFormatButtons = ({ editor }: { editor: Editor }) => {
+  return (
+    <div className="flex gap-1 border-r border-gray-200 pr-2">
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        isActive={editor.isActive('bold')}
+        title="粗体 (Ctrl+B)"
+      >
+        <Bold size={16} />
+      </MenuButton>
 
-export const CustomMark = Mark.create({
-  name: 'customMark',
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        isActive={editor.isActive('italic')}
+        title="斜体 (Ctrl+I)"
+      >
+        <Italic size={16} />
+      </MenuButton>
 
-  parseHTML() {
-    return [{ tag: 'span[data-custom]' }]
-  },
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        isActive={editor.isActive('underline')}
+        title="下划线 (Ctrl+U)"
+      >
+        <Underline size={16} />
+      </MenuButton>
 
-  renderHTML({ HTMLAttributes }) {
-    return ['span', { ...HTMLAttributes, 'data-custom': '' }, 0]
-  }
-})
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        isActive={editor.isActive('strike')}
+        title="删除线"
+      >
+        <Strikethrough size={16} />
+      </MenuButton>
+
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        isActive={editor.isActive('code')}
+        title="行内代码"
+      >
+        <Code size={16} />
+      </MenuButton>
+    </div>
+  )
+}
 ```
 
-## 高级插件功能
+### 3. 标题按钮
 
-### 状态管理
+```tsx
+const HeadingButtons = ({ editor }: { editor: Editor }) => {
+  return (
+    <div className="flex gap-1 border-r border-gray-200 pr-2">
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        isActive={editor.isActive('heading', { level: 1 })}
+        title="标题 1"
+      >
+        H1
+      </MenuButton>
 
-```javascript
-import { Extension } from '@tiptap/core'
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        isActive={editor.isActive('heading', { level: 2 })}
+        title="标题 2"
+      >
+        H2
+      </MenuButton>
 
-export const StatePlugin = Extension.create({
-  name: 'statePlugin',
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        isActive={editor.isActive('heading', { level: 3 })}
+        title="标题 3"
+      >
+        H3
+      </MenuButton>
+    </div>
+  )
+}
+```
 
-  addStorage() {
-    return {
-      count: 0
+### 4. 列表按钮
+
+```tsx
+const ListButtons = ({ editor }: { editor: Editor }) => {
+  return (
+    <div className="flex gap-1 border-r border-gray-200 pr-2">
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        isActive={editor.isActive('bulletList')}
+        title="无序列表"
+      >
+        <List size={16} />
+      </MenuButton>
+
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        isActive={editor.isActive('orderedList')}
+        title="有序列表"
+      >
+        <ListOrdered size={16} />
+      </MenuButton>
+    </div>
+  )
+}
+```
+
+## 下拉菜单组件
+
+### 1. 颜色选择器
+
+```tsx
+import { useState } from 'react'
+
+const ColorPicker = ({ editor }: { editor: Editor }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const colors = [
+    { name: '黑色', value: '#000000' },
+    { name: '红色', value: '#ef4444' },
+    { name: '绿色', value: '#22c55e' },
+    { name: '蓝色', value: '#3b82f6' },
+    { name: '紫色', value: '#a855f7' },
+    { name: '橙色', value: '#f97316' }
+  ]
+
+  return (
+    <div className="relative">
+      <MenuButton onClick={() => setIsOpen(!isOpen)} title="文字颜色">
+        <div className="h-4 w-4 rounded border bg-black" />
+      </MenuButton>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+          <div className="grid grid-cols-3 gap-2">
+            {colors.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  editor.chain().focus().setColor(color.value).run()
+                  setIsOpen(false)
+                }}
+                className="h-8 w-8 rounded border transition-transform hover:scale-110"
+                style={{ backgroundColor: color.value }}
+                title={color.name}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### 2. 对齐方式选择器
+
+```tsx
+const AlignmentPicker = ({ editor }: { editor: Editor }) => {
+  const alignments = [
+    { name: '左对齐', value: 'left', icon: '←' },
+    { name: '居中', value: 'center', icon: '↔' },
+    { name: '右对齐', value: 'right', icon: '→' },
+    { name: '两端对齐', value: 'justify', icon: '⇔' }
+  ]
+
+  return (
+    <div className="flex gap-1">
+      {alignments.map((alignment) => (
+        <MenuButton
+          key={alignment.value}
+          onClick={() => editor.chain().focus().setTextAlign(alignment.value).run()}
+          isActive={editor.isActive({ textAlign: alignment.value })}
+          title={alignment.name}
+        >
+          {alignment.icon}
+        </MenuButton>
+      ))}
+    </div>
+  )
+}
+```
+
+## 快捷键支持
+
+### 1. 键盘快捷键处理
+
+```tsx
+import { useEffect } from 'react'
+
+const useKeyboardShortcuts = (editor: Editor) => {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + B: 粗体
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault()
+        editor.chain().focus().toggleBold().run()
+      }
+
+      // Ctrl/Cmd + I: 斜体
+      if ((event.ctrlKey || event.metaKey) && event.key === 'i') {
+        event.preventDefault()
+        editor.chain().focus().toggleItalic().run()
+      }
+
+      // Ctrl/Cmd + U: 下划线
+      if ((event.ctrlKey || event.metaKey) && event.key === 'u') {
+        event.preventDefault()
+        editor.chain().focus().toggleUnderline().run()
+      }
+
+      // Ctrl/Cmd + Z: 撤销
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        editor.chain().focus().undo().run()
+      }
+
+      // Ctrl/Cmd + Y 或 Ctrl/Cmd + Shift + Z: 重做
+      if (
+        ((event.ctrlKey || event.metaKey) && event.key === 'y') ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'z')
+      ) {
+        event.preventDefault()
+        editor.chain().focus().redo().run()
+      }
     }
-  },
 
-  addCommands() {
-    return {
-      incrementCount:
-        () =>
-        ({ editor }) => {
-          const currentCount = editor.storage.statePlugin.count
-          editor.storage.statePlugin.count = currentCount + 1
-          return true
-        }
-    }
-  }
-})
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [editor])
+}
 ```
 
-### 事件处理
+### 2. 在编辑器中使用
 
-```javascript
-import { Extension } from '@tiptap/core'
+```tsx
+const TiptapEditor = () => {
+  const editor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: '<p>Hello World! 🌎️</p>',
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'focus:outline-none min-h-80 p-4'
+      }
+    }
+  })
 
-export const EventPlugin = Extension.create({
-  name: 'eventPlugin',
+  useKeyboardShortcuts(editor)
 
-  onCreate() {
-    console.log('编辑器创建')
-  },
-
-  onUpdate() {
-    console.log('内容更新')
-  },
-
-  onSelectionUpdate() {
-    console.log('选择更新')
-  },
-
-  onDestroy() {
-    console.log('编辑器销毁')
-  }
-})
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200">
+      <MenuBar editor={editor} />
+      <EditorContent editor={editor} />
+    </div>
+  )
+}
 ```
 
-## 插件最佳实践
+## 响应式菜单栏
 
-### 1. 性能优化
+### 1. 移动端适配
 
-- 避免在插件中进行昂贵的计算
-- 使用防抖处理频繁的事件
-- 合理使用状态缓存
+```tsx
+const ResponsiveMenuBar = ({ editor }: { editor: Editor }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-### 2. 错误处理
+  return (
+    <div className="border-b border-gray-200">
+      {/* 桌面端菜单 */}
+      <div className="hidden gap-1 p-2 md:flex">
+        <TextFormatButtons editor={editor} />
+        <HeadingButtons editor={editor} />
+        <ListButtons editor={editor} />
+        <ColorPicker editor={editor} />
+        <AlignmentPicker editor={editor} />
+      </div>
 
-```javascript
-export const SafePlugin = Extension.create({
-  name: 'safePlugin',
+      {/* 移动端菜单 */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-between p-2">
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="rounded p-2 hover:bg-gray-100">
+            <Menu size={20} />
+          </button>
 
-  addCommands() {
-    return {
-      safeCommand:
-        () =>
-        ({ editor }) => {
-          try {
-            // 执行命令
-            return true
-          } catch (error) {
-            console.error('命令执行失败:', error)
-            return false
-          }
-        }
-    }
-  }
-})
+          <div className="flex gap-1">
+            <MenuButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}>
+              <Bold size={16} />
+            </MenuButton>
+            <MenuButton
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              isActive={editor.isActive('italic')}
+            >
+              <Italic size={16} />
+            </MenuButton>
+          </div>
+        </div>
+
+        {isMobileMenuOpen && (
+          <div className="border-t border-gray-200 bg-gray-50 p-2">
+            <div className="grid grid-cols-2 gap-2">
+              <TextFormatButtons editor={editor} />
+              <HeadingButtons editor={editor} />
+              <ListButtons editor={editor} />
+              <ColorPicker editor={editor} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 ```
 
-### 3. 配置选项
+## 菜单栏样式优化
 
-```javascript
-export const ConfigurablePlugin = Extension.create({
-  name: 'configurablePlugin',
+### 1. 主题适配
 
-  addOptions() {
-    return {
-      enabled: true,
-      customOption: 'default'
-    }
-  },
-
-  onCreate() {
-    if (!this.options.enabled) {
-      return
-    }
-    // 插件逻辑
-  }
-})
+```tsx
+const MenuBar = ({ editor }: { editor: Editor }) => {
+  return (
+    <div className="flex flex-wrap gap-1 border-b border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+      <MenuButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        isActive={editor.isActive('bold')}
+        className="${editor.isActive('bold') ? 'bg-gray-200 dark:bg-gray-600' : ''} rounded p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+      >
+        <Bold size={16} />
+      </MenuButton>
+    </div>
+  )
+}
 ```
 
-## 调试插件
+### 2. 动画效果
 
-### 开发工具
-
-```javascript
-import { Extension } from '@tiptap/core'
-
-export const DebugPlugin = Extension.create({
-  name: 'debugPlugin',
-
-  onCreate() {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('编辑器状态:', this.editor.state)
-      console.log('编辑器配置:', this.editor.options)
-    }
-  }
-})
+```tsx
+const MenuButton = ({ onClick, isActive, children, title }: MenuButtonProps) => {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`rounded p-2 transition-all duration-200 hover:scale-105 hover:bg-gray-100 active:scale-95 dark:hover:bg-gray-700 ${
+        isActive ? 'bg-gray-200 text-gray-900 dark:bg-gray-600 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'
+      } `}
+    >
+      {children}
+    </button>
+  )
+}
 ```
 
 ## 总结
 
-TipTap 的插件系统为开发者提供了强大的扩展能力，通过合理使用插件，可以：
+TipTap 编辑器的菜单栏系统提供了丰富的功能：
 
-- 快速实现自定义功能
-- 保持代码的模块化
-- 提高开发效率
-- 增强用户体验
+- ✅ **模块化设计** - 每个功能都可以独立开发和维护
+- ✅ **响应式支持** - 适配桌面端和移动端
+- ✅ **快捷键支持** - 提高编辑效率
+- ✅ **主题适配** - 支持亮色和暗色主题
+- ✅ **可扩展性** - 易于添加新功能
 
-掌握插件开发是使用 TipTap 的关键技能，希望这篇文章能帮助您更好地理解和使用 TipTap 的插件系统。
+通过合理的菜单栏设计，可以大大提升用户的编辑体验，让编辑器更加易用和高效。

@@ -56,6 +56,30 @@ const Tiptap = () => {
 export default Tiptap
 ```
 
+### Simple template
+
+tiptap 提供的简单模版，不是 notion 风格，也就是不支持 slash commands，在页面顶部才有操作栏
+
+```bash
+# 现有项目
+npx @tiptap/cli@latest add simple-editor
+
+# 新项目
+npx @tiptap/cli@latest init simple-editor
+```
+
+然后使用
+
+```js
+import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
+
+export default function App() {
+  return <SimpleEditor />
+}
+```
+
+notion 风格的模版需要收费，可以基于 simple template 来修改
+
 ## 参考
 
 - Tiptap extension & 快速集成：[extension 文档](https://tiptap.dev/docs/editor/extensions/overview)

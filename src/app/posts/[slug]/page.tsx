@@ -1,8 +1,8 @@
-import { Tiptap } from '@/components/editor'
 import { readFile } from 'fs/promises'
-import { join } from 'path'
 import { remark } from 'remark'
 import html from 'remark-html'
+import fs from 'node:fs'
+import { join } from 'node:path'
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -24,11 +24,18 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     content = '<h1>文件未找到</h1><p>请检查文件路径是否正确。</p>'
   }
 
-  return <Tiptap content={content}></Tiptap>
+  console.log(content)
+
+  return <div></div>
 }
 
 export function generateStaticParams() {
-  return [{ slug: 'editor0' }, { slug: 'editor1' }, { slug: 'editor2' }, { slug: 'editor3' }, { slug: 'editor4' }]
+  // 读取所有文章
+  const posts = fs.readdirSync(join(process.cwd(), 'src', 'content', 'editor'))
+
+  console.log(posts)
+
+  return posts.map((post) => ({ slug: post.replace('.md', '') }))
 }
 
 export const dynamicParams = false

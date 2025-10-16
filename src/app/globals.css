@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@import '../styles/_variables.scss';
+@import '../styles/_keyframe-animations.scss';
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* @custom-variant dark (&:is(.dark *)); */
@@ -122,9 +125,9 @@
   }
 
   /* 标题锚点滚动偏移，考虑固定头部高度 */
-  h1[id],
+  /* h1[id],
   h2[id],
   h3[id] {
     scroll-margin-top: 100px;
-  }
+  } */
 }
