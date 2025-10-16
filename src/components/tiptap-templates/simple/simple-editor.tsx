@@ -47,13 +47,13 @@ import TextMenu from '@/components/tiptap-menus/text-menu'
  * - 图片上传和管理
  * - 主题切换支持
  */
-export function SimpleEditor({ content }: { content?: string }) {
+export function SimpleEditor({ content, editable = true }: { content?: string; editable?: boolean }) {
   // === Tiptap 编辑器配置 ===
   const editor = useEditor({
     // 性能优化配置
     immediatelyRender: false, // 延迟渲染，提升性能
     shouldRerenderOnTransaction: false, // 避免不必要的重渲染
-
+    editable: editable, // 禁用编辑
     // 编辑器属性配置
     editorProps: {
       attributes: {

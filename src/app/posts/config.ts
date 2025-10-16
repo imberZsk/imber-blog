@@ -1,20 +1,27 @@
 export const postsConfig = [
   {
-    title: 'TipTap 编辑器（5）- 兼容性',
-    href: '/posts/tiptap-compat',
+    title: 'TipTap 编辑器（6）- 数据结构',
+    href: '/posts/tiptap-data',
     date: '2025-07-29',
     tags: ['editor']
     // views: 32
   },
   {
-    title: 'TipTap 编辑器（4）- 插件开发',
+    title: 'TipTap 编辑器（5）- 插件开发实战',
+    href: '/posts/tiptap-plugin-practice',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（4）- 插件系统',
     href: '/posts/tiptap-plugin',
     date: '2025-07-29',
     tags: ['editor']
     // views: 32
   },
   {
-    title: 'TipTap 编辑器（3）- 菜单栏',
+    title: 'TipTap 编辑器（3）- 菜单栏 & slash commands',
     href: '/posts/tiptap-menu',
     date: '2025-07-29',
     tags: ['editor']

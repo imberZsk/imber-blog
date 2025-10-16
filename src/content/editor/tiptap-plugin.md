@@ -1,4 +1,4 @@
-# TipTap 编辑器（4）- 插件开发
+# TipTap 编辑器（4）- 插件系统
 
 ## 前言
 
@@ -18,36 +18,335 @@ TipTap 的插件系统基于 ProseMirror 的插件架构，每个插件都可以
 
 ### 基础插件结构
 
+下面是 bold 插件的源码
+
 ```javascript
-import { Plugin, PluginKey } from '@tiptap/pm/state'
+/** @jsxImportSource @tiptap/core */
+import { Mark, markInputRule, markPasteRule, mergeAttributes } from '@tiptap/core'
 
-const CustomPluginKey = new PluginKey('customPlugin')
+export interface BoldOptions {
+  /**
+   * HTML attributes to add to the bold element.
+   * @default {}
+   * @example { class: 'foo' }
+   */
+  HTMLAttributes: Record<string, any>
+}
 
-export const customPlugin = () => {
-  return new Plugin({
-    key: CustomPluginKey,
-    state: {
-      init() {
-        return {
-          // 初始状态
-        }
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    bold: {
+      /**
+       * Set a bold mark
+       */
+      setBold: () => ReturnType
+      /**
+       * Toggle a bold mark
+       */
+      toggleBold: () => ReturnType
+      /**
+       * Unset a bold mark
+       */
+      unsetBold: () => ReturnType
+    }
+  }
+}
+
+/**
+ * Matches bold text via `**` as input.
+ */
+export const starInputRegex = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))$/
+
+/**
+ * Matches bold text via `**` while pasting.
+ */
+export const starPasteRegex = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))/g
+
+/**
+ * Matches bold text via `__` as input.
+ */
+export const underscoreInputRegex = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))$/
+
+/**
+ * Matches bold text via `__` while pasting.
+ */
+export const underscorePasteRegex = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))/g
+
+/**
+ * This extension allows you to mark text as bold.
+ * @see https://tiptap.dev/api/marks/bold
+ */
+export const Bold = Mark.create<BoldOptions>({
+  name: 'bold',
+
+  addOptions() {
+    return {
+      HTMLAttributes: {},
+    }
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'strong',
       },
-      apply(tr, value) {
-        // 状态更新逻辑
-        return value
-      }
-    },
-    props: {
-      // 处理 DOM 事件
-      handleDOMEvents: {
-        click: (view, event) => {
-          // 处理点击事件
-          return false
+      {
+        tag: 'b',
+        getAttrs: node => (node as HTMLElement).style.fontWeight !== 'normal' && null,
+      },
+      {
+        style: 'font-weight=400',
+        clearMark: mark => mark.type.name === this.name,
+      },
+      {
+        style: 'font-weight',
+        getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value as string) && null,
+      },
+    ]
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return (
+      <strong {...mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)}>
+        <slot />
+      </strong>
+    )
+  },
+
+  markdownTokenName: 'strong',
+
+  parseMarkdown: (token, helpers) => {
+    // Convert 'strong' token to bold mark
+    return helpers.applyMark('bold', helpers.parseInline(token.tokens || []))
+  },
+
+  renderMarkdown: (node, h) => {
+    return `**${h.renderChildren(node)}**`
+  },
+
+  addCommands() {
+    return {
+      setBold:
+        () =>
+        ({ commands }) => {
+          return commands.setMark(this.name)
+        },
+      toggleBold:
+        () =>
+        ({ commands }) => {
+          return commands.toggleMark(this.name)
+        },
+      unsetBold:
+        () =>
+        ({ commands }) => {
+          return commands.unsetMark(this.name)
+        },
+    }
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      'Mod-b': () => this.editor.commands.toggleBold(),
+      'Mod-B': () => this.editor.commands.toggleBold(),
+    }
+  },
+
+  addInputRules() {
+    return [
+      markInputRule({
+        find: starInputRegex,
+        type: this.type,
+      }),
+      markInputRule({
+        find: underscoreInputRegex,
+        type: this.type,
+      }),
+    ]
+  },
+
+  addPasteRules() {
+    return [
+      markPasteRule({
+        find: starPasteRegex,
+        type: this.type,
+      }),
+      markPasteRule({
+        find: underscorePasteRegex,
+        type: this.type,
+      }),
+    ]
+  },
+})
+```
+
+## 编辑器常用字段
+
+### 扩展配置
+
+#### [addOptions](https://tiptap.dev/docs/editor/extensions/custom-extensions/create-new/extension#addoptions)
+
+用于配置选项，也就是 extension.configure({})
+
+```tsx
+import { Extension } from '@tiptap/core'
+
+const MyExtension = Extension.create({
+  name: 'myExtension',
+  addOptions: {
+    myOption: 'myOption'
+  }
+})
+
+export default MyExtension
+```
+
+#### [group](https://prosemirror.net/docs/ref/#model.NodeSpec.group)
+
+表示分组到块级元素
+
+```tsx
+import { Extension } from '@tiptap/core'
+
+const MyExtension = Extension.create({
+  name: 'myExtension',
+  group: 'block' // 告诉编辑器：我是一个块级元素
+})
+```
+
+#### [content](https://prosemirror.net/docs/guide/#schema.content_expressions)
+
+content: 'block+' 表示至少有一个块级元素，块级元素如 'paragraph | heading | codeBlock | blockquote | list'
+
+```tsx
+import { Extension } from '@tiptap/core'
+
+const MyExtension = Extension.create({
+  name: 'myExtension',
+  content: 'block+'
+})
+```
+
+#### [defining](https://prosemirror.net/docs/ref/#model.NodeSpec.defining)
+
+默认是 false，设置为 true 时，光标在代码块内部时，上下箭头键不会轻易跳出代码块，需要明确的操作（如 Enter、Escape）才能离开。
+
+```tsx
+import { Extension } from '@tiptap/core'
+
+const MyExtension = Extension.create({
+  name: 'myExtension',
+  defining: true
+})
+```
+
+#### [parseHTML](https://prosemirror.net/docs/ref/#model.NodeSpec.parseHTML)
+
+用于解析 HTML 为 ProseMirror 节点
+
+```tsx
+import { Extension } from '@tiptap/core'
+
+const MyExtension = Extension.create({
+  name: 'myExtension',
+  parseHTML() {
+    return [
+      {
+        tag: 'span',
+        getAttrs: (node) => {
+          return {
+            class: node.getAttribute('class')
+          }
         }
+      }
+    ]
+  }
+})
+```
+
+#### [renderHTML](https://prosemirror.net/docs/ref/#model.NodeSpec.renderHTML)
+
+用于渲染 HTML 为 ProseMirror 节点
+
+```tsx
+const CustomMark = Mark.create({
+  name: 'customMark',
+
+  renderHTML({ HTMLAttributes }) {
+    return ['span', HTMLAttributes, 0]
+  }
+})
+```
+
+#### addCommands
+
+用于定义扩展命令，用户可以执行的命令
+
+```tsx
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    customExtension: {
+      customCommand: () => ReturnType
+    }
+  }
+}
+
+const CustomExtension = Extension.create({
+  name: 'customExtension',
+
+  addCommands() {
+    return {
+      customCommand:
+        () =>
+        ({ commands }) => {
+          return commands.setContent('Custom command executed')
+        }
+    }
+  }
+})
+```
+
+使用
+
+```tsx
+editor.commands.customCommand() // 'Custom command executed'
+editor.chain().customCommand().run() // 'Custom command executed'
+```
+
+#### addAttributes
+
+用于定义自定义属性
+
+```tsx
+const CustomMark = Mark.create({
+  name: 'customMark',
+
+  addAttributes() {
+    return {
+      customAttribute: {
+        default: 'value',
+        parseHTML: (element) => element.getAttribute('data-custom-attribute')
       }
     }
-  })
-}
+  }
+})
+```
+
+#### addKeyboardShortcuts
+
+用于定义扩展键盘快捷键
+
+```tsx
+const CustomExtension = Extension.create({
+  name: 'customExtension',
+
+  addKeyboardShortcuts() {
+    return {
+      'Mod-k': () => {
+        console.log('Keyboard shortcut executed')
+      }
+    }
+  }
+})
 ```
 
 ### 添加插件到编辑器
@@ -65,6 +364,8 @@ const editor = new Editor({
 ## 常用插件类型
 
 ### 1. 命令插件
+
+Mark.create 和 Node.create 表示不同节点插件，而 Extension.create 表示功能插件，没有新的节点
 
 ```javascript
 import { Extension } from '@tiptap/core'
@@ -233,24 +534,12 @@ export const ConfigurablePlugin = Extension.create({
 })
 ```
 
-## 调试插件
+### editor 上的方法
 
-### 开发工具
+插件开发的基础就是灵活使用插件的方法还有 editor 上的方法
 
-```javascript
-import { Extension } from '@tiptap/core'
-
-export const DebugPlugin = Extension.create({
-  name: 'debugPlugin',
-
-  onCreate() {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('编辑器状态:', this.editor.state)
-      console.log('编辑器配置:', this.editor.options)
-    }
-  }
-})
-```
+- editor.getAttributes('textStyle') 用于获取当前选中文本或光标位置的属性信息。
+- lift 解除
 
 ## 总结
 

@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     content = '<h1>文件未找到</h1><p>请检查文件路径是否正确。</p>'
   }
 
-  return <SimpleEditor content={content}></SimpleEditor>
+  return <SimpleEditor content={content} editable={false}></SimpleEditor>
 }
 
 export function generateStaticParams() {
