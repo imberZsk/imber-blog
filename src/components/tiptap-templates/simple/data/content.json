@@ -10,7 +10,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Getting started"
+          "text": "我的个人博客 - 编辑器测试 Demo - TODO - 插件"
         }
       ]
     },
@@ -22,7 +22,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Welcome to the "
+          "text": "欢迎来到我的 "
         },
         {
           "type": "text",
@@ -37,24 +37,11 @@
               }
             }
           ],
-          "text": "Simple Editor"
+          "text": "个人博客"
         },
         {
           "type": "text",
-          "text": " template! This template integrates "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "bold"
-            }
-          ],
-          "text": "open source"
-        },
-        {
-          "type": "text",
-          "text": " UI components and Tiptap extensions licensed under "
+          "text": "！这里记录了我的 "
         },
         {
           "type": "text",
@@ -63,11 +50,24 @@
               "type": "bold"
             }
           ],
-          "text": "MIT"
+          "text": "技术学习"
         },
         {
           "type": "text",
-          "text": "."
+          "text": " 和 "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "生活感悟"
+        },
+        {
+          "type": "text",
+          "text": "。"
         }
       ]
     },
@@ -79,7 +79,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Integrate it by following the "
+          "text": "如果您想了解更多，可以 "
         },
         {
           "type": "text",
@@ -87,30 +87,49 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://tiptap.dev/docs/ui-components/templates/simple-editor",
-                "target": "_blank",
-                "rel": "noopener noreferrer nofollow",
+                "href": "/",
+                "target": "_self",
+                "rel": null,
                 "class": null
               }
             }
           ],
-          "text": "Tiptap UI Components docs"
+          "text": "回到首页"
         },
         {
           "type": "text",
-          "text": " or using our CLI tool."
+          "text": " 浏览更多文章，或者 "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "/about",
+                "target": "_self",
+                "rel": null,
+                "class": null
+              }
+            }
+          ],
+          "text": "了解我"
+        },
+        {
+          "type": "text",
+          "text": " 的更多信息。"
         }
       ]
     },
     {
       "type": "codeBlock",
       "attrs": {
-        "language": null
+        "language": "javascript"
       },
       "content": [
         {
           "type": "text",
-          "text": "npx @tiptap/cli init"
+          "text": "// 我的座右铭\nconst motto = \"学而时习之，不亦说乎\";\nconsole.log(motto);"
         }
       ]
     },
@@ -123,7 +142,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Features"
+          "text": "我的技能栈"
         }
       ]
     },
@@ -143,7 +162,7 @@
                   "type": "italic"
                 }
               ],
-              "text": "A fully responsive rich text editor with built-in support for common formatting and layout tools. Type markdown "
+              "text": "技术是不断发展的，学习是永无止境的。我专注于 "
             },
             {
               "type": "text",
@@ -152,7 +171,7 @@
                   "type": "code"
                 }
               ],
-              "text": "**"
+              "text": "前端开发"
             },
             {
               "type": "text",
@@ -161,7 +180,7 @@
                   "type": "italic"
                 }
               ],
-              "text": " or use keyboard shortcuts "
+              "text": " 和 "
             },
             {
               "type": "text",
@@ -170,24 +189,16 @@
                   "type": "code"
                 }
               ],
-              "text": "⌘+B"
-            },
-            {
-              "type": "text",
-              "text": " for "
+              "text": "用户体验设计"
             },
             {
               "type": "text",
               "marks": [
                 {
-                  "type": "strike"
+                  "type": "italic"
                 }
               ],
-              "text": "most"
-            },
-            {
-              "type": "text",
-              "text": " all common markdown marks. 🪄"
+              "text": "，致力于创造更好的数字体验。"
             }
           ]
         }
@@ -201,7 +212,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Add images, customize alignment, and apply "
+          "text": "我熟练掌握各种前端技术，包括 "
         },
         {
           "type": "text",
@@ -213,11 +224,43 @@
               }
             }
           ],
-          "text": "advanced formatting"
+          "text": "React"
         },
         {
           "type": "text",
-          "text": " to make your writing more engaging and professional."
+          "text": "、"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "highlight",
+              "attrs": {
+                "color": "var(--tt-color-highlight-green)"
+              }
+            }
+          ],
+          "text": "Vue"
+        },
+        {
+          "type": "text",
+          "text": "、"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "highlight",
+              "attrs": {
+                "color": "var(--tt-color-highlight-purple)"
+              }
+            }
+          ],
+          "text": "TypeScript"
+        },
+        {
+          "type": "text",
+          "text": " 等现代前端框架和工具。"
         }
       ]
     },
@@ -225,8 +268,8 @@
       "type": "image",
       "attrs": {
         "src": "/md/prosemirror-devtools.png",
-        "alt": "placeholder-image",
-        "title": "placeholder-image"
+        "alt": "我的工作台",
+        "title": "我的工作台"
       }
     },
     {
@@ -248,50 +291,11 @@
                       "type": "bold"
                     }
                   ],
-                  "text": "Superscript"
+                  "text": "前端开发"
                 },
                 {
                   "type": "text",
-                  "text": " (x"
-                },
-                {
-                  "type": "text",
-                  "marks": [
-                    {
-                      "type": "superscript"
-                    }
-                  ],
-                  "text": "2"
-                },
-                {
-                  "type": "text",
-                  "text": ") and "
-                },
-                {
-                  "type": "text",
-                  "marks": [
-                    {
-                      "type": "bold"
-                    }
-                  ],
-                  "text": "Subscript"
-                },
-                {
-                  "type": "text",
-                  "text": " (H"
-                },
-                {
-                  "type": "text",
-                  "marks": [
-                    {
-                      "type": "subscript"
-                    }
-                  ],
-                  "text": "2"
-                },
-                {
-                  "type": "text",
-                  "text": "O) for precision."
+                  "text": "：精通 React、Vue、Angular 等主流框架"
                 }
               ]
             }
@@ -313,25 +317,25 @@
                       "type": "bold"
                     }
                   ],
-                  "text": "Typographic conversion"
+                  "text": "后端技术"
                 },
                 {
                   "type": "text",
-                  "text": ": automatically convert to "
-                },
-                {
-                  "type": "text",
-                  "marks": [
-                    {
-                      "type": "code"
-                    }
-                  ],
-                  "text": "->"
-                },
-                {
-                  "type": "text",
-                  "text": " an arrow "
-                },
+                  "text": "：熟悉 Node.js、Python、Java 等后端语言"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": "left"
+              },
+              "content": [
                 {
                   "type": "text",
                   "marks": [
@@ -339,11 +343,37 @@
                       "type": "bold"
                     }
                   ],
-                  "text": "→"
+                  "text": "数据库"
                 },
                 {
                   "type": "text",
-                  "text": "."
+                  "text": "：熟练使用 MySQL、MongoDB、Redis 等数据库"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "bold"
+                    }
+                  ],
+                  "text": "云服务"
+                },
+                {
+                  "type": "text",
+                  "text": "：了解 AWS、阿里云、腾讯云等云平台服务"
                 }
               ]
             }
@@ -372,14 +402,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://tiptap.dev/docs/ui-components/templates/simple-editor#features",
-                "target": "_blank",
-                "rel": "noopener noreferrer nofollow",
+                "href": "/projects",
+                "target": "_self",
+                "rel": null,
                 "class": null
               }
             }
           ],
-          "text": "Learn more"
+          "text": "查看我的项目作品"
         }
       ]
     },
@@ -395,7 +425,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Make it your own"
+          "text": "学习计划"
         }
       ]
     },
@@ -407,7 +437,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Switch between light and dark modes, and tailor the editor's appearance with customizable CSS to match your style."
+          "text": "技术更新日新月异，我制定了详细的学习计划来跟上时代的步伐。"
         }
       ]
     },
@@ -428,7 +458,27 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Test template"
+                  "text": "学习 Next.js 14 新特性"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "taskItem",
+          "attrs": {
+            "checked": true
+          },
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "掌握 Tailwind CSS 高级用法"
                 }
               ]
             }
@@ -452,14 +502,34 @@
                     {
                       "type": "link",
                       "attrs": {
-                        "href": "https://tiptap.dev/docs/ui-components/templates/simple-editor",
-                        "target": "_blank",
-                        "rel": "noopener noreferrer nofollow",
+                        "href": "/learning",
+                        "target": "_self",
+                        "rel": null,
                         "class": null
                       }
                     }
                   ],
-                  "text": "Integrate the free template"
+                  "text": "深入学习 AI 编程助手"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "taskItem",
+          "attrs": {
+            "checked": false
+          },
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "研究微前端架构设计"
                 }
               ]
             }
@@ -468,10 +538,150 @@
       ]
     },
     {
+      "type": "heading",
+      "attrs": {
+        "textAlign": "left",
+        "level": 3
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "数学公式示例"
+        }
+      ]
+    },
+    {
       "type": "paragraph",
       "attrs": {
         "textAlign": "left"
-      }
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "在学习过程中，我经常需要处理一些数学公式，比如："
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": "left"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "二次方程的解：x = "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "(-b ± √(b"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "superscript"
+            }
+          ],
+          "text": "2"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": " - 4ac)) / 2a"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": "left"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "化学方程式：H"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "subscript"
+            }
+          ],
+          "text": "2"
+        },
+        {
+          "type": "text",
+          "text": " + O"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "subscript"
+            }
+          ],
+          "text": "2"
+        },
+        {
+          "type": "text",
+          "text": " → H"
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "subscript"
+            }
+          ],
+          "text": "2"
+        },
+        {
+          "type": "text",
+          "text": "O"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": "left"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "感谢您阅读我的博客！如果您有任何问题或建议，欢迎 "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "/contact",
+                "target": "_self",
+                "rel": null,
+                "class": null
+              }
+            }
+          ],
+          "text": "联系我"
+        },
+        {
+          "type": "text",
+          "text": " 进行交流。"
+        }
+      ]
     }
   ]
 }

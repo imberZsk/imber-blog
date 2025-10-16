@@ -1,5 +1,19 @@
 export const postsConfig = [
   {
+    title: 'TipTap 编辑器（8）- 协同编辑',
+    href: '/posts/tiptap-yjs',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
+    title: 'TipTap 编辑器（7）- 集成 AI 功能',
+    href: '/posts/tiptap-data',
+    date: '2025-07-29',
+    tags: ['editor']
+    // views: 32
+  },
+  {
     title: 'TipTap 编辑器（6）- 数据结构',
     href: '/posts/tiptap-data',
     date: '2025-07-29',
@@ -47,6 +61,41 @@ export const postsConfig = [
     date: '2025-07-29',
     tags: ['editor']
     // views: 32
+  },
+  {
+    title: '脚手架 Cli（5）- 集成 AI，支持 AI 生成组件',
+    href: '/posts/cli-ai',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（4）- generate 命令',
+    href: '/posts/cli-generate',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（3）- create 命令',
+    href: '/posts/cli-create',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（2）- 项目打包与发布 NPM',
+    href: '/posts/cli-pack',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（1）- Monorepo 搭建',
+    href: '/posts/cli-monorepo',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
   }
 ]
 
@@ -67,13 +116,13 @@ export const navItems = [
   //   path: '/gallery',
   //   name: '画廊'
   // },
+  // {
+  //   path: '/todos',
+  //   name: '清单'
+  // },
   {
-    path: '/todos',
-    name: '清单'
-  },
-  {
-    path: '/friends',
-    name: '友链'
+    path: '/projects',
+    name: '作品'
   }
 ]
 

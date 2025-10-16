@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils'
+import { getTagColor } from '../../lib/tag-colors'
 
 interface PostCategoriesProps {
   categories: string[]
@@ -29,7 +30,7 @@ const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCa
               'cursor-pointer rounded px-3 py-1 text-xs transition-colors',
               activeCategory === category
                 ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'
+                : getTagColor(category)
             )}
           >
             {category}

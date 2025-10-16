@@ -2,16 +2,16 @@ import { PADDING_TOP } from '../const'
 import { cn } from '../../../lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
-import Client from './client'
-import { fetchFriends } from '@/services/friends'
+// import Client from './client'
+// import { fetchFriends } from '@/services/friends'
 
-interface Friend {
-  id: string
-  name: string
-  description: string
-  avatar: string
-  link?: string
-}
+// interface Friend {
+//   id: string
+//   name: string
+//   description: string
+//   avatar: string
+//   link?: string
+// }
 
 interface Project {
   id: string
@@ -95,22 +95,22 @@ const companyProjects: Project[] = [
 ]
 
 const Page = async () => {
-  const friends: { data: Friend[] } = await fetchFriends()
+  // const friends: { data: Friend[] } = await fetchFriends()
 
   return (
     <div className={cn('mx-auto max-w-5xl px-6 py-8', PADDING_TOP)}>
       {/* 极简标题 */}
-      <div className="mb-12">
+      {/* <div className="mb-12">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-medium tracking-wide text-zinc-800 dark:text-zinc-200">Friends</h1>
         </div>
         <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-500">海内存知己，天涯若比邻</p>
-      </div>
+      </div> */}
 
-      <Client friends={friends.data} />
+      {/* <Client friends={friends.data} /> */}
 
       {/* 作品网站展示模块 */}
-      <div className="mt-20">
+      <div className="">
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-medium tracking-wide text-zinc-800 dark:text-zinc-200">Projects</h2>

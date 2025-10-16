@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { PostCategories } from '@/components/content'
+import { getTagColor } from '@/lib/tag-colors'
 
 interface Post {
   title: string
@@ -68,7 +69,7 @@ const Client = ({ posts, categories }: ClientProps) => {
                         'rounded px-1.5 py-0.5 text-xs transition-colors',
                         tag === activeCategory
                           ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
-                          : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                          : getTagColor(tag)
                       )}
                     >
                       {tag}

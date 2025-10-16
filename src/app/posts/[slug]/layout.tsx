@@ -8,7 +8,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="relative mx-auto min-h-screen w-full bg-white dark:bg-[#191a1a]">
+    <div className="relative mx-auto min-h-screen w-full bg-white/80 dark:bg-[#191a1a]">
       <div
         className="fixed top-0 left-0 mx-auto h-screen w-full"
         style={

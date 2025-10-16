@@ -61,7 +61,7 @@ const Header = () => {
                     画廊
                   </Link>
                 </li> */}
-                <li>
+                {/* <li>
                   <Link
                     href="/todos"
                     title="清单"
@@ -69,14 +69,14 @@ const Header = () => {
                   >
                     清单
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link
-                    href="/friends"
-                    title="友链"
+                    href="/projects"
+                    title="作品"
                     className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
                   >
-                    友链
+                    作品
                   </Link>
                 </li>
                 <li>
