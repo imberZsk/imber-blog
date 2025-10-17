@@ -267,7 +267,7 @@
     {
       "type": "image",
       "attrs": {
-        "src": "/md/prosemirror-devtools.png",
+        "src": "/editor/prosemirror-devtools.png",
         "alt": "我的工作台",
         "title": "我的工作台"
       }

@@ -58,7 +58,7 @@ export default Tiptap
 
 ### Simple template
 
-tiptap 提供的简单模版，不是 notion 风格，也就是不支持 slash commands，在页面顶部才有操作栏
+tiptap 提供的简单模版，不是 notion 风格，也就是不支持 slash command，在页面顶部才有操作栏
 
 ```bash
 # 现有项目

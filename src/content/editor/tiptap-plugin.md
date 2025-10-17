@@ -365,7 +365,11 @@ const editor = new Editor({
 
 ### 1. 命令插件
 
-Mark.create 和 Node.create 表示不同节点插件，而 Extension.create 表示功能插件，没有新的节点
+Mark.create 和 Node.create 表示不同节点插件，而 Extension.create 表示功能插件可以修改编辑器行为，没有新的节点
+
+- Extension 可以参考 [TextAlign](https://tiptap.dev/docs/editor/extensions/functionality/textalign)
+- Node 可以参考 [Heading](https://tiptap.dev/docs/editor/extensions/nodes/heading) 或 [CodeBlock](https://tiptap.dev/docs/editor/extensions/nodes/code-block)
+- Mark 可以参考 [Bold](https://tiptap.dev/docs/editor/extensions/marks/bold)
 
 ```javascript
 import { Extension } from '@tiptap/core'

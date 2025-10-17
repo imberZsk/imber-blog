@@ -35,7 +35,7 @@ export const postsConfig = [
     // views: 32
   },
   {
-    title: 'TipTap 编辑器（3）- 菜单栏 & slash commands',
+    title: 'TipTap 编辑器（3）- 菜单栏 & slash command',
     href: '/posts/tiptap-menu',
     date: '2025-07-29',
     tags: ['editor']
