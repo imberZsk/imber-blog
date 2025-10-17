@@ -132,7 +132,8 @@ export const CalloutClassNames = cn(
 
 - 如何实现不同颜色的高亮块？如何不用 tailwind 实现？
 - 怎么把图标写成一个元素，然后加上可以切换图标功能？
-- 如何兼容 Notion?
+- 兼容性是怎么样的，如何兼容 Notion?
+- 不能再嵌套高亮组件、不能添加图片等?
 
 ## 分栏组件
 

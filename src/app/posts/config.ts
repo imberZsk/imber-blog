@@ -8,7 +8,7 @@ export const postsConfig = [
   },
   {
     title: 'TipTap 编辑器（7）- 集成 AI 功能',
-    href: '/posts/tiptap-data',
+    href: '/posts/tiptap-ai',
     date: '2025-07-29',
     tags: ['editor']
     // views: 32
