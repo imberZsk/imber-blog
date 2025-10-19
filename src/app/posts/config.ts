@@ -63,22 +63,36 @@ export const postsConfig = [
     // views: 32
   },
   {
-    title: '脚手架 Cli（5）- 集成 AI，支持 AI 生成组件',
+    title: '脚手架 Cli（7）- 集成 AI，支持 AI 生成组件',
     href: '/posts/cli-ai',
     date: '2025-07-29',
     tags: ['脚手架']
     // views: 32
   },
   {
-    title: '脚手架 Cli（4）- generate 命令',
+    title: '脚手架 Cli（6）- generate 命令',
     href: '/posts/cli-generate',
     date: '2025-07-29',
     tags: ['脚手架']
     // views: 32
   },
   {
-    title: '脚手架 Cli（3）- create 命令',
+    title: '脚手架 Cli（5）- create 命令',
     href: '/posts/cli-create',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（4）- Vue3 + Vite 模版',
+    href: '/posts/cli-vue',
+    date: '2025-07-29',
+    tags: ['脚手架']
+    // views: 32
+  },
+  {
+    title: '脚手架 Cli（3）- NextJS 模版',
+    href: '/posts/cli-next',
     date: '2025-07-29',
     tags: ['脚手架']
     // views: 32
