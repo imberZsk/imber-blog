@@ -9,7 +9,7 @@ export const CalloutClassNames = cn(
   '[&_.callout-gray_p]:flex-1 [&_.callout-gray]:break-all',
 
   // 图标样式 - 使用伪元素
-  '[&_.callout-gray]:before:content-["💡"] [&_.callout-gray]:before:absolute [&_.callout-gray]:before:left-5 [&_.callout-gray]:before:text-lg [&_.callout-gray]:before:flex-shrink-0 [&_.callout-gray]:before:mr-1',
+  // '[&_.callout-gray]:before:content-["💡"] [&_.callout-gray]:before:absolute [&_.callout-gray]:before:left-5 [&_.callout-gray]:before:text-lg [&_.callout-gray]:before:flex-shrink-0 [&_.callout-gray]:before:mr-1',
 
   // 不同颜色的高亮块 - 浅色主题
   '[&_.callout-gray]:bg-stone-50 [&_.callout-gray]:text-stone-800',

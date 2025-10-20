@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react'
-import { CalloutClassNames } from './style'
 
 // --- Tiptap 核心扩展 ---
 import { StarterKit } from '@tiptap/starter-kit' // 基础功能包：段落、标题、粗体、斜体等
@@ -39,7 +38,7 @@ import '@/components/tiptap-templates/simple/simple-editor.scss' // 编辑器主
 import initialContent from '@/components/tiptap-templates/simple/data/content.json'
 import TextMenu from '@/components/tiptap-menus/text-menu'
 import { SlashCommand } from '@/components/tiptap-extensions'
-import { Callout } from '@/components/tiptap-extensions/Callout'
+import { Callout } from '@/components/tiptap-node/callout-node'
 
 /**
  * SimpleEditor 主组件
@@ -117,7 +116,7 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
         <EditorContent
           editor={editor}
           role="presentation" // 无障碍角色
-          className={cn('simple-editor-content', CalloutClassNames)}
+          className={cn('simple-editor-content')}
         />
 
         {/* 文本菜单 */}

@@ -15,6 +15,27 @@
       ]
     },
     {
+      "type": "callout",
+      "attrs": {
+        "background": null,
+        "icon": "🌈"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "attrs": {
+            "textAlign": null
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "这是一个自定义callout示例，支持从Notion复制粘贴的格式。"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "type": "paragraph",
       "attrs": {
         "textAlign": null

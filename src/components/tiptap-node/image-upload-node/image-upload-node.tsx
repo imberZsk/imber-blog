@@ -10,30 +10,30 @@ import { focusNextNode, isValidPosition } from "@/lib/tiptap-utils"
 
 export interface FileItem {
   /**
-   * Unique identifier for the file item
+   * 文件项的唯一标识符
    */
   id: string
   /**
-   * The actual File object being uploaded
+   * 正在上传的实际File对象
    */
   file: File
   /**
-   * Current upload progress as a percentage (0-100)
+   * 当前上传进度的百分比 (0-100)
    */
   progress: number
   /**
-   * Current status of the file upload process
+   * 文件上传过程的当前状态
    * @default "uploading"
    */
   status: "uploading" | "success" | "error"
 
   /**
-   * URL to the uploaded file, available after successful upload
+   * 上传成功后可用的文件URL
    * @optional
    */
   url?: string
   /**
-   * Controller that can be used to abort the upload process
+   * 可用于中止上传过程的控制器
    * @optional
    */
   abortController?: AbortController
@@ -41,24 +41,24 @@ export interface FileItem {
 
 export interface UploadOptions {
   /**
-   * Maximum allowed file size in bytes
+   * 允许的最大文件大小（字节）
    */
   maxSize: number
   /**
-   * Maximum number of files that can be uploaded
+   * 可以上传的最大文件数量
    */
   limit: number
   /**
-   * String specifying acceptable file types (MIME types or extensions)
-   * @example ".jpg,.png,image/jpeg" or "image/*"
+   * 指定可接受文件类型的字符串（MIME类型或扩展名）
+   * @example ".jpg,.png,image/jpeg" 或 "image/*"
    */
   accept: string
   /**
-   * Function that handles the actual file upload process
-   * @param {File} file - The file to be uploaded
-   * @param {Function} onProgress - Callback function to report upload progress
-   * @param {AbortSignal} signal - Signal that can be used to abort the upload
-   * @returns {Promise<string>} Promise resolving to the URL of the uploaded file
+   * 处理实际文件上传过程的函数
+   * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 报告上传进度的回调函数
+   * @param {AbortSignal} signal - 可用于中止上传的信号
+   * @returns {Promise<string>} 解析为已上传文件URL的Promise
    */
   upload: (
     file: File,
@@ -66,21 +66,21 @@ export interface UploadOptions {
     signal: AbortSignal
   ) => Promise<string>
   /**
-   * Callback triggered when a file is uploaded successfully
-   * @param {string} url - URL of the successfully uploaded file
+   * 文件上传成功时触发的回调
+   * @param {string} url - 成功上传的文件URL
    * @optional
    */
   onSuccess?: (url: string) => void
   /**
-   * Callback triggered when an error occurs during upload
-   * @param {Error} error - The error that occurred
+   * 上传过程中发生错误时触发的回调
+   * @param {Error} error - 发生的错误
    * @optional
    */
   onError?: (error: Error) => void
 }
 
 /**
- * Custom hook for managing multiple file uploads with progress tracking and cancellation
+ * 用于管理多个文件上传的自定义钩子，包含进度跟踪和取消功能
  */
 function useFileUpload(options: UploadOptions) {
   const [fileItems, setFileItems] = React.useState<FileItem[]>([])
@@ -269,12 +269,12 @@ const FileCornerIcon: React.FC = () => (
 
 interface ImageUploadDragAreaProps {
   /**
-   * Callback function triggered when files are dropped or selected
-   * @param {File[]} files - Array of File objects that were dropped or selected
+   * 文件被拖放或选择时触发的回调函数
+   * @param {File[]} files - 被拖放或选择的File对象数组
    */
   onFile: (files: File[]) => void
   /**
-   * Optional child elements to render inside the drag area
+   * 可选的子元素，将在拖放区域内渲染
    * @optional
    * @default undefined
    */
@@ -282,7 +282,7 @@ interface ImageUploadDragAreaProps {
 }
 
 /**
- * A component that creates a drag-and-drop area for image uploads
+ * 为图像上传创建拖放区域的组件
  */
 const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({
   onFile,
@@ -339,17 +339,17 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({
 
 interface ImageUploadPreviewProps {
   /**
-   * The file item to preview
+   * 要预览的文件项
    */
   fileItem: FileItem
   /**
-   * Callback to remove this file from upload queue
+   * 从上传队列中移除此文件的回调
    */
   onRemove: () => void
 }
 
 /**
- * Component that displays a preview of an uploading file with progress
+ * 显示上传文件预览和进度的组件
  */
 const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
   fileItem,
