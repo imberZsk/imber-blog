@@ -166,7 +166,7 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
     >
       {/* 颜色选择器弹出层 */}
       {colorPopoverOpen && (
-        <div className="absolute -top-1 left-1/2 z-50 flex -translate-x-1/2 -translate-y-full transform gap-2 rounded-md border border-stone-200 bg-white p-1 px-4 py-2 shadow-lg transition-opacity dark:border-stone-300">
+        <div className="absolute -top-1 left-1/2 z-10 flex -translate-x-1/2 -translate-y-full transform gap-2 rounded-md border border-stone-200 bg-white p-1 px-4 py-2 shadow-lg transition-opacity dark:border-stone-300 dark:bg-stone-800">
           {colorOptions.map((color) => (
             <button
               key={color.value || 'default'}
