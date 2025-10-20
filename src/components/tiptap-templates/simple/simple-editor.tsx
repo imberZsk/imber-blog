@@ -13,7 +13,7 @@ import { Highlight } from '@tiptap/extension-highlight' // 文本高亮功能
 import { Subscript } from '@tiptap/extension-subscript' // 下标功能
 import { Superscript } from '@tiptap/extension-superscript' // 上标功能
 import { Selection } from '@tiptap/extensions' // 选择功能增强
-import { CodeBlock } from '@/components/tiptap-extensions/CodeBlock/CodeBlock'
+import { CodeBlock } from '@/components/tiptap-node/code-block'
 
 // --- Tiptap 节点组件 ---
 import { ImageUploadNode } from '@/components/tiptap-node/image-upload-node/image-upload-node-extension' // 图片上传节点

@@ -36,9 +36,9 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
     try {
       // 阻止事件冒泡，防止触发背景点击事件
       if (e) {
-        e.stopPropagation();
+        e.stopPropagation()
       }
-      
+
       props.updateAttributes({ background: colorValue })
       setColorPopoverOpen(false)
     } catch (error) {
@@ -49,25 +49,25 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
   // 处理背景点击事件
   const handleBackgroundClick = (e: React.MouseEvent) => {
     // 如果点击的是Popover触发器或其内容，或者点击了其他交互元素，则不触发颜色选择器
-    const target = e.target as HTMLElement;
-    
+    const target = e.target as HTMLElement
+
     // 检查是否点击了emoji触发器区域
-    const isEmojiTrigger = target.closest('.absolute.left-3');
-    
+    const isEmojiTrigger = target.closest('.absolute.left-3')
+
     // 检查是否点击了Popover内容区域
-    const isPopoverContent = target.closest('[data-popover-content]');
-    
+    const isPopoverContent = target.closest('[data-popover-content]')
+
     // 检查是否点击了颜色选择器按钮
-    const isColorSelector = target.closest('.rounded-md.border.border-stone-200');
-    
+    const isColorSelector = target.closest('.rounded-md.border.border-stone-200')
+
     // 检查是否点击了其他按钮
-    const isButton = target.closest('button');
-    
+    const isButton = target.closest('button')
+
     // 只有当没有点击任何交互元素时，才触发颜色选择器
     if (!isEmojiTrigger && !isPopoverContent && !isColorSelector && !isButton) {
       // 阻止事件冒泡，防止与其他组件交互
-      e.stopPropagation();
-      setColorPopoverOpen(true);
+      e.stopPropagation()
+      setColorPopoverOpen(true)
     }
   }
 
@@ -169,11 +169,11 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
         <div className="absolute -top-1 left-1/2 z-50 flex -translate-x-1/2 -translate-y-full transform gap-2 rounded-md border border-stone-200 bg-white p-1 px-4 py-2 shadow-lg transition-opacity dark:border-stone-300">
           {colorOptions.map((color) => (
             <button
-                key={color.value || 'default'}
-                className={`relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm transition-colors ${color.light}`}
-                onClick={(e) => handleColorSelect(color.value, e)}
-                aria-label={`选择${color.name}背景`}
-              >
+              key={color.value || 'default'}
+              className={`relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm transition-colors ${color.light}`}
+              onClick={(e) => handleColorSelect(color.value, e)}
+              aria-label={`选择${color.name}背景`}
+            >
               {background === color.value && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-sm bg-black/20">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -189,7 +189,7 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
         <PopoverTrigger asChild>
           <span className="absolute top-7 left-3 -translate-y-1/2 cursor-pointer text-xl">{icon}</span>
         </PopoverTrigger>
-        <PopoverContent className="max-h-[300px] max-w-[400px] min-w-[320px] overflow-hidden rounded-md border-0 bg-[#252525] p-0 shadow-lg">
+        <PopoverContent className="max-h-[300px] max-w-[400px] min-w-[320px] overflow-hidden rounded-md border-0 bg-white p-0 shadow-lg dark:bg-[#252525]">
           {/* 搜索栏 */}
           <div className="border-b border-stone-200 px-4 py-2 dark:border-stone-700">
             <div className="relative">
@@ -217,7 +217,7 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
               {Object.keys(calloutEmojisByCategory).map((category) => (
                 <button
                   key={category}
-                  className={`mr-1 rounded-md px-3 py-1 text-sm transition-colors ${
+                  className={`mr-1 cursor-pointer rounded-md px-3 py-1 text-sm transition-colors ${
                     activeCategory === category
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
                       : 'hover:bg-stone-100 dark:hover:bg-stone-800'
@@ -236,7 +236,7 @@ export const CalloutNode: React.FC<NodeViewProps> = (props) => {
               {displayEmojis.map((emoji) => (
                 <button
                   key={emoji}
-                  className="flex h-10 w-10 items-center justify-center rounded-md text-xl transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-xl transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
                   onClick={() => handleEmojiClick(emoji)}
                   aria-label={`选择图标 ${emoji}`}
                 >

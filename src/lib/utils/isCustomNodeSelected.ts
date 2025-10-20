@@ -1,3 +1,5 @@
+import { CodeBlock } from '@/components/tiptap-node/code-block'
+import HorizontalRule from '@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension'
 import { Editor } from '@tiptap/react'
 
 // import { AiWriter, AiImage, Figcaption, HorizontalRule, ImageBlock, ImageUpload, Link, CodeBlock } from '@/extensions'
@@ -22,11 +24,10 @@ export const isTableGripSelected = (node: HTMLElement) => {
 
 export const isCustomNodeSelected = (editor: Editor, node: HTMLElement) => {
   const customNodes = [
-    ''
-    // HorizontalRule.name,
+    HorizontalRule.name,
     // ImageBlock.name,
     // ImageUpload.name,
-    // CodeBlock.name,
+    CodeBlock.name
     // ImageBlock.name,
     // Link.name,
     // AiWriter.name,
