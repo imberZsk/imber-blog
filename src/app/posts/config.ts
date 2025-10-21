@@ -56,13 +56,6 @@ export const postsConfig = [
     // views: 32
   },
   {
-    title: 'TipTap 编辑器（0）- 功能测试',
-    href: '/posts/tiptap-base',
-    date: '2025-07-29',
-    tags: ['editor']
-    // views: 32
-  },
-  {
     title: '脚手架 Cli（7）- 集成 AI，支持 AI 生成组件',
     href: '/posts/cli-ai',
     date: '2025-07-29',
