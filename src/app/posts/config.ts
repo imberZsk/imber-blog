@@ -1,6 +1,6 @@
 export const postsConfig = [
   {
-    title: 'TipTap 编辑器（8）- 协同编辑',
+    title: 'TipTap 编辑器（8）- Yjs 协同编辑',
     href: '/posts/tiptap-yjs',
     date: '2025-07-29',
     tags: ['editor']
