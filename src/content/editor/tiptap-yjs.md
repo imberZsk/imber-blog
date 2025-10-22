@@ -106,13 +106,13 @@ CRDT 通过给每个字符分配唯一标识符来避免冲突。下面是简单
 
 ### 在 TipTap 中集成 Yjs
 
-Yjs 点过来跳转到了Tiptap，也就是这里： https://tiptap.dev/docs/collaboration/getting-started/install
+Yjs 点过来跳转到了Tiptap，也就是这里： [https://tiptap.dev/docs/collaboration/getting-started/install](https://tiptap.dev/docs/collaboration/getting-started/install)
 
-当然也可以直接看这个Demo：https://tiptap.dev/docs/examples/advanced/collaborative-editing，这是官方提供的商业服务 tiptap cloud
+当然也可以直接看这个Demo：[https://tiptap.dev/docs/examples/advanced/collaborative-editing](https://tiptap.dev/docs/examples/advanced/collaborative-editing)，这是官方提供的商业服务 tiptap cloud
 
-注意用 tiptap cloud 7天没有使用需要在 https://cloud.tiptap.dev/v1/apps/settings 恢复应用，注意只有 30 天试用期
+注意用 tiptap cloud 7天没有使用需要在 [https://cloud.tiptap.dev/v1/apps/settings](https://cloud.tiptap.dev/v1/apps/settings) 恢复应用，注意只有 30 天试用期
 
-也有免费的，应该是大部分的人的选择，也就是 [Hocuspocus](https://tiptap.dev/docs/hocuspocus/provider/examples#tiptap)
+也有免费的，应该是大部分的人的选择，也就是 [Hocuspocus](https://tiptap.dev/docs/hocuspocus/provider/examples#tiptap) ✅
 
 启动后端服务
 

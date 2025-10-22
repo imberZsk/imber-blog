@@ -46,7 +46,7 @@ const projects: Project[] = [
     name: '富文本编辑器',
     description: '基于 tiptap3.x 的现代化富文本编辑器',
     tech: ['Tiptap', 'Next.js'],
-    link: 'http://imber-editor.netlify.app',
+    link: 'http://imber-editor.netlify.app/simple',
     image: '/posts/friends/editor.png' // 占位符，等用户提供图片
   },
   {
