@@ -103,6 +103,34 @@ export const postsConfig = [
     date: '2025-07-29',
     tags: ['脚手架']
     // views: 32
+  },
+  {
+    title: 'React 源码（4）- Fiber 架构和数据结构',
+    href: '/posts/react-source-fiber',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（3）- 入口和初始化流程',
+    href: '/posts/react-source-createRoot',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（2）- JSX 和 ReactElement',
+    href: '/posts/react-source-jsx',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（1）- React 源码目录预览',
+    href: '/posts/react-source-preview',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
   }
 ]
 

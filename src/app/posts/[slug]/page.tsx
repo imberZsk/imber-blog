@@ -9,13 +9,39 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params
 
   // 定义内容目录映射
-  const contentDirs = ['editor', 'cli', 'ai', 'performance', 'nextjs', 'sentry']
+  const contentDirs = ['editor', 'cli', 'ai', 'performance', 'nextjs', 'sentry', 'react-source']
 
   let content = ''
   let filePath = ''
 
+  // 智能目录匹配：根据 slug 前缀优先匹配对应目录
+  const getPriorityDirs = (slug: string) => {
+    const priorityMap: Record<string, string[]> = {
+      tiptap: ['editor'],
+      editor: ['editor'],
+      cli: ['cli'],
+      'react-source': ['react-source'],
+      sentry: ['sentry'],
+      performance: ['performance'],
+      nextjs: ['nextjs'],
+      ai: ['ai']
+    }
+
+    // 查找匹配的前缀
+    for (const [prefix, dirs] of Object.entries(priorityMap)) {
+      if (slug.startsWith(prefix)) {
+        return [...dirs, ...contentDirs.filter((dir) => !dirs.includes(dir))]
+      }
+    }
+
+    // 如果没有匹配的前缀，使用默认顺序
+    return contentDirs
+  }
+
+  const searchDirs = getPriorityDirs(slug)
+
   // 尝试在不同目录中查找文件
-  for (const dir of contentDirs) {
+  for (const dir of searchDirs) {
     try {
       // 处理不同的命名规则
       let fileName = slug
@@ -46,8 +72,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       // 如果成功读取，跳出循环
       break
     } catch (error) {
-      // 如果当前目录找不到文件，继续尝试下一个目录
-      console.warn(`目录 ${dir} 找不到文件 ${error}`)
+      console.error('读取文件失败:', error)
+      // 静默处理文件不存在的情况，只在开发环境显示调试信息
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`目录 ${dir} 中未找到文件: ${slug}`)
+      }
       continue
     }
   }
@@ -63,7 +92,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
 export function generateStaticParams() {
   // 定义内容目录
-  const contentDirs = ['editor', 'cli', 'ai', 'performance', 'nextjs', 'sentry']
+  const contentDirs = ['editor', 'cli', 'ai', 'performance', 'nextjs', 'sentry', 'react-source']
 
   // 读取所有目录中的文章
   const allPosts: string[] = []
@@ -82,8 +111,11 @@ export function generateStaticParams() {
         allPosts.push(slug)
       })
     } catch (error) {
-      // 如果目录不存在，跳过
-      console.warn(`目录 ${dir} 不存在，跳过 ${error}`)
+      console.error('读取目录失败:', error)
+      // 静默处理目录不存在的情况，只在开发环境显示调试信息
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`目录 ${dir} 不存在，跳过`)
+      }
     }
   })
 
