@@ -67,9 +67,7 @@ const Client = ({ posts, categories }: ClientProps) => {
                       key={tagIndex}
                       className={cn(
                         'rounded px-1.5 py-0.5 text-xs transition-colors',
-                        tag === activeCategory
-                          ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
-                          : getTagColor(tag)
+                        tag === activeCategory ? cn(getTagColor(tag), 'opacity-80') : getTagColor(tag)
                       )}
                     >
                       {tag}

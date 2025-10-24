@@ -105,6 +105,48 @@ export const postsConfig = [
     // views: 32
   },
   {
+    title: 'React 源码（12）- Hooks',
+    href: '/posts/react-source-hooks',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（11）- Diff 算法',
+    href: '/posts/react-source-diff',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（10）- Commit 提交阶段',
+    href: '/posts/react-source-commit',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（9）- Reconciler 协调阶段',
+    href: '/posts/react-source-reconciler',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（8）- Scheduler 调度阶段',
+    href: '/posts/react-source-scheduler',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（7）- 初始化和更新流程',
+    href: '/posts/react-source-init',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
     title: 'React 源码（6）- Lane 车道模型',
     href: '/posts/react-source-lane',
     date: '2025-07-29',

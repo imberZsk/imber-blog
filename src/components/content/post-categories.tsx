@@ -28,9 +28,7 @@ const PostCategories = ({ categories, activeCategory, onCategoryChange }: PostCa
             onClick={() => onCategoryChange(category)}
             className={cn(
               'cursor-pointer rounded px-3 py-1 text-xs transition-colors',
-              activeCategory === category
-                ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
-                : getTagColor(category)
+              activeCategory === category ? cn(getTagColor(category), 'opacity-80') : getTagColor(category)
             )}
           >
             {category}
