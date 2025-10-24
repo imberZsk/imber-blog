@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MobileNav } from '@/components/layout'
 import { ModeToggle } from '@/components/common'
+import { getEnabledNavItems, navStyles } from '@/config/navigation'
 
 const Header = () => {
   return (
@@ -23,79 +24,15 @@ const Header = () => {
 
           {/* 中间导航 - 桌面端显示 */}
           <nav className="hidden lg:absolute lg:left-1/2 lg:block lg:-translate-x-1/2">
-            <div className="rounded-full bg-zinc-100/80 px-6 py-2 backdrop-blur-md dark:bg-white/5">
-              <ul className="flex items-center gap-6 text-sm">
-                <li>
-                  <Link
-                    href="/"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                    title="首页"
-                  >
-                    首页
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/posts"
-                    title="文集"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    文集
-                  </Link>
-                </li>
-                {/* <li>
-                  <Link
-                    href="/ideas"
-                    title='思考'
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    思考
-                  </Link>
-                </li> */}
-                {/* <li>
-                  <Link
-                    title='画廊'
-                    href="/gallery"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    画廊
-                  </Link>
-                </li> */}
-                {/* <li>
-                  <Link
-                    href="/todos"
-                    title="清单"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    清单
-                  </Link>
-                </li> */}
-                <li>
-                  <Link
-                    href="/projects"
-                    title="作品"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    作品
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/simple"
-                    title="编辑器"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    编辑器
-                  </Link>
-                </li>
-                {/* <li>
-                  <Link
-                    href="/tools"
-                    className="text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                  >
-                    工具
-                  </Link>
-                </li> */}
+            <div className={navStyles.container}>
+              <ul className={navStyles.list}>
+                {getEnabledNavItems().map((item) => (
+                  <li key={item.path}>
+                    <Link href={item.path} className={navStyles.link} title={item.title}>
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           </nav>

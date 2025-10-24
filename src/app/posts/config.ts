@@ -190,32 +190,9 @@ export const postsConfig = [
   }
 ]
 
-export const navItems = [
-  {
-    path: '/',
-    name: '首页'
-  },
-  {
-    path: '/posts',
-    name: '文集'
-  },
-  // {
-  //   path: '/ideas',
-  //   name: '思考'
-  // },
-  // {
-  //   path: '/gallery',
-  //   name: '画廊'
-  // },
-  // {
-  //   path: '/todos',
-  //   name: '清单'
-  // },
-  {
-    path: '/projects',
-    name: '作品'
-  }
-]
+import { getEnabledNavItems } from '@/config/navigation'
+
+export const navItems = getEnabledNavItems()
 
 // export const postsConfig = [
 //   {
