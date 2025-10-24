@@ -105,6 +105,20 @@ export const postsConfig = [
     // views: 32
   },
   {
+    title: 'React 源码（6）- Lane 车道模型',
+    href: '/posts/react-source-lane',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
+    title: 'React 源码（5）- React 事件机制',
+    href: '/posts/react-source-events',
+    date: '2025-07-29',
+    tags: ['React 源码']
+    // views: 32
+  },
+  {
     title: 'React 源码（4）- Fiber 架构和数据结构',
     href: '/posts/react-source-fiber',
     date: '2025-07-29',
