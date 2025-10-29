@@ -47,7 +47,3 @@ ensureRootIsScheduled(root, eventTime)
 ```
 
 接下来就是 scheduler 的处理
-
-<!-- ## 函数组件 useState setNumber() 更新流程
-
-上面 root.render() 走到了 scheduleUpdateOnFiber 开始调度（调度入口），除了 root.render() 还有别的更新方式，所以先看看 useState，因为 useState 也会走到 scheduleUpdateOnFiber -->

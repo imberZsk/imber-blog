@@ -43,11 +43,39 @@ function workLoop() {
       break
     }
 
-    // 获取任务的回调函数
+    // 获取任务的回调函数，callback 是 performConcurrentWorkOnRoot.bind(null, root) -> performUnitOfWork
     const callback = currentTask.callback
 
     // 执行任务回调，传入是否超时的信息
     // 回调可能返回一个函数（continuationCallback）用于分片执行
+    const continuationCallback = callback(didUserCallbackTimeout)
+  }
+}
+```
+
+## 核心流程
+
+只关注异步流程，因为异步可打断更新逻辑更复杂核心
+
+1. 先在 reconciler 里 updateContainer 函数一值执行，然后在 `packages/react-reconciler/src/ReactFiberWorkLoop.old.js` 中执行 `scheduleUpdateOnFiber` 是调度的入口标记 Root 的`pendingLanes`，然后 `ensureRootIsScheduled`判断同步还是并发和确保根节点调度 执行 `scheduleCallback`，`scheduleCallback(schedulerPriorityLevel,performConcurrentWorkOnRoot.bind(null, root));` 才是真正在 Scheduler 包中
+
+2. packages/scheduler/src/forks/Scheduler.js Scheduler 包中的名字叫 `unstable_scheduleCallback`，它里面主要有两个队列 `taskQueue` 和 `timerQueue` 用来放立即执行任务和未到期任务都是最小堆，立即执行任务走 `requestHostCallback(flushWork)`，然后 `MessageChannel` 调度一帧来执行
+
+3. `requestHostCallback` 的参数 `flushWork` 会走到 `workLoop`，他会判断是否停止任务让给宿主，核心逻辑如下
+
+```js
+function workLoop(hasTimeRemaining, initialTime) {
+  while (
+    currentTask !== null // 还有任务需要执行
+  ) {
+    if (
+      currentTask.expirationTime > currentTime && // 任务还未过期
+      (!hasTimeRemaining || shouldYieldToHost()) // 且（没有剩余时间 或 应该让出给宿主）
+    ) {
+      break
+    }
+
+    // 执行任务
     const continuationCallback = callback(didUserCallbackTimeout)
   }
 }
