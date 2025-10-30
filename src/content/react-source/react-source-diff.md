@@ -1,5 +1,7 @@
 # React 源码（11）- Diff 算法
 
+`packages/react-reconciler/src/ReactChildFiber.old.js`
+
 ## diff 的入口
 
 如下图，`react diff` 不管是 `FunctionComponent` 还是 `HostComponent` 都会来到 `reconcileChildren`，然后分为单节点 `reconcileSingleElement` 和 多节点 `reconcileChildrenArray` 的 `diff`(忽略一些别的情况，如文本节点 diff)

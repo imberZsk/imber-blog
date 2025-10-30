@@ -1,5 +1,7 @@
 # React 源码（8）- Scheduler 调度阶段
 
+`/packages/scheduler/src/forks/Scheduler.js`
+
 ## 两个队列，两个最小堆
 
 `unstable_scheduleCallback` 是调度的逻辑，里面有两个队列
