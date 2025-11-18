@@ -1,2 +1,8 @@
 onlyBuiltDependencies:
   - '@parcel/watcher'
+  - '@sentry/cli'
+  - '@tailwindcss/oxide'
+  - es5-ext
+  - sharp
+  - simple-git-hooks
+  - unrs-resolver

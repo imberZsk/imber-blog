@@ -56,6 +56,20 @@ export const postsConfig = [
     // views: 32
   },
   {
+    title: '监控平台（2）- 监控平台架构设计',
+    href: '/posts/sentry-design',
+    date: '2025-11-18',
+    tags: ['监控平台']
+    // views: 32
+  },
+  {
+    title: '监控平台（1）- sentry 接入',
+    href: '/posts/sentry',
+    date: '2025-11-18',
+    tags: ['监控平台']
+    // views: 32
+  },
+  {
     title: '脚手架 Cli（7）- 集成 AI，支持 AI 生成组件',
     href: '/posts/cli-ai',
     date: '2025-07-29',
