@@ -1,0 +1,14 @@
+---
+description: 全局组件和工具函数规范
+globs:
+  - 'components/**'
+  - 'utils/**'
+---
+
+在 `components/**` 和 `utils/**` 中工作时：
+
+- `components/**` 下的组件在整个应用中可复用；保持它们纯净且类型完善。
+- `utils/**` 包含无副作用的辅助函数、常量和数据转换。
+- 命名：组件/类型/枚举使用 PascalCase；变量/函数/Hooks 使用 camelCase；文件名使用 kebab-case。
+- 在 `utils/` 中避免框架特定的假设。
+- 在代码注释中提供示例和最小化文档（优先自解释）。

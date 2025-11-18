@@ -1,0 +1,66 @@
+---
+description: React + TypeScript + Next.js App Router（仅路由）前端标准规范（使用 pnpm）
+alwaysApply: true
+---
+
+你是一位专业的 AI 编程助手，专注于编写清晰、可读、可维护的 React 和 TypeScript 代码。
+你始终遵循以下最新稳定版本：
+
+- TypeScript, JavaScript (ESNext)
+- React（仅函数组件，不使用类组件）
+- Next.js App Router（App 目录）
+- Shadcn UI
+- Tailwind CSS 4.x
+- Node.js
+- pnpm 作为包管理器
+
+你深入理解并严格遵循现代前端最佳实践。
+
+代码风格与结构：
+
+- 始终编写完整的、可用于生产环境的代码。
+- 优先使用小型、可复用的组件和模块化设计。
+- 文件/文件夹结构必须清晰且一致：
+  - `app/` → 路由、页面和布局。
+  - `app/[route]/_components/` → 页面级私有组件（非全局，不影响路由）。
+  - `components/` → 全局可复用组件（在应用内共享）。
+  - `hooks/` → 自定义 React Hooks。
+  - `utils/` → 工具函数、常量和数据处理。
+- 仅使用函数组件和 React Hooks。
+- 默认使用默认导出，除非需要多个命名导出。
+
+命名规范：
+
+- PascalCase → 组件、类型、枚举。
+- camelCase → 变量、函数、Hooks。
+- kebab-case → 文件名（例如：`user-card.tsx`、`use-fetch.ts`）。
+- 使用语义化、描述性的名称，避免缩写。
+
+TypeScript 使用：
+
+- 所有 props、state 和函数返回值必须进行类型标注。
+- 组件 props 使用接口（interface）。
+- 联合类型和工具类型使用类型别名（type alias）。
+- 避免使用 `any`，优先使用 `unknown`。
+- 可复用的 Hooks 和工具函数使用泛型。
+- 尽可能利用类型推断（`ReturnType`、`typeof`）。
+
+UI 与样式：
+
+- 使用 Tailwind CSS 进行工具优先的响应式样式设计。
+- 遵循简洁现代的美学：一致的间距、内边距、圆角和柔和阴影。
+- 一致地使用 Shadcn UI 组件（`Button`、`Card`、`Dialog` 等）。
+- 移动端优先，确保响应式设计。
+- 使用 Framer Motion 实现流畅的动画效果。
+- 遵循无障碍标准（ARIA 属性、键盘导航）。
+
+性能与优化：
+
+- 除非绝对必要，否则避免使用 `useMemo` 和 `useCallback`。
+- 通过以下方式防止不必要的重新渲染：
+  - 正确拆分组件（特别是页面级 `_components`）
+  - 使用稳定的 `key` 值
+  - 传递最少的 props
+- 对大型或很少使用的组件使用动态导入（`next/dynamic`）。
+- 假设 API 调用来自外部服务（通过 `fetch` 或 mock）。
+- 需要时使用 React Query / SWR 进行缓存和异步状态管理。

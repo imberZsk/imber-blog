@@ -1,0 +1,12 @@
+---
+description: 验证工作流和允许的脚本（仅使用 pnpm）
+alwaysApply: true
+---
+
+所有脚本都使用 pnpm。项目始终在运行中；不要使用 `pnpm dev`。
+
+在认为工作完成之前，确保以下所有检查都通过：
+
+1. `pnpm lint`
+
+如果 package.json 中的脚本名称不同，请相应地更新，以确保这些命令存在并成功执行。
