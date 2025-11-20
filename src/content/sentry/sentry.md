@@ -1,6 +1,9 @@
+# 监控平台（1）- sentry 接入
+
 ## sentry 的简介
 
-https://sentry.io/ 可以看到它提供的云平台有免费版本，只能一个账号，5k 错误监控，也够使用了，如果是自己部署，需要很高的服务器配置，比较贵，而且比较黑盒
+https://sentry.io/
+可以看到它提供的云平台有免费版本，只能一个账号，5k 错误监控，也够使用了，如果是自己部署，需要很高的服务器配置，比较贵，而且比较黑盒
 
 ![pricing](/sentry/pricing.png)
 
@@ -8,22 +11,25 @@ https://sentry.io/ 可以看到它提供的云平台有免费版本，只能一�
 
 登陆它的云平台，选择对应类型的项目，比如 nextjs，然后按它的步骤做，全选 yes
 
-- `npx @sentry/wizard@latest -i nextjs --saas --org imberzsk --project imber-animation` 最后这个 imber-animation 就是项目名来匹配 DSN
+- `npx @sentry/wizard@latest -i nextjs --saas --org imberzsk --project imber-animation`
+  最后这个 imber-animation 就是项目名来匹配 DSN
 
 - 然后询问是否通过 API 路由来阻断广告
 - 启用 Tracing 来采集 performance （看web vitals指标，也就是 tracesSampleRate: 1 配置）
 - 启用 Session Replay 来遇到错误时支持视频回放（Sentry.replayIntegration() 插件配置）
-- 启用 Logs 发送 log 到 sentry（ 配置插件可以精确控制 `Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }) `）
+- 启用 Logs 发送 log 到 sentry（ 配置插件可以精确控制
+  `Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }) `）
   - 使用
 
     ```jsx
-    import * as Sentry from '@sentry/nextjs'
+    import * as Sentry from "@sentry/nextjs"
 
-    Sentry.logger.info('User triggered test log', { log_source: 'sentry_test' })
+    Sentry.logger.info("User triggered test log", { log_source: "sentry_test" })
     ```
 
 - 创建 /sentry-example-page 例子
-- 是否在用 CI/CD 工具在构建应用，比如 Github Action、Gitlab（然后它会生成一个环境变量，可以删除它的env，然后复制到本地.env，然后远程配置）
+- 是否在用 CI/CD 工具在构建应用，比如 Github
+  Action、Gitlab（然后它会生成一个环境变量，可以删除它的env，然后复制到本地.env，然后远程配置）
 - 项目中有 prettier，是否 run
 - 添加 MCP
 - 选择编辑器

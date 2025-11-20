@@ -56,6 +56,13 @@ export const postsConfig = [
     // views: 32
   },
   {
+    title: '监控平台（3）- 监控平台Monorepo工程化搭建',
+    href: '/posts/sentry-init',
+    date: '2025-11-18',
+    tags: ['监控平台']
+    // views: 32
+  },
+  {
     title: '监控平台（2）- 监控平台架构设计',
     href: '/posts/sentry-design',
     date: '2025-11-18',
