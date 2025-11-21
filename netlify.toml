@@ -1,0 +1,15 @@
+[build]
+  command = "pnpm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22.x"
+
+# 为图片优化 API 设置响应头
+# 注意：Netlify 可能不完全支持 Next.js Image Optimization API 的所有配置
+[[headers]]
+  for = "/_next/image"
+  [headers.values]
+    Content-Disposition = "attachment"
+    Cache-Control = "public, max-age=31536000, immutable"
+
