@@ -3,7 +3,7 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "22.x"
+  NODE_VERSION = "22.16.0"
 
 # 为图片优化 API 设置响应头
 # 注意：Netlify 可能不完全支持 Next.js Image Optimization API 的所有配置
