@@ -1,10 +1,15 @@
 # TipTap 编辑器（2）- 样式隔离
 
+> 区别于官网的样式方案：[https://tiptap.dev/docs/editor/getting-started/style-editor](https://tiptap.dev/docs/editor/getting-started/style-editor)（sass +
+> tailwind），也就是 @apply，这个方式就是需要切换css文件，然后嵌套样式，也可以下面这种方案，纯 JS 的方式写 TailwindCSS
+
 ## 前言
 
 在开发富文本编辑器时，样式隔离是一个至关重要的问题。编辑器的样式需要与页面其他部分的样式完全隔离，避免相互影响。同时，编辑器内部的各种组件（如标题、段落、列表等）也需要有统一的样式管理方案。
 
-本文将介绍如何基于 Tailwind CSS 实现 TipTap 编辑器的样式隔离，提供一个可扩展、易维护的样式架构方案。(普通使用还是基于 simple template 去修改比较好优点是开箱即用，缺点是开发效率和性能要差点)
+本文将介绍如何基于 Tailwind
+CSS 实现 TipTap 编辑器的样式隔离，提供一个可扩展、易维护的样式架构方案。(普通使用还是基于 simple
+template 去修改比较好优点是开箱即用，缺点是开发效率和性能要差点)
 
 ## 样式隔离面临的挑战
 
@@ -56,15 +61,15 @@
 首先，我们需要把样式抽离出去，方便维护，也就是当前目录下的 style.ts：
 
 ```tsx
-'use client'
+"use client"
 
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
-import './tiptap.css'
+import { useEditor, EditorContent } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Placeholder from "@tiptap/extension-placeholder"
+import "./tiptap.css"
 
 // 样式组件化
-import { EditorAllClassNames } from './style'
+import { EditorAllClassNames } from "./style"
 
 const Tiptap = () => {
   const editor = useEditor({
@@ -74,11 +79,11 @@ const Tiptap = () => {
         placeholder: `Write something, ' / ' for commands…`
       })
     ],
-    content: '',
+    content: "",
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: 'focus:outline-none min-h-80'
+        class: "focus:outline-none min-h-80"
       }
     }
   })
@@ -95,8 +100,8 @@ export default Tiptap
 ![prosemirror-devtools](/editor/prosemirror-devtools.png)
 
 ```ts
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -108,69 +113,71 @@ export function cn(...inputs: ClassValue[]) {
 style.ts 定义样式
 
 ```javascript
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils"
 // ============================ NODES ============================
 // #region
 
 // 编辑器容器样式
-export const EditorContainerClassNames = 'mx-auto max-w-3xl px-4 pt-24 pb-8 2xl:max-w-4xl'
+export const EditorContainerClassNames = "mx-auto max-w-3xl px-4 pt-24 pb-8 2xl:max-w-4xl"
 
 // 正文：16 1.6 2%，组件间距 16px
-export const paragraphClassNames = '[&_p]:text-base [&_p]:leading-[1.6] [&_p]:tracking-[2%] [&_p]:my-4'
+export const paragraphClassNames =
+  "[&_p]:text-base [&_p]:leading-[1.6] [&_p]:tracking-[2%] [&_p]:my-4"
 
 // 引用 - 支持多种颜色
 export const blockquoteClassNames = cn(
-  '[&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:my-4 [&_blockquote]:border-gray-500'
+  "[&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:my-4 [&_blockquote]:border-gray-500"
 )
 
 // 无序列表
-export const bulletListClassNames = '[&_ul]:!list-disc [&_ul]:pl-4 [&_ul]:my-4'
+export const bulletListClassNames = "[&_ul]:!list-disc [&_ul]:pl-4 [&_ul]:my-4"
 
 // 代码块 pre->code，快捷键
 export const codeBlockClassNames =
-  '[&_pre]:bg-white [&_pre]:dark:bg-black [&_pre]:border [&_pre]:border-gray-200 [&_pre]:dark:border-gray-800 [&_pre]:p-4 [&_pre]:my-4 [&_pre]:block [&_pre]:rounded-md [&_pre_code]:bg-transparent [&_pre_code]:border-0 [&_pre_code]:p-0'
+  "[&_pre]:bg-white [&_pre]:dark:bg-black [&_pre]:border [&_pre]:border-gray-200 [&_pre]:dark:border-gray-800 [&_pre]:p-4 [&_pre]:my-4 [&_pre]:block [&_pre]:rounded-md [&_pre_code]:bg-transparent [&_pre_code]:border-0 [&_pre_code]:p-0"
 
 // 标题组件
 export const headingClassNames = cn(
-  '[&_h1]:text-[28px] [&_h1]:leading-[1.5] [&_h1]:tracking-[2%] [&_h1]:my-4 [&_h1]:font-semibold',
-  '[&_h2]:text-[22px] [&_h2]:leading-[1.5] [&_h2]:tracking-[2%] [&_h2]:my-4 [&_h2]:font-semibold',
-  '[&_h3]:text-[18px] [&_h3]:leading-[1.6] [&_h3]:tracking-[2%] [&_h3]:my-4 [&_h3]:font-semibold',
-  '[&_h4]:text-[16px] [&_h4]:leading-[1.6] [&_h4]:tracking-[2%] [&_h4]:my-4 [&_h4]:font-semibold',
-  '[&_h5]:text-[14px] [&_h5]:leading-[1.6] [&_h5]:tracking-[2%] [&_h5]:my-4 [&_h5]:font-semibold',
-  '[&_h6]:text-[12px] [&_h6]:leading-[1.6] [&_h6]:tracking-[2%] [&_h6]:my-4 [&_h6]:font-semibold'
+  "[&_h1]:text-[28px] [&_h1]:leading-[1.5] [&_h1]:tracking-[2%] [&_h1]:my-4 [&_h1]:font-semibold",
+  "[&_h2]:text-[22px] [&_h2]:leading-[1.5] [&_h2]:tracking-[2%] [&_h2]:my-4 [&_h2]:font-semibold",
+  "[&_h3]:text-[18px] [&_h3]:leading-[1.6] [&_h3]:tracking-[2%] [&_h3]:my-4 [&_h3]:font-semibold",
+  "[&_h4]:text-[16px] [&_h4]:leading-[1.6] [&_h4]:tracking-[2%] [&_h4]:my-4 [&_h4]:font-semibold",
+  "[&_h5]:text-[14px] [&_h5]:leading-[1.6] [&_h5]:tracking-[2%] [&_h5]:my-4 [&_h5]:font-semibold",
+  "[&_h6]:text-[12px] [&_h6]:leading-[1.6] [&_h6]:tracking-[2%] [&_h6]:my-4 [&_h6]:font-semibold"
 )
 
 // 分割线
-export const horizontalRuleClassNames = '[&_hr]:my-4 [&_hr]:h-px [&_hr]:bg-gray-400 [&_hr]:border-0'
+export const horizontalRuleClassNames =
+  "[&_hr]:my-4 [&_hr]:h-px [&_hr]:bg-gray-400 [&_hr]:border-0"
 
 // 列表项，li，这样可以控制 li 节点，暂时没用上
-export const listItemClassNames = '[&_li]:my-1'
+export const listItemClassNames = "[&_li]:my-1"
 
 // 有序列表
-export const orderedListClassNames = '[&_ol]:!list-decimal [&_ol]:pl-4 [&_ol]:my-4'
+export const orderedListClassNames = "[&_ol]:!list-decimal [&_ol]:pl-4 [&_ol]:my-4"
 // #endregion
 
 // ============================ MARKS ============================
 // #region
 
 // 超链接
-export const linkClassNames = '[&_a]:text-blue-500 [&_a]:underline [&_a]:cursor-pointer'
+export const linkClassNames = "[&_a]:text-blue-500 [&_a]:underline [&_a]:cursor-pointer"
 
 // 粗体
-export const boldClassNames = '[&_strong]:font-bold'
+export const boldClassNames = "[&_strong]:font-bold"
 
 // 行内 code，快捷键 `` 或者 command + e
 export const codeClassNames =
-  '[&_code:not(pre_code)]:bg-white [&_code:not(pre_code)]:dark:bg-black [&_code:not(pre_code)]:border [&_code:not(pre_code)]:border-gray-200 [&_code:not(pre_code)]:dark:border-gray-800 [&_code:not(pre_code)]:inline [&_code:not(pre_code)]:px-1 [&_code:not(pre_code)]:text-sm [&_code:not(pre_code)]:py-0.5 [&_code:not(pre_code)]:rounded-md'
+  "[&_code:not(pre_code)]:bg-white [&_code:not(pre_code)]:dark:bg-black [&_code:not(pre_code)]:border [&_code:not(pre_code)]:border-gray-200 [&_code:not(pre_code)]:dark:border-gray-800 [&_code:not(pre_code)]:inline [&_code:not(pre_code)]:px-1 [&_code:not(pre_code)]:text-sm [&_code:not(pre_code)]:py-0.5 [&_code:not(pre_code)]:rounded-md"
 
 // 斜体 em command + i
-export const italicClassNames = ''
+export const italicClassNames = ""
 
 // 删除线 s command + shift + s
-export const strikeClassNames = ''
+export const strikeClassNames = ""
 
 // 下滑线 u command +  u
-export const underlineClassNames = ''
+export const underlineClassNames = ""
 
 // #endregion
 
@@ -222,7 +229,8 @@ export const EditorAllClassNames = cn(
 
 ## 总结
 
-基于 Tailwind CSS 的样式隔离方案为 TipTap 编辑器提供了一个完整、可扩展的样式管理解决方案。通过使用作用域前缀、CSS 变量主题系统和组件化样式管理，我们实现了：
+基于 Tailwind
+CSS 的样式隔离方案为 TipTap 编辑器提供了一个完整、可扩展的样式管理解决方案。通过使用作用域前缀、CSS 变量主题系统和组件化样式管理，我们实现了：
 
 - ✅ 完全的样式隔离，避免与页面样式冲突
 - ✅ 主题一致性，编辑器与页面主题同步切换

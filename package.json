@@ -56,6 +56,7 @@
     "react-hotkeys-hook": "^5.2.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
+    "require-in-the-middle": "^8.0.1",
     "sonner": "^2.0.5",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.0.2",
