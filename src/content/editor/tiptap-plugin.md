@@ -2,7 +2,16 @@
 
 ## 前言
 
-[TipTap](https://tiptap.dev/docs/editor/getting-started/overview) 是一个基于 ProseMirror 的现代富文本编辑器，它提供了强大的插件系统，让开发者可以轻松扩展编辑器的功能。
+[TipTap](https://tiptap.dev/docs/editor/getting-started/overview)
+是一个基于 ProseMirror 的现代富文本编辑器，它提供了强大的插件系统，让开发者可以轻松扩展编辑器的功能。
+
+## Nodes 和 Marks
+
+编辑器就是一棵树，Nodes 就是树上的节点，比如段落，代码块，Marks 就是给节点做装饰，改善用户体验，比如加粗，链接
+
+## Node Mark Extension
+
+Node 和 Mark 是跟页面元素相关的，Extension则是扩展功能
 
 ## 插件系统架构
 
@@ -188,12 +197,12 @@ export const Bold = Mark.create<BoldOptions>({
 用于配置选项，也就是 extension.configure({})
 
 ```tsx
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 const MyExtension = Extension.create({
-  name: 'myExtension',
+  name: "myExtension",
   addOptions: {
-    myOption: 'myOption'
+    myOption: "myOption"
   }
 })
 
@@ -205,24 +214,25 @@ export default MyExtension
 表示分组到块级元素
 
 ```tsx
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 const MyExtension = Extension.create({
-  name: 'myExtension',
-  group: 'block' // 告诉编辑器：我是一个块级元素
+  name: "myExtension",
+  group: "block" // 告诉编辑器：我是一个块级元素
 })
 ```
 
 #### [content](https://prosemirror.net/docs/guide/#schema.content_expressions)
 
-content: 'block+' 表示至少有一个块级元素，块级元素如 'paragraph | heading | codeBlock | blockquote | list'
+content: 'block+' 表示至少有一个块级元素，块级元素如 'paragraph | heading | codeBlock |
+blockquote | list'
 
 ```tsx
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 const MyExtension = Extension.create({
-  name: 'myExtension',
-  content: 'block+'
+  name: "myExtension",
+  content: "block+"
 })
 ```
 
@@ -231,10 +241,10 @@ const MyExtension = Extension.create({
 默认是 false，设置为 true 时，光标在代码块内部时，上下箭头键不会轻易跳出代码块，需要明确的操作（如 Enter、Escape）才能离开。
 
 ```tsx
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 const MyExtension = Extension.create({
-  name: 'myExtension',
+  name: "myExtension",
   defining: true
 })
 ```
@@ -244,17 +254,17 @@ const MyExtension = Extension.create({
 用于解析 HTML 为 ProseMirror 节点
 
 ```tsx
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 const MyExtension = Extension.create({
-  name: 'myExtension',
+  name: "myExtension",
   parseHTML() {
     return [
       {
-        tag: 'span',
+        tag: "span",
         getAttrs: (node) => {
           return {
-            class: node.getAttribute('class')
+            class: node.getAttribute("class")
           }
         }
       }
@@ -269,10 +279,10 @@ const MyExtension = Extension.create({
 
 ```tsx
 const CustomMark = Mark.create({
-  name: 'customMark',
+  name: "customMark",
 
   renderHTML({ HTMLAttributes }) {
-    return ['span', HTMLAttributes, 0]
+    return ["span", HTMLAttributes, 0]
   }
 })
 ```
@@ -282,7 +292,7 @@ const CustomMark = Mark.create({
 用于定义扩展命令，用户可以执行的命令
 
 ```tsx
-declare module '@tiptap/core' {
+declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     customExtension: {
       customCommand: () => ReturnType
@@ -291,14 +301,14 @@ declare module '@tiptap/core' {
 }
 
 const CustomExtension = Extension.create({
-  name: 'customExtension',
+  name: "customExtension",
 
   addCommands() {
     return {
       customCommand:
         () =>
         ({ commands }) => {
-          return commands.setContent('Custom command executed')
+          return commands.setContent("Custom command executed")
         }
     }
   }
@@ -318,13 +328,13 @@ editor.chain().customCommand().run() // 'Custom command executed'
 
 ```tsx
 const CustomMark = Mark.create({
-  name: 'customMark',
+  name: "customMark",
 
   addAttributes() {
     return {
       customAttribute: {
-        default: 'value',
-        parseHTML: (element) => element.getAttribute('data-custom-attribute')
+        default: "value",
+        parseHTML: (element) => element.getAttribute("data-custom-attribute")
       }
     }
   }
@@ -337,12 +347,12 @@ const CustomMark = Mark.create({
 
 ```tsx
 const CustomExtension = Extension.create({
-  name: 'customExtension',
+  name: "customExtension",
 
   addKeyboardShortcuts() {
     return {
-      'Mod-k': () => {
-        console.log('Keyboard shortcut executed')
+      "Mod-k": () => {
+        console.log("Keyboard shortcut executed")
       }
     }
   }
@@ -352,9 +362,9 @@ const CustomExtension = Extension.create({
 ### 添加插件到编辑器
 
 ```javascript
-import { Editor } from '@tiptap/core'
-import { StarterKit } from '@tiptap/starter-kit'
-import { customPlugin } from './customPlugin'
+import { Editor } from "@tiptap/core"
+import { StarterKit } from "@tiptap/starter-kit"
+import { customPlugin } from "./customPlugin"
 
 const editor = new Editor({
   extensions: [StarterKit, customPlugin()]
@@ -367,22 +377,24 @@ const editor = new Editor({
 
 Mark.create 和 Node.create 表示不同节点插件，而 Extension.create 表示功能插件可以修改编辑器行为，没有新的节点
 
-- Extension 可以参考 [TextAlign](https://tiptap.dev/docs/editor/extensions/functionality/textalign)
-- Node 可以参考 [Heading](https://tiptap.dev/docs/editor/extensions/nodes/heading) 或 [CodeBlock](https://tiptap.dev/docs/editor/extensions/nodes/code-block)
+- Extension 可以参考
+  [TextAlign](https://tiptap.dev/docs/editor/extensions/functionality/textalign)
+- Node 可以参考 [Heading](https://tiptap.dev/docs/editor/extensions/nodes/heading) 或
+  [CodeBlock](https://tiptap.dev/docs/editor/extensions/nodes/code-block)
 - Mark 可以参考 [Bold](https://tiptap.dev/docs/editor/extensions/marks/bold)
 
 ```javascript
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 export const CustomCommand = Extension.create({
-  name: 'customCommand',
+  name: "customCommand",
 
   addCommands() {
     return {
       insertCustomContent:
         () =>
         ({ commands }) => {
-          return commands.insertContent('<p>自定义内容</p>')
+          return commands.insertContent("<p>自定义内容</p>")
         }
     }
   }
@@ -392,20 +404,20 @@ export const CustomCommand = Extension.create({
 ### 2. 节点插件
 
 ```javascript
-import { Node } from '@tiptap/core'
+import { Node } from "@tiptap/core"
 
 export const CustomNode = Node.create({
-  name: 'customNode',
+  name: "customNode",
 
-  group: 'block',
-  content: 'inline*',
+  group: "block",
+  content: "inline*",
 
   parseHTML() {
-    return [{ tag: 'div[data-custom]' }]
+    return [{ tag: "div[data-custom]" }]
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', { ...HTMLAttributes, 'data-custom': '' }, 0]
+    return ["div", { ...HTMLAttributes, "data-custom": "" }, 0]
   }
 })
 ```
@@ -413,17 +425,17 @@ export const CustomNode = Node.create({
 ### 3. 标记插件
 
 ```javascript
-import { Mark } from '@tiptap/core'
+import { Mark } from "@tiptap/core"
 
 export const CustomMark = Mark.create({
-  name: 'customMark',
+  name: "customMark",
 
   parseHTML() {
-    return [{ tag: 'span[data-custom]' }]
+    return [{ tag: "span[data-custom]" }]
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['span', { ...HTMLAttributes, 'data-custom': '' }, 0]
+    return ["span", { ...HTMLAttributes, "data-custom": "" }, 0]
   }
 })
 ```
@@ -433,10 +445,10 @@ export const CustomMark = Mark.create({
 ### 状态管理
 
 ```javascript
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 export const StatePlugin = Extension.create({
-  name: 'statePlugin',
+  name: "statePlugin",
 
   addStorage() {
     return {
@@ -461,25 +473,25 @@ export const StatePlugin = Extension.create({
 ### 事件处理
 
 ```javascript
-import { Extension } from '@tiptap/core'
+import { Extension } from "@tiptap/core"
 
 export const EventPlugin = Extension.create({
-  name: 'eventPlugin',
+  name: "eventPlugin",
 
   onCreate() {
-    console.log('编辑器创建')
+    console.log("编辑器创建")
   },
 
   onUpdate() {
-    console.log('内容更新')
+    console.log("内容更新")
   },
 
   onSelectionUpdate() {
-    console.log('选择更新')
+    console.log("选择更新")
   },
 
   onDestroy() {
-    console.log('编辑器销毁')
+    console.log("编辑器销毁")
   }
 })
 ```
@@ -496,7 +508,7 @@ export const EventPlugin = Extension.create({
 
 ```javascript
 export const SafePlugin = Extension.create({
-  name: 'safePlugin',
+  name: "safePlugin",
 
   addCommands() {
     return {
@@ -507,7 +519,7 @@ export const SafePlugin = Extension.create({
             // 执行命令
             return true
           } catch (error) {
-            console.error('命令执行失败:', error)
+            console.error("命令执行失败:", error)
             return false
           }
         }
@@ -520,12 +532,12 @@ export const SafePlugin = Extension.create({
 
 ```javascript
 export const ConfigurablePlugin = Extension.create({
-  name: 'configurablePlugin',
+  name: "configurablePlugin",
 
   addOptions() {
     return {
       enabled: true,
-      customOption: 'default'
+      customOption: "default"
     }
   },
 

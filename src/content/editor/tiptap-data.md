@@ -1,12 +1,16 @@
 ## TipTap 编辑器（6）- 数据结构
 
+> L1的编辑器抽象了数据和模型，需要开发者清晰的了解数据层，由数据层驱动视图
+> [schema](https://tiptap.dev/docs/editor/core-concepts/schema)
+
 ### 插件对应的语义化标签
 
 在 TipTap 编辑器中，不同的功能组件对应着不同的语义化 HTML 标签，这些标签不仅提供了视觉样式，更重要的是为屏幕阅读器和其他辅助技术提供了语义信息。
 
 **根容器和工具栏**
 
-- 根容器使用 `<div role="application" aria-label="富文本编辑器">`，其中 role 表示这个元素是什么，aria-label 虽然视觉不可见，但文本阅读器会读出，提高了可访问性
+- 根容器使用
+  `<div role="application" aria-label="富文本编辑器">`，其中 role 表示这个元素是什么，aria-label 虽然视觉不可见，但文本阅读器会读出，提高了可访问性
 - 工具栏使用 `<div role="toolbar" aria-label="文本格式化">` 来标识工具栏的语义
 
 **文本结构标签**
@@ -20,15 +24,19 @@
 **列表和交互元素**
 
 - 无序列表和有序列表分别使用 `<ul>` / `<ol>` 和 `<li>` 标签
-- 复选框使用 `<div role="checkbox" aria-checked="true/false">` 或标准的 `<input type="checkbox">`
+- 复选框使用 `<div role="checkbox" aria-checked="true/false">` 或标准的
+  `<input type="checkbox">`
 - 表格使用完整的表格标签结构：`<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>`
 
 **文本格式标签**
 
-- 粗体使用 `<strong>` 而不是 `<b>`，因为 strong 表示内容重要性，而 b 只是吸引注意，没有语义上的重要性
+- 粗体使用 `<strong>` 而不是
+  `<b>`，因为 strong 表示内容重要性，而 b 只是吸引注意，没有语义上的重要性
 - 斜体使用 `<em>` 而不是 `<i>`，因为 em 是语义上的强调，i 表示不同语气或声音
 - 下划线使用 `<u>` 标签
-- 删除线使用 `<s>` 标签，**表示不再准确或不再相关的内容**（如商品原价），表示文档编辑的删除。而 `<del>` 则用于表示*从文档中删除*的内容，通常与 `<ins>` 配合使用，具有更严格的语义
+- 删除线使用 `<s>`
+  标签，**表示不再准确或不再相关的内容**（如商品原价），表示文档编辑的删除。而 `<del>`
+  则用于表示*从文档中删除*的内容，通常与 `<ins>` 配合使用，具有更严格的语义
 
 **特殊格式标签**
 
@@ -110,22 +118,22 @@ const jsonContent = editor.getJSON()
 const textContent = editor.getText()
 
 // 设置内容
-editor.commands.setContent('<p>Hello <strong>world</strong></p>')
+editor.commands.setContent("<p>Hello <strong>world</strong></p>")
 editor.commands.setContent({
-  type: 'doc',
+  type: "doc",
   content: [
     {
-      type: 'paragraph',
+      type: "paragraph",
       content: [
-        { type: 'text', text: 'Hello ' },
-        { type: 'text', marks: [{ type: 'bold' }], text: 'world' }
+        { type: "text", text: "Hello " },
+        { type: "text", marks: [{ type: "bold" }], text: "world" }
       ]
     }
   ]
 })
 
 // 插入内容
-editor.commands.insertContent('<p>New paragraph</p>')
+editor.commands.insertContent("<p>New paragraph</p>")
 ```
 
 **自定义转换**

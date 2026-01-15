@@ -24,8 +24,7 @@ export const Callout = Node.create({
   // 可选择标志：设为true允许选中该节点
   selectable: true,
 
-  // 原子节点标志：设为false以支持包含多个段落的复杂内容
-  // 这样可以更好地处理从Notion复制过来的带有空行的内容
+  // 带有 atom： true 的节点不能直接编辑，应该当作一个单元来处理。在编辑器的语境下不太可能用到这个
   atom: false,
 
   // 内容规则：至少包含一个block类型的子节点
@@ -47,6 +46,10 @@ export const Callout = Node.create({
 
   // 定义性标志：设为true确保复制粘贴时保留完整的节点结构
   // 这对于从Notion粘贴包含复杂内容和空行的callout非常重要
+
+  // 节点默认会被丢弃，因为整个内容被替换（例如粘贴新内容时）。如果需要保留节点进行此类替换作，请将其配置为定义作 。
+  // Typically, that applies to Blockquote, CodeBlock, Heading, and ListItem.
+  // 通常，这适用于 Blockquote、CodeBlock、Heading 和 ListItem。
   defining: true,
 
   /**

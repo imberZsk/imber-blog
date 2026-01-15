@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react'
 
 // --- Tiptap 核心扩展 ---
@@ -107,6 +106,10 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
     ],
     content: content || initialContent // 初始内容（从 JSON 文件加载）
   })
+
+  if (!editor) {
+    return null
+  }
 
   return (
     <div className="simple-editor-wrapper">
