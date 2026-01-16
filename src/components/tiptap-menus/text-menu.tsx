@@ -97,12 +97,15 @@ const MainToolbarContent = ({
       </ToolbarGroup>
       {/* ===== 第二组：文档结构工具 ===== */}
       <ToolbarGroup>
+        {/* <ColumnsButton /> */}
         {/* 标题下拉菜单：支持 H1-H4 标题，用于设置文本的标题级别 */}
         <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
         {/* 列表下拉菜单：支持无序列表、有序列表、任务列表 */}
         <ListDropdownMenu types={['bulletList', 'orderedList', 'taskList']} portal={isMobile} />
         <BlockquoteButton /> {/* 引用块按钮 - 将选中文本转换为引用块 */}
         <CodeBlockButton /> {/* 代码块按钮 - 插入代码块 */}
+        {/* 分列组件 */}
+        {/* <ColumnsButton /> */}
       </ToolbarGroup>
       <ToolbarSeparator /> {/* 分隔线 */}
       {/* ===== 第三组：文本格式工具 ===== */}

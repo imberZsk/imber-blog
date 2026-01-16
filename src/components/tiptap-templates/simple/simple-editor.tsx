@@ -38,6 +38,7 @@ import initialContent from '@/components/tiptap-templates/simple/data/content.js
 import TextMenu from '@/components/tiptap-menus/text-menu'
 import { SlashCommand } from '@/components/tiptap-extensions'
 import { Callout } from '@/components/tiptap-node/callout-node'
+import { Columns, Column } from '@/components/tiptap-extensions'
 
 /**
  * SimpleEditor 主组件
@@ -102,7 +103,9 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
       }),
       SlashCommand,
       CodeBlock,
-      Callout
+      Callout,
+      Columns,
+      Column
     ],
     content: content || initialContent // 初始内容（从 JSON 文件加载）
   })
@@ -110,6 +113,8 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
   if (!editor) {
     return null
   }
+
+  console.log(editor)
 
   return (
     <div className="simple-editor-wrapper">
