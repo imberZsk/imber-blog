@@ -1,23 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Tag, Eye } from 'lucide-react'
+import { Calendar, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { PostCategories } from '@/components/content'
 import { getTagColor } from '@/lib/tag-colors'
-
-interface Post {
-  title: string
-  href: string
-  date: string
-  tags: string[]
-  views?: number
-}
+import type { PostSummary } from '@/lib/posts'
 
 interface ClientProps {
-  posts: Post[]
+  posts: PostSummary[]
   categories: string[]
 }
 
@@ -34,8 +27,9 @@ const Client = ({ posts, categories }: ClientProps) => {
 
   return (
     <>
-      {/* 分类选择器 */}
-      <PostCategories categories={categories} activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+      {posts.length > 0 && (
+        <PostCategories categories={categories} activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+      )}
 
       {/* 文章列表 */}
       <div className="space-y-4">
@@ -55,10 +49,12 @@ const Client = ({ posts, categories }: ClientProps) => {
               </h2>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-500">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{post.date}</span>
-                </div>
+                {post.date && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{post.date}</span>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Tag className="h-3 w-3" />
@@ -74,16 +70,13 @@ const Client = ({ posts, categories }: ClientProps) => {
                     </span>
                   ))}
                 </div>
-
-                <div className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" />
-                  <span>{post.views}</span>
-                </div>
               </div>
             </Link>
           </motion.div>
         ))}
       </div>
+
+      {posts.length === 0 && <p className="py-24 text-center text-sm text-zinc-500">暂时还没有原创文章</p>}
     </>
   )
 }

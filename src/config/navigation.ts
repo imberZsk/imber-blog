@@ -20,6 +20,18 @@ export const navigationConfig: NavItem[] = [
     enabled: true
   },
   {
+    path: '/knowledge',
+    name: '知识库',
+    title: '知识库',
+    enabled: true
+  },
+  {
+    path: '/mindmaps',
+    name: '思维导图',
+    title: '思维导图',
+    enabled: true
+  },
+  {
     path: '/ideas',
     name: '思考',
     title: '思考',

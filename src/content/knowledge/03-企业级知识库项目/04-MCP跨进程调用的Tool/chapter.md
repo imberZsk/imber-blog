@@ -1,0 +1,1 @@
+我开发了一个mcp server 的npm 包，包含xxx tool,支持 stdio 访问。可以在cursor 或langchain里用 npx执行来连上这个mcp server。

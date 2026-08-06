@@ -1,0 +1,285 @@
+# 08 - 模块与包管理
+
+> 你在前端里 `import { foo } from './bar'` 已经做了上千次。Python 的 `import` 长得几乎一样，但「什么算导出」「文件怎么被找到」「文件夹怎么变成包」这三件事和 JS 差得不少。这篇就把这些差异讲清楚，省得你被 `ModuleNotFoundError` 反复折磨。
+
+## 一、先建立直觉：模块 ≈ 一个 JS 文件
+
+**类比**：Python 里一个 `.py` 文件就是一个**模块（module）**，等价于前端一个 `.js` / `.ts` 文件。文件名就是模块名。
+
+```python
+# utils.py —— 这就是一个模块，模块名叫 utils
+PI = 3.14            # 模块级变量，存圆周率常量
+
+def add(a, b):       # 模块级函数：返回两数之和；a、b 为待相加的两个数
+    return a + b
+```
+
+```python
+# main.py —— 在别的文件里用它
+import utils                  # 整个模块拿进来，类似 import * as utils
+print(utils.PI)               # 用 模块名.成员 访问
+print(utils.add(1, 2))
+```
+
+并排看 JS，你会觉得很眼熟：
+
+```javascript
+// utils.js
+export const PI = 3.14
+export function add(a, b) { return a + b }
+
+// main.js
+import * as utils from './utils.js'
+console.log(utils.PI)
+console.log(utils.add(1, 2))
+```
+
+**边界（这里和 JS 不一样）**：Python **没有 `export` 关键字**。模块里所有顶层定义的名字（变量、函数、类）**自动都能被 import**，不需要显式标记导出。换句话说，JS 是「默认私有，显式 export」，Python 是「默认全公开」。想表达「这个别导出」只能靠约定——名字前加下划线 `_internal`，但那只是约定，挡不住硬 import。
+
+---
+
+## 二、import 的几种写法（对照 JS）
+
+| JS / TS | Python | 说明 |
+|---------|--------|------|
+| `import * as utils from './utils'` | `import utils` | 拿整个模块，用 `utils.add` 访问 |
+| `import { add } from './utils'` | `from utils import add` | 只拿某个名字，直接用 `add` |
+| `import { add, PI } from './utils'` | `from utils import add, PI` | 拿多个 |
+| `import { add as plus } from './utils'` | `from utils import add as plus` | 重命名 |
+| `import _ from 'lodash'`（默认导出） | （无对应概念） | Python 没有「默认导出」 |
+| `import * as np from 'numpy'`（整模块起别名） | `import numpy as np` | 给整个模块起别名 |
+
+代码示例：
+
+```python
+# 写法 1：拿整个模块（推荐，命名空间清晰，不怕重名）
+import math                       # 标准库：数学函数
+print(math.sqrt(16))              # 必须带前缀 math.
+
+# 写法 2：只拿需要的名字（用得最多）
+from math import sqrt, pi         # 只把 sqrt 和 pi 拿进当前文件
+print(sqrt(16))                   # 直接用，不带前缀
+
+# 写法 3：起别名（第三方库的通用习惯）
+import numpy as np                # 社区约定：numpy 一律别名 np
+import pandas as pd               # pandas 一律别名 pd
+
+# 写法 4：全部拿进来（不推荐，会污染命名空间）
+from math import *                # 类似 JS 里把所有东西摊平，容易撞名
+```
+
+**边界**：`from module import *` 对应不了 JS 里任何好习惯，等于把别人模块的所有名字一股脑塞进你的作用域，极易和你已有的变量撞名。除了交互式调试，几乎不要用。
+
+---
+
+## 三、`__name__ == "__main__"`：判断「是被运行还是被导入」
+
+这是 Python 新手第一眼最懵、但其实你在 node 里见过的东西。
+
+**类比**：node 里判断「这个文件是被直接 `node xxx.js` 运行，还是被别人 require」用的是 `require.main === module`。Python 用的是 `__name__` 这个内置变量。
+
+```python
+# app.py
+
+def main():               # 真正的程序入口逻辑
+    print("程序启动")
+
+# __name__ 是 Python 自动给每个模块设的内置变量，存「当前模块的名字」
+# - 被直接运行（python app.py）时，__name__ 的值是字符串 "__main__"
+# - 被别的文件 import 时，__name__ 的值是模块名 "app"
+if __name__ == "__main__":    # 业务场景：只有直接运行本文件时才执行 main，被导入时不执行
+    main()
+```
+
+并排看 node：
+
+```javascript
+// app.js
+function main() { console.log("程序启动") }
+
+// 直接 node app.js 运行时为 true；被 require 时为 false
+if (require.main === module) {
+    main()
+}
+```
+
+**为什么需要它**：因为 Python 的 `import` 会**完整执行**被导入文件的所有顶层代码（这点和 JS 一样，模块只在首次导入时执行一次）。如果你在文件顶层直接写了 `main()`，那别人 import 你这个模块时，`main()` 也会被意外执行。用 `if __name__ == "__main__":` 把入口逻辑包起来，就能区分「运行」和「被导入」两种场景。
+
+---
+
+## 四、包（package）：文件夹 + `__init__.py`
+
+**类比**：当模块多了要分目录管理时，一个**文件夹**就是一个**包（package）**，约等于前端里一个带 `index.js` 入口的目录。
+
+目录结构：
+
+```
+myapp/
+├── __init__.py          # 有它，myapp 才是一个「包」（角色 ≈ index.js）
+├── utils.py             # 子模块 myapp.utils
+└── db/
+    ├── __init__.py
+    └── mysql.py         # 子模块 myapp.db.mysql
+```
+
+导入时用点 `.` 表示层级，对应 JS 的路径斜杠 `/`：
+
+```python
+import myapp.utils                  # 导入子模块，类似 import 'myapp/utils'
+from myapp.db import mysql          # 从 myapp/db 里拿 mysql
+from myapp.db.mysql import connect  # 一路点到具体函数
+```
+
+### `__init__.py` 是干嘛的？
+
+它是这个包的「入口文件」，**包被导入时它会先执行**。最常见的两个用途：
+
+```python
+# myapp/__init__.py
+
+# 用途 1：把子模块的东西「提上来」，让外部 import 更短
+# 这样外部就能写 from myapp import connect，而不用写 from myapp.db.mysql import connect
+from myapp.db.mysql import connect
+
+# 用途 2：声明这个包对外暴露什么（配合 from myapp import *）
+# __all__ 存「import * 时允许导出的名字列表」，相当于手动维护一份导出清单
+__all__ = ["connect"]
+```
+
+这和前端的 barrel 文件（`index.ts` 里 `export { connect } from './db/mysql'` 收口再统一导出）是同一个思路。
+
+**边界（重要）**：从 Python 3.3 起，不写 `__init__.py` 的文件夹也能被当包导入（叫「命名空间包」）。所以你可能见过没有 `__init__.py` 的目录也能 import。**但建议还是显式建一个空的 `__init__.py`**——它让「这是一个正式的包」这件事清晰无歧义，也避免一些工具（测试发现、打包）出问题。把它当成「目录的 package.json 占位」就行。
+
+---
+
+## 五、模块查找路径：Python 是怎么找到文件的？
+
+这是踩坑重灾区，必须讲透。前端 `import './utils'` 是**相对当前文件**找；而 Python 的 `import utils` 默认是**在一组固定的搜索路径里**找，机制不同。
+
+**类比**：node 解析 `require('lodash')` 时会顺着一层层 `node_modules` 往上找。Python 也有一个「往哪找」的列表，叫 `sys.path`。
+
+```python
+import sys                # 标准库：和解释器/运行环境打交道
+
+# sys.path 存「import 时按顺序搜索的目录列表」，是个普通的字符串列表
+for p in sys.path:        # 打印出来看看解释器到底会去哪些目录找模块
+    print(p)
+```
+
+`sys.path` 大致按这个顺序：
+
+1. **当前运行脚本所在的目录**（你 `python xxx.py`，xxx.py 所在目录）
+2. 环境变量 `PYTHONPATH` 指定的目录
+3. 标准库目录（`math`、`json` 这些在这）
+4. 第三方包安装目录 `site-packages`（pip 装的东西在这，角色 ≈ `node_modules`）
+
+| 概念 | node / npm | Python |
+|------|-----------|--------|
+| 第三方包装哪 | `node_modules/` | `site-packages/` |
+| 装包命令 | `npm install x` | `pip install x` |
+| 搜索路径列表 | 逐层 `node_modules` | `sys.path` |
+| 依赖清单 | `package.json` | `requirements.txt` / `pyproject.toml` |
+| 隔离环境 | 每个项目独立 `node_modules` | 虚拟环境 venv（见下） |
+
+**边界（最容易栽的坑）**：JS 里 `import './utils'` 带 `./` 是「相对文件」找；Python 里 `import utils`（不带点）是「在 `sys.path` 里找」，**不是相对当前文件**。所以同目录下的两个文件，A 想 import 同级的 B，能成功往往是因为「当前脚本目录」恰好在 `sys.path` 里——一旦你换个目录运行、或者把文件挪进包里，立刻 `ModuleNotFoundError`。Python 的「相对当前文件」要用下面的相对导入语法。
+
+---
+
+## 六、相对导入 vs 绝对导入
+
+包内部的模块互相引用，有两种写法：
+
+```python
+# 假设当前文件是 myapp/db/mysql.py，想用 myapp/utils.py 里的 log 函数
+
+# 绝对导入：从顶层包名写全路径（推荐，清晰、不易错）
+from myapp.utils import log
+
+# 相对导入：用点表示「相对当前包的位置」
+from ..utils import log       # .. 表示上一级包（myapp），类似文件系统的 ../
+from .other import helper     # 单个 . 表示当前包（同级），类似 ./
+```
+
+点的含义和文件路径完全对应：
+
+| 文件路径写法 | Python 相对导入 | 含义 |
+|------------|----------------|------|
+| `./other` | `from .other import x` | 同一个包里的兄弟模块 |
+| `../utils` | `from ..utils import x` | 上一级包里的模块 |
+| `../../core` | `from ...core import x` | 上两级 |
+
+**边界（高频报错）**：相对导入**只能在「包内部、且该文件是被当作包的一部分导入」时使用**。如果你直接 `python myapp/db/mysql.py` 去运行一个含相对导入的文件，会报 `ImportError: attempted relative import with no known parent package`。原因是直接运行时，这个文件被当成顶层脚本（`__name__` 变 `__main__`），它「不知道自己属于哪个包」，`..` 就没有参照物。
+
+解决办法：从项目根目录用 `-m` 模块方式运行，让 Python 知道包结构：
+
+```bash
+# 不要这样直接跑含相对导入的文件
+python myapp/db/mysql.py        # ❌ 可能报 attempted relative import
+
+# 用 -m，以「模块」方式从根目录运行，包结构才完整
+python -m myapp.db.mysql        # ✅ 注意是点不是斜杠，且不带 .py
+```
+
+新手建议：**项目内部统一用绝对导入**（`from myapp.utils import log`），心智负担最小，能绕开绝大多数相对导入的坑。
+
+---
+
+## 七、虚拟环境与装包（venv + pip）
+
+最后补一块前端直觉对照。前端每个项目有自己的 `node_modules`，天然隔离。Python 默认所有项目共用一套全局环境，容易版本打架，所以要手动建**虚拟环境（venv）**来隔离。
+
+```bash
+# 建一个虚拟环境，会生成一个 venv 目录（角色 ≈ 项目专属的 node_modules + node 副本）
+python -m venv venv
+
+# 激活它（之后的 pip/python 都作用在这个隔离环境里）
+source venv/bin/activate        # macOS / Linux
+# venv\Scripts\activate         # Windows
+
+# 装包，等价于 npm install
+pip install requests
+
+# 导出当前依赖清单，等价于 package.json 的 dependencies
+pip freeze > requirements.txt
+
+# 别人拿到项目后一键还原依赖，等价于 npm install
+pip install -r requirements.txt
+```
+
+| npm | pip / venv |
+|-----|-----------|
+| `node_modules/` | `venv/`（激活后包装进里面） |
+| `npm install x` | `pip install x` |
+| `package.json` | `requirements.txt` / `pyproject.toml` |
+| `npm install`（还原） | `pip install -r requirements.txt` |
+| nvm 切 node 版本 | 不同 venv 用不同 Python |
+
+**边界**：`node_modules` 是自动按目录隔离的，你几乎不用想；venv 需要你**手动建 + 手动激活**，忘了激活就会装到全局环境去。养成进项目先 `source venv/bin/activate` 的习惯。
+
+---
+
+## 八、常见踩坑清单
+
+1. **以为有 `export`**：Python 顶层名字全自动可导入，没有 export；想标记私有用 `_前缀`（仅约定）。
+2. **`import utils` 找不到**：不带点的 import 走 `sys.path`，不是相对当前文件。同级文件互引在包里要用绝对/相对导入。
+3. **直接跑含相对导入的文件报错**：`attempted relative import` —— 改用 `python -m 包.模块` 从根目录运行。
+4. **循环导入（circular import）**：A 导 B、B 又导 A，可能拿到「还没初始化完」的半成品。解法：把 import 挪到函数内部，或拆分公共部分到第三个模块。和前端循环依赖一个道理。
+5. **改了模块代码没生效**：模块只在首次 import 时执行一次并缓存（在 `sys.modules` 里）。普通脚本重新运行即可；交互环境/notebook 里要重启内核或用 `importlib.reload`。
+
+---
+
+## 小结
+
+Python 的模块系统骨架和前端高度相似：一个 `.py` ≈ 一个 `.js`，`import` 写法几乎能一一对照，包就是带 `__init__.py` 的文件夹（≈ 带 barrel 入口的目录）。真正要拧过来的是三处差异：**没有 export（默认全公开）**、**不带点的 import 走 `sys.path` 而非相对文件**、**相对导入只能在包内且不能直接运行**。
+
+✅ **该掌握**
+- `import x` / `from x import y` / `import x as y` 三种写法及其 JS 对应
+- `if __name__ == "__main__":` 区分「直接运行」与「被导入」
+- 包 = 文件夹 + `__init__.py`（入口/收口，≈ index.ts barrel）
+- venv + pip 对应 node_modules + npm，进项目先激活
+
+⚠️ **易混淆**
+- `import utils`（走 sys.path）≠ JS 的 `import './utils'`（相对文件）
+- `from x import *` 不是好习惯，会污染命名空间
+- 相对导入 `from ..utils import x` 不能靠 `python 文件.py` 直接跑，要用 `python -m 包.模块`
+- 模块首次导入即执行并缓存，不是每次 import 都重跑

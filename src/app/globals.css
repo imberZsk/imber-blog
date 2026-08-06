@@ -131,3 +131,113 @@
     scroll-margin-top: 100px;
   } */
 }
+
+@layer components {
+  .knowledge-article {
+    @apply text-[15px] leading-7 text-zinc-800 dark:text-zinc-200;
+  }
+
+  .knowledge-article h1 {
+    @apply mb-6 text-3xl leading-tight font-semibold text-zinc-950 dark:text-white;
+  }
+
+  .knowledge-article h2 {
+    @apply mt-10 mb-4 border-b border-zinc-200 pb-2 text-xl font-semibold text-zinc-950 dark:border-zinc-800 dark:text-white;
+  }
+
+  .knowledge-article h3 {
+    @apply mt-8 mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100;
+  }
+
+  .knowledge-article h4,
+  .knowledge-article h5,
+  .knowledge-article h6 {
+    @apply mt-6 mb-2 font-semibold text-zinc-900 dark:text-zinc-100;
+  }
+
+  .knowledge-article p,
+  .knowledge-article ul,
+  .knowledge-article ol,
+  .knowledge-article blockquote,
+  .knowledge-article pre,
+  .knowledge-article table {
+    @apply my-4;
+  }
+
+  .knowledge-article ul {
+    @apply list-disc pl-6;
+  }
+
+  .knowledge-article ol {
+    @apply list-decimal pl-6;
+  }
+
+  .knowledge-article li {
+    @apply my-1;
+  }
+
+  .knowledge-article a {
+    @apply text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900 dark:text-sky-400 dark:decoration-sky-800 dark:hover:text-sky-300;
+  }
+
+  .knowledge-article blockquote {
+    @apply border-l-4 border-zinc-300 pl-4 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400;
+  }
+
+  .knowledge-article code {
+    @apply rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[0.9em] text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100;
+  }
+
+  .knowledge-article pre {
+    @apply overflow-x-auto border border-zinc-200 bg-zinc-950 p-4 text-sm dark:border-zinc-800;
+  }
+
+  .knowledge-article pre code {
+    @apply bg-transparent p-0 text-zinc-100;
+  }
+
+  .knowledge-article img {
+    @apply my-6 h-auto max-w-full border border-zinc-200 dark:border-zinc-800;
+  }
+
+  .knowledge-article table {
+    @apply block w-full border-collapse overflow-x-auto text-sm;
+  }
+
+  .knowledge-article th,
+  .knowledge-article td {
+    @apply border border-zinc-300 px-3 py-2 text-left align-top dark:border-zinc-700;
+  }
+
+  .knowledge-article th {
+    @apply bg-zinc-100 font-semibold dark:bg-zinc-900;
+  }
+
+  .knowledge-article hr {
+    @apply my-8 border-zinc-200 dark:border-zinc-800;
+  }
+}
+
+/* Markmap 会在运行时注入未分层样式，这里同样保持未分层以确保主题变量能够生效。 */
+.mindmap-canvas.markmap {
+  --markmap-font: 400 15px/21px 'Inter', sans-serif;
+  --markmap-text-color: #27272a;
+  --markmap-a-color: #0369a1;
+  --markmap-a-hover-color: #075985;
+  --markmap-code-bg: #f4f4f5;
+  --markmap-code-color: #27272a;
+  --markmap-highlight-bg: #fef3c7;
+  --markmap-highlight-node-bg: #facc1533;
+  --markmap-circle-open-bg: #ffffff;
+}
+
+.dark .mindmap-canvas.markmap {
+  --markmap-text-color: #f4f4f5;
+  --markmap-a-color: #7dd3fc;
+  --markmap-a-hover-color: #bae6fd;
+  --markmap-code-bg: #27272a;
+  --markmap-code-color: #f4f4f5;
+  --markmap-highlight-bg: #713f12;
+  --markmap-highlight-node-bg: #facc1526;
+  --markmap-circle-open-bg: #18181b;
+}

@@ -17,11 +17,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://imber.netlify.app'),
   title: {
-    default: 'Imber | NodeJS Full Stack Developer',
+    default: 'Imber | AI Application Developer',
     template: '%s | Imber的博客'
   },
-  description: 'Imber的个人博客 - NodeJS全栈开发者，分享前端、后端、全栈开发经验和技术文章',
-  keywords: ['Imber', 'NodeJS', 'Full Stack Developer', '全栈开发', '前端开发', '后端开发', '个人博客', '技术分享'],
+  description: 'Imber的个人博客 - 高级前端背景的AI应用开发工程师，分享全栈开发、AI编程与大模型应用实践',
+  keywords: ['Imber', 'AI应用开发', 'AI编程', 'RAG', 'Agent', '全栈开发', '前端开发', '个人博客', '技术分享'],
   authors: [{ name: 'Imber', url: 'https://imber.netlify.app' }],
   creator: 'Imber',
   publisher: 'Imber',
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     locale: 'zh_CN',
     url: 'https://imber.netlify.app',
     siteName: 'Imber的博客',
-    title: 'Imber | NodeJS Full Stack Developer',
-    description: 'Imber的个人博客 - NodeJS全栈开发者，分享技术文章和开发经验',
+    title: 'Imber | AI Application Developer',
+    description: '高级前端背景的AI应用开发工程师，分享全栈开发、AI编程与大模型应用实践',
     images: [
       {
         url: '/og-image.png',
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Imber | NodeJS Full Stack Developer',
-    description: 'Imber的个人博客 - NodeJS全栈开发者，分享技术文章和开发经验',
+    title: 'Imber | AI Application Developer',
+    description: '高级前端背景的AI应用开发工程师，分享全栈开发、AI编程与大模型应用实践',
     images: ['/og-image.png']
   },
   robots: {

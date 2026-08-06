@@ -5,7 +5,10 @@ import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
-import { navItems } from '@/app/posts/config'
+import { getEnabledNavItems } from '@/config/navigation'
+
+/** 当前启用的移动端导航项。 */
+const navItems = getEnabledNavItems()
 
 const menuVariants: Variants = {
   closed: {
