@@ -32,21 +32,9 @@ export const navigationConfig: NavItem[] = [
     enabled: true
   },
   {
-    path: '/ideas',
-    name: '思考',
-    title: '思考',
-    enabled: false
-  },
-  {
     path: '/gallery',
     name: '画廊',
     title: '画廊',
-    enabled: false
-  },
-  {
-    path: '/todos',
-    name: '清单',
-    title: '清单',
     enabled: false
   },
   {

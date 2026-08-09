@@ -53,8 +53,6 @@ class Http {
 // 创建实例
 export const gitHubService = new Http(process.env.NEXT_PUBLIC_API_BASE_URL)
 
-export const strapiService = new Http('https://grounded-crystal-d6a5ec67a5.strapiapp.com')
-
 // 使用示例:
 /*
 // GET 请求
