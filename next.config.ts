@@ -37,12 +37,6 @@ const nextConfig = {
         hostname: 'raw.githubusercontent.com',
         port: '',
         pathname: '/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'grounded-crystal-d6a5ec67a5.media.strapiapp.com',
-        port: '',
-        pathname: '/**'
       }
     ]
   }

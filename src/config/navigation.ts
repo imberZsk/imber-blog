@@ -32,21 +32,9 @@ export const navigationConfig: NavItem[] = [
     enabled: true
   },
   {
-    path: '/ideas',
-    name: '思考',
-    title: '思考',
-    enabled: false
-  },
-  {
     path: '/gallery',
     name: '画廊',
     title: '画廊',
-    enabled: false
-  },
-  {
-    path: '/todos',
-    name: '清单',
-    title: '清单',
     enabled: false
   },
   {
@@ -78,11 +66,4 @@ export const navigationConfig: NavItem[] = [
 // 获取启用的导航项
 export const getEnabledNavItems = (): NavItem[] => {
   return navigationConfig.filter((item) => item.enabled)
-}
-
-// 导航样式配置
-export const navStyles = {
-  link: 'px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-mint',
-  container: '',
-  list: 'flex items-center gap-5'
 }

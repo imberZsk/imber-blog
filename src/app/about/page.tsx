@@ -66,20 +66,12 @@ const contactLinks = [
 export default function AboutPage() {
   return (
     <main className={cn('mx-auto max-w-5xl px-5 pb-20', PADDING_TOP)}>
-      <section className="border-border grid gap-10 border-b pb-12 md:grid-cols-[128px_minmax(0,1fr)] md:items-start">
-        <Image
-          src="/avatar.jpg"
-          alt="Imber"
-          width={112}
-          height={112}
-          className="border-border aspect-square rounded-lg border object-cover"
-          priority
-        />
-
+      <section className="border-border grid gap-10 border-b pb-14 md:grid-cols-[minmax(0,1fr)_220px] md:items-center md:gap-16">
         <div className="max-w-3xl">
-          <p className="text-mint text-sm">AI 应用开发工程师</p>
-          <h1 className="text-foreground mt-2 text-4xl font-semibold">Imber</h1>
-          <p className="text-foreground mt-6 text-lg leading-8">
+          <p className="text-mint font-mono text-xs font-semibold">PROFILE / AI APPLICATIONS</p>
+          <h1 className="text-foreground mt-4 text-5xl font-semibold">Imber</h1>
+          <p className="text-mint mt-4 text-base font-medium">高级前端背景的 AI 应用开发工程师</p>
+          <p className="text-foreground mt-7 text-lg leading-8">
             我从高级前端开发走向 AI
             应用开发。过去长期处理复杂交互、前端架构和工程质量，现在把这套产品与工程经验延伸到全栈开发、AI
             编程以及大模型应用落地。
@@ -96,12 +88,26 @@ export default function AboutPage() {
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
+
+        <figure className="md:justify-self-end">
+          <Image
+            src="/avatar.jpg"
+            alt="Imber"
+            width={220}
+            height={264}
+            className="border-border aspect-[5/6] w-full max-w-[220px] rounded-md border object-cover"
+            priority
+          />
+          <figcaption className="text-mint mt-3 font-mono text-[11px] font-semibold">
+            PRODUCT / ENGINEERING / AI
+          </figcaption>
+        </figure>
       </section>
 
       <section className="py-12">
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
-            <p className="text-mint text-xs font-semibold uppercase">Focus</p>
+            <p className="text-mint font-mono text-xs font-semibold">FOCUS / 01</p>
             <h2 className="text-foreground mt-2 text-2xl font-semibold">能力主线</h2>
           </div>
           <p className="text-muted-foreground hidden max-w-sm text-right text-sm leading-6 sm:block">
@@ -130,7 +136,7 @@ export default function AboutPage() {
 
       <section className="border-border grid gap-10 border-t py-12 md:grid-cols-[180px_minmax(0,1fr)]">
         <div>
-          <p className="text-mint text-xs font-semibold uppercase">Experience</p>
+          <p className="text-mint font-mono text-xs font-semibold">EXPERIENCE / 02</p>
           <h2 className="text-foreground mt-2 text-2xl font-semibold">技术范围</h2>
         </div>
         <div className="divide-border divide-y">
@@ -145,7 +151,7 @@ export default function AboutPage() {
 
       <section className="border-border grid gap-10 border-t pt-12 md:grid-cols-[180px_minmax(0,1fr)]">
         <div>
-          <p className="text-mint text-xs font-semibold uppercase">Contact</p>
+          <p className="text-mint font-mono text-xs font-semibold">CONTACT / 03</p>
           <h2 className="text-foreground mt-2 text-2xl font-semibold">联系我</h2>
         </div>
         <div className="divide-border border-border divide-y border-y">

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MobileNav } from '@/components/layout'
 import { ModeToggle } from '@/components/common'
-import { getEnabledNavItems, navStyles } from '@/config/navigation'
+import DesktopNav from './desktop-nav'
 
 /** 展示全站固定导航、移动端菜单入口和主题切换。 */
 const Header = () => {
@@ -24,19 +24,7 @@ const Header = () => {
           </div>
 
           {/* 中间导航 - 桌面端显示 */}
-          <nav className="hidden lg:absolute lg:left-1/2 lg:block lg:-translate-x-1/2">
-            <div className={navStyles.container}>
-              <ul className={navStyles.list}>
-                {getEnabledNavItems().map((item) => (
-                  <li key={item.path}>
-                    <Link href={item.path} className={navStyles.link} title={item.title}>
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
+          <DesktopNav />
 
           {/* 右侧用户按钮 */}
           {/* <button className="rounded-full p-2 text-zinc-300 transition-colors hover:bg-white/5 hover:text-zinc-100">
