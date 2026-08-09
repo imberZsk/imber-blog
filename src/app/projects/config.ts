@@ -22,28 +22,10 @@ export const projectsConfig: Project[] = [
     type: 'personal'
   },
   {
-    id: '2',
-    name: 'GSAP & Framer Motion 动画效果',
-    description: 'Framer Motion & GSAP 实现的酷炫动画效果集合',
-    tech: ['Framer Motion', 'GSAP'],
-    link: 'https://imber-animation.netlify.app',
-    image: '/posts/friends/screenshot.png',
-    type: 'personal'
-  },
-  {
-    id: '3',
-    name: '富文本编辑器',
-    description: '基于 tiptap3.x 的现代化富文本编辑器',
-    tech: ['Tiptap', 'Next.js'],
-    link: 'http://imber-editor.netlify.app/simple',
-    image: '/posts/friends/editor.png',
-    type: 'personal'
-  },
-  {
     id: '4',
-    name: '面试题',
+    name: '前端面试',
     description: 'ProcessOn 记录的面试题脑图',
-    tech: ['面试题'],
+    tech: ['前端面试'],
     link: 'https://www.processon.com/mindmap/62ce8cea1efad406ff8300bf',
     image: '/posts/friends/ProcessOn.png',
     type: 'personal'
