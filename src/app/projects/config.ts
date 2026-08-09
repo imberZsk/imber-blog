@@ -14,21 +14,11 @@ export interface Project {
 export const projectsConfig: Project[] = [
   // 个人作品
   {
-    id: 'imber-frontend',
-    name: 'Imber Frontend',
-    description: 'Web 动画、3D 交互与前端工程实践的可运行实验场和知识库',
-    tech: ['GSAP', 'Three.js', 'Next.js'],
-    link: 'https://imber-frontend.netlify.app/',
-    github: 'https://github.com/imberZsk/imber-frontend',
-    image: '/posts/friends/imber-frontend.png',
-    type: 'personal'
-  },
-  {
     id: 'visual-worktree',
     name: 'Visual Worktree',
     description: '以任务为单位管理多个 Git 仓库与 Worktree 的桌面开发工作台',
     tech: ['Electron', 'React', 'Git'],
-    link: 'https://imber-visual-docs.netlify.app/',
+    link: 'https://imber-visual-docs.netlify.app/visual-worktree',
     github: 'https://github.com/imberZsk/visual-worktree',
     releaseUrl: 'https://github.com/imberZsk/visual-worktree/releases/latest',
     image: '/posts/friends/visual-worktree.png',
@@ -76,6 +66,16 @@ export const projectsConfig: Project[] = [
     github: 'https://github.com/imberZsk/visual-muse',
     releaseUrl: 'https://github.com/imberZsk/visual-muse/releases/latest',
     image: '/posts/friends/visual-muse-product.png',
+    type: 'personal'
+  },
+  {
+    id: 'imber-frontend',
+    name: 'Imber Frontend',
+    description: 'Web 动画、3D 交互与前端工程实践的可运行实验场和知识库',
+    tech: ['GSAP', 'Three.js', 'Next.js'],
+    link: 'https://imber-frontend.netlify.app/',
+    github: 'https://github.com/imberZsk/imber-frontend',
+    image: '/posts/friends/imber-frontend.png',
     type: 'personal'
   },
   // 公司项目
