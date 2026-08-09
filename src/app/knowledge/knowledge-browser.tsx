@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search } from 'lucide-react'
+import { ArrowUpRight, Network, Search } from 'lucide-react'
 import type { KnowledgeArticle, KnowledgeArticleKind } from '@/lib/knowledge'
 import { Button, Input } from '@/components/ui'
+import { KNOWLEDGE_TRACKS, type KnowledgeTrackSlug } from './config'
 
 /** 知识库列表每次展示或追加的文章数量。 */
 const ARTICLE_PAGE_SIZE = 80
@@ -23,63 +24,85 @@ const ARTICLE_KIND_LABELS: Record<KnowledgeArticleKind, string> = {
 /** 知识库列表页的可交互参数。 */
 interface KnowledgeBrowserProps {
   articles: KnowledgeArticle[]
-  topics: string[]
+  activeTrack: KnowledgeTrackSlug
 }
 
 /**
  * 提供知识文章的主题筛选、搜索和列表导航。
- * @param props 全部文章元数据和一级主题列表。
+ * @param props 全部文章元数据和当前 URL 选中的学习主线。
  */
-export function KnowledgeBrowser({ articles, topics }: KnowledgeBrowserProps) {
+export function KnowledgeBrowser({ articles, activeTrack }: KnowledgeBrowserProps) {
   /** 用户当前输入的搜索关键词。 */
   const [query, setQuery] = useState('')
-  /** 用户当前选中的一级主题。 */
-  const [activeTopic, setActiveTopic] = useState('全部')
   /** 当前允许展示的最大文章数量。 */
   const [visibleCount, setVisibleCount] = useState(ARTICLE_PAGE_SIZE)
+  /** 当前主线对应的标签和思维导图链接。 */
+  const activeTrackConfig = KNOWLEDGE_TRACKS.find((track) => track.slug === activeTrack) || KNOWLEDGE_TRACKS[0]
   /** 经过主题和关键词过滤后的文章列表。 */
   const filteredArticles = useMemo(() => {
     /** 便于进行不区分大小写匹配的关键词。 */
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN')
 
     return articles.filter((article) => {
-      /** 当前文章是否属于所选主题。 */
-      const matchesTopic = activeTopic === '全部' || article.topic === activeTopic
+      /** 总览文章在每条主线中可见，其余文章按主线归类。 */
+      const matchesTrack = article.track === null || article.track === activeTrack
       /** 当前文章的标题或路径是否命中关键词。 */
       const matchesQuery =
         normalizedQuery.length === 0 ||
         article.title.toLocaleLowerCase('zh-CN').includes(normalizedQuery) ||
         article.displayPath.toLocaleLowerCase('zh-CN').includes(normalizedQuery)
 
-      return matchesTopic && matchesQuery
+      return matchesTrack && matchesQuery
     })
-  }, [activeTopic, articles, query])
+  }, [activeTrack, articles, query])
   /** 当前已进入页面 DOM 的文章列表。 */
   const visibleArticles = filteredArticles.slice(0, visibleCount)
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-        <div className="flex max-w-full gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">
-          {['全部', ...topics].map((topic) => (
-            <Button
-              key={topic}
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setActiveTopic(topic)
-                setVisibleCount(ARTICLE_PAGE_SIZE)
-              }}
-              className={`h-auto shrink-0 justify-start rounded-none border-l-2 px-3 py-2 text-left text-sm transition-colors ${
-                activeTopic === topic
-                  ? 'border-mint bg-accent text-mint font-medium'
-                  : 'text-muted-foreground hover:border-border hover:text-foreground border-transparent'
-              }`}
-            >
-              {topic}
-            </Button>
-          ))}
-        </div>
+        <nav
+          className="flex max-w-full gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible"
+          aria-label="知识主线"
+        >
+          {KNOWLEDGE_TRACKS.map((track, index) => {
+            /** 当前导航项是否与 URL 中选中的主线一致。 */
+            const isActive = track.slug === activeTrack
+            /** 当前主线包含的公开文章数量。 */
+            const articleCount = articles.filter(
+              (article) => article.track === null || article.track === track.slug
+            ).length
+
+            return (
+              <Link
+                key={track.slug}
+                href={`/knowledge?track=${track.slug}`}
+                aria-current={isActive ? 'page' : undefined}
+                className={`group grid min-w-[220px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 border-l-2 px-3 py-3 transition-colors lg:min-w-0 ${
+                  isActive
+                    ? 'border-mint bg-accent text-foreground'
+                    : 'text-muted-foreground hover:border-border hover:bg-accent/50 hover:text-foreground border-transparent'
+                }`}
+              >
+                <span className="text-mint font-mono text-xs font-semibold">{String(index + 1).padStart(2, '0')}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{track.label}</span>
+                  <span className="mt-1 block text-xs leading-5">{track.description}</span>
+                </span>
+                <span className="text-mint font-mono text-[11px]">{articleCount}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <Link
+          href={activeTrackConfig.mindmapHref}
+          className="text-muted-foreground hover:text-mint mt-3 flex items-center gap-2 px-3 text-xs transition-colors"
+        >
+          <Network className="h-3.5 w-3.5" aria-hidden="true" />
+          查看对应思维导图
+          <ArrowUpRight className="ml-auto h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
       </aside>
 
       <section className="min-w-0">
