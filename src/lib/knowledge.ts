@@ -6,6 +6,7 @@ import { extname, join, posix, relative, resolve, sep } from 'node:path'
 import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
 import html from 'remark-html'
+import type { KnowledgeTrackSlug } from '@/app/knowledge/config'
 
 /** 知识文章在列表页和阅读页共用的元数据。 */
 export interface KnowledgeArticle {
@@ -16,6 +17,7 @@ export interface KnowledgeArticle {
   href: string
   title: string
   topic: string
+  track: KnowledgeTrackSlug | null
   kind: KnowledgeArticleKind
   breadcrumbs: string[]
 }
@@ -62,6 +64,17 @@ const SERIES_TOPIC_NAMES = new Set(['AI编程', '前端'])
 
 /** 需要按前两层路径分别排序的课程型板块。 */
 const SERIES_GROUP_NAMES = new Set(['AI编程', '前端', '后端', '测试'])
+
+/** 顶层知识目录与三条公开学习主线的对应关系。 */
+const KNOWLEDGE_TRACK_BY_SECTION: Partial<Record<string, KnowledgeTrackSlug>> = {
+  AI编程: 'ai-coding',
+  Agent: 'ai-apps',
+  企业级知识库项目: 'ai-apps',
+  后端: 'full-stack',
+  前端: 'full-stack',
+  测试: 'full-stack',
+  一人公司: 'ai-apps'
+}
 
 /** 各文章用途在同一课程中的阅读阶段。 */
 const ARTICLE_SEQUENCE_GROUP: Record<KnowledgeArticleKind, number> = {
@@ -211,6 +224,8 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
           : sectionName
   /** 当前文章在学习路径中的用途。 */
   const kind = getArticleKind(sourceArticlePath)
+  /** 当前文章所属的公开学习主线；总览等公共文章不限定主线。 */
+  const track = KNOWLEDGE_TRACK_BY_SECTION[sectionName] || null
 
   return {
     slug,
@@ -220,6 +235,7 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
     href: `/knowledge/${encodePath(articlePath)}`,
     title,
     topic,
+    track,
     kind,
     breadcrumbs: slug.slice(0, -1)
   }
