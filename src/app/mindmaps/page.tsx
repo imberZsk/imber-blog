@@ -18,32 +18,34 @@ export default function MindmapsPage() {
 
   return (
     <main className={cn('mx-auto max-w-5xl px-4 pb-20', PADDING_TOP)}>
-      <header className="mb-10 max-w-2xl border-b border-zinc-200 pb-7 dark:border-zinc-800">
-        <h1 className="text-2xl font-semibold text-zinc-950 dark:text-white">思维导图</h1>
-        <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+      <header className="border-border mb-10 max-w-2xl border-b pb-7">
+        <h1 className="text-foreground text-2xl font-semibold">思维导图</h1>
+        <p className="text-muted-foreground mt-3 text-sm leading-7">
           三张地图记录了从全栈工程、AI 辅助开发到大模型应用落地的完整能力路径。
         </p>
       </header>
 
-      <div className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      <div className="divide-border border-border divide-y border-y">
         {mindmaps.map((mindmap, index) => (
           <Link
             key={mindmap.slug}
             href={mindmap.href}
-            className="group grid gap-4 py-7 transition-colors hover:bg-zinc-50 sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center dark:hover:bg-zinc-900/50"
+            className="hover:bg-accent/50 group grid gap-4 py-7 transition-colors sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center"
           >
-            <div className="flex h-10 w-10 items-center justify-center border border-zinc-200 text-sm font-medium text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+            <div className="border-border text-muted-foreground group-hover:border-mint group-hover:text-mint flex h-10 w-10 items-center justify-center border text-sm font-medium transition-colors">
               {String(index + 1).padStart(2, '0')}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Network className="h-4 w-4 shrink-0 text-zinc-400" />
-                <h2 className="text-lg font-medium text-zinc-950 dark:text-white">{mindmap.title}</h2>
+                <Network className="text-muted-foreground group-hover:text-mint h-4 w-4 shrink-0 transition-colors" />
+                <h2 className="text-foreground text-lg font-medium">{mindmap.title}</h2>
               </div>
-              <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{mindmap.description}</p>
-              <p className="mt-2 text-xs text-zinc-400">{mindmap.nodeCount.toLocaleString('zh-CN')} 个知识节点</p>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">{mindmap.description}</p>
+              <p className="text-muted-foreground mt-2 text-xs">
+                {mindmap.nodeCount.toLocaleString('zh-CN')} 个知识节点
+              </p>
             </div>
-            <ArrowRight className="hidden h-5 w-5 text-zinc-400 transition-transform group-hover:translate-x-1 sm:block" />
+            <ArrowRight className="text-muted-foreground group-hover:text-mint hidden h-5 w-5 transition-all group-hover:translate-x-1 sm:block" />
           </Link>
         ))}
       </div>

@@ -1,69 +1,38 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
+import { Button } from '@/components/ui'
 
+/** 切换博客的浅色和深色显示偏好。 */
 export function ModeToggle() {
+  /** 当前主题及其更新方法。 */
   const { theme, setTheme } = useTheme()
+  /** 客户端已完成挂载，允许读取主题状态。 */
   const [mounted, setMounted] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
 
-  // 避免水合不匹配
+  /** 客户端挂载后再展示主题按钮，避免服务端与客户端主题不一致。 */
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  /** 当前是否使用深色主题。 */
   const isDark = theme === 'dark'
-
-  const handleToggle = useCallback(() => {
-    // 防止快速连击
-    if (isTransitioning) return
-
-    setIsTransitioning(true)
-    setTheme(isDark ? 'light' : 'dark')
-
-    // 重置防抖状态
-    setTimeout(() => {
-      setIsTransitioning(false)
-    }, 300)
-  }, [isDark, setTheme, isTransitioning])
 
   if (!mounted) {
     return null
   }
 
   return (
-    <button
-      className={`relative !box-content flex h-[20px] w-[40px] cursor-pointer rounded-[60px] p-[4px] transition-colors duration-300 ${
-        isDark ? 'justify-end bg-gray-700 shadow-inner' : 'justify-start bg-blue-200 shadow-inner'
-      } ${isTransitioning ? 'pointer-events-none' : ''}`}
-      onClick={handleToggle}
-      disabled={isTransitioning}
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label={`切换到${isDark ? '浅色' : '深色'}模式`}
-      role="switch"
-      aria-checked={isDark}
+      title={`切换到${isDark ? '浅色' : '深色'}模式`}
     >
-      <motion.div
-        className={`flex h-[20px] w-[20px] items-center justify-center rounded-full text-2xl transition-colors duration-300 ${
-          isDark ? 'bg-gray-800 text-yellow-200 shadow-lg' : 'bg-yellow-400 text-orange-600 shadow-lg'
-        }`}
-        // 自动处理布局变化
-        layout
-        transition={{
-          // 指定动画类型为弹簧动画
-          type: 'spring',
-          // 设置动画的视觉感知持续时间为 0.2 秒
-          visualDuration: 0.2,
-          // 控制弹簧的弹跳强度
-          bounce: 0.2
-        }}
-        // 确保这个元素不会阻挡点击事件
-        style={{ pointerEvents: 'none' }}
-      >
-        {isDark ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
-      </motion.div>
-    </button>
+      {isDark ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+    </Button>
   )
 }

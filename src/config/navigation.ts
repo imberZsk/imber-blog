@@ -82,7 +82,7 @@ export const getEnabledNavItems = (): NavItem[] => {
 
 // 导航样式配置
 export const navStyles = {
-  link: 'text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400',
-  container: 'rounded-full bg-zinc-100/80 px-6 py-2 backdrop-blur-md dark:bg-white/5',
-  list: 'flex items-center gap-6 text-sm'
+  link: 'px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-mint',
+  container: '',
+  list: 'flex items-center gap-5'
 }

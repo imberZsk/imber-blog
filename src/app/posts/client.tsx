@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Tag } from 'lucide-react'
+import { BookOpen, Calendar, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
@@ -14,7 +14,9 @@ interface ClientProps {
   categories: string[]
 }
 
+/** 展示可按分类筛选的原创文章列表及空状态。 */
 const Client = ({ posts, categories }: ClientProps) => {
+  /** 当前选中的文章分类，all 表示不限制分类。 */
   const [activeCategory, setActiveCategory] = useState('all')
 
   // 根据选中的分类筛选文章
@@ -76,7 +78,13 @@ const Client = ({ posts, categories }: ClientProps) => {
         ))}
       </div>
 
-      {posts.length === 0 && <p className="py-24 text-center text-sm text-zinc-500">暂时还没有原创文章</p>}
+      {posts.length === 0 && (
+        <div className="border-border flex min-h-64 flex-col items-center justify-center border-b text-center">
+          <BookOpen className="text-muted-foreground mb-4 size-5" aria-hidden="true" />
+          <p className="text-foreground text-sm font-medium">原创文章正在整理</p>
+          <p className="text-muted-foreground mt-1 text-sm">新内容发布后会在这里按时间归档。</p>
+        </div>
+      )}
     </>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Loader2, X, Trash2 } from 'lucide-react'
+import { Send, Loader2, MessageSquare, X, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type Message = {
@@ -167,22 +167,10 @@ export default function ChatBot() {
       {/* 聊天按钮 */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-5 bottom-5 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+        className="bg-primary text-primary-foreground focus:ring-ring fixed right-5 bottom-5 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:-translate-y-0.5 focus:ring-2 focus:ring-offset-2 focus:outline-none"
         aria-label="打开聊天"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
+        <MessageSquare className="size-5" aria-hidden="true" />
 
         {/* 未读消息计数 */}
         {unreadCount > 0 && (
@@ -199,15 +187,15 @@ export default function ChatBot() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed right-5 bottom-20 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl sm:w-96"
+            className="border-border bg-card text-card-foreground fixed right-5 bottom-20 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-lg border shadow-xl sm:w-96"
           >
             {/* 聊天头部 */}
-            <div className="flex items-center justify-between border-b border-gray-200 bg-blue-600 px-4 py-2 text-white">
+            <div className="border-border bg-primary text-primary-foreground flex items-center justify-between border-b px-4 py-2">
               <h3 className="font-medium">AI 知识库</h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={clearChatHistory}
-                  className="rounded p-1 hover:bg-blue-700"
+                  className="hover:bg-primary-foreground/15 rounded p-1"
                   aria-label="清除聊天历史"
                   title="清除聊天历史"
                 >
@@ -215,7 +203,7 @@ export default function ChatBot() {
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="rounded p-1 hover:bg-blue-700"
+                  className="hover:bg-primary-foreground/15 rounded p-1"
                   aria-label="关闭聊天"
                   title="关闭聊天"
                 >
@@ -225,12 +213,14 @@ export default function ChatBot() {
             </div>
 
             {/* 消息区域 */}
-            <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+            <div className="bg-background flex-1 overflow-y-auto p-4">
               {messages.map((message) => (
                 <div key={message.id} className={`mb-3 flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      message.isUser ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 shadow'
+                      message.isUser
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-card-foreground border-border border'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -245,7 +235,7 @@ export default function ChatBot() {
               ))}
               {isLoading && (
                 <div className="mb-3 flex justify-start">
-                  <div className="flex max-w-[80%] items-center rounded-lg bg-white px-4 py-2 text-gray-800 shadow">
+                  <div className="border-border bg-card text-card-foreground flex max-w-[80%] items-center rounded-lg border px-4 py-2">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     <p className="text-sm">思考中...</p>
                   </div>
@@ -255,14 +245,14 @@ export default function ChatBot() {
             </div>
 
             {/* 输入区域 */}
-            <form onSubmit={handleSubmit} className="border-t border-gray-200 bg-white p-2">
+            <form onSubmit={handleSubmit} className="border-border bg-card border-t p-2">
               <div className="flex rounded-md">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="输入您的问题..."
-                  className="flex-1 rounded-l-md border border-r-0 border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-mint focus:ring-mint flex-1 rounded-l-md border border-r-0 px-4 py-2 focus:ring-1 focus:outline-none"
                   disabled={isLoading}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -275,7 +265,7 @@ export default function ChatBot() {
                 />
                 <button
                   type="submit"
-                  className="flex items-center justify-center rounded-r-md border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="border-primary bg-primary text-primary-foreground flex items-center justify-center rounded-r-md border px-4 py-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={isLoading || !input.trim()}
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}

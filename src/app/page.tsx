@@ -1,10 +1,10 @@
-import { Github } from 'lucide-react'
+import { ArrowRight, BookOpen, Github } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Metadata } from 'next'
-// import Aurora from '@/components/Aurora/Aurora'
 import { JuejinSvg } from '@/components/icons'
-import { BlurText } from '@/components/content'
+import { Button } from '@/components/ui'
+import { HomeHero } from './home-hero'
 
 export const metadata: Metadata = {
   title: 'Imber | NodeJS Full Stack Developer',
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
 }
 
 export default function HomePage() {
-  // JSON-LD 结构化数据
+  /** 首页对应的作者结构化数据。 */
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -101,6 +101,7 @@ export default function HomePage() {
     }
   }
 
+  /** 首页对应的网站结构化数据。 */
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -126,93 +127,79 @@ export default function HomePage() {
 
   return (
     <>
-      {/* JSON-LD 结构化数据 */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
 
-      <div className="min-h-screen text-zinc-900 dark:text-zinc-100">
-        <section className="relative h-screen">
-          {/* <Aurora /> */}
-
-          {/* Main Content */}
-          <main className="mx-auto flex min-h-screen max-w-6xl px-4">
-            <div className="flex w-full flex-col items-center justify-center lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-              {/* Text Content */}
-              <div className="mt-20 text-center lg:mt-0 lg:flex-1 lg:text-left">
-                <h1 className="mb-4 text-4xl font-bold">
-                  <BlurText text="Hi, I'm Imber 👋" delay={50} animateBy="chars" ease="none" className="inline-block" />
-                </h1>
-                <div className="mb-8 space-y-2">
-                  <div className="text-xl">
-                    <BlurText delay={50} animateBy="chars" ease="none" className="inline-block">
-                      A NodeJS Full Stack{' '}
-                      <span className="font-mono text-yellow-600 dark:text-yellow-500">&lt;Developer /&gt;</span>
-                    </BlurText>
-                  </div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                    <BlurText
-                      text="An independent developer coding with love"
-                      delay={50}
-                      animateBy="chars"
-                      ease="none"
-                      className="inline-block"
-                    />
-                  </div>
-                </div>
-
-                {/* Social Links */}
-                <div className="flex justify-center gap-2 lg:justify-start">
+      <main className="bg-background text-foreground pt-16">
+        <HomeHero>
+          <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-24 lg:py-16">
+            <div className="max-w-2xl">
+              <div
+                data-hero-accent
+                className="text-mint mb-5 flex origin-left items-center gap-3 text-xs font-semibold"
+              >
+                <span className="bg-mint h-px w-10" aria-hidden="true" />
+                ENGINEERING NOTES / 2026
+              </div>
+              <h1 data-hero-reveal className="text-foreground text-4xl font-semibold sm:text-6xl">
+                Imber 的开发笔记
+              </h1>
+              <p data-hero-reveal className="text-muted-foreground mt-5 max-w-lg text-base leading-7">
+                记录全栈开发、AI 编程与大模型应用实践，把复杂问题沉淀成可复用的工程经验。
+              </p>
+              <div data-hero-reveal className="mt-8 flex flex-wrap gap-3">
+                <Button asChild size="lg">
+                  <Link href="/knowledge">
+                    浏览知识库
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary" size="lg">
+                  <Link href="/posts">
+                    <BookOpen aria-hidden="true" />
+                    阅读文集
+                  </Link>
+                </Button>
+              </div>
+              <div data-hero-reveal className="mt-7 flex items-center gap-2">
+                <Button asChild variant="outline" size="icon">
                   <Link
                     href="https://github.com/imberZsk"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="访问Imber的GitHub主页"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
-                    title="访问Imber的GitHub主页"
+                    aria-label="访问 Imber 的 GitHub 主页"
+                    title="GitHub"
                   >
-                    <Github className="h-5 w-5" />
-                    <span className="hidden text-sm">GitHub</span>
+                    <Github aria-hidden="true" />
                   </Link>
+                </Button>
+                <Button asChild variant="outline" size="icon">
                   <Link
                     href="https://juejin.cn/user/3378167164966920/posts"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="访问Imber的掘金主页"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-zinc-900 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
-                    title="访问Imber的掘金主页"
+                    aria-label="访问 Imber 的掘金主页"
+                    title="掘金"
                   >
-                    <JuejinSvg className="h-5 w-5" />
-                    <span className="hidden text-sm">掘金</span>
+                    <JuejinSvg className="size-4" aria-hidden="true" />
                   </Link>
-                </div>
-              </div>
-
-              {/* Avatar - Moved below text on mobile */}
-              <div className="mt-8 w-48 lg:mt-0 lg:w-72">
-                <Image
-                  src="/avatar.jpg"
-                  alt="Imber的头像 - NodeJS全栈开发者"
-                  width={300}
-                  height={300}
-                  className="rounded-full"
-                  priority
-                />
+                </Button>
               </div>
             </div>
-          </main>
 
-          {/* Footer */}
-          <div className="absolute bottom-0 left-1/2 mx-auto w-full -translate-x-1/2 px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-500">
-            <BlurText
-              text="我既无法了解宇宙，也无法看透未来，一个简单的自我"
-              delay={200}
-              animateBy="words"
-              ease="none"
-              className="inline-block"
-            />
+            <div data-hero-visual className="justify-self-center lg:justify-self-end">
+              <Image
+                src="/avatar.jpg"
+                alt="Imber，AI 应用开发工程师"
+                width={360}
+                height={360}
+                className="border-border aspect-square w-52 rounded-lg border object-cover transition-transform duration-500 ease-out hover:-translate-y-1 sm:w-64 lg:w-80"
+                priority
+              />
+            </div>
           </div>
-        </section>
-      </div>
+        </HomeHero>
+      </main>
     </>
   )
 }

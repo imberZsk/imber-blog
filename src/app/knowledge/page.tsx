@@ -19,9 +19,9 @@ export default function KnowledgePage() {
 
   return (
     <main className={cn('mx-auto max-w-6xl px-4 pb-16', PADDING_TOP)}>
-      <header className="mb-8 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-        <h1 className="text-2xl font-semibold text-zinc-950 dark:text-white">知识库</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      <header className="border-border mb-8 border-b pb-6">
+        <h1 className="text-foreground text-2xl font-semibold">知识库</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
           {articles.length} 篇学习内容，按学习指南、主课、实践和扩展资料依次整理。
         </p>
       </header>

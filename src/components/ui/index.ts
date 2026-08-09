@@ -1,2 +1,5 @@
 export { Button } from './button'
+export { Badge } from './badge'
+export { Card, CardContent } from './card'
+export { Input } from './input'
 export { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown-menu'

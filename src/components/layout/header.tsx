@@ -6,10 +6,11 @@ import { MobileNav } from '@/components/layout'
 import { ModeToggle } from '@/components/common'
 import { getEnabledNavItems, navStyles } from '@/config/navigation'
 
+/** 展示全站固定导航、移动端菜单入口和主题切换。 */
 const Header = () => {
   return (
-    <header className="fixed top-0 z-10 w-full border-b border-zinc-200/50 bg-white/90 backdrop-blur dark:border-zinc-800/50 dark:bg-[#1a1a1a]/90">
-      <div className="mx-auto max-w-6xl px-4 py-4">
+    <header className="border-border bg-background/90 fixed top-0 z-20 w-full border-b backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between">
           {/* 左侧移动端菜单按钮 */}
           <MobileNav />
@@ -18,7 +19,7 @@ const Header = () => {
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:left-0 lg:translate-x-0">
             <Link href="/" className="flex items-center gap-2" title="首页">
               <Image src="/avatar.jpg" alt="Logo" width={32} height={32} priority className="rounded-full" />
-              <span className="hidden text-lg font-semibold sm:block">Imber</span>
+              <span className="hidden text-base font-semibold sm:block">Imber</span>
             </Link>
           </div>
 

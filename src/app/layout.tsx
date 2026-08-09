@@ -93,7 +93,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="" suppressHydrationWarning>
       <body suppressHydrationWarning className="">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <Header />
           {children}
           <ChatBot />
