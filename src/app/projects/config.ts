@@ -5,6 +5,7 @@ export interface Project {
   tech: string[]
   link: string
   github?: string
+  releaseUrl?: string
   image: string
   type: 'personal' | 'company'
 }
@@ -29,6 +30,7 @@ export const projectsConfig: Project[] = [
     tech: ['Electron', 'React', 'Git'],
     link: 'https://imber-visual-docs.netlify.app/',
     github: 'https://github.com/imberZsk/visual-worktree',
+    releaseUrl: 'https://github.com/imberZsk/visual-worktree/releases/latest',
     image: '/posts/friends/visual-worktree.png',
     type: 'personal'
   },
@@ -39,6 +41,7 @@ export const projectsConfig: Project[] = [
     tech: ['Electron', 'React', 'AI Coding'],
     link: 'https://imber-visual-docs.netlify.app/visual-ai-coding/',
     github: 'https://github.com/imberZsk/visual-ai-coding',
+    releaseUrl: 'https://github.com/imberZsk/visual-ai-coding/releases/latest',
     image: '/posts/friends/visual-ai-coding-product.png',
     type: 'personal'
   },
@@ -49,6 +52,7 @@ export const projectsConfig: Project[] = [
     tech: ['Electron', 'React', 'Lark'],
     link: 'https://imber-visual-docs.netlify.app/visual-lark-bridge/',
     github: 'https://github.com/imberZsk/visual-lark-bridge',
+    releaseUrl: 'https://github.com/imberZsk/visual-lark-bridge/releases/latest',
     image: '/posts/friends/visual-lark-bridge-product.png',
     type: 'personal'
   },
@@ -59,6 +63,7 @@ export const projectsConfig: Project[] = [
     tech: ['Electron', 'React', 'Markdown'],
     link: 'https://imber-visual-docs.netlify.app/visual-learn/',
     github: 'https://github.com/imberZsk/visual-learn',
+    releaseUrl: 'https://github.com/imberZsk/visual-learn/releases/latest',
     image: '/posts/friends/visual-learn-product.png',
     type: 'personal'
   },
@@ -69,25 +74,8 @@ export const projectsConfig: Project[] = [
     tech: ['Electron', 'React', 'Markdown'],
     link: 'https://imber-visual-docs.netlify.app/visual-muse/',
     github: 'https://github.com/imberZsk/visual-muse',
+    releaseUrl: 'https://github.com/imberZsk/visual-muse/releases/latest',
     image: '/posts/friends/visual-muse-product.png',
-    type: 'personal'
-  },
-  {
-    id: '1',
-    name: '新写的博客',
-    description: '基于 Next.js 的博客',
-    tech: ['Next.js'],
-    link: 'https://imber.netlify.app',
-    image: '/posts/friends/blog.png',
-    type: 'personal'
-  },
-  {
-    id: '4',
-    name: '前端面试',
-    description: 'ProcessOn 记录的面试题脑图',
-    tech: ['前端面试'],
-    link: 'https://www.processon.com/mindmap/62ce8cea1efad406ff8300bf',
-    image: '/posts/friends/ProcessOn.png',
     type: 'personal'
   },
   // 公司项目

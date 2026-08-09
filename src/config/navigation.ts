@@ -67,10 +67,3 @@ export const navigationConfig: NavItem[] = [
 export const getEnabledNavItems = (): NavItem[] => {
   return navigationConfig.filter((item) => item.enabled)
 }
-
-// 导航样式配置
-export const navStyles = {
-  link: 'px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-mint',
-  container: '',
-  list: 'flex items-center gap-5'
-}

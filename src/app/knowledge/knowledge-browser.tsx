@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { FileText, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import type { KnowledgeArticle, KnowledgeArticleKind } from '@/lib/knowledge'
 import { Button, Input } from '@/components/ui'
 
 /** 知识库列表每次展示或追加的文章数量。 */
 const ARTICLE_PAGE_SIZE = 80
+
+/** 匹配文章标题中不再需要重复展示的数字或中文顺序前缀。 */
+const ARTICLE_TITLE_ORDER_PATTERN = /^(?:\d{1,3}|[一二三四五六七八九十]+)[\s、.．·-]+/
 
 /** 文章用途对应的初学者友好名称。 */
 const ARTICLE_KIND_LABELS: Record<KnowledgeArticleKind, string> = {
@@ -69,7 +72,7 @@ export function KnowledgeBrowser({ articles, topics }: KnowledgeBrowserProps) {
               }}
               className={`h-auto shrink-0 justify-start rounded-none border-l-2 px-3 py-2 text-left text-sm transition-colors ${
                 activeTopic === topic
-                  ? 'border-mint bg-accent text-foreground font-medium'
+                  ? 'border-mint bg-accent text-mint font-medium'
                   : 'text-muted-foreground hover:border-border hover:text-foreground border-transparent'
               }`}
             >
@@ -81,7 +84,7 @@ export function KnowledgeBrowser({ articles, topics }: KnowledgeBrowserProps) {
 
       <section className="min-w-0">
         <div className="mb-5 flex items-center gap-3">
-          <Search className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden="true" />
+          <Search className="text-mint h-4 w-4 shrink-0" aria-hidden="true" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -89,28 +92,35 @@ export function KnowledgeBrowser({ articles, topics }: KnowledgeBrowserProps) {
             aria-label="搜索知识文章"
             className="min-w-0 flex-1"
           />
-          <span className="text-muted-foreground shrink-0 text-xs">{filteredArticles.length} 篇</span>
+          <span className="text-mint shrink-0 font-mono text-xs">{filteredArticles.length} 篇</span>
         </div>
 
         <div className="divide-border divide-y">
-          {visibleArticles.map((article) => (
-            <Link
-              key={article.path}
-              href={article.href}
-              className="hover:bg-accent/50 group flex gap-3 py-4 transition-colors"
-            >
-              <FileText className="text-muted-foreground group-hover:text-mint mt-1 h-4 w-4 shrink-0" />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-foreground text-sm font-medium group-hover:underline">{article.title}</h2>
-                  <span className="border-border text-muted-foreground border px-1.5 py-0.5 text-[11px]">
-                    {ARTICLE_KIND_LABELS[article.kind]}
-                  </span>
+          {visibleArticles.map((article, index) => {
+            /** 当前筛选结果中从 01 开始的统一展示顺序。 */
+            const displayOrder = String(index + 1).padStart(2, '0')
+            /** 去掉来源标题中不统一的顺序前缀后的列表标题。 */
+            const displayTitle = article.title.replace(ARTICLE_TITLE_ORDER_PATTERN, '')
+
+            return (
+              <Link
+                key={article.path}
+                href={article.href}
+                className="hover:bg-accent/50 group flex gap-4 px-3 py-4 transition-colors"
+              >
+                <span className="text-mint mt-0.5 w-7 shrink-0 font-mono text-xs font-semibold">{displayOrder}</span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-foreground text-sm font-medium group-hover:underline">{displayTitle}</h2>
+                    <span className="border-mint/40 text-mint border px-1.5 py-0.5 font-mono text-[11px]">
+                      {ARTICLE_KIND_LABELS[article.kind]}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground mt-1 truncate text-xs">{article.displayPath}</p>
                 </div>
-                <p className="text-muted-foreground mt-1 truncate text-xs">{article.displayPath}</p>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
 
         {filteredArticles.length === 0 && (

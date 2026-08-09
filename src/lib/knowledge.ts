@@ -63,12 +63,12 @@ const SERIES_TOPIC_NAMES = new Set(['AI编程', '前端'])
 /** 需要按前两层路径分别排序的课程型板块。 */
 const SERIES_GROUP_NAMES = new Set(['AI编程', '前端', '后端', '测试'])
 
-/** 各文章用途在同一课程中的阅读顺序。 */
-const ARTICLE_KIND_ORDER: Record<KnowledgeArticleKind, number> = {
+/** 各文章用途在同一课程中的阅读阶段。 */
+const ARTICLE_SEQUENCE_GROUP: Record<KnowledgeArticleKind, number> = {
   guide: 0,
   lesson: 1,
-  practice: 2,
-  reference: 3
+  practice: 1,
+  reference: 2
 }
 
 /** 匹配目录或文件名前用于控制顺序的数字前缀。 */
@@ -249,10 +249,11 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
         return groupComparison
       }
 
-      /** 两篇文章用途的排序结果。 */
-      const kindComparison = ARTICLE_KIND_ORDER[leftArticle.kind] - ARTICLE_KIND_ORDER[rightArticle.kind]
+      /** 两篇文章所属阅读阶段的排序结果。 */
+      const sequenceGroupComparison =
+        ARTICLE_SEQUENCE_GROUP[leftArticle.kind] - ARTICLE_SEQUENCE_GROUP[rightArticle.kind]
 
-      return kindComparison || leftArticle.path.localeCompare(rightArticle.path, 'zh-CN', { numeric: true })
+      return sequenceGroupComparison || leftArticle.path.localeCompare(rightArticle.path, 'zh-CN', { numeric: true })
     })
 }
 
