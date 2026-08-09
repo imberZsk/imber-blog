@@ -1,27 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Tag, Eye } from 'lucide-react'
+import { BookOpen, Calendar, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { PostCategories } from '@/components/content'
 import { getTagColor } from '@/lib/tag-colors'
-
-interface Post {
-  title: string
-  href: string
-  date: string
-  tags: string[]
-  views?: number
-}
+import type { PostSummary } from '@/lib/posts'
 
 interface ClientProps {
-  posts: Post[]
+  posts: PostSummary[]
   categories: string[]
 }
 
+/** 展示可按分类筛选的原创文章列表及空状态。 */
 const Client = ({ posts, categories }: ClientProps) => {
+  /** 当前选中的文章分类，all 表示不限制分类。 */
   const [activeCategory, setActiveCategory] = useState('all')
 
   // 根据选中的分类筛选文章
@@ -34,8 +29,9 @@ const Client = ({ posts, categories }: ClientProps) => {
 
   return (
     <>
-      {/* 分类选择器 */}
-      <PostCategories categories={categories} activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+      {posts.length > 0 && (
+        <PostCategories categories={categories} activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+      )}
 
       {/* 文章列表 */}
       <div className="space-y-4">
@@ -55,10 +51,12 @@ const Client = ({ posts, categories }: ClientProps) => {
               </h2>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-500">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{post.date}</span>
-                </div>
+                {post.date && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{post.date}</span>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Tag className="h-3 w-3" />
@@ -74,16 +72,19 @@ const Client = ({ posts, categories }: ClientProps) => {
                     </span>
                   ))}
                 </div>
-
-                <div className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" />
-                  <span>{post.views}</span>
-                </div>
               </div>
             </Link>
           </motion.div>
         ))}
       </div>
+
+      {posts.length === 0 && (
+        <div className="border-border flex min-h-64 flex-col items-center justify-center border-b text-center">
+          <BookOpen className="text-muted-foreground mb-4 size-5" aria-hidden="true" />
+          <p className="text-foreground text-sm font-medium">原创文章正在整理</p>
+          <p className="text-muted-foreground mt-1 text-sm">新内容发布后会在这里按时间归档。</p>
+        </div>
+      )}
     </>
   )
 }

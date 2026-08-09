@@ -32,6 +32,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-mint: var(--accent-mint);
+  --color-warm: var(--accent-warm);
+  --color-ember: var(--accent-ember);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -48,25 +51,36 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.97 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --color-canvas: #f3f6f4;
+  --color-paper: #ffffff;
+  --color-surface-alt: #e9eeeb;
+  --color-ink: #101211;
+  --color-ink-soft: #18231d;
+  --color-mid-gray: #66716a;
+  --color-hairline: #d4dcd7;
+  --accent-mint: #13795b;
+  --accent-warm: #c85f35;
+  --accent-ember: #e7000b;
+  --font-geist: Geist, Inter, ui-sans-serif, system-ui, sans-serif;
+  --radius: 0.5rem;
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--accent-mint);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-surface-alt);
+  --secondary-foreground: var(--color-ink-soft);
+  --muted: var(--color-surface-alt);
+  --muted-foreground: var(--color-mid-gray);
+  --accent: #e1eee8;
+  --accent-foreground: #115c46;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--color-hairline);
+  --input: var(--color-hairline);
+  --ring: var(--accent-mint);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -83,37 +97,46 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --color-canvas: #101211;
+  --color-paper: #191c1a;
+  --color-surface-alt: #222623;
+  --color-ink: #f4f6f3;
+  --color-ink-soft: #dfe5e0;
+  --color-mid-gray: #aeb6b0;
+  --color-hairline: #343a36;
+  --accent-mint: #71e6bd;
+  --accent-warm: #ff9f76;
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--accent-mint);
+  --primary-foreground: #0d211a;
+  --secondary: var(--color-surface-alt);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-surface-alt);
+  --muted-foreground: var(--color-mid-gray);
+  --accent: #25342d;
+  --accent-foreground: var(--accent-mint);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: var(--color-hairline);
+  --input: var(--color-hairline);
+  --ring: var(--accent-mint);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: var(--color-paper);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--accent-mint);
+  --sidebar-primary-foreground: #0d211a;
+  --sidebar-accent: var(--color-surface-alt);
+  --sidebar-accent-foreground: var(--color-ink);
+  --sidebar-border: var(--color-hairline);
+  --sidebar-ring: var(--accent-mint);
 }
 
 @layer base {
@@ -122,6 +145,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-geist);
   }
 
   /* 标题锚点滚动偏移，考虑固定头部高度 */
@@ -130,4 +154,114 @@
   h3[id] {
     scroll-margin-top: 100px;
   } */
+}
+
+@layer components {
+  .knowledge-article {
+    @apply text-foreground text-[15px] leading-7;
+  }
+
+  .knowledge-article h1 {
+    @apply text-foreground mb-6 text-3xl leading-tight font-semibold;
+  }
+
+  .knowledge-article h2 {
+    @apply border-border text-foreground mt-10 mb-4 border-b pb-2 text-xl font-semibold;
+  }
+
+  .knowledge-article h3 {
+    @apply text-foreground mt-8 mb-3 text-lg font-semibold;
+  }
+
+  .knowledge-article h4,
+  .knowledge-article h5,
+  .knowledge-article h6 {
+    @apply text-foreground mt-6 mb-2 font-semibold;
+  }
+
+  .knowledge-article p,
+  .knowledge-article ul,
+  .knowledge-article ol,
+  .knowledge-article blockquote,
+  .knowledge-article pre,
+  .knowledge-article table {
+    @apply my-4;
+  }
+
+  .knowledge-article ul {
+    @apply list-disc pl-6;
+  }
+
+  .knowledge-article ol {
+    @apply list-decimal pl-6;
+  }
+
+  .knowledge-article li {
+    @apply my-1;
+  }
+
+  .knowledge-article a {
+    @apply text-mint decoration-mint/40 hover:text-warm underline underline-offset-4;
+  }
+
+  .knowledge-article blockquote {
+    @apply border-mint text-muted-foreground border-l-4 pl-4;
+  }
+
+  .knowledge-article code {
+    @apply bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-[0.9em];
+  }
+
+  .knowledge-article pre {
+    @apply border-border bg-card overflow-x-auto border p-4 text-sm;
+  }
+
+  .knowledge-article pre code {
+    @apply bg-transparent p-0 text-zinc-100;
+  }
+
+  .knowledge-article img {
+    @apply border-border my-6 h-auto max-w-full border;
+  }
+
+  .knowledge-article table {
+    @apply block w-full border-collapse overflow-x-auto text-sm;
+  }
+
+  .knowledge-article th,
+  .knowledge-article td {
+    @apply border-border border px-3 py-2 text-left align-top;
+  }
+
+  .knowledge-article th {
+    @apply bg-muted font-semibold;
+  }
+
+  .knowledge-article hr {
+    @apply my-8 border-zinc-200 dark:border-zinc-800;
+  }
+}
+
+/* Markmap 会在运行时注入未分层样式，这里同样保持未分层以确保主题变量能够生效。 */
+.mindmap-canvas.markmap {
+  --markmap-font: 400 15px/21px 'Inter', sans-serif;
+  --markmap-text-color: #27272a;
+  --markmap-a-color: #0369a1;
+  --markmap-a-hover-color: #075985;
+  --markmap-code-bg: #f4f4f5;
+  --markmap-code-color: #27272a;
+  --markmap-highlight-bg: #fef3c7;
+  --markmap-highlight-node-bg: #facc1533;
+  --markmap-circle-open-bg: #ffffff;
+}
+
+.dark .mindmap-canvas.markmap {
+  --markmap-text-color: #f4f4f5;
+  --markmap-a-color: #7dd3fc;
+  --markmap-a-hover-color: #bae6fd;
+  --markmap-code-bg: #27272a;
+  --markmap-code-color: #f4f4f5;
+  --markmap-highlight-bg: #713f12;
+  --markmap-highlight-node-bg: #facc1526;
+  --markmap-circle-open-bg: #18181b;
 }
