@@ -41,15 +41,6 @@ export const projectsConfig: Project[] = [
     type: 'company'
   },
   {
-    id: '6',
-    name: '领克 Z10 官网',
-    description: '领克 Z10 官网，使用了 Next.js、SEO、Amap、响应式、Tailwind CSS、GSAP、Framer Motion',
-    tech: ['Next.js', 'GSAP', 'Framer Motion'],
-    link: 'https://www.xjmzstarauto.com/starbuff',
-    image: '/posts/friends/z10.png',
-    type: 'company'
-  },
-  {
     id: '7',
     name: '魅族社区',
     description: '魅族社区，React、Vite、主题切换、瀑布流、响应式',
