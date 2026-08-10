@@ -99,7 +99,7 @@ export function KnowledgeQuiz({ questions }: KnowledgeQuizProps) {
         <CircleHelp className="text-mint size-4" aria-hidden="true" />
         <h2 id="knowledge-quiz-title">学完自测</h2>
       </div>
-      <p className="knowledge-quiz-intro">用一道核心题确认自己真的理解了这一课。</p>
+      <p className="knowledge-quiz-intro">用一道实践判断题检验对本课知识的理解。</p>
 
       <div className="space-y-8">
         {questions.map((question, questionIndex) => {
