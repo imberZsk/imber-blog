@@ -30,19 +30,20 @@ export interface KnowledgeQuizQuestion {
 /** 匹配适合优先生成题目的总结、学习成果类二级标题。 */
 const SUMMARY_HEADING_PATTERN = /^##\s+.*(?:小结|总结|核心要点|关键要点|本章要点|你将能够|你能做什么).*$/m
 
-/** 匹配 Markdown 中的二级标题。 */
-const SECOND_LEVEL_HEADING_PATTERN = /^##\s+(.+)$/gm
+/** 匹配作者明确写出的学习目标，避免用章节标题冒充知识结论。 */
+const LEARNING_OUTCOME_PATTERN = /^>\s*(?:本章目标|学习目标|学完你能|读完你能|目标)[:：]\s*(.+)$/gm
 
-/** 不适合作为核心知识选项的辅助章节标题。 */
-const AUXILIARY_HEADING_PATTERN = /^(?:小结|总结|继续阅读|延伸阅读|参考资料|适合人群|前置知识|可执行示例)$/
+/** 排除导航、写作说明等不能用于检验理解的陈述。 */
+const NON_ASSESSABLE_STATEMENT_PATTERN = /^(?:下一(?:篇|章)|继续阅读|延伸阅读|参考资料|本文围绕|本章将)/
 
 /** 选择题选项使用的稳定标识。 */
 const QUIZ_OPTION_IDS = ['A', 'B', 'C', 'D'] as const
 
-/** 通用题中用于检验工程判断的错误陈述。 */
-const GENERIC_INCORRECT_OPTIONS = [
-  '只要最终结果看起来正确，就可以省略验证和证据检查。',
-  '所有项目都应使用同一种方案，不需要考虑场景、权限和成本。'
+/** 自动生成题中用于识别常见学习误区的错误陈述模板。 */
+const GENERIC_INCORRECT_OPTION_TEMPLATES = [
+  '学习“{title}”时，只记住术语或 API 名称即可，不必理解适用条件与失败边界。',
+  '使用“{title}”时，只要示例能运行，就无需验证输入、输出和异常路径。',
+  '遇到不同场景时，应直接照搬“{title}”中的示例，不需要结合约束调整方案。'
 ] as const
 
 /** 重点课程人工设计的核心知识题。 */
@@ -181,7 +182,9 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
  */
 function normalizeQuizStatement(markdownLine: string): string {
   return markdownLine
+    .replace(/^\s*>\s*/, '')
     .replace(/^\s*[-*+]\s+/, '')
+    .replace(/^(?:✅\s*该掌握|⚠️?\s*易混淆)\s*/, '')
     .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
     .replace(/[`*_~]/g, '')
     .replace(/[；;]\s*$/, '')
@@ -207,56 +210,107 @@ function extractSummaryStatements(markdown: string): string[] {
     .split('\n')
     .filter((line) => /^\s*[-*+]\s+/.test(line))
     .map(normalizeQuizStatement)
-    .filter((statement) => statement.length >= 8 && statement.length <= 90)
+    .filter(
+      (statement) =>
+        statement.length >= 8 && statement.length <= 140 && !NON_ASSESSABLE_STATEMENT_PATTERN.test(statement)
+    )
 
   return Array.from(new Set(summaryStatements)).slice(0, 2)
 }
 
 /**
- * 从文章二级标题提取核心学习范围。
+ * 从文章开头明确声明的学习目标中提取可检验陈述。
  * @param markdown 当前文章的原始 Markdown。
  */
-function extractCoreHeadings(markdown: string): string[] {
-  /** 当前文章中去重后的有效二级标题。 */
-  const coreHeadings: string[] = []
+function extractLearningOutcomes(markdown: string): string[] {
+  /** 当前文章中去重后的明确学习成果。 */
+  const learningOutcomes: string[] = []
 
-  for (const headingMatch of markdown.matchAll(SECOND_LEVEL_HEADING_PATTERN)) {
-    /** 去除 Markdown 标记后的标题文本。 */
-    const heading = normalizeQuizStatement(headingMatch[1] || '')
-    if (!heading || AUXILIARY_HEADING_PATTERN.test(heading) || coreHeadings.includes(heading)) {
+  for (const outcomeMatch of markdown.matchAll(LEARNING_OUTCOME_PATTERN)) {
+    /** 去除 Markdown 标记后的学习成果文本。 */
+    const learningOutcome = normalizeQuizStatement(outcomeMatch[1] || '')
+    if (
+      learningOutcome.length < 8 ||
+      learningOutcome.length > 180 ||
+      NON_ASSESSABLE_STATEMENT_PATTERN.test(learningOutcome) ||
+      learningOutcomes.includes(learningOutcome)
+    ) {
       continue
     }
 
-    coreHeadings.push(heading)
-    if (coreHeadings.length === 2) {
+    learningOutcomes.push(learningOutcome)
+    if (learningOutcomes.length === 2) {
       break
     }
   }
 
-  return coreHeadings
+  return learningOutcomes
 }
 
 /**
- * 为没有人工题库的文章生成一题基于总结或核心章节的复习题。
+ * 从正文开头提取一条能够表达概念作用或适用场景的陈述作为最后兜底。
+ * @param markdown 当前文章的原始 Markdown。
+ * @param title 已移除模块内课号的文章标题。
+ */
+function extractOpeningStatement(markdown: string, title: string): string {
+  /** 正文开头中可能承载主题定义或用途的自然段。 */
+  const openingStatement = markdown
+    .split('\n')
+    .map(normalizeQuizStatement)
+    .find(
+      (statement) =>
+        statement.length >= 20 &&
+        statement.length <= 140 &&
+        !statement.startsWith('#') &&
+        !statement.startsWith('|') &&
+        !statement.startsWith('![') &&
+        !NON_ASSESSABLE_STATEMENT_PATTERN.test(statement)
+    )
+
+  return openingStatement || `“${title}”需要结合具体目标、约束和验证结果来理解与使用。`
+}
+
+/**
+ * 为没有人工题库的文章生成一题基于知识结论的实践判断题。
  * @param markdown 当前文章的原始 Markdown。
  * @param title 已移除模块内课号的文章标题。
  */
 function createGeneratedQuiz(markdown: string, title: string): KnowledgeQuizQuestion[] {
   /** 优先采用作者写在总结中的核心结论。 */
   const summaryStatements = extractSummaryStatements(markdown)
-  /** 没有结构化总结时使用文章的核心章节标题。 */
-  const coreStatements = summaryStatements.length > 0 ? summaryStatements : extractCoreHeadings(markdown)
-  /** 题目实际使用的一到两个正确陈述。 */
-  const correctStatements = coreStatements.length > 0 ? coreStatements : [`本文围绕“${title}”展开。`]
-  /** 多个核心陈述用多选，否则保持单选。 */
+  /** 没有结构化总结时使用作者明确声明的学习成果。 */
+  const learningOutcomes = summaryStatements.length > 0 ? [] : extractLearningOutcomes(markdown)
+  /** 题目实际检验的一到两个知识结论，禁止使用章节标题作为答案。 */
+  const correctStatements =
+    summaryStatements.length > 0
+      ? summaryStatements
+      : learningOutcomes.length > 0
+        ? learningOutcomes
+        : [extractOpeningStatement(markdown, title)]
+  /** 多个独立知识结论使用多选，否则保持单选。 */
   const questionType: KnowledgeQuizQuestionType = correctStatements.length > 1 ? 'multiple' : 'single'
-  /** 正确陈述与通用错误判断组成的候选答案。 */
-  const optionLabels = [...correctStatements, ...GENERIC_INCORRECT_OPTIONS].slice(0, 4)
-  /** 带稳定标识和正确性的候选答案。 */
-  const options = optionLabels.map((label, index) => ({
+  /** 与当前主题绑定的常见误区，避免出现和文章无关的占位干扰项。 */
+  const incorrectStatements = GENERIC_INCORRECT_OPTION_TEMPLATES.map((optionTemplate) =>
+    optionTemplate.replace('{title}', title)
+  )
+  /** 知识结论与常见误区共同组成四个带判题信息的候选答案。 */
+  const optionCandidates = [
+    ...correctStatements.map((label) => ({ label, isCorrect: true })),
+    ...incorrectStatements.map((label) => ({ label, isCorrect: false }))
+  ].slice(0, 4)
+  /** 使用标题字符得到稳定偏移，避免所有自动题都把正确答案固定放在前面。 */
+  const optionRotationOffset =
+    Array.from(title).reduce((characterSum, character) => characterSum + (character.codePointAt(0) || 0), 0) %
+    optionCandidates.length
+  /** 按稳定偏移重新排列后的候选答案。 */
+  const orderedOptionCandidates = [
+    ...optionCandidates.slice(optionRotationOffset),
+    ...optionCandidates.slice(0, optionRotationOffset)
+  ]
+  /** 带稳定标识和正确性的最终候选答案。 */
+  const options = orderedOptionCandidates.map((optionCandidate, index) => ({
     id: QUIZ_OPTION_IDS[index] || String(index + 1),
-    label,
-    isCorrect: index < correctStatements.length
+    ...optionCandidate
   }))
 
   return [
@@ -265,10 +319,10 @@ function createGeneratedQuiz(markdown: string, title: string): KnowledgeQuizQues
       type: questionType,
       prompt:
         questionType === 'multiple'
-          ? '根据本文，哪些说法属于需要掌握的核心结论？'
-          : '根据本文，哪一项是最需要掌握的核心结论？',
+          ? `在“${title}”的实际应用中，哪些判断符合本课内容？`
+          : `以下关于“${title}”的判断，哪一项正确？`,
       options,
-      explanation: `本文需要优先记住：${correctStatements.join('；')}`
+      explanation: `正确判断是：${correctStatements.join('；')}。其余选项把记忆术语、跑通示例或照搬方案误当成了真正掌握，忽略了适用边界与验证。`
     }
   ]
 }
