@@ -3,7 +3,7 @@
 import { useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 import { getEnabledNavItems } from '@/config/navigation'
 
@@ -27,6 +27,8 @@ const DesktopNav = () => {
   const navigationListRef = useRef<HTMLUListElement>(null)
   /** 唯一的导航高亮背景，只在当前 Header 内水平移动。 */
   const activeBackgroundRef = useRef<HTMLSpanElement>(null)
+  /** 滑动背景是否已经完成首次尺寸和位置测量。 */
+  const [hasPositionedActiveBackground, setHasPositionedActiveBackground] = useState(false)
 
   /** 在路由或导航尺寸变化后同步高亮层的位置。 */
   useLayoutEffect(() => {
@@ -48,6 +50,7 @@ const DesktopNav = () => {
       activeBackgroundElement.style.width = `${activeItemElement.offsetWidth}px`
       activeBackgroundElement.style.transform = `translateX(${activeItemElement.offsetLeft}px)`
       activeBackgroundElement.style.opacity = '1'
+      setHasPositionedActiveBackground(true)
     }
 
     updateActiveBackgroundPosition()
@@ -81,8 +84,10 @@ const DesktopNav = () => {
           <li key={item.path} className="relative">
             <Link
               href={item.path}
-              className={`relative z-10 block px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === item.path ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              className={`relative z-10 block rounded-[4px] px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === item.path
+                  ? `${hasPositionedActiveBackground ? '' : 'bg-primary'} text-primary-foreground`
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               title={item.title}
               aria-current={activePath === item.path ? 'page' : undefined}
