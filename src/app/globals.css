@@ -300,6 +300,94 @@
   }
 }
 
+/* Tailwind 会裁剪分层内不含 @apply 的原生规则，首页动画保持未分层以确保进入生产 CSS。 */
+.home-hero {
+  /* 首页入场动画的三段持续时间。 */
+  --home-hero-accent-duration: 450ms;
+  --home-hero-content-duration: 600ms;
+  --home-hero-visual-duration: 700ms;
+  /* 各层开始时间复刻原 GSAP timeline 的 overlap 与 stagger。 */
+  --home-hero-accent-delay: 0ms;
+  --home-hero-heading-delay: 270ms;
+  --home-hero-description-delay: 360ms;
+  --home-hero-actions-delay: 450ms;
+  --home-hero-links-delay: 540ms;
+  --home-hero-visual-delay: 690ms;
+  /* CSS 仅作为无脚本兜底，曲线近似 GSAP power3.out。 */
+  --home-hero-easing: cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.home-hero [data-hero-accent] {
+  animation: home-hero-accent-in var(--home-hero-accent-duration) var(--home-hero-easing) var(--home-hero-accent-delay)
+    both;
+}
+
+.home-hero [data-hero-reveal='heading'] {
+  animation: home-hero-content-in var(--home-hero-content-duration) var(--home-hero-easing)
+    var(--home-hero-heading-delay) both;
+}
+
+.home-hero [data-hero-reveal='description'] {
+  animation: home-hero-content-in var(--home-hero-content-duration) var(--home-hero-easing)
+    var(--home-hero-description-delay) both;
+}
+
+.home-hero [data-hero-reveal='actions'] {
+  animation: home-hero-content-in var(--home-hero-content-duration) var(--home-hero-easing)
+    var(--home-hero-actions-delay) both;
+}
+
+.home-hero [data-hero-reveal='links'] {
+  animation: home-hero-content-in var(--home-hero-content-duration) var(--home-hero-easing) var(--home-hero-links-delay)
+    both;
+}
+
+.home-hero [data-hero-visual] {
+  animation: home-hero-visual-in var(--home-hero-visual-duration) var(--home-hero-easing) var(--home-hero-visual-delay)
+    both;
+}
+
+@keyframes home-hero-accent-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes home-hero-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes home-hero-visual-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero [data-hero-accent],
+  .home-hero [data-hero-reveal],
+  .home-hero [data-hero-visual] {
+    animation: none;
+  }
+}
+
 /* Markmap 会在运行时注入未分层样式，这里同样保持未分层以确保主题变量能够生效。 */
 .mindmap-canvas.markmap {
   --markmap-font: 400 15px/21px 'Inter', sans-serif;
