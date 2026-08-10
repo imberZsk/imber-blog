@@ -3,13 +3,19 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Network, Search } from 'lucide-react'
-import type { KnowledgeArticle, KnowledgeArticleKind } from '@/lib/knowledge'
+import type { KnowledgeArticleKind, KnowledgeListArticle } from '@/lib/knowledge'
 import { Button, Input } from '@/components/ui'
-import { getKnowledgeArticleAnchor, getKnowledgeListHref, getKnowledgeSubtopicAnchor } from './article-anchor'
-import { KNOWLEDGE_TRACKS, type KnowledgeTrackSlug } from './config'
+import {
+  getKnowledgeArticleAnchor,
+  getKnowledgeListHref,
+  getKnowledgeSubtopicAnchor,
+  getKnowledgeTrackHref
+} from './article-anchor'
+import { isKnowledgeTrackSlug, KNOWLEDGE_TRACKS, type KnowledgeTrackSlug } from './config'
+import type { KnowledgeTrackArticleCounts } from './knowledge-page-view'
 
 /** 知识库列表每次展示或追加的文章数量。 */
-const ARTICLE_PAGE_SIZE = 80
+const ARTICLE_PAGE_SIZE = 40
 
 /** 匹配列表左侧已经单独展示、不应在标题中重复出现的模块内课号。 */
 const ARTICLE_TITLE_ORDER_PATTERN = /^第\s*\d+\s*课(?:实践|扩展)?[：:]\s*/
@@ -32,6 +38,9 @@ const SUBTOPIC_HEADING_SELECTOR = '[data-knowledge-subtopic-heading]'
 /** 知识库地址中记录当前可见模块的查询参数名。 */
 const MODULE_QUERY_PARAM = 'module'
 
+/** 旧版知识库地址中记录学习路线的查询参数名。 */
+const LEGACY_TRACK_QUERY_PARAM = 'track'
+
 /** 文章用途对应的初学者友好名称。 */
 const ARTICLE_KIND_LABELS: Record<KnowledgeArticleKind, string> = {
   guide: '学习指南',
@@ -42,10 +51,9 @@ const ARTICLE_KIND_LABELS: Record<KnowledgeArticleKind, string> = {
 
 /** 知识库列表页的可交互参数。 */
 interface KnowledgeBrowserProps {
-  articles: KnowledgeArticle[]
+  articles: KnowledgeListArticle[]
   activeTrack: KnowledgeTrackSlug
-  activeModule: string | null
-  focusedArticlePath: string | null
+  trackArticleCounts: KnowledgeTrackArticleCounts
 }
 
 /**
@@ -87,7 +95,7 @@ function centerActiveNavigationItem(
  * 提供知识文章的主题筛选、搜索和列表导航。
  * @param props 全部文章元数据以及当前 URL 选中的学习主线和模块。
  */
-export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedArticlePath }: KnowledgeBrowserProps) {
+export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: KnowledgeBrowserProps) {
   /** 三条学习主线所在的可滚动导航容器。 */
   const trackNavigationRef = useRef<HTMLElement>(null)
   /** 当前主线模块所在的可滚动导航容器。 */
@@ -100,22 +108,20 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
   const articleListRef = useRef<HTMLDivElement>(null)
   /** 用户当前输入的搜索关键词。 */
   const [query, setQuery] = useState('')
+  /** 当前 URL 选中且在本路线中有效的一级模块。 */
+  const [activeModule, setActiveModule] = useState<string | null>(null)
+  /** 浏览器地址中的模块和文章定位是否已经完成首次同步。 */
+  const [hasSyncedLocation, setHasSyncedLocation] = useState(false)
   /** 全部模块模式下根据右侧滚动位置识别出的当前模块。 */
   const [visibleModule, setVisibleModule] = useState<string | null>(null)
   /** 根据右侧滚动位置识别出的当前课程或技术细分类。 */
   const [visibleSubtopic, setVisibleSubtopic] = useState<string | null>(null)
-  /** 从浏览器历史记录恢复的文章路径，用于处理 Next 复用旧列表实例的场景。 */
-  const [historyFocusedArticlePath, setHistoryFocusedArticlePath] = useState<string | null>(focusedArticlePath)
-  /** 服务端参数优先，否则使用浏览器历史事件同步出的返回目标。 */
-  const effectiveFocusedArticlePath = focusedArticlePath || historyFocusedArticlePath
+  /** 从浏览器地址恢复的文章路径。 */
+  const [focusedArticlePath, setFocusedArticlePath] = useState<string | null>(null)
   /** 当前筛选范围内用于恢复位置的文章序号。 */
   const focusedArticleIndex = articles
-    .filter(
-      (article) =>
-        (article.track === null || article.track === activeTrack) &&
-        (activeModule === null || article.topic === activeModule)
-    )
-    .findIndex((article) => article.path === effectiveFocusedArticlePath)
+    .filter((article) => activeModule === null || article.topic === activeModule)
+    .findIndex((article) => article.path === focusedArticlePath)
   /** 为确保返回锚点已进入 DOM 而需要预先展示的文章数量。 */
   const initialVisibleCount =
     focusedArticleIndex < 0
@@ -132,13 +138,7 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
     /** 用于累计当前主线各一级模块文章数量的映射。 */
     const moduleCounts = new Map<string, number>()
 
-    articles.forEach((article) => {
-      if (article.track !== null && article.track !== activeTrack) {
-        return
-      }
-
-      moduleCounts.set(article.topic, (moduleCounts.get(article.topic) || 0) + 1)
-    })
+    articles.forEach((article) => moduleCounts.set(article.topic, (moduleCounts.get(article.topic) || 0) + 1))
 
     /** 公共总览内容的文章数量。 */
     const overviewCount = moduleCounts.get(OVERVIEW_MODULE_LABEL) || 0
@@ -168,17 +168,15 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
 
     return articles
       .filter((article) => {
-        /** 总览文章在每条主线中可见，其余文章按主线归类。 */
-        const matchesTrack = article.track === null || article.track === activeTrack
         /** 选中模块后只展示该模块文章，不混入公共总览。 */
         const matchesModule = activeModule === null || article.topic === activeModule
         /** 当前文章的标题或路径是否命中关键词。 */
         const matchesQuery =
           normalizedQuery.length === 0 ||
           article.title.toLocaleLowerCase('zh-CN').includes(normalizedQuery) ||
-          article.displayPath.toLocaleLowerCase('zh-CN').includes(normalizedQuery)
+          article.path.toLocaleLowerCase('zh-CN').includes(normalizedQuery)
 
-        return matchesTrack && matchesModule && matchesQuery
+        return matchesModule && matchesQuery
       })
       .sort((leftArticle, rightArticle) => {
         /** 左侧文章一级模块在实体目录中的位置。 */
@@ -263,28 +261,89 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
     window.history.replaceState(window.history.state, '', returnListHref)
   }
 
+  /**
+   * 在已经加载的路线索引中即时切换模块，并把状态写入浏览器历史。
+   * @param event 当前模块链接的鼠标点击事件。
+   * @param nextModule 用户要查看的模块；空值表示全部模块。
+   */
+  const handleModuleNavigation = (event: MouseEvent<HTMLAnchorElement>, nextModule: string | null) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return
+    }
+
+    event.preventDefault()
+    /** 模块切换后的可分享静态路线地址。 */
+    const nextModuleHref = getKnowledgeListHref({ track: activeTrack, module: nextModule })
+    window.history.pushState(window.history.state, '', nextModuleHref)
+    setActiveModule(nextModule)
+    setFocusedArticlePath(null)
+    setVisibleCount(ARTICLE_PAGE_SIZE)
+
+    /** 模块切换后让文章列表回到固定页头下方。 */
+    const articleListTop = articleListRef.current
+      ? window.scrollY + articleListRef.current.getBoundingClientRect().top - FOCUSED_ARTICLE_SCROLL_OFFSET_PX
+      : 0
+    window.scrollTo({ top: Math.max(0, articleListTop), behavior: 'instant' })
+  }
+
   useEffect(() => {
     centerActiveNavigationItem(trackNavigationRef.current, activeTrackLinkRef.current)
     centerActiveNavigationItem(moduleNavigationRef.current, activeModuleLinkRef.current)
   }, [activeTrack, highlightedModule])
 
   useEffect(() => {
-    /** 从当前地址栏同步浏览器返回时保存的文章路径。 */
-    const syncHistoryFocusedArticlePath = () => {
-      /** 当前知识库地址中持久化的文章定位参数。 */
-      const currentFocusedArticlePath = new URL(window.location.href).searchParams.get('focus')
-      setHistoryFocusedArticlePath(currentFocusedArticlePath)
+    /** 从当前地址栏同步模块和浏览器返回时保存的文章路径。 */
+    const syncKnowledgeLocation = () => {
+      /** 当前浏览器中的知识库地址。 */
+      const knowledgeUrl = new URL(window.location.href)
+      /** 旧版查询参数中携带的学习路线。 */
+      const legacyTrack = knowledgeUrl.searchParams.get(LEGACY_TRACK_QUERY_PARAM)
+
+      if (isKnowledgeTrackSlug(legacyTrack)) {
+        knowledgeUrl.searchParams.delete(LEGACY_TRACK_QUERY_PARAM)
+        /** 旧版链接需要迁移到的静态路线地址。 */
+        const migratedTrackHref = `${getKnowledgeTrackHref(legacyTrack)}${knowledgeUrl.search}${knowledgeUrl.hash}`
+
+        // 兼容已分享的旧链接：跨路线必须加载对应静态索引，同路线只清理旧 track 参数。
+        if (legacyTrack !== activeTrack) {
+          window.location.replace(migratedTrackHref)
+          return
+        }
+
+        window.history.replaceState(window.history.state, '', migratedTrackHref)
+      }
+
+      /** 当前地址中请求的模块。 */
+      const requestedModule = knowledgeUrl.searchParams.get(MODULE_QUERY_PARAM)
+      /** 仅允许使用当前静态索引中真实存在的模块。 */
+      const currentModule =
+        requestedModule && articles.some((article) => article.topic === requestedModule) ? requestedModule : null
+      /** 当前地址中请求恢复位置的文章路径。 */
+      const requestedFocusedArticlePath = knowledgeUrl.searchParams.get('focus')
+      /** 仅接受当前模块筛选范围内真实存在的文章定位。 */
+      const currentFocusedArticlePath =
+        requestedFocusedArticlePath &&
+        articles.some(
+          (article) =>
+            article.path === requestedFocusedArticlePath && (currentModule === null || article.topic === currentModule)
+        )
+          ? requestedFocusedArticlePath
+          : null
+
+      setActiveModule(currentModule)
+      setFocusedArticlePath(currentFocusedArticlePath)
+      setHasSyncedLocation(true)
     }
 
-    syncHistoryFocusedArticlePath()
-    window.addEventListener('popstate', syncHistoryFocusedArticlePath)
-    window.addEventListener('pageshow', syncHistoryFocusedArticlePath)
+    syncKnowledgeLocation()
+    window.addEventListener('popstate', syncKnowledgeLocation)
+    window.addEventListener('pageshow', syncKnowledgeLocation)
 
     return () => {
-      window.removeEventListener('popstate', syncHistoryFocusedArticlePath)
-      window.removeEventListener('pageshow', syncHistoryFocusedArticlePath)
+      window.removeEventListener('popstate', syncKnowledgeLocation)
+      window.removeEventListener('pageshow', syncKnowledgeLocation)
     }
-  }, [])
+  }, [activeTrack, articles])
 
   useEffect(() => {
     if (focusedArticleIndex < 0) {
@@ -298,14 +357,14 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
   }, [focusedArticleIndex])
 
   useEffect(() => {
-    if (!effectiveFocusedArticlePath || focusedArticleIndex < 0 || focusedArticleIndex >= visibleCount) {
+    if (!focusedArticlePath || focusedArticleIndex < 0 || focusedArticleIndex >= visibleCount) {
       return
     }
 
     /** 等待分页扩容渲染完成后执行定位的动画帧。 */
     const animationFrameId = window.requestAnimationFrame(() => {
       /** 返回后需要重新定位并高亮的文章元素。 */
-      const focusedArticleElement = document.getElementById(getKnowledgeArticleAnchor(effectiveFocusedArticlePath))
+      const focusedArticleElement = document.getElementById(getKnowledgeArticleAnchor(focusedArticlePath))
       if (!focusedArticleElement) {
         return
       }
@@ -317,9 +376,13 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
     })
 
     return () => window.cancelAnimationFrame(animationFrameId)
-  }, [effectiveFocusedArticlePath, focusedArticleIndex, visibleCount])
+  }, [focusedArticlePath, focusedArticleIndex, visibleCount])
 
   useEffect(() => {
+    if (!hasSyncedLocation) {
+      return
+    }
+
     /** 当前等待执行的滚动同步帧，用于合并连续滚动事件。 */
     let animationFrameId: number | null = null
 
@@ -402,7 +465,7 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
         window.cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [activeModule, activeTrack, query, visibleCount])
+  }, [activeModule, activeTrack, hasSyncedLocation, query, visibleCount])
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_168px]">
@@ -416,15 +479,13 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
             /** 当前导航项是否与 URL 中选中的主线一致。 */
             const isActive = track.slug === activeTrack
             /** 当前主线包含的公开文章数量。 */
-            const articleCount = articles.filter(
-              (article) => article.track === null || article.track === track.slug
-            ).length
+            const articleCount = trackArticleCounts[track.slug]
 
             return (
               <Link
                 key={track.slug}
                 ref={isActive ? activeTrackLinkRef : undefined}
-                href={`/knowledge?track=${track.slug}`}
+                href={getKnowledgeTrackHref(track.slug)}
                 aria-current={isActive ? 'page' : undefined}
                 className={`group grid min-w-[220px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 border-l-2 px-3 py-3 transition-colors lg:min-w-0 ${
                   isActive
@@ -452,7 +513,8 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
           >
             <Link
               ref={highlightedModule === null ? activeModuleLinkRef : undefined}
-              href={`/knowledge?track=${activeTrack}`}
+              href={getKnowledgeListHref({ track: activeTrack })}
+              onClick={(event) => handleModuleNavigation(event, null)}
               aria-current={highlightedModule === null ? 'page' : undefined}
               className={`grid min-w-[164px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 text-xs transition-colors lg:min-w-0 ${
                 highlightedModule === null
@@ -462,9 +524,7 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
             >
               <span className="text-mint font-mono text-[11px] font-semibold">ALL</span>
               <span>全部模块</span>
-              <span className="text-mint font-mono text-[11px]">
-                {moduleOptions.reduce((totalCount, moduleOption) => totalCount + moduleOption.count, 0)}
-              </span>
+              <span className="text-mint font-mono text-[11px]">{articles.length}</span>
             </Link>
 
             {numberedModuleOptions.map((moduleOption, index) => {
@@ -475,7 +535,8 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
                 <Link
                   key={moduleOption.label}
                   ref={isActive ? activeModuleLinkRef : undefined}
-                  href={{ pathname: '/knowledge', query: { track: activeTrack, module: moduleOption.label } }}
+                  href={getKnowledgeListHref({ track: activeTrack, module: moduleOption.label })}
+                  onClick={(event) => handleModuleNavigation(event, moduleOption.label)}
                   aria-current={isActive ? 'page' : undefined}
                   className={`grid min-w-[164px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 text-xs transition-colors lg:min-w-0 ${
                     isActive
@@ -576,6 +637,7 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
                 <Link
                   id={getKnowledgeArticleAnchor(article.path)}
                   href={article.href}
+                  prefetch={false}
                   data-article-path={article.path}
                   onClick={handleArticleNavigation}
                   className="border-border hover:bg-accent/50 target:bg-accent/50 group flex scroll-mt-24 gap-4 border-b px-3 py-4 transition-colors"
@@ -588,7 +650,7 @@ export function KnowledgeBrowser({ articles, activeTrack, activeModule, focusedA
                         {ARTICLE_KIND_LABELS[article.kind]}
                       </span>
                     </div>
-                    <p className="text-muted-foreground mt-1 truncate text-xs">{article.displayPath}</p>
+                    <p className="text-muted-foreground mt-1 truncate text-xs">{article.path}</p>
                   </div>
                 </Link>
               </Fragment>
