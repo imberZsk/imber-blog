@@ -27,6 +27,12 @@ export interface KnowledgeArticle {
   breadcrumbs: string[]
 }
 
+/** 知识库列表页实际需要下发给浏览器的轻量文章元数据。 */
+export type KnowledgeListArticle = Pick<
+  KnowledgeArticle,
+  'path' | 'href' | 'title' | 'sequence' | 'topic' | 'subtopic' | 'kind'
+>
+
 /** 知识文章在学习路径中的用途。 */
 export type KnowledgeArticleKind = 'guide' | 'lesson' | 'practice' | 'reference'
 

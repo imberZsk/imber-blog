@@ -66,6 +66,6 @@ export const DEFAULT_KNOWLEDGE_TRACK: KnowledgeTrackSlug = KNOWLEDGE_TRACKS[0].s
  * 判断 URL 参数是否为已发布的知识主线。
  * @param value 待校验的 track 查询参数。
  */
-export function isKnowledgeTrackSlug(value: string | undefined): value is KnowledgeTrackSlug {
+export function isKnowledgeTrackSlug(value: string | null | undefined): value is KnowledgeTrackSlug {
   return KNOWLEDGE_TRACKS.some((track) => track.slug === value)
 }
