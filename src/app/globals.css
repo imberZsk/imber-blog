@@ -220,6 +220,18 @@
     @apply bg-transparent p-0 text-zinc-100;
   }
 
+  .knowledge-code-block {
+    @apply relative my-4;
+  }
+
+  .knowledge-code-block pre {
+    @apply my-0 pt-12;
+  }
+
+  .knowledge-code-block-actions {
+    @apply absolute top-2 right-2 z-10;
+  }
+
   .knowledge-article img {
     @apply border-border my-6 h-auto max-w-full border;
   }
@@ -239,6 +251,52 @@
 
   .knowledge-article hr {
     @apply my-8 border-zinc-200 dark:border-zinc-800;
+  }
+
+  .knowledge-quiz {
+    @apply border-border mt-14 border-t pt-8;
+  }
+
+  .knowledge-quiz h2 {
+    @apply m-0 border-0 p-0 text-lg font-semibold;
+  }
+
+  .knowledge-quiz-intro {
+    @apply text-muted-foreground mt-2 mb-6 text-sm;
+  }
+
+  .knowledge-article-navigation {
+    @apply border-border mt-12 grid grid-cols-1 gap-px border-t sm:grid-cols-2;
+  }
+
+  .knowledge-article-navigation-link {
+    @apply hover:bg-muted/60 flex min-w-0 flex-col gap-2 px-3 py-5 transition-colors sm:pr-6;
+  }
+
+  .knowledge-article-navigation-link-next {
+    @apply sm:border-border pr-16 sm:border-l sm:pr-3 sm:pl-6 sm:text-right;
+  }
+
+  .knowledge-article .knowledge-article-navigation-link,
+  .knowledge-article .knowledge-article-navigation-link:hover {
+    text-decoration: none;
+  }
+
+  .knowledge-article-navigation-label {
+    @apply text-mint flex items-center gap-1.5 font-mono text-[11px] font-semibold;
+  }
+
+  .knowledge-article-navigation-link-next .knowledge-article-navigation-label {
+    @apply sm:justify-end;
+  }
+
+  .knowledge-article-navigation-label svg {
+    @apply size-3.5;
+  }
+
+  .knowledge-article-navigation-title {
+    @apply text-foreground line-clamp-2 text-sm leading-5 font-medium break-words;
+    overflow-wrap: anywhere;
   }
 }
 
