@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
-    "@commitlint/config-conventional": "^19.8.0",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/lodash.throttle": "^4.1.9",
