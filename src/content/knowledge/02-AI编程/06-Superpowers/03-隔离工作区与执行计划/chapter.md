@@ -1,8 +1,8 @@
-# Using Git Worktrees 与 Executing Plans：隔离改动并分批执行
+# Superpowers（3）- Using Git Worktrees 与 Executing Plans：隔离改动并分批执行
 
 工作树解决“多个任务互相污染”，执行计划解决“长任务做着做着偏航”。两者结合后，每个任务有独立目录，每批实现结束都有验证和复盘点。
 
-## 创建独立工作树
+# 一、创建独立工作树
 
 下面命令会从当前仓库创建一个独立分支和目录，不影响正在进行的其他任务：
 
@@ -18,7 +18,7 @@ git status --short
 
 创建后先安装依赖并运行基线测试。基线本来就失败时，应记录失败并确认是否与任务有关，不能把它悄悄算成本次回归。
 
-## 分批执行计划
+# 二、分批执行计划
 
 `executing-plans` 不是把计划一次性跑到底，而是：
 
@@ -29,13 +29,25 @@ git status --short
 
 批次的价值在于尽早发现方向错误。三个任务一批通常比二十个任务全部做完再回看更容易纠正。
 
-## 安全边界
+# 三、安全边界
 
 - 不在源目录直接开发。
 - 不复用已有脏工作树承载无关任务。
 - 删除工作树前先确认分支已合并、远程已推送、目录没有未提交文件。
 
-## 官方资料
+# 四、官方资料
 
 - [using-git-worktrees](https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees)
 - [executing-plans](https://github.com/obra/superpowers/tree/main/skills/executing-plans)
+
+# 五、总结
+
+- **安全边界**：不复用已有脏工作树承载无关任务。
+- **创建独立工作树**：下面命令会从当前仓库创建一个独立分支和目录，不影响正在进行的其他任务：
+- **分批执行计划**：executing-plans 不是把计划一次性跑到底，而是：
+- **官方资料**：using-git-worktrees
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“Superpowers（3）- Using Git Worktrees 与 Executing Plans：隔离改动并分批执行”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

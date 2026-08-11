@@ -30,3 +30,8 @@ javac -encoding UTF-8 HelloWorld.java && java HelloWorld
 | 执行者 | V8 引擎 | JVM 虚拟机 |
 
 > 为什么多一步：Java 是「编译型 + 虚拟机」语言，javac 把代码变成 JVM 能懂的字节码，再由 JVM 跨平台执行 —— 这就是「一次编译，到处运行」。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“疑问记录”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

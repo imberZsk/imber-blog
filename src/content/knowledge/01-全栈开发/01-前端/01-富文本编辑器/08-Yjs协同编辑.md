@@ -1,16 +1,16 @@
 # TipTap 编辑器（8）- Yjs 协同编辑
 
-## 前言
+# 一、前言
 
 在多人协作的编辑场景中，如何保证文档的一致性是一个复杂的技术问题。当多个用户同时编辑同一个文档时，需要解决冲突、保持同步，并确保最终结果的一致性。目前主要有两种算法来解决这个问题：**OT（Operational Transformation）** 和 **CRDT（Conflict-free Replicated Data Types）**。
 
-## OT 算法
+# 二、OT 算法
 
-### 什么是 OT 算法
+## 2.1 什么是 OT 算法
 
 OT（Operational Transformation）是一种用于协同编辑的算法，它通过转换操作来解决冲突，确保所有用户看到相同的最终结果。
 
-### 工作原理
+## 2.2 工作原理
 
 假设我们有一个文档，内容是 `"abc"`，两个用户同时编辑：
 
@@ -24,7 +24,7 @@ OT（Operational Transformation）是一种用于协同编辑的算法，它通�
 - 用户 A 看到：`"axbc"`
 - 用户 B 看到：`"abyc"`
 
-### OT 算法解决冲突
+## 2.3 OT 算法解决冲突
 
 OT 算法的核心思想是**转换操作**，让操作能够适应其他用户的操作：
 
@@ -36,7 +36,7 @@ OT 算法的核心思想是**转换操作**，让操作能够适应其他用户�
 
 **最终结果：** 两个用户都看到 `"axbyc"`
 
-### OT 算法的特点
+## 2.4 OT 算法的特点
 
 - ✅ **实时性好**：操作立即生效
 - ✅ **冲突解决**：通过转换操作解决冲突
@@ -45,13 +45,13 @@ OT 算法的核心思想是**转换操作**，让操作能够适应其他用户�
 
 可视化的展示 OT 算法的执行和流转过程 [https://operational-transformation.github.io/index.html](https://operational-transformation.github.io/index.html)
 
-## CRDT 算法
+# 三、CRDT 算法
 
-### 什么是 CRDT 算法
+## 3.1 什么是 CRDT 算法
 
 CRDT（Conflict-free Replicated Data Types）是一种无冲突的复制数据类型，它通过设计数据结构本身来避免冲突，而不需要转换操作。
 
-### 工作原理
+## 3.2 工作原理
 
 同样以文档 `"abc"` 为例，两个用户同时编辑：
 
@@ -60,7 +60,7 @@ CRDT（Conflict-free Replicated Data Types）是一种无冲突的复制数据�
 **用户 A 的操作：** 在位置 1 插入 `"x"`
 **用户 B 的操作：** 在位置 2 插入 `"y"`
 
-### CRDT 算法解决冲突
+## 3.3 CRDT 算法解决冲突
 
 CRDT 通过给每个字符分配唯一标识符来避免冲突。下面是简单方便理解的例子，具体 CRDT 更复杂：
 
@@ -90,7 +90,7 @@ CRDT 通过给每个字符分配唯一标识符来避免冲突。下面是简单
 
 **最终结果：** `"axbyc"`
 
-### CRDT 算法的特点
+## 3.4 CRDT 算法的特点
 
 - ✅ **去中心化**：不需要中央服务器
 - ✅ **简单可靠**：算法相对简单，不容易出错
@@ -98,13 +98,13 @@ CRDT 通过给每个字符分配唯一标识符来避免冲突。下面是简单
 - ❌ **存储开销**：需要存储额外的元数据
 - ❌ **延迟较高**：需要等待所有操作到达
 
-## Yjs 中的实现
+# 四、Yjs 中的实现
 
-### Yjs 简介
+## 4.1 Yjs 简介
 
 [Yjs](https://docs.yjs.dev/) 是一个基于 CRDT 的协同编辑库
 
-### 在 TipTap 中集成 Yjs
+## 4.2 在 TipTap 中集成 Yjs
 
 Yjs 点过来跳转到了Tiptap，也就是这里： [https://tiptap.dev/docs/collaboration/getting-started/install](https://tiptap.dev/docs/collaboration/getting-started/install)
 
@@ -176,7 +176,7 @@ export default function Page() {
 }
 ```
 
-### 实时同步流程
+## 4.3 实时同步流程
 
 1. **用户输入** → TipTap 编辑器
 2. **生成操作** → Yjs 处理
@@ -184,9 +184,9 @@ export default function Page() {
 4. **接收操作** → 其他客户端
 5. **应用操作** → 更新编辑器
 
-## 总结
+# 五、总结
 
-### OT vs CRDT 对比
+## 5.1 OT vs CRDT 对比
 
 | 特性     | OT 算法 | CRDT 算法 |
 | -------- | ------- | --------- |
@@ -196,9 +196,14 @@ export default function Page() {
 | 实现难度 | 难      | 中等      |
 | 存储开销 | 低      | 高        |
 
-### 选择建议
+## 5.2 选择建议
 
 - **OT 算法**：适合对实时性要求极高的场景
 - **CRDT 算法**：适合需要去中心化、简单可靠的场景
 
 Yjs 选择了 CRDT 算法，因为它更简单、更可靠，适合大多数协同编辑场景。在 TipTap 中集成 Yjs 可以轻松实现多人实时协作编辑功能。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“TipTap 编辑器（8）- Yjs 协同编辑”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

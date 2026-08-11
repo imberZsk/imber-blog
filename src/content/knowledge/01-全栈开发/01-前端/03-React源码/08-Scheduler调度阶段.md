@@ -2,7 +2,7 @@
 
 `/packages/scheduler/src/forks/Scheduler.js`
 
-## 两个队列，两个最小堆
+# 一、两个队列，两个最小堆
 
 `unstable_scheduleCallback` 是调度的逻辑，里面有两个队列
 
@@ -10,7 +10,7 @@
 
 - timerQueue (定时器队列): 存放未到期的延迟任务。这也是一个最小堆（Min-Heap），但它是根据任务的 startTime（计划开始时间）进行排序。堆顶是即将到期的任务。
 
-## 优雅降级请求浏览器每一帧空闲时间
+# 二、优雅降级请求浏览器每一帧空闲时间
 
 /packages/scheduler/src/forks/Scheduler.js
 
@@ -18,7 +18,7 @@
 
 ![](/posts/react-source/scheduler.png)
 
-## workLoop
+# 三、workLoop
 
 这是 scheduler 核心逻辑，从 flushWork->workLoop
 
@@ -55,7 +55,7 @@ function workLoop() {
 }
 ```
 
-## 核心流程
+# 四、核心流程
 
 只关注异步流程，因为异步可打断更新逻辑更复杂核心
 
@@ -82,3 +82,15 @@ function workLoop(hasTimeRemaining, initialTime) {
   }
 }
 ```
+
+# 五、总结
+
+- **核心流程**：只关注异步流程，因为异步可打断更新逻辑更复杂核心
+- **两个队列，两个最小堆**：unstablescheduleCallback 是调度的逻辑，里面有两个队列
+- **优雅降级请求浏览器每一帧空闲时间**：/packages/scheduler/src/forks/Scheduler.js
+- **workLoop**：这是 scheduler 核心逻辑，从 flushWork->workLoop
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（8）- Scheduler 调度阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

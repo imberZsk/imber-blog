@@ -1,0 +1,109 @@
+# 工程基础（39）- 模型部署与本地调用
+
+> 读完你能：讲清「云端 API / 自部署 / 本地模型」三种用法的取舍，理解「OpenAI 兼容接口」为什么让你能一行不改地切换模型，并跑通一个自己写的 OpenAI 兼容 mock 模型服务。
+
+# 一、与进阶篇的分工
+
+本篇保留为本地模型调用和部署入门。进阶模型原理与生命周期请读 89《图解 Transformer 架构》和 90《大模型训练、推理全流程详细图解》，它们会解释 token、attention、训练、微调和推理优化的边界。
+
+# 二、一个真实场景
+
+你的 AI 应用一直调 OpenAI。某天合规同学说："客户数据不能出公司，模型得部署在我们自己服务器上。"
+
+你慌了一下：是不是要把所有调模型的代码重写一遍？打开代码一看——只要把 `base_url` 从 OpenAI 改成自部署服务的地址，`api_key` 换一下，**其余一行不用动**。因为你自部署用的 vLLM 暴露的也是「OpenAI 兼容接口」。
+
+这就是这一篇的核心：**模型在哪、是谁的，对客户端代码是透明的，只要大家都遵守 OpenAI 那套接口约定。** 搞懂这一点，模型部署的选型就清晰了。
+
+# 三、三种用法的取舍
+
+| 方式 | 怎么用 | 适合 | 代价 |
+|---|---|---|---|
+| 云端 API | 直接调 OpenAI/通义/智谱 | 快速起步、不想管运维 | 数据出公司、按量付费、有网络依赖 |
+| 自部署 | vLLM/TGI 把开源模型部署到自己服务器 | 数据合规、量大省成本、要定制 | 要 GPU、要运维、要会调优 |
+| 本地模型 | Ollama/LMStudio 在本机跑小模型 | 开发调试、离线、隐私 | 受本机算力限制，大模型跑不动 |
+
+选型主线很清楚：**起步和验证用云端 API，数据合规或量大了转自部署，本地开发和离线场景用 Ollama。** 而它们能平滑切换的前提，是下面这个接口约定。
+
+# 四、OpenAI 兼容接口：业界的通用插座
+
+「OpenAI 兼容」指一个模型服务暴露的接口，长得和 OpenAI 的 `POST /v1/chat/completions` 一模一样——请求体、响应体结构都对齐。
+
+请求体长这样（关键是 `messages` 多轮对话数组）：
+
+```json
+{
+  "model": "任意模型名",
+  "messages": [{"role": "user", "content": "你好"}]
+}
+```
+
+响应体长这样（关键是 `choices[0].message.content` 和 `usage`）：
+
+```json
+{
+  "choices": [{"message": {"role": "assistant", "content": "你好，我是..."}}],
+  "usage": {"prompt_tokens": 2, "completion_tokens": 32, "total_tokens": 34}
+}
+```
+
+只要服务端按这个结构来，客户端就能用同一套解析代码。Ollama、vLLM、智谱、通义、DeepSeek 全都提供 OpenAI 兼容接口，正是为了让你无痛切换。它像电源的标准插座：插头一样，背后是火电还是水电不影响你用。
+
+# 五、客户端代码：换 base_url 就够了
+
+通用客户端的核心就是构造标准请求、解析标准响应：
+
+```python
+def chat(message, model="mock-model"):
+    """OpenAI 兼容调用，对 mock/OpenAI/Ollama 通用，只需换 BASE_URL。"""
+    req_body = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": message}],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{BASE_URL}/v1/chat/completions",
+        data=req_body,
+        headers={"Content-Type": "application/json", "Authorization": "Bearer fake-key"},
+    )
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    # 按 OpenAI 响应结构解析
+    return {"answer": data["choices"][0]["message"]["content"], "usage": data["usage"]}
+```
+
+切换模型只改 `BASE_URL`：
+
+```
+本地 mock   → http://localhost:8039
+Ollama      → http://localhost:11434/v1
+真实 OpenAI → https://api.openai.com/v1  + 真实 key
+vLLM 自部署 → http://你的服务器:8000/v1
+```
+
+`chat` 函数对这四种全通用。这就是接口标准化的威力。
+
+# 七、工程上真正会踩的坑
+
+- **以为切模型要改一堆代码**。只要都走 OpenAI 兼容接口，改 `base_url` 和 key 就行。要是发现切个模型要大改，说明客户端代码没抽象好。
+- **本地模型当生产用**。Ollama 在笔记本上跑 7B 模型做开发很爽，但并发能力、响应速度撑不住生产流量。本地模型主要用于开发、调试、离线。
+- **自部署忽略显存和并发**。vLLM 部署不是起个服务就完事，模型多大、显存够不够、并发量多少、要不要量化，每个都影响能不能扛住。
+- **token 用量不监控**。OpenAI 响应里的 `usage` 是成本的直接来源，不记录就不知道钱花哪了。每次调用都该把 `usage` 落日志（这是下一篇和第 41 篇的事）。
+
+# 八、一句话面试答法
+
+> **模型部署你怎么选，切换模型成本高吗？** 起步和快速验证用云端 API；数据不能出公司或调用量大了，用 vLLM 自部署开源模型；本地开发和离线场景用 Ollama。它们之间切换成本很低，因为大家都提供「OpenAI 兼容接口」——请求和响应结构都对齐 `/v1/chat/completions`，我的客户端代码只要换 base_url 和 key，逻辑一行不改。所以我写调用代码时会把 base_url 做成配置，方便随时切。
+
+# 九、下一篇
+
+`40-AI应用日志与可观测性.md` —— 模型调用跑起来了，但线上出问题怎么排查？哪次请求慢、花了多少 token、检索命中没有？下一篇做结构化日志，把每次请求的关键信息记下来，让线上问题可追溯。
+
+# 十、总结
+
+- **工程上真正会踩的坑**：以为切模型要改一堆代码。
+- **三种用法的取舍**：选型主线很清楚：起步和验证用云端 API，数据合规或量大了转自部署，本地开发和离线场景用 Ollama。
+- **OpenAI 兼容接口：业界的通用插座**：「OpenAI 兼容」指一个模型服务暴露的接口，长得和 OpenAI 的 POST /v1/chat/completions 一模一样——请求体、响应体结构都对齐。
+- **客户端代码：换 base_url 就够了**：通用客户端的核心就是构造标准请求、解析标准响应：
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“Agent 工程（39）- 模型部署与本地调用”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -28,52 +28,52 @@ python/
 ├── 学习路线和目录.md                  # 本文件：学习路线总览
 │
 ├── # 阶段一：环境与语法速成（前端视角）
-├── 01-Python环境配置.md               # Python、pip、venv、IDE（对比 node/npm）
-├── 02-第一个Python程序.md             # HelloWorld、运行方式、缩进即代码块
-├── 03-Python与JavaScript对比.md       # 语法对照表（变量/函数/类型）
-├── 04-数据类型与变量.md               # int/str/list/dict/tuple/set（对比 JS）
-├── 05-控制流与函数.md                 # if/for/while、def、默认参数、*args/**kwargs
+├── 02-Python环境配置.md               # Python、pip、venv、IDE（对比 node/npm）
+├── 03-第一个Python程序.md             # HelloWorld、运行方式、缩进即代码块
+├── 04-Python与JavaScript对比.md       # 语法对照表（变量/函数/类型）
+├── 05-数据类型与变量.md               # int/str/list/dict/tuple/set（对比 JS）
+├── 06-控制流与函数.md                 # if/for/while、def、默认参数、*args/**kwargs
 │
 ├── # 阶段二：Python 进阶特性
-├── 06-列表推导式与生成器.md           # 比 map/filter 更优雅的写法
-├── 07-面向对象.md                     # class、self、继承、魔术方法
-├── 08-模块与包管理.md                 # import、__init__、pip、requirements
-├── 09-异常处理与上下文管理.md         # try/except、with 语句
-├── 10-装饰器与高阶函数.md             # 装饰器 ≈ 高阶组件/中间件
-├── 11-类型注解.md                     # type hint（像 TS 的渐进类型）
-├── 12-虚拟环境与依赖管理.md           # venv/poetry/uv（对比 node_modules）
+├── 07-列表推导式与生成器.md           # 比 map/filter 更优雅的写法
+├── 08-面向对象.md                     # class、self、继承、魔术方法
+├── 09-模块与包管理.md                 # import、__init__、pip、requirements
+├── 10-异常处理与上下文管理.md         # try/except、with 语句
+├── 11-装饰器与高阶函数.md             # 装饰器 ≈ 高阶组件/中间件
+├── 12-类型注解.md                     # type hint（像 TS 的渐进类型）
+├── 13-虚拟环境与依赖管理.md           # venv/poetry/uv（对比 node_modules）
 │
 ├── # 阶段三：Web 后端（FastAPI 为主）
-├── 13-Web后端概览.md                  # WSGI/ASGI、框架选型（Flask/Django/FastAPI）
-├── 14-FastAPI入门.md                  # 路由、请求响应（对比 Express）
-├── 15-请求参数与数据校验.md           # Pydantic 模型（像 zod/TS interface）
-├── 16-数据库操作.md                   # SQLAlchemy ORM、增删改查
-├── 17-异步与并发.md                   # async/await（语法像 JS，机制不同）
-├── 18-中间件与依赖注入.md             # Depends、认证、CORS
+├── 14-Web后端概览.md                  # WSGI/ASGI、框架选型（Flask/Django/FastAPI）
+├── 15-FastAPI入门.md                  # 路由、请求响应（对比 Express）
+├── 16-请求参数与数据校验.md           # Pydantic 模型（像 zod/TS interface）
+├── 17-数据库操作.md                   # SQLAlchemy ORM、增删改查
+├── 18-异步与并发.md                   # async/await（语法像 JS，机制不同）
+├── 19-中间件与依赖注入.md             # Depends、认证、CORS
 │
 ├── # 阶段四：数据处理
-├── 19-文件与IO操作.md                 # 读写文件、JSON、CSV
-├── 20-NumPy基础.md                    # 数组运算（科学计算地基）
-├── 21-Pandas数据分析.md               # DataFrame（像加强版 Excel/SQL）
-├── 22-数据可视化.md                   # matplotlib 画图入门
+├── 20-文件与IO操作.md                 # 读写文件、JSON、CSV
+├── 21-NumPy基础.md                    # 数组运算（科学计算地基）
+├── 22-Pandas数据分析.md               # DataFrame（像加强版 Excel/SQL）
+├── 23-数据可视化.md                   # matplotlib 画图入门
 │
 ├── # 阶段五：AI 编程（重点方向）
-├── 23-调用大模型API.md                # OpenAI/Claude SDK、流式输出
-├── 24-Prompt工程基础.md               # 提示词、结构化输出、函数调用
-├── 25-向量与Embedding.md              # 文本向量化、相似度检索
-├── 26-RAG入门.md                      # 检索增强生成、向量库
-├── 27-Agent与工具调用.md              # ReAct、tool use、多步推理
+├── 24-调用大模型API.md                # OpenAI/Claude SDK、流式输出
+├── 25-Prompt工程基础.md               # 提示词、结构化输出、函数调用
+├── 26-向量与Embedding.md              # 文本向量化、相似度检索
+├── 27-RAG入门.md                      # 检索增强生成、向量库
+├── 28-Agent与工具调用.md              # ReAct、tool use、多步推理
 │
 ├── # 阶段六：自动化与爬虫
-├── 28-爬虫入门.md                     # requests + BeautifulSoup
-├── 29-自动化脚本.md                   # 文件批处理、定时任务
+├── 29-爬虫入门.md                     # requests + BeautifulSoup
+├── 30-自动化脚本.md                   # 文件批处理、定时任务
 │
 ├── # 阶段七：工程化与实战
-├── 30-项目结构与规范.md               # 目录组织、配置管理、日志
-├── 31-测试.md                         # pytest 单元测试
-├── 32-打包与部署.md                   # Docker、环境变量
-├── 33-实战-AI生成一个接口demo.md      # 需求→FastAPI接口→数据库→联调
-├── 34-实战-AI生成一个数据脚本.md      # 抓数据→清洗→分析→出图
+├── 31-项目结构与规范.md               # 目录组织、配置管理、日志
+├── 32-测试.md                         # pytest 单元测试
+├── 33-打包与部署.md                   # Docker、环境变量
+├── 34-实战-AI生成一个接口demo.md      # 需求→FastAPI接口→数据库→联调
+├── 35-实战-AI生成一个数据脚本.md      # 抓数据→清洗→分析→出图
 │
 └── # 附录
     ├── 附录-Python陷阱对照.md         # 易踩坑点（可变默认参数、闭包等）
@@ -106,3 +106,8 @@ python/
 - 真实代码：让 AI 按章节主题生成 demo，对照阅读
 - 官方文档：[docs.python.org](https://docs.python.org/zh-cn/3/)、[FastAPI](https://fastapi.tiangolo.com/zh/)
 - 对照 Java 学习：`temp/learn/java学习/学习路线和目录.md`
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“Python 学习路线”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

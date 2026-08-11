@@ -1,0 +1,18 @@
+# Demo 06 · 权限模式与 Plan Mode 演练
+
+本 Demo 给你一组**场景卡片**和一段适合用 Plan Mode 演练的「迁移需求」，帮你练习「按风险选模式」和「先规划后执行」。
+
+## 文件说明
+
+- `场景选模式.md`：给定若干任务，练习该用哪种权限模式。
+- `plan-mode演练.md`：一个适合 Plan Mode 的复杂需求脚本，照着和 Claude 对话。
+
+## 怎么用
+
+1. 打开 `场景选模式.md`，对每个场景先自己判断该用哪种模式，再看答案。
+2. 打开 `plan-mode演练.md`，进入 Plan Mode（只读），照脚本和 Claude 反复打磨方案——全程它不会改任何文件。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“Demo 06 · 权限模式与 Plan Mode 演练”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

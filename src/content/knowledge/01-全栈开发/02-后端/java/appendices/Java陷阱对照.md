@@ -313,3 +313,8 @@ Java 的坑和 JS 有部分对应（引用比较、浅拷贝、浮点误差）�
 - 数组/List 越界抛异常，不像 JS 返回 `undefined`
 
 相关篇目：`equals`/`hashCode` 与类详见第 05 篇；集合与泛型详见第 06 篇；异常处理详见第 07 篇；String↔基本类型对照详见 A3 速查表。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：思维导图（Mindmap）
+> DIAGRAM_DESCRIPTION：中心节点为“A1 - 附录-Java陷阱对照”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

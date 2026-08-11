@@ -67,3 +67,8 @@ npm run report
 - **公共前置步骤**：`test.describe` + `test.beforeEach` 复用「访问演示页」
 - **跨浏览器**：`playwright.config.ts` 中配置 chromium / firefox / webkit 三个 project，一套代码自动多引擎运行
 - **失败可诊断**：配置了失败截图、录屏与首次重试 Trace
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“01 - Playwright 快速入门 Demo”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

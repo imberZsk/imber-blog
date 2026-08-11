@@ -1,9 +1,9 @@
-# Subagent Driven Development：把独立任务交给独立上下文
+# Superpowers（5）- Subagent Driven Development：把独立任务交给独立上下文
 
 `subagent-driven-development`
 适合已经有明确计划、任务之间大体独立的实现。每个任务使用新的子代理上下文，完成后再经过规格审查和代码质量审查，避免一个长会话积累错误假设。
 
-## 标准循环
+# 一、标准循环
 
 1. 主代理读取完整计划，提取任务和上下文。
 2. 为一个任务派发实现代理。
@@ -12,7 +12,7 @@
 5. 代码质量审查代理检查缺陷、可维护性和测试。
 6. 问题修正并复审通过后，再进入下一任务。
 
-## 何时可以并行
+# 二、何时可以并行
 
 `dispatching-parallel-agents`
 只适合互不依赖的调查或改动，例如分别分析三个独立测试失败。以下情况不要并行：
@@ -22,7 +22,7 @@
 - 根因未知，多个失败可能来自同一问题。
 - 需要共享浏览器、数据库或其他有状态资源。
 
-## 可直接使用的派发模板
+# 三、可直接使用的派发模板
 
 ```text
 任务：只实现计划中的“收藏状态解析”。
@@ -33,7 +33,19 @@
 
 并行的目标不是让更多代理同时写代码，而是缩短真正独立工作的等待时间。
 
-## 官方资料
+# 四、官方资料
 
 - [subagent-driven-development](https://github.com/obra/superpowers/tree/main/skills/subagent-driven-development)
 - [dispatching-parallel-agents](https://github.com/obra/superpowers/tree/main/skills/dispatching-parallel-agents)
+
+# 五、总结
+
+- **标准循环**：主代理读取完整计划，提取任务和上下文。
+- **何时可以并行**：dispatching-parallel-agents
+- **可直接使用的派发模板**：并行的目标不是让更多代理同时写代码，而是缩短真正独立工作的等待时间。
+- **官方资料**：subagent-driven-development
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“Superpowers（5）- Subagent Driven Development：把独立任务交给独立上下文”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

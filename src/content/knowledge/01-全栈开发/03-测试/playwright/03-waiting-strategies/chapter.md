@@ -1,12 +1,12 @@
-# 等待策略完全指南:告别 waitForTimeout
+# Playwright（3）- 等待策略完全指南:告别 waitForTimeout
 
-## 适合人群
+# 一、适合人群
 
 - 写过 Playwright 测试但经常遇到时序问题的开发者
 - 测试用例中充斥着 `waitForTimeout(1000)` 代码的工程师
 - 想要提升测试稳定性和执行速度的自动化测试新手
 
-## 前置知识
+# 二、前置知识
 
 在阅读本文前,你需要了解:
 
@@ -14,9 +14,9 @@
 - JavaScript/TypeScript 基础语法
 - 异步编程概念(`async/await`)
 
-## 为什么不用 waitForTimeout
+# 三、为什么不用 waitForTimeout
 
-### 问题根源
+## 3.1 问题根源
 
 很多测试新手会这样写代码:
 
@@ -34,7 +34,7 @@ await expect(page.locator('.success-message')).toBeVisible();
 3. **拖慢测试**:每个 `waitForTimeout` 都是纯等待,无法提前完成
 4. **难以维护**:时间常量分散在各处,调整困难
 
-### 真实案例
+## 3.2 真实案例
 
 在我们的项目中,有个测试用例选择"运单"下拉后需要等待"车牌"字段被自动填充:
 
@@ -50,9 +50,9 @@ await selectDropdown({ page, dataPath: 'tr_id', keyword: '川A12345' });
 - 如果在联动完成前操作 `tr_id`,会触发搜索时组件状态不稳定,返回"无相关数据"
 - 需要重试多次才能成功,大幅增加测试耗时
 
-## Playwright 自动等待机制
+# 四、Playwright 自动等待机制
 
-### 内置智能等待
+## 4.1 内置智能等待
 
 Playwright 的大部分操作都内置了自动等待:
 
@@ -70,7 +70,7 @@ await expect(page.locator('.message')).toBeVisible(); // 等待元素可见
 - **enabled**: 元素未禁用(不是 `disabled`)
 - **editable**: 输入框可编辑(针对 `fill` 操作)
 
-### 默认超时时间
+## 4.2 默认超时时间
 
 ```typescript
 // 单个操作超时(见下方说明,@playwright/test 中默认不单独限制)
@@ -87,9 +87,9 @@ await expect(page.locator('.message')).toBeVisible({ timeout: 10000 });
 
 下面 `playwright.config.ts` 示例里写的 `actionTimeout: 30_000` 是「主动设置」的值,不是框架默认。如果你不配置它,测试运行器是不会给单个动作加 30 秒上限的。
 
-## 三种核心等待策略
+# 五、三种核心等待策略
 
-### 1. waitForSelector: 等待元素出现
+## 5.1 waitForSelector: 等待元素出现
 
 **使用场景**: 等待某个元素出现在 DOM 中
 
@@ -160,7 +160,7 @@ const optionCount = await waitForDropdownReady(page);
 console.log(`下拉菜单出现,共 ${optionCount} 个选项`);
 ```
 
-### 2. waitForFunction: 等待自定义条件
+## 5.2 waitForFunction: 等待自定义条件
 
 **使用场景**: 等待复杂的业务状态,如字段有值、数据加载完成、状态变更
 
@@ -219,7 +219,7 @@ await page.waitForFunction(
 );
 ```
 
-### 3. waitForResponse: 等待 API 响应
+## 5.3 waitForResponse: 等待 API 响应
 
 **使用场景**: 等待特定的网络请求完成
 
@@ -269,9 +269,9 @@ expect(data.batch_id).toBeTruthy();
 await page.goto(`/batch/detail?id=${data.batch_id}`);
 ```
 
-## 联动字段等待模式(waitForField 实战)
+# 六、联动字段等待模式(waitForField 实战)
 
-### 问题场景
+## 6.1 问题场景
 
 在表单中,选择某个字段后,系统会自动填充其他关联字段:
 
@@ -281,7 +281,7 @@ await page.goto(`/batch/detail?id=${data.batch_id}`);
 
 如果在联动完成前操作目标字段,会导致组件状态不稳定。
 
-### 解决方案
+## 6.2 解决方案
 
 封装 `waitForField` 参数,在选择后自动等待关联字段被填充:
 
@@ -347,7 +347,7 @@ async function selectDropdown(config: DropdownConfig): Promise<void> {
 }
 ```
 
-### 使用示例
+## 6.3 使用示例
 
 ```typescript
 // ✅ 选择运单后等待车牌被自动填充
@@ -374,7 +374,7 @@ await selectDropdown({
 });
 ```
 
-### 效果对比
+## 6.4 效果对比
 
 **改进前**:
 ```typescript
@@ -396,9 +396,9 @@ await selectDropdown({ page, dataPath: 'tr_id', keyword: '川A12345' });
 // 结果:第1次就成功,测试时间从 8秒 降到 2秒
 ```
 
-## React 组件联动时序问题解决
+# 七、React 组件联动时序问题解决
 
-### 问题根源
+## 7.1 问题根源
 
 React 组件的联动逻辑是异步的:
 
@@ -410,7 +410,7 @@ React 组件的联动逻辑是异步的:
 
 整个过程可能需要 100ms - 2000ms(取决于网络和服务器响应)。
 
-### 完整解决方案
+## 7.2 完整解决方案
 
 结合 `waitForFunction` 和重试机制:
 
@@ -480,16 +480,16 @@ async function selectDropdown(config: DropdownConfig): Promise<void> {
 }
 ```
 
-### 关键要点
+## 7.3 关键要点
 
 1. **`waitForFunction` 治本**: 等待真实条件,而非固定时间
 2. **重试机制兜底**: 处理偶发的组件状态不稳定
 3. **保留短暂 `waitForTimeout`**: 仅用于等待 UI 微任务(100ms 以内),不是等待业务状态
 4. **失败必须显式**: 超时抛出明确错误,包含字段名、关键词等调试信息
 
-## 智能重试与超时配置
+# 八、智能重试与超时配置
 
-### 自定义超时
+## 8.1 自定义超时
 
 ```typescript
 // ✅ 针对慢接口增加超时
@@ -505,7 +505,7 @@ await page.waitForSelector('.tooltip', {
 });
 ```
 
-### 全局超时配置
+## 8.2 全局超时配置
 
 在 `playwright.config.ts` 中配置:
 
@@ -527,7 +527,7 @@ export default defineConfig({
 });
 ```
 
-### 优雅的错误处理
+## 8.3 优雅的错误处理
 
 ```typescript
 // ✅ 捕获超时,给出友好提示
@@ -552,7 +552,7 @@ try {
 }
 ```
 
-### 条件重试模式
+## 8.4 条件重试模式
 
 ```typescript
 /**
@@ -595,7 +595,7 @@ await retryUntilSuccess(
 );
 ```
 
-## 完整 Demo 示例
+# 九、完整 Demo 示例
 
 下面是一个完整的表单填写测试用例,演示了所有等待策略的组合使用:
 
@@ -729,9 +729,9 @@ test('完整表单提交流程', async ({ page }) => {
 });
 ```
 
-## 小结
+# 十、总结
 
-### 核心原则
+## 10.1 核心原则
 
 1. **优先使用 Playwright 自动等待**: `click`、`fill`、`expect` 等操作已内置智能等待
 2. **禁止固定等待**: 避免 `waitForTimeout`,改用条件等待
@@ -739,7 +739,7 @@ test('完整表单提交流程', async ({ page }) => {
 4. **组合多种策略**: `waitForSelector` + `waitForFunction` + `waitForResponse` 组合使用
 5. **失败必须明确**: 超时时给出清晰的错误信息,包含当前状态
 
-### 方法选择指南
+## 10.2 方法选择指南
 
 | 场景 | 推荐方法 | 示例 |
 |------|----------|------|
@@ -750,7 +750,7 @@ test('完整表单提交流程', async ({ page }) => {
 | 等待状态变更 | `waitForFunction` | 等待按钮变为可用 |
 | 等待 UI 微任务 | `waitForTimeout(100)` | React 状态更新后的短暂等待 |
 
-### 常见陷阱
+## 10.3 常见陷阱
 
 1. **过度使用 `waitForTimeout`**: 除非等待 UI 微任务(100ms 以内),否则都应该用条件等待
 2. **忘记传递参数给 `waitForFunction`**: 回调函数在浏览器上下文执行,需要通过参数传值
@@ -758,10 +758,22 @@ test('完整表单提交流程', async ({ page }) => {
 4. **不处理超时错误**: 应该捕获超时异常,读取当前状态,给出诊断信息
 5. **忽略组件状态不稳定**: React 组件联动时需要重试机制兜底
 
-## 延伸阅读
+# 十一、延伸阅读
 
 - [Playwright 官方文档 - Auto-waiting](https://playwright.dev/docs/actionability)
 - [Playwright 官方文档 - Assertions](https://playwright.dev/docs/test-assertions)
 - [Playwright 官方文档 - Network](https://playwright.dev/docs/network)
 - [测试稳定性最佳实践](https://playwright.dev/docs/best-practices)
 - [如何调试 Playwright 测试](https://playwright.dev/docs/debug)
+
+# 十二、总结
+
+- **三种核心等待策略**：使用场景: 等待某个元素出现在 DOM 中
+- **为什么不用 waitForTimeout**：时间难以控制:网络快时浪费1.5秒,网络慢时仍会失败
+- **React 组件联动时序问题解决**：React 组件的联动逻辑是异步的:
+- **适合人群**：写过 Playwright 测试但经常遇到时序问题的开发者
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“Playwright（3）- 等待策略完全指南:告别 waitForTimeout”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

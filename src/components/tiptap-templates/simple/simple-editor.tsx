@@ -13,6 +13,7 @@ import { Subscript } from '@tiptap/extension-subscript' // 下标功能
 import { Superscript } from '@tiptap/extension-superscript' // 上标功能
 import { Selection } from '@tiptap/extensions' // 选择功能增强
 import { CodeBlock } from '@/components/tiptap-node/code-block'
+import { CodeSandboxNode } from '@/components/tiptap-node/code-sandbox-node'
 
 // --- Tiptap 节点组件 ---
 import { ImageUploadNode } from '@/components/tiptap-node/image-upload-node/image-upload-node-extension' // 图片上传节点
@@ -103,6 +104,7 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
       }),
       SlashCommand,
       CodeBlock,
+      CodeSandboxNode,
       Callout,
       Columns,
       Column

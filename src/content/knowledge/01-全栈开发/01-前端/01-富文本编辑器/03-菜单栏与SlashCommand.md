@@ -1,14 +1,14 @@
-# TipTap 编辑器（3）-菜单栏和 slash command
+# TipTap 编辑器（3）- 菜单栏和 slash command
 
-## 前言
+# 一、前言
 
 TipTap 编辑器 Notion 风格的时候，需要选中文本提供菜单栏，而不是固定在页面，是动态的，然后支持输入 / 唤醒垂直菜单栏，这些都是 simple tiptap 没有的，需要自己实现。
 
 基于 simple tiptap 的时候，可以把固定的菜单栏引入 [@tiptap/extension-bubble-menu](https://tiptap.dev/docs/editor/extensions/functionality/bubble-menu#element) 扩展里。
 
-## 基础 Demo
+# 二、基础 Demo
 
-### 抽离组件
+## 2.1 抽离组件
 
 ```tsx
 'use client'
@@ -41,7 +41,7 @@ const TiptapEditor = () => {
 export default TiptapEditor
 ```
 
-### 基础按钮组件
+## 2.2 基础按钮组件
 
 ```tsx
 interface MenuButtonProps {
@@ -66,7 +66,7 @@ const MenuButton = ({ onClick, isActive = false, disabled = false, children, tit
 }
 ```
 
-### 菜单栏组件
+## 2.3 菜单栏组件
 
 ```tsx
 const MenuBar = ({ editor }: { editor: Editor }) => {
@@ -116,7 +116,7 @@ const MenuBar = ({ editor }: { editor: Editor }) => {
 }
 ```
 
-## 基于 simple tiptap
+# 三、基于 simple tiptap
 
 ```tsx
 import React from 'react'
@@ -247,7 +247,7 @@ const TextMenu: React.FC<TextMenuProps> = ({
 export default TextMenu
 ```
 
-## slash command
+# 四、slash command
 
 参考官网的 Demo，基于 @tiptap/suggestion 实现，功能复杂，addProseMirrorPlugins 添加原生的插件
 
@@ -613,3 +613,13 @@ export const SlashCommand = Extension.create({
 export default SlashCommand
 
 ```
+
+# 五、总结
+
+- **slash command**：参考官网的 Demo，基于 @tiptap/suggestion 实现，功能复杂，addProseMirrorPlugins 添加原生的插件
+- **前言**：TipTap 编辑器 Notion 风格的时候，需要选中文本提供菜单栏，而不是固定在页面，是动态的，然后支持输入 / 唤醒垂直菜单栏，这些都是 simple tiptap 没有的，需要自己实现。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“TipTap 编辑器（3）- 菜单栏和 slash command”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

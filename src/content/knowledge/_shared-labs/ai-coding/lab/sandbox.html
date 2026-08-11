@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 编程在线实验</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0f1211; color: #e7ece9; font-size: 13px; letter-spacing: 0; }
+    button, select, input { font: inherit; }
+    .shell { min-height: 100vh; padding: 16px; }
+    .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .eyebrow { color: #68e0b5; font: 700 11px/1.4 ui-monospace, monospace; }
+    h1 { margin: 4px 0 0; font-size: 17px; line-height: 1.35; }
+    .summary { margin: 5px 0 0; max-width: 720px; color: #a5afa9; line-height: 1.5; }
+    .run { min-width: 92px; border: 1px solid #68e0b5; border-radius: 6px; background: #68e0b5; color: #07110d; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.8fr); gap: 12px; }
+    .panel { border: 1px solid #29322e; border-radius: 6px; background: #141817; padding: 12px; min-width: 0; }
+    .panel-title { margin: 0 0 10px; color: #cbd3cf; font-size: 12px; font-weight: 700; }
+    .control { display: grid; gap: 5px; margin-bottom: 10px; }
+    .control:last-child { margin-bottom: 0; }
+    .control-head { display: flex; justify-content: space-between; gap: 8px; color: #aeb8b2; }
+    .control-value { color: #68e0b5; font-family: ui-monospace, monospace; }
+    select { width: 100%; border: 1px solid #36413b; border-radius: 5px; background: #0d100f; color: #e7ece9; padding: 7px 8px; }
+    input[type="range"] { width: 100%; accent-color: #68e0b5; }
+    .toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #29322e; padding-top: 9px; }
+    .toggle input { width: 18px; height: 18px; accent-color: #efb366; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .metric { border: 1px solid #2b3530; background: #101412; padding: 8px; min-width: 0; }
+    .metric b { display: block; color: #68e0b5; font: 700 16px/1.2 ui-monospace, monospace; overflow-wrap: anywhere; }
+    .metric span { display: block; margin-top: 4px; color: #8f9a94; font-size: 10px; }
+    .stages { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
+    .stage { min-width: 92px; border: 1px solid #35413b; border-radius: 5px; padding: 7px; color: #a8b2ac; }
+    .stage.ok { border-color: #367a61; color: #8de9c7; }
+    .stage.warn { border-color: #8a6230; color: #efbd7e; }
+    .stage.fail { border-color: #8b4545; color: #ff9b9b; }
+    .stage small { display: block; margin-top: 3px; color: #7e8983; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border-top: 1px solid #29322e; padding: 7px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { color: #7f8b84; font-size: 10px; text-transform: uppercase; }
+    td:first-child { width: 25%; color: #cbd3cf; font-family: ui-monospace, monospace; }
+    .diagnosis { margin-top: 9px; border-left: 3px solid #68e0b5; background: #101412; padding: 8px 10px; color: #b7c0bb; line-height: 1.5; }
+    .diagnosis.danger { border-left-color: #ef7f7f; }
+    .foot { margin-top: 8px; color: #68736d; font-size: 10px; }
+    @media (max-width: 680px) {
+      .shell { padding: 12px; }
+      .top { display: grid; }
+      .run { width: 100%; }
+      .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div>
+        <div class="eyebrow" id="scenario-id"></div>
+        <h1 id="title"></h1>
+        <p class="summary" id="summary"></p>
+      </div>
+      <button class="run" id="run" type="button">运行实验</button>
+    </header>
+    <section class="grid">
+      <div class="panel">
+        <h2 class="panel-title">实验参数</h2>
+        <div id="controls"></div>
+        <label class="toggle">
+          <span>注入典型故障</span>
+          <input id="failure" type="checkbox">
+        </label>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">执行结果</h2>
+        <div class="metrics" id="metrics"></div>
+        <div class="stages" id="stages"></div>
+        <table>
+          <thead><tr><th>检查项</th><th>可观察结果</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="diagnosis" id="diagnosis"></div>
+        <div class="foot">所有结果由当前参数在浏览器内实时计算；危险命令、真实文件写入和外部服务调用不会执行。</div>
+      </div>
+    </section>
+  </main>
+  <script>
+    /** 构建期由文章白名单写入的场景编号。 */
+    const SCENARIO_ID = __KNOWLEDGE_LAB_SCENARIO__;
+
+    /** AI 编程实验的标题、说明与输入控件配置。 */
+    const SCENARIOS = {
+      'AC-01': { title: 'Prompt 结构与回归对比器', summary: '把 Prompt 当作输入契约，观察完整度、冲突和版本回归。', controls: [
+        { key: 'sections', label: '已配置结构块', type: 'range', min: 1, max: 5, value: 4, suffix: '/5' },
+        { key: 'examples', label: 'Few-shot 示例数', type: 'range', min: 0, max: 4, value: 2, suffix: ' 个' },
+        { key: 'schema', label: '输出契约', type: 'select', value: 'json', options: [['none', '无约束'], ['markdown', 'Markdown'], ['json', 'JSON Schema']] }
+      ] },
+      'AC-02': { title: '上下文预算与指令优先级', summary: '计算固定指令、源文件、日志和历史对话进入窗口后的保留与裁剪。', controls: [
+        { key: 'budget', label: '上下文预算', type: 'range', min: 8000, max: 32000, step: 2000, value: 16000, suffix: ' tokens' },
+        { key: 'logs', label: '测试日志', type: 'range', min: 1000, max: 18000, step: 1000, value: 12000, suffix: ' tokens' },
+        { key: 'files', label: '源文件', type: 'range', min: 2000, max: 14000, step: 1000, value: 8000, suffix: ' tokens' }
+      ] },
+      'AC-03': { title: '权限、Plan Mode 与 Diff 审批', summary: '同一动作在只读、询问和自动执行模式下必须得到不同决策。', controls: [
+        { key: 'mode', label: '授权模式', type: 'select', value: 'ask', options: [['plan', 'Plan Mode'], ['ask', 'Ask before write'], ['auto', 'Auto edit']] },
+        { key: 'action', label: '工具动作', type: 'select', value: 'patch', options: [['read', '读取文件'], ['patch', '应用补丁'], ['network', '访问网络'], ['delete', '删除目录']] },
+        { key: 'scope', label: '目标范围', type: 'select', value: 'file', options: [['file', '单个已解析文件'], ['workspace', '当前工作树'], ['broad', '未解析的宽泛路径']] }
+      ] },
+      'AC-04': { title: 'Agent Harness 核心循环', summary: '逐步运行 Observe、Plan、Tool、Verify、Retry 或 Finish。', controls: [
+        { key: 'maxSteps', label: '最大步数', type: 'range', min: 3, max: 10, value: 7, suffix: ' 步' },
+        { key: 'verify', label: '验证策略', type: 'select', value: 'tests', options: [['none', '跳过验证'], ['syntax', '仅语法检查'], ['tests', '定向测试']] },
+        { key: 'retries', label: '重试上限', type: 'range', min: 0, max: 3, value: 2, suffix: ' 次' }
+      ] },
+      'AC-05': { title: '编程工具调用与路径安全', summary: '在虚拟工作区中校验工具名、参数 Schema、路径与补丁验证。', controls: [
+        { key: 'tool', label: '调用工具', type: 'select', value: 'apply_patch', options: [['read_file', 'read_file'], ['search_code', 'search_code'], ['apply_patch', 'apply_patch'], ['shell', 'shell']] },
+        { key: 'path', label: '目标路径', type: 'select', value: 'safe', options: [['safe', 'src/formatter.ts'], ['outside', '../../secrets.env'], ['empty', '空路径']] },
+        { key: 'postCheck', label: '写后检查', type: 'select', value: 'tests', options: [['none', '不检查'], ['diff', '检查 Diff'], ['tests', 'Diff + Tests']] }
+      ] },
+      'AC-06': { title: 'Subagent 任务图与并发预算', summary: '根据 DAG 依赖和共享文件写集合计算并发批次与冲突。', controls: [
+        { key: 'slots', label: '并发槽位', type: 'range', min: 1, max: 5, value: 3, suffix: ' 个' },
+        { key: 'tasks', label: '子任务数量', type: 'range', min: 3, max: 9, value: 6, suffix: ' 个' },
+        { key: 'strategy', label: '冲突策略', type: 'select', value: 'ownership', options: [['none', '不分配文件所有权'], ['ownership', '按文件所有权'], ['serial', '全部串行']] }
+      ] },
+      'AC-07': { title: 'Skill 触发与渐进式披露', summary: '比较 description 精确度、误触发率与一次性加载资料造成的上下文成本。', controls: [
+        { key: 'specificity', label: '描述精确度', type: 'range', min: 20, max: 100, step: 10, value: 80, suffix: '%' },
+        { key: 'skills', label: '候选 Skills', type: 'range', min: 3, max: 20, value: 8, suffix: ' 个' },
+        { key: 'loading', label: '资料加载', type: 'select', value: 'progressive', options: [['all', '一次加载全部'], ['progressive', '按需渐进加载']] }
+      ] },
+      'AC-08': { title: 'TDD 与系统化调试闭环', summary: '比较复现、假设验证和最小修复与直接修改表象的结果。', controls: [
+        { key: 'reproduce', label: '先稳定复现', type: 'select', value: 'yes', options: [['yes', '是'], ['no', '否']] },
+        { key: 'hypotheses', label: '待验证假设', type: 'range', min: 1, max: 5, value: 3, suffix: ' 个' },
+        { key: 'regression', label: '回归范围', type: 'select', value: 'focused', options: [['none', '无回归'], ['focused', '定向 + 边界'], ['all', '全量测试']] }
+      ] },
+      'AC-09': { title: 'Git Worktree 并行冲突', summary: '模拟多个工作树的文件所有权、脏状态、合并冲突与收尾。', controls: [
+        { key: 'worktrees', label: '并行工作树', type: 'range', min: 1, max: 5, value: 3, suffix: ' 个' },
+        { key: 'sharedFiles', label: '共享修改文件', type: 'range', min: 0, max: 5, value: 1, suffix: ' 个' },
+        { key: 'cleanup', label: '收尾策略', type: 'select', value: 'safe', options: [['none', '直接删除'], ['safe', '检查 clean + merged'], ['stash', '隐藏后删除']] }
+      ] },
+      'AC-10': { title: 'Checkpoint、回溯与上下文压缩', summary: '区分代码快照、执行状态和对话摘要，避免把三种恢复机制混为一谈。', controls: [
+        { key: 'steps', label: '累计修改步骤', type: 'range', min: 2, max: 12, value: 7, suffix: ' 步' },
+        { key: 'checkpoint', label: '检查点间隔', type: 'range', min: 1, max: 6, value: 3, suffix: ' 步' },
+        { key: 'operation', label: '恢复操作', type: 'select', value: 'restore', options: [['undo', '仅撤销代码'], ['restore', '恢复检查点'], ['compact', '仅压缩对话']] }
+      ] },
+      'AC-11': { title: 'Hooks 与 CI 质量门禁', summary: '运行工具前后钩子与 Lint、Test、Build，观察失败在哪一层阻断。', controls: [
+        { key: 'gate', label: '强制门禁', type: 'select', value: 'all', options: [['lint', '仅 Lint'], ['test', 'Lint + Test'], ['all', 'Lint + Test + Build']] },
+        { key: 'changedFiles', label: '修改文件', type: 'range', min: 1, max: 20, value: 6, suffix: ' 个' },
+        { key: 'stopHook', label: 'Stop Hook', type: 'select', value: 'verify', options: [['none', '不检查'], ['verify', '检查验证证据']] }
+      ] },
+      'AC-12': { title: 'MCP 工具发现与权限检查', summary: '从 Server 连接、Schema 发现到调用授权和返回值校验逐层排障。', controls: [
+        { key: 'servers', label: 'MCP Servers', type: 'range', min: 1, max: 8, value: 3, suffix: ' 个' },
+        { key: 'scope', label: '授权范围', type: 'select', value: 'least', options: [['broad', '全盘读写'], ['least', '最小目录 + 只读'], ['none', '未授权']] },
+        { key: 'timeout', label: '调用超时', type: 'range', min: 1, max: 15, value: 5, suffix: ' 秒' }
+      ] },
+      'AC-13': { title: 'Prompt 与 Agent 回归评测矩阵', summary: '用固定样例集比较候选版本的任务成功、工具选择、成本与延迟。', controls: [
+        { key: 'cases', label: '评测样例', type: 'range', min: 10, max: 100, step: 10, value: 50, suffix: ' 条' },
+        { key: 'version', label: '候选版本', type: 'select', value: 'v2', options: [['v1', 'v1 基线'], ['v2', 'v2 候选'], ['v3', 'v3 激进优化']] },
+        { key: 'threshold', label: '上线阈值', type: 'range', min: 70, max: 98, value: 88, suffix: '%' }
+      ] }
+    };
+
+    /** 当前场景配置。 */
+    const scenario = SCENARIOS[SCENARIO_ID];
+    /** 实验参数区容器。 */
+    const controlsElement = document.querySelector('#controls');
+    /** 故障注入开关。 */
+    const failureElement = document.querySelector('#failure');
+
+    if (!scenario) {
+      throw new Error('未知 AI 编程实验场景：' + SCENARIO_ID);
+    }
+
+    document.querySelector('#scenario-id').textContent = SCENARIO_ID + ' · DETERMINISTIC LAB';
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+
+    /** 把单个声明式控件渲染为可交互表单。 */
+    function renderControl(control) {
+      /** 当前控件的外层容器。 */
+      const wrapper = document.createElement('label');
+      wrapper.className = 'control';
+      /** 当前控件显示的值。 */
+      const valueId = 'value-' + control.key;
+      /** 当前控件标题和实时值。 */
+      const heading = document.createElement('span');
+      heading.className = 'control-head';
+      heading.innerHTML = '<span>' + control.label + '</span><span class="control-value" id="' + valueId + '"></span>';
+      wrapper.appendChild(heading);
+      /** 当前控件的输入元素。 */
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input');
+      input.dataset.key = control.key;
+      if (control.type === 'select') {
+        control.options.forEach(function (option) {
+          /** 下拉列表中的单个选项。 */
+          const optionElement = document.createElement('option');
+          optionElement.value = option[0];
+          optionElement.textContent = option[1];
+          optionElement.selected = option[0] === control.value;
+          input.appendChild(optionElement);
+        });
+      } else {
+        input.type = 'range';
+        input.min = control.min;
+        input.max = control.max;
+        input.step = control.step || 1;
+        input.value = control.value;
+      }
+      input.addEventListener('input', updateControlValues);
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+
+    scenario.controls.forEach(function (control) { controlsElement.appendChild(renderControl(control)); });
+
+    /** 更新所有控件右侧的可读值。 */
+    function updateControlValues() {
+      scenario.controls.forEach(function (control) {
+        /** 当前配置对应的实际输入元素。 */
+        const input = controlsElement.querySelector('[data-key="' + control.key + '"]');
+        /** 需要显示在控件标题右侧的值。 */
+        const displayValue = control.type === 'select'
+          ? input.options[input.selectedIndex].text
+          : input.value + (control.suffix || '');
+        document.querySelector('#value-' + control.key).textContent = displayValue;
+      });
+    }
+
+    /** 读取当前表单并转换为计算函数使用的对象。 */
+    function readValues() {
+      /** 当前实验的全部已解析参数。 */
+      const values = {};
+      scenario.controls.forEach(function (control) {
+        /** 当前参数对应的表单控件。 */
+        const input = controlsElement.querySelector('[data-key="' + control.key + '"]');
+        values[control.key] = control.type === 'range' ? Number(input.value) : input.value;
+      });
+      values.failure = failureElement.checked;
+      return values;
+    }
+
+    /** 把布尔状态映射为实验阶段样式。 */
+    function stage(name, state, detail) { return { name: name, state: state, detail: detail }; }
+
+    /** 根据当前场景参数执行确定性机制模拟。 */
+    function simulate(id, values) {
+      /** 故障开关，用于统一触发每个场景的典型失败路径。 */
+      const fail = values.failure;
+      switch (id) {
+        case 'AC-01': {
+          /** Prompt 结构、示例和输出契约形成的完整度。 */
+          const score = Math.min(100, values.sections * 14 + values.examples * 6 + (values.schema === 'json' ? 20 : values.schema === 'markdown' ? 10 : 0) - (fail ? 22 : 0));
+          return { metrics: [[score + '%', '契约完整度'], [Math.max(0, 5 - values.sections), '缺失结构块'], [fail ? 2 : 0, '约束冲突'], [values.examples, '回归样例']], stages: [stage('Role', values.sections >= 1 ? 'ok' : 'fail', '职责'), stage('Context', values.sections >= 2 ? 'ok' : 'warn', '边界'), stage('Constraints', fail ? 'fail' : values.sections >= 3 ? 'ok' : 'warn', '约束'), stage('Examples', values.examples ? 'ok' : 'warn', '样例'), stage('Schema', values.schema === 'none' ? 'warn' : 'ok', '输出')], rows: [['输出稳定性', values.schema === 'json' ? '可做 Schema 校验并自动重试' : '可能混入解释文本'], ['版本差异', fail ? '新约束与旧示例冲突，必须阻断发布' : '未发现阻断性回归'], ['建议', score >= 85 ? '进入固定样例回归' : '先补齐缺失结构再评测']], diagnosis: fail ? '失败路径：互相冲突的约束会让格式合规率下降，不能只看单次输出。' : '正常路径：结构和输出契约齐全，Prompt 可以作为可测试资产管理。', danger: fail };
+        }
+        case 'AC-02': {
+          /** 不可裁剪的系统、规则和用户请求 Token。 */
+          const fixed = 2130;
+          /** 历史消息占用的 Token。 */
+          const history = 6000;
+          /** 未压缩前的总上下文 Token。 */
+          const total = fixed + values.files + values.logs + history;
+          /** 先提炼日志后仍需裁剪的 Token。 */
+          const optimizedLogs = fail ? values.logs : Math.min(values.logs, 2200);
+          /** 实际送入模型的 Token。 */
+          const kept = Math.min(values.budget, fixed + values.files + optimizedLogs + history);
+          return { metrics: [[total.toLocaleString(), '原始 Tokens'], [kept.toLocaleString(), '最终保留'], [Math.max(0, total - kept).toLocaleString(), '摘要/裁剪'], [Math.round(kept / values.budget * 100) + '%', '窗口占用']], stages: [stage('System', 'ok', '900'), stage('AGENTS', 'ok', '1050'), stage('User', 'ok', '180'), stage('Files', kept < fixed + values.files ? 'warn' : 'ok', values.files), stage('Logs', fail ? 'fail' : 'ok', optimizedLogs), stage('History', total > values.budget ? 'warn' : 'ok', history)], rows: [['优先级', 'System > 子目录 AGENTS > 根规则 > 用户请求 > 证据'], ['日志策略', fail ? '整段日志挤占窗口，关键文件可能丢失' : '只保留错误栈、失败断言和相关上下文'], ['最低证据集', kept >= fixed + Math.min(values.files, 6000) ? '规则、需求和关键源码仍在' : '证据不足，应缩小任务或继续检索']], diagnosis: total > values.budget ? '上下文已超预算。正确处理是先结构化提炼日志，再按任务相关性选择源码。' : '当前内容可完整进入窗口，但仍应避免无关日志污染注意力。', danger: fail && total > values.budget };
+        }
+        case 'AC-03': {
+          /** 当前动作是否只读取现有状态。 */
+          const readOnly = values.action === 'read';
+          /** 当前动作是否属于高风险删除。 */
+          const destructive = values.action === 'delete';
+          /** 当前决策是否允许直接执行。 */
+          const allowed = !fail && values.scope !== 'broad' && (readOnly || (values.mode === 'auto' && !destructive));
+          /** 当前决策是否必须询问用户。 */
+          const ask = !allowed && values.mode !== 'plan' && values.scope !== 'broad';
+          return { metrics: [[allowed ? 'ALLOW' : ask ? 'ASK' : 'DENY', '最终决策'], [values.mode.toUpperCase(), '授权模式'], [values.scope, '目标范围'], [destructive ? 'HIGH' : readOnly ? 'LOW' : 'MEDIUM', '风险级别']], stages: [stage('解析目标', values.scope === 'broad' ? 'fail' : 'ok', values.scope), stage('权限匹配', values.mode === 'plan' && !readOnly ? 'warn' : 'ok', values.mode), stage('Diff 审批', readOnly ? 'ok' : allowed ? 'ok' : ask ? 'warn' : 'fail', allowed ? '通过' : '待确认'), stage('执行', allowed ? 'ok' : 'fail', allowed ? '已模拟' : '未执行')], rows: [['Plan Mode', values.mode === 'plan' ? '只允许读取和规划，不构成写入授权' : '当前不在只读计划模式'], ['宽泛路径', values.scope === 'broad' ? '目标未解析，拒绝递归或破坏性动作' : '目标已限定'], ['故障注入', fail ? '模拟共享组件影响面未检查，强制阻断' : '未发现额外风险']], diagnosis: allowed ? '动作满足当前授权和目标边界，可以进入执行后验证。' : '动作未执行。拒绝或询问是权限系统的正确结果，不是工具故障。', danger: !allowed };
+        }
+        case 'AC-04': {
+          /** 是否具备足够验证能力发现负数边界问题。 */
+          const verified = values.verify === 'tests' && !fail;
+          /** 修复边界问题需要的最少步骤。 */
+          const neededSteps = verified ? 7 : 5;
+          /** 是否在步数预算内完成正确修复。 */
+          const success = values.maxSteps >= neededSteps && verified && values.retries >= 1;
+          return { metrics: [[Math.min(values.maxSteps, neededSteps), '实际步数'], [success ? 'PASS' : 'FAIL', '完成状态'], [verified ? 2 : 0, '验证用例'], [success ? 1 : Math.max(0, values.retries), '重试次数']], stages: [stage('Observe', 'ok', '失败测试'), stage('Plan', 'ok', '最小范围'), stage('Tool', fail ? 'warn' : 'ok', 'apply_patch'), stage('Verify', values.verify === 'none' ? 'fail' : verified ? 'ok' : 'warn', values.verify), stage('Retry', values.retries ? 'ok' : 'warn', values.retries), stage('Finish', success ? 'ok' : 'fail', success ? '证据齐全' : '未完成')], rows: [['停止原因', success ? '定向测试通过且达到完成条件' : values.verify === 'none' ? '错误地把工具成功当成任务成功' : '步数或重试预算不足'], ['边界用例', verified ? '负数金额格式化已覆盖' : '未执行能暴露根因的测试'], ['防无限循环', 'maxSteps=' + values.maxSteps + '，retries=' + values.retries]], diagnosis: success ? 'Harness 通过验证证据结束任务。' : 'Harness 不应宣布完成；需要补足验证、重试或步数预算。', danger: !success };
+        }
+        case 'AC-05': {
+          /** 工具名是否在可信白名单内。 */
+          const knownTool = ['read_file', 'search_code', 'apply_patch'].includes(values.tool);
+          /** 目标路径是否已解析且位于工作区。 */
+          const safePath = values.path === 'safe';
+          /** 写操作后是否有足够验证。 */
+          const verified = values.tool !== 'apply_patch' || values.postCheck === 'tests';
+          /** 工具调用是否满足全部执行前条件。 */
+          const accepted = knownTool && safePath && verified && !fail;
+          return { metrics: [[accepted ? 'EXECUTED' : 'BLOCKED', '调用状态'], [knownTool ? 'VALID' : 'UNKNOWN', 'Tool Schema'], [safePath ? 'INSIDE' : 'REJECTED', '路径边界'], [verified ? 'YES' : 'NO', '写后验证']], stages: [stage('工具发现', knownTool ? 'ok' : 'fail', values.tool), stage('参数校验', values.path === 'empty' ? 'fail' : 'ok', values.path), stage('路径解析', safePath ? 'ok' : 'fail', safePath ? 'workspace' : 'outside'), stage('执行', accepted ? 'ok' : 'fail', accepted ? 'virtual repo' : 'blocked'), stage('验证', verified ? 'ok' : 'warn', values.postCheck)], rows: [['虚拟目标', values.path === 'safe' ? '/workspace/src/formatter.ts' : values.path === 'outside' ? '/secrets.env' : '(empty)'], ['危险命令', values.tool === 'shell' ? '不在工具白名单，模型文本不会直接进入 Shell' : '未请求 Shell'], ['故障注入', fail ? 'Schema 字段缺失，执行前拒绝' : '参数结构完整']], diagnosis: accepted ? '工具调用通过白名单、Schema、路径和验证四层检查。' : '调用被安全层阻断，未发生真实文件写入。', danger: !accepted };
+        }
+        case 'AC-06': {
+          /** 串行策略或并发槽位决定的实际并发数。 */
+          const concurrency = values.strategy === 'serial' ? 1 : Math.min(values.slots, values.tasks);
+          /** 任务需要的并发批次数。 */
+          const waves = Math.ceil(values.tasks / concurrency);
+          /** 未划分文件所有权时可能出现的冲突数。 */
+          const conflicts = values.strategy === 'none' ? Math.max(1, Math.floor(values.tasks / 3)) : fail ? 1 : 0;
+          /** 完成全部批次的估算时间。 */
+          const duration = waves * 4 + conflicts * 3;
+          return { metrics: [[concurrency, '实际并发'], [waves, '执行批次'], [conflicts, '文件冲突'], [duration + 'm', '估算耗时']], stages: [stage('拆分 DAG', 'ok', values.tasks + ' tasks'), stage('检查依赖', fail ? 'warn' : 'ok', fail ? '缺失边' : 'valid'), stage('分配所有权', values.strategy === 'ownership' ? 'ok' : values.strategy === 'serial' ? 'warn' : 'fail', values.strategy), stage('并发执行', conflicts ? 'warn' : 'ok', concurrency), stage('汇总', conflicts ? 'fail' : 'ok', conflicts ? '待解决' : '完成')], rows: [['可并行任务', Math.max(0, values.tasks - 2) + ' 个，根任务与汇总保持依赖'], ['冲突传播', conflicts ? conflicts + ' 个任务修改同一文件，汇总前必须解决' : '写集合互斥，可直接汇总'], ['失败策略', fail ? '一个依赖任务超时，下游任务取消' : '失败只取消依赖分支']], diagnosis: conflicts ? '增加槽位不会消除共享文件冲突，应先按文件或模块划分所有权。' : 'DAG 依赖和写集合清晰，并发能缩短关键路径。', danger: conflicts > 0 };
+        }
+        case 'AC-07': {
+          /** 由描述精确度和候选规模共同决定的触发准确率。 */
+          const precision = Math.max(35, Math.min(99, values.specificity - Math.max(0, values.skills - 8) * 2 - (fail ? 20 : 0)));
+          /** 预计会误触发的 Skill 数量。 */
+          const falseTriggers = Math.round(values.skills * (100 - precision) / 100);
+          /** 本轮资料进入上下文的 Token。 */
+          const tokens = values.loading === 'all' ? values.skills * 1800 : 900 + Math.max(1, falseTriggers) * 350;
+          return { metrics: [[precision + '%', '触发准确率'], [falseTriggers, '误触发'], [tokens.toLocaleString(), '加载 Tokens'], [values.loading === 'all' ? 'EAGER' : 'LAZY', '披露策略']], stages: [stage('任务匹配', precision >= 75 ? 'ok' : 'warn', precision + '%'), stage('冲突消解', falseTriggers <= 1 ? 'ok' : 'warn', falseTriggers), stage('读取 SKILL', 'ok', '完整入口'), stage('加载参考', values.loading === 'progressive' ? 'ok' : 'warn', values.loading), stage('执行', fail ? 'fail' : 'ok', fail ? '资源缺失' : 'ready')], rows: [['过宽描述', precision < 70 ? '多个通用任务都会误触发，应补充适用与不适用边界' : '触发边界可区分'], ['渐进披露', values.loading === 'progressive' ? '先读入口，只在需要时加载 reference/scripts' : '一次加载全部资料，挤占任务上下文'], ['故障注入', fail ? '入口引用的资源不存在，执行前报错' : '资源引用可解析']], diagnosis: precision >= 75 && values.loading === 'progressive' && !fail ? '触发质量与上下文成本均在可接受范围。' : '应收紧 description，并按任务阶段加载资源。', danger: fail || precision < 60 };
+        }
+        case 'AC-08': {
+          /** 是否有稳定失败用例作为修复基线。 */
+          const hasBaseline = values.reproduce === 'yes' && !fail;
+          /** 当前回归策略覆盖的用例数量。 */
+          const tests = values.regression === 'none' ? 0 : values.regression === 'focused' ? 4 : 48;
+          /** 是否形成可证伪的完整调试闭环。 */
+          const solved = hasBaseline && values.hypotheses >= 2 && tests >= 4;
+          return { metrics: [[solved ? 'ROOT CAUSE' : 'SYMPTOM', '修复层级'], [values.hypotheses, '验证假设'], [tests, '回归用例'], [solved ? 'PASS' : 'RISK', '结论']], stages: [stage('复现', hasBaseline ? 'ok' : 'fail', values.reproduce), stage('收集证据', fail ? 'fail' : 'ok', 'stack + input'), stage('验证假设', values.hypotheses >= 2 ? 'ok' : 'warn', values.hypotheses), stage('最小修复', solved ? 'ok' : 'warn', solved ? 'branch only' : 'unproven'), stage('回归', tests >= 4 ? 'ok' : 'fail', tests)], rows: [['失败基线', hasBaseline ? '固定输入可稳定复现' : '没有稳定复现，无法证明修复有效'], ['根因证据', values.hypotheses >= 2 ? '对照实验排除至少一个替代解释' : '只验证单一猜测'], ['范围控制', values.regression === 'all' ? '全量测试成本高，仍需保留定向用例' : values.regression === 'focused' ? '定向和边界用例匹配改动范围' : '没有回归证据']], diagnosis: solved ? '修复建立在可复现失败与对照证据上，并由定向回归闭环。' : '当前只能说明现象变化，不能证明根因已修复。', danger: !solved };
+        }
+        case 'AC-09': {
+          /** 并行工作树之间预期的内容冲突数。 */
+          const conflicts = Math.max(0, values.sharedFiles * Math.max(0, values.worktrees - 1) - (fail ? 0 : 1));
+          /** 收尾策略是否会保护脏工作树。 */
+          const safeCleanup = values.cleanup === 'safe' && !fail;
+          return { metrics: [[values.worktrees, '工作树'], [conflicts, '潜在冲突'], [safeCleanup ? 'SAFE' : 'UNSAFE', '清理策略'], [Math.max(1, values.worktrees - conflicts), '可独立合并']], stages: [stage('创建分支', 'ok', values.worktrees), stage('分配范围', values.sharedFiles ? 'warn' : 'ok', values.sharedFiles + ' shared'), stage('并行修改', conflicts ? 'warn' : 'ok', conflicts), stage('合并验证', conflicts ? 'fail' : 'ok', conflicts ? 'resolve' : 'clean'), stage('移除工作树', safeCleanup ? 'ok' : 'fail', values.cleanup)], rows: [['脏状态', fail ? '一个工作树存在未提交改动，禁止删除' : '合并前逐个检查 status'], ['共享文件', values.sharedFiles ? '应指定单一所有者或把公共改动前置' : '写集合互斥'], ['安全收尾', safeCleanup ? '确认 clean、merged 后再移除明确路径' : '隐藏或直接删除不能证明数据可恢复']], diagnosis: conflicts || !safeCleanup ? '并行边界或清理条件不成立，不能批量移除工作树。' : '任务边界互斥且清理证据完整，可以安全收尾。', danger: conflicts > 0 || !safeCleanup };
+        }
+        case 'AC-10': {
+          /** 按间隔产生的可用检查点数量。 */
+          const checkpoints = Math.floor(values.steps / values.checkpoint);
+          /** 最近检查点之后需要重放的步骤数。 */
+          const replay = values.steps % values.checkpoint;
+          /** 选择恢复操作后真正恢复的状态范围。 */
+          const restored = values.operation === 'restore' ? '代码 + 工具状态' : values.operation === 'undo' ? '仅代码 Diff' : '仅对话摘要';
+          return { metrics: [[checkpoints, '检查点'], [replay, '需重放步骤'], [restored, '恢复范围'], [fail ? 'STALE' : 'VALID', '快照状态']], stages: [stage('修改', 'ok', values.steps), stage('保存快照', checkpoints ? 'ok' : 'warn', checkpoints), stage('选择操作', 'ok', values.operation), stage('恢复', fail ? 'fail' : 'ok', restored), stage('校验', values.operation === 'compact' || fail ? 'warn' : 'ok', 'workspace')], rows: [['Undo', '只撤销代码，不自动恢复外部工具副作用'], ['Restore', '恢复检查点记录的工作区与 Harness 状态'], ['Compact', '减少对话 Token，不改变磁盘或执行状态']], diagnosis: fail ? '快照对应的仓库版本已变化，恢复前必须校验基线。' : values.operation === 'compact' ? '上下文已压缩，但代码和工具状态没有回退。' : '恢复边界明确，可根据检查点继续执行。', danger: fail };
+        }
+        case 'AC-11': {
+          /** 当前门禁要求运行的检查集合。 */
+          const checks = values.gate === 'lint' ? ['Lint'] : values.gate === 'test' ? ['Lint', 'Test'] : ['Lint', 'Test', 'Build'];
+          /** 故障注入命中的门禁名称。 */
+          const failedGate = fail ? checks[Math.min(1, checks.length - 1)] : null;
+          /** Stop Hook 是否要求最终验证证据。 */
+          const stopAllowed = values.stopHook === 'verify' && !failedGate;
+          return { metrics: [[checks.length, '强制门禁'], [values.changedFiles, '修改文件'], [failedGate || 'NONE', '失败节点'], [stopAllowed ? 'ALLOW' : 'BLOCK', 'Stop 决策']], stages: [stage('PreTool', 'ok', 'scope'), stage('Tool', 'ok', values.changedFiles + ' files'), stage('PostTool', 'ok', 'diff'), ...checks.map(function (check) { return stage(check, check === failedGate ? 'fail' : 'ok', check === failedGate ? 'failed' : 'passed'); }), stage('Stop', stopAllowed ? 'ok' : 'fail', stopAllowed ? 'evidence' : 'blocked')], rows: [['触发顺序', 'PreTool → Tool → PostTool → ' + checks.join(' → ') + ' → Stop'], ['失败传播', failedGate ? failedGate + ' 失败，后续发布步骤不执行' : '全部强制门禁通过'], ['Stop Hook', values.stopHook === 'verify' ? '检查命令、退出码与测试摘要' : '没有验证证据也可能结束']], diagnosis: stopAllowed ? '质量门禁和完成证据均通过。' : '流水线已阻断，修复失败项后必须从受影响门禁重新运行。', danger: !stopAllowed };
+        }
+        case 'AC-12': {
+          /** 当前授权能否支持只读工具调用。 */
+          const authorized = values.scope === 'least' && !fail;
+          /** 连接和发现的估算耗时。 */
+          const discoveryMs = values.servers * 180;
+          /** 是否会因为过短超时而失败。 */
+          const timedOut = values.timeout * 1000 < discoveryMs;
+          return { metrics: [[values.servers, 'Servers'], [values.servers * 4, '发现 Tools'], [discoveryMs + 'ms', '发现耗时'], [authorized && !timedOut ? 'READY' : 'BLOCKED', '调用状态']], stages: [stage('连接 Server', timedOut ? 'fail' : 'ok', values.timeout + 's'), stage('发现 Schema', timedOut ? 'fail' : 'ok', values.servers * 4), stage('校验授权', authorized ? 'ok' : 'fail', values.scope), stage('清洗内容', fail ? 'fail' : 'ok', fail ? 'injection' : 'safe'), stage('调用 Tool', authorized && !timedOut ? 'ok' : 'fail', authorized ? 'read-only' : 'blocked')], rows: [['最小权限', values.scope === 'least' ? '仅允许目标目录只读' : values.scope === 'broad' ? '授权过宽，应拆分读写能力' : '没有可用授权'], ['Prompt Injection', fail ? '工具返回内容包含越权指令，按不可信数据处理' : '返回内容未请求改变系统规则'], ['超时', timedOut ? '发现阶段超过调用预算，应减少 Server 或提高合理超时' : '连接预算充足']], diagnosis: authorized && !timedOut ? 'Server、Schema、权限和内容边界均通过，可发起只读调用。' : '调用在连接或授权阶段被阻断。', danger: !authorized || timedOut };
+        }
+        case 'AC-13': {
+          /** 不同候选版本的基础任务成功率。 */
+          const baseRate = values.version === 'v1' ? 82 : values.version === 'v2' ? 91 : 94;
+          /** 故障样例对成功率造成的回归。 */
+          const successRate = baseRate - (fail ? 12 : 0);
+          /** 工具选择准确率。 */
+          const toolAccuracy = Math.max(0, successRate - (values.version === 'v3' ? 5 : 2));
+          /** 版本的平均 Token 成本。 */
+          const tokens = values.version === 'v1' ? 2100 : values.version === 'v2' ? 1850 : 2650;
+          /** 是否满足上线阈值和工具准确性保护线。 */
+          const passed = successRate >= values.threshold && toolAccuracy >= values.threshold - 3;
+          return { metrics: [[successRate + '%', '任务成功率'], [toolAccuracy + '%', '工具准确率'], [tokens, '平均 Tokens'], [passed ? 'SHIP' : 'HOLD', '发布决策']], stages: [stage('冻结样例', 'ok', values.cases), stage('运行基线', 'ok', 'v1'), stage('运行候选', fail ? 'warn' : 'ok', values.version), stage('比较指标', passed ? 'ok' : 'fail', values.threshold + '%'), stage('发布门禁', passed ? 'ok' : 'fail', passed ? 'pass' : 'hold')], rows: [['样例规模', values.cases + ' 条，包含正常、失败与安全边界'], ['成本变化', tokens + ' tokens/次，不能只按成功率决策'], ['回归项', fail ? '文件搜索任务出现 6 条回归，必须逐条归因' : '没有超过保护线的坏案例']], diagnosis: passed ? '候选版本满足成功率与工具选择双重阈值，可以灰度。' : '候选版本未达到发布门禁，应保留基线并分析坏案例。', danger: !passed };
+        }
+        default: throw new Error('未实现的场景：' + id);
+      }
+    }
+
+    /** 把一次模拟结果渲染到指标、阶段、表格和诊断区。 */
+    function renderResult(result) {
+      document.querySelector('#metrics').innerHTML = result.metrics.map(function (metric) { return '<div class="metric"><b>' + metric[0] + '</b><span>' + metric[1] + '</span></div>'; }).join('');
+      document.querySelector('#stages').innerHTML = result.stages.map(function (item) { return '<div class="stage ' + item.state + '"><b>' + item.name + '</b><small>' + item.detail + '</small></div>'; }).join('');
+      document.querySelector('#rows').innerHTML = result.rows.map(function (row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('');
+      /** 当前结果的诊断提示元素。 */
+      const diagnosisElement = document.querySelector('#diagnosis');
+      diagnosisElement.textContent = result.diagnosis;
+      diagnosisElement.className = 'diagnosis' + (result.danger ? ' danger' : '');
+    }
+
+    /** 使用当前表单参数重新运行实验。 */
+    function run() { renderResult(simulate(SCENARIO_ID, readValues())); }
+
+    document.querySelector('#run').addEventListener('click', run);
+    failureElement.addEventListener('change', run);
+    updateControlValues();
+    run();
+  </script>
+</body>
+</html>

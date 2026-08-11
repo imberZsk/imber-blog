@@ -1,12 +1,12 @@
-# Imber CLI Vue3 + Vite 模板详解
+# Imber CLI（4）- Vue3 + Vite 模板
 
-## 概述
+# 一、概述
 
 Imber CLI 的 Vue3 + Vite 模板是一个现代化的 Vue.js 开发模板，基于 Vue 3.4+ 和 Vite 5+ 构建。该模板集成了 TypeScript、Pinia、Vue Router、Element Plus 等现代 Vue 生态工具，为开发者提供了一个功能完整、性能优异的 Vue 应用开发基础。
 
-## 模板特性
+# 二、模板特性
 
-### 核心特性
+## 2.1 核心特性
 
 - **Vue 3.4+**：最新的 Composition API 和 `<script setup>` 语法
 - **Vite 5+**：极速的开发服务器和构建工具
@@ -18,7 +18,7 @@ Imber CLI 的 Vue3 + Vite 模板是一个现代化的 Vue.js 开发模板，基�
 - **Cypress**：端到端测试
 - **Storybook**：组件开发和文档
 
-### 技术栈
+## 2.2 技术栈
 
 ```json
 {
@@ -43,9 +43,9 @@ Imber CLI 的 Vue3 + Vite 模板是一个现代化的 Vue.js 开发模板，基�
 }
 ```
 
-## 项目结构
+# 三、项目结构
 
-### 目录结构
+## 3.1 目录结构
 
 ```
 {{projectNameKebab}}/
@@ -80,9 +80,9 @@ Imber CLI 的 Vue3 + Vite 模板是一个现代化的 Vue.js 开发模板，基�
 └── package.json             # 项目配置
 ```
 
-## 核心配置
+# 四、核心配置
 
-### 1. Vite 配置
+## 4.1 Vite 配置
 
 ```typescript
 // vite.config.ts
@@ -142,7 +142,7 @@ export default defineConfig({
 })
 ```
 
-### 2. TypeScript 配置
+## 4.2 TypeScript 配置
 
 ```json
 // tsconfig.json
@@ -178,7 +178,7 @@ export default defineConfig({
 }
 ```
 
-### 3. 应用入口配置
+## 4.3 应用入口配置
 
 ```typescript
 // src/main.ts
@@ -207,9 +207,9 @@ app.use(ElementPlus)
 app.mount('#app')
 ```
 
-## 核心组件
+# 五、核心组件
 
-### 1. 根组件
+## 5.1 根组件
 
 ```vue
 <!-- src/App.vue -->
@@ -241,7 +241,7 @@ onMounted(() => {
 </style>
 ```
 
-### 2. 路由配置
+## 5.2 路由配置
 
 ```typescript
 // src/router/index.ts
@@ -308,7 +308,7 @@ router.beforeEach((to, from, next) => {
 export default router
 ```
 
-### 3. 状态管理
+## 5.3 状态管理
 
 ```typescript
 // src/stores/user.ts
@@ -365,7 +365,7 @@ export const useUserStore = defineStore('user', () => {
 })
 ```
 
-### 4. 组合式函数
+## 5.4 组合式函数
 
 ```typescript
 // src/composables/useApi.ts
@@ -408,7 +408,7 @@ export function useApi<T>(url: string, options: UseApiOptions = {}) {
 }
 ```
 
-### 5. 业务组件示例
+## 5.5 业务组件示例
 
 ```vue
 <!-- src/components/business/UserCard.vue -->
@@ -493,9 +493,9 @@ const handleDelete = () => {
 </style>
 ```
 
-## 开发工具配置
+# 六、开发工具配置
 
-### 1. Vitest 配置
+## 6.1 Vitest 配置
 
 ```typescript
 // vitest.config.ts
@@ -518,7 +518,7 @@ export default defineConfig({
 })
 ```
 
-### 2. Cypress 配置
+## 6.2 Cypress 配置
 
 ```typescript
 // cypress.config.ts
@@ -541,7 +541,7 @@ export default defineConfig({
 })
 ```
 
-### 3. Storybook 配置
+## 6.3 Storybook 配置
 
 ```typescript
 // .storybook/main.ts
@@ -562,9 +562,9 @@ const config: StorybookConfig = {
 export default config
 ```
 
-## 最佳实践
+# 七、最佳实践
 
-### 1. 组件设计模式
+## 7.1 组件设计模式
 
 ```vue
 <!-- 使用 Composition API 和 <script setup> -->
@@ -635,7 +635,7 @@ const reset = () => {
 </script>
 ```
 
-### 2. API 接口管理
+## 7.2 API 接口管理
 
 ```typescript
 // src/api/user.ts
@@ -660,7 +660,7 @@ export const userApi = {
 }
 ```
 
-### 3. 类型定义
+## 7.3 类型定义
 
 ```typescript
 // src/types/user.ts
@@ -694,9 +694,9 @@ export interface UserListResponse {
 }
 ```
 
-## 性能优化
+# 八、性能优化
 
-### 1. 组件懒加载
+## 8.1 组件懒加载
 
 ```typescript
 // src/router/index.ts
@@ -709,7 +709,7 @@ const routes = [
 ]
 ```
 
-### 2. 状态管理优化
+## 8.2 状态管理优化
 
 ```typescript
 // src/stores/index.ts
@@ -727,7 +727,7 @@ pinia.use(
 export default pinia
 ```
 
-### 3. 构建优化
+## 8.3 构建优化
 
 ```typescript
 // vite.config.ts
@@ -746,9 +746,9 @@ export default defineConfig({
 })
 ```
 
-## 测试策略
+# 九、测试策略
 
-### 1. 单元测试
+## 9.1 单元测试
 
 ```typescript
 // src/components/__tests__/UserCard.test.ts
@@ -791,7 +791,7 @@ describe('UserCard', () => {
 })
 ```
 
-### 2. E2E 测试
+## 9.2 E2E 测试
 
 ```typescript
 // cypress/e2e/user-management.cy.ts
@@ -818,9 +818,9 @@ describe('User Management', () => {
 })
 ```
 
-## 部署配置
+# 十、部署配置
 
-### 1. Docker 配置
+## 10.1 Docker 配置
 
 ```dockerfile
 # Dockerfile
@@ -845,7 +845,7 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-### 2. Nginx 配置
+## 10.2 Nginx 配置
 
 ```nginx
 # nginx.conf
@@ -867,7 +867,7 @@ server {
 }
 ```
 
-## 总结
+# 十一、总结
 
 Imber CLI 的 Vue3 + Vite 模板提供了一个完整的现代化 Vue 开发环境：
 
@@ -878,3 +878,8 @@ Imber CLI 的 Vue3 + Vite 模板提供了一个完整的现代化 Vue 开发环�
 5. **性能优化**：代码分割、懒加载、构建优化
 
 通过这个模板，开发者可以快速启动一个高质量的 Vue 项目，享受 Vue 3 的 Composition API 和现代前端开发的最佳实践。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“Imber CLI（4）- Vue3 + Vite 模板”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

@@ -63,11 +63,11 @@ javac -encoding UTF-8 HelloWorld.java && java HelloWorld
 
 | Demo 目录 | 对应小册章节 |
 |----------|------------|
-| 01-basics | 02-第一个Java程序、03-Java与JavaScript对比 |
-| 02-oop | 05-类与对象 |
-| 03-collections | 06-集合与泛型 |
-| 04-exception | 07-异常处理 |
-| 05-annotation | 08-注解与反射 |
+| 01-basics | 03-第一个Java程序、04-Java与JavaScript对比 |
+| 02-oop | 06-类与对象 |
+| 03-collections | 07-集合与泛型 |
+| 04-exception | 08-异常处理 |
+| 05-annotation | 09-注解与反射 |
 
 ## 验收状态
 
@@ -75,4 +75,9 @@ javac -encoding UTF-8 HelloWorld.java && java HelloWorld
 
 ## 关于 Spring Boot
 
-小册第 09 课起的 Spring Boot 部分需要 Maven 管理依赖、联网拉取依赖包，无法用单文件 `javac`/`java` 直接运行，因此不放在本目录。学到该阶段时，参考小册「10-创建第一个项目」用 IDEA + Maven 创建标准工程。
+小册第 09 课起的 Spring Boot 部分需要 Maven 管理依赖、联网拉取依赖包，无法用单文件 `javac`/`java` 直接运行，因此不放在本目录。学到该阶段时，参考小册「11-创建第一个项目」用 IDEA + Maven 创建标准工程。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“Java Demo 示例集”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

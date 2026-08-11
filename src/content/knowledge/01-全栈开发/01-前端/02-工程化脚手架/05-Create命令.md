@@ -1,12 +1,12 @@
-# Imber CLI Create 命令实现详解
+# Imber CLI（5）- Create 命令实现
 
-## 概述
+# 一、概述
 
 `create` 命令是 Imber CLI 的核心功能之一，负责创建新项目。它通过交互式界面引导用户选择项目模板，然后下载、渲染并创建项目结构。本文将深入解析 `create` 命令的实现原理和最佳实践。
 
-## 核心架构
+# 二、核心架构
 
-### 命令入口
+## 2.1 命令入口
 
 ```typescript
 // packages/cli/src/index.ts
@@ -20,7 +20,7 @@ program
   })
 ```
 
-### 主要流程
+## 2.2 主要流程
 
 ```mermaid
 graph TD
@@ -36,9 +36,9 @@ graph TD
     I --> J[创建项目完成]
 ```
 
-## 实现详解
+# 三、实现详解
 
-### 1. 交互式界面设计
+## 3.1 交互式界面设计
 
 使用 `@inquirer/prompts` 实现用户友好的交互界面：
 
@@ -88,7 +88,7 @@ async function create() {
 - **输入验证**：确保项目名称符合 npm 包命名规范
 - **循环验证**：直到用户输入有效值才继续
 
-### 2. 模板包管理
+## 3.2 模板包管理
 
 通过 `NpmPackage` 类管理模板的下载、更新和缓存：
 
@@ -131,7 +131,7 @@ if (!(await pkg.exists())) {
 - **错误处理**：完善的错误提示和异常处理
 - **进度反馈**：使用 ora 提供友好的加载动画
 
-### 3. 模板渲染机制
+## 3.3 模板渲染机制
 
 使用 EJS 模板引擎进行动态内容渲染：
 
@@ -191,7 +191,7 @@ for (const file of files) {
 - `author`: 当前用户
 - `year`: 当前年份
 
-### 4. 条件性文件生成
+## 3.4 条件性文件生成
 
 支持根据用户选择生成不同的文件结构：
 
@@ -221,9 +221,9 @@ for (const file of files) {
 <% } %>
 ```
 
-## 模板设计最佳实践
+# 四、模板设计最佳实践
 
-### 1. 目录结构设计
+## 4.1 目录结构设计
 
 ```
 template/
@@ -240,7 +240,7 @@ template/
 └── README.md
 ```
 
-### 2. 配置文件模板
+## 4.2 配置文件模板
 
 **package.json 模板：**
 
@@ -275,7 +275,7 @@ template/
 }
 ```
 
-### 3. 代码模板示例
+## 4.3 代码模板示例
 
 **React 组件模板：**
 
@@ -303,9 +303,9 @@ const <%= projectNamePascal %>: React.FC<<%= projectNamePascal %>Props> = ({
 export default <%= projectNamePascal %>
 ```
 
-## 错误处理与用户体验
+# 五、错误处理与用户体验
 
-### 1. 完善的错误处理
+## 5.1 完善的错误处理
 
 ```typescript
 async function create() {
@@ -324,7 +324,7 @@ async function create() {
 }
 ```
 
-### 2. 用户友好的提示
+## 5.2 用户友好的提示
 
 ```typescript
 // 成功创建后的提示
@@ -341,7 +341,7 @@ console.log(`
 `)
 ```
 
-### 3. 进度反馈
+## 5.3 进度反馈
 
 ```typescript
 const steps = [
@@ -359,9 +359,9 @@ const updateStep = (index: number, status: 'pending' | 'running' | 'completed' |
 }
 ```
 
-## 扩展性设计
+# 六、扩展性设计
 
-### 1. 插件化架构
+## 6.1 插件化架构
 
 ```typescript
 interface CreatePlugin {
@@ -378,7 +378,7 @@ interface CreateContext {
 }
 ```
 
-### 2. 自定义模板支持
+## 6.2 自定义模板支持
 
 ```typescript
 // 支持本地模板
@@ -395,9 +395,9 @@ if (localTemplate) {
 }
 ```
 
-## 性能优化
+# 七、性能优化
 
-### 1. 并行处理
+## 7.1 并行处理
 
 ```typescript
 // 并行下载多个依赖
@@ -406,7 +406,7 @@ const downloadPromises = dependencies.map((dep) => pkg.install(dep))
 await Promise.all(downloadPromises)
 ```
 
-### 2. 缓存策略
+## 7.2 缓存策略
 
 ```typescript
 // 检查模板版本
@@ -419,7 +419,7 @@ if (cachedVersion === latestVersion) {
 }
 ```
 
-## 总结
+# 八、总结
 
 Imber CLI 的 `create` 命令展现了现代脚手架工具的最佳实践：
 
@@ -430,3 +430,8 @@ Imber CLI 的 `create` 命令展现了现代脚手架工具的最佳实践：
 5. **代码质量**：TypeScript 类型安全、完善的错误处理
 
 通过这种设计，开发者可以快速创建符合最佳实践的项目结构，大大提高了开发效率。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图或知识图（Mermaid）
+> DIAGRAM_DESCRIPTION：图中必须完整呈现“Imber CLI（5）- Create 命令实现”涉及的核心节点、依赖方向、关键分支和异常路径，并与正文术语保持一致。

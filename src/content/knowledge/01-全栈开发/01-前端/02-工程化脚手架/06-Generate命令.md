@@ -1,12 +1,12 @@
-# Imber CLI Generate 命令实现详解
+# Imber CLI（6）- Generate 命令实现
 
-## 概述
+# 一、概述
 
 `generate` 命令是 Imber CLI 的创新功能，基于 AI 技术实现智能组件生成。它通过 OpenAI API 分析用户需求，自动生成符合项目规范的 React/Vue 组件代码。本文将深入解析其实现原理和技术细节。
 
-## 核心架构
+# 二、核心架构
 
-### 命令入口
+## 2.1 命令入口
 
 ```typescript
 // packages/cli/src/index.ts
@@ -20,7 +20,7 @@ program
   })
 ```
 
-### 主要流程
+## 2.2 主要流程
 
 ```mermaid
 graph TD
@@ -35,9 +35,9 @@ graph TD
     I --> J[完成生成]
 ```
 
-## 实现详解
+# 三、实现详解
 
-### 1. 配置文件管理
+## 3.1 配置文件管理
 
 使用 `cosmiconfig` 库实现灵活的配置管理：
 
@@ -116,7 +116,7 @@ module.exports = {
 }
 ```
 
-### 2. OpenAI 客户端集成
+## 3.2 OpenAI 客户端集成
 
 ```typescript
 import OpenAI from 'openai'
@@ -146,7 +146,7 @@ while (!componentDesc) {
 }
 ```
 
-### 3. AI 代码生成
+## 3.3 AI 代码生成
 
 ```typescript
 // 调用 OpenAI API 生成组件代码
@@ -186,7 +186,7 @@ try {
 }
 ```
 
-### 4. Markdown 解析与文件生成
+## 3.4 Markdown 解析与文件生成
 
 使用 `remark` 解析 AI 返回的 Markdown 格式代码：
 
@@ -271,9 +271,9 @@ function saveFile(fileName: string, content: string, outputDir: string, config: 
 }
 ```
 
-## 高级功能
+# 四、高级功能
 
-### 1. 智能文件命名
+## 4.1 智能文件命名
 
 ```typescript
 function generateFileName(componentName: string, type: 'component' | 'style' | 'test'): string {
@@ -292,7 +292,7 @@ function generateFileName(componentName: string, type: 'component' | 'style' | '
 }
 ```
 
-### 2. 代码质量检查
+## 4.2 代码质量检查
 
 ```typescript
 import { ESLint } from 'eslint'
@@ -327,7 +327,7 @@ async function lintGeneratedCode(filePath: string) {
 }
 ```
 
-### 3. 模板变量替换
+## 4.3 模板变量替换
 
 ```typescript
 function processTemplateVariables(content: string, componentName: string): string {
@@ -348,9 +348,9 @@ function processTemplateVariables(content: string, componentName: string): strin
 }
 ```
 
-## 错误处理与用户体验
+# 五、错误处理与用户体验
 
-### 1. 完善的错误处理
+## 5.1 完善的错误处理
 
 ```typescript
 async function generate() {
@@ -372,7 +372,7 @@ async function generate() {
 }
 ```
 
-### 2. 进度反馈
+## 5.2 进度反馈
 
 ```typescript
 const steps = [
@@ -396,7 +396,7 @@ function updateStep(index: number, status: 'pending' | 'running' | 'completed' |
 }
 ```
 
-### 3. 成功提示
+## 5.3 成功提示
 
 ```typescript
 function showSuccessMessage(files: string[]) {
@@ -416,9 +416,9 @@ ${files.map((file) => `  ✅ ${file}`).join('\n')}
 }
 ```
 
-## 扩展功能
+# 六、扩展功能
 
-### 1. 批量生成
+## 6.1 批量生成
 
 ```typescript
 async function batchGenerate(descriptions: string[]) {
@@ -434,7 +434,7 @@ async function batchGenerate(descriptions: string[]) {
 }
 ```
 
-### 2. 组件预览
+## 6.2 组件预览
 
 ```typescript
 async function previewComponent(componentPath: string) {
@@ -447,7 +447,7 @@ async function previewComponent(componentPath: string) {
 }
 ```
 
-### 3. 智能建议
+## 6.3 智能建议
 
 ```typescript
 async function suggestImprovements(componentCode: string) {
@@ -469,9 +469,9 @@ async function suggestImprovements(componentCode: string) {
 }
 ```
 
-## 性能优化
+# 七、性能优化
 
-### 1. 缓存机制
+## 7.1 缓存机制
 
 ```typescript
 import crypto from 'crypto'
@@ -489,7 +489,7 @@ async function getCachedResult(key: string) {
 }
 ```
 
-### 2. 并发控制
+## 7.2 并发控制
 
 ```typescript
 import pLimit from 'p-limit'
@@ -503,7 +503,7 @@ async function generateWithLimit(descriptions: string[]) {
 }
 ```
 
-## 总结
+# 八、总结
 
 Imber CLI 的 `generate` 命令展现了 AI 辅助开发的前沿实践：
 
@@ -514,3 +514,8 @@ Imber CLI 的 `generate` 命令展现了 AI 辅助开发的前沿实践：
 5. **扩展性**：插件化架构、批量处理、智能建议
 
 通过这种设计，开发者可以用自然语言描述需求，快速生成高质量的组件代码，大大提高了开发效率。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图或知识图（Mermaid）
+> DIAGRAM_DESCRIPTION：图中必须完整呈现“Imber CLI（6）- Generate 命令实现”涉及的核心节点、依赖方向、关键分支和异常路径，并与正文术语保持一致。

@@ -1,12 +1,12 @@
-# Imber CLI 项目打包与发布 NPM 详解
+# Imber CLI（2）- 项目打包与发布 NPM
 
-## 概述
+# 一、概述
 
 Imber CLI 的打包与发布系统是一个完整的 NPM 包管理解决方案，支持 monorepo 架构下的多包发布、版本管理、依赖优化和自动化部署。本文将深入解析其实现原理、最佳实践和高级功能。
 
-## 打包系统架构
+# 二、打包系统架构
 
-### 整体架构图
+## 2.1 整体架构图
 
 ```mermaid
 graph TD
@@ -29,16 +29,16 @@ graph TD
     D --> O[标签管理]
 ```
 
-### 核心组件
+## 2.2 核心组件
 
 1. **构建系统**：TypeScript 编译、代码优化、资源处理
 2. **包管理器**：依赖分析、包结构生成、元数据管理
 3. **版本控制**：语义化版本、变更记录、发布流程
 4. **发布系统**：NPM 发布、CDN 同步、文档生成
 
-## 构建系统实现
+# 三、构建系统实现
 
-### 1. TypeScript 编译配置
+## 3.1 TypeScript 编译配置
 
 ```json
 // tsconfig.build.json
@@ -59,7 +59,7 @@ graph TD
 }
 ```
 
-### 2. 构建脚本
+## 3.2 构建脚本
 
 ```typescript
 // scripts/build.ts
@@ -201,7 +201,7 @@ MIT
 export default BuildSystem
 ```
 
-### 3. 多包构建
+## 3.3 多包构建
 
 ```typescript
 // scripts/build-monorepo.ts
@@ -261,9 +261,9 @@ class MonorepoBuilder {
 export default MonorepoBuilder
 ```
 
-## 版本管理系统
+# 四、版本管理系统
 
-### 1. 语义化版本控制
+## 4.1 语义化版本控制
 
 ```typescript
 // scripts/version-manager.ts
@@ -320,7 +320,7 @@ class VersionManager {
 export default VersionManager
 ```
 
-### 2. 变更日志生成
+## 4.2 变更日志生成
 
 ```typescript
 // scripts/changelog-generator.ts
@@ -418,9 +418,9 @@ class ChangelogGenerator {
 export default ChangelogGenerator
 ```
 
-## 发布系统实现
+# 五、发布系统实现
 
-### 1. NPM 发布
+## 5.1 NPM 发布
 
 ```typescript
 // scripts/publisher.ts
@@ -498,7 +498,7 @@ class NPMPublisher {
 export default NPMPublisher
 ```
 
-### 2. 自动化发布流程
+## 5.2 自动化发布流程
 
 ```typescript
 // scripts/auto-publisher.ts
@@ -610,9 +610,9 @@ class AutoPublisher {
 export default AutoPublisher
 ```
 
-## 高级功能
+# 六、高级功能
 
-### 1. 依赖分析
+## 6.1 依赖分析
 
 ```typescript
 // scripts/dependency-analyzer.ts
@@ -720,7 +720,7 @@ class DependencyAnalyzer {
 export default DependencyAnalyzer
 ```
 
-### 2. 包大小优化
+## 6.2 包大小优化
 
 ```typescript
 // scripts/bundle-optimizer.ts
@@ -790,9 +790,9 @@ class BundleOptimizer {
 export default BundleOptimizer
 ```
 
-## 部署配置
+# 七、部署配置
 
-### 1. GitHub Actions 配置
+## 7.1 GitHub Actions 配置
 
 ```yaml
 # .github/workflows/release.yml
@@ -839,7 +839,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-### 2. 环境配置
+## 7.2 环境配置
 
 ```typescript
 // scripts/env-config.ts
@@ -876,9 +876,9 @@ class EnvironmentConfig {
 export default EnvironmentConfig
 ```
 
-## 最佳实践
+# 八、最佳实践
 
-### 1. 版本管理策略
+## 8.1 版本管理策略
 
 ```typescript
 // 语义化版本控制
@@ -899,7 +899,7 @@ const versionExamples = {
 }
 ```
 
-### 2. 发布流程
+## 8.2 发布流程
 
 ```typescript
 // 发布检查清单
@@ -915,7 +915,7 @@ const releaseChecklist = [
 ]
 ```
 
-### 3. 回滚策略
+## 8.3 回滚策略
 
 ```typescript
 // scripts/rollback.ts
@@ -937,7 +937,7 @@ class RollbackManager {
 }
 ```
 
-## 总结
+# 九、总结
 
 Imber CLI 的打包与发布系统提供了完整的 NPM 包管理解决方案：
 
@@ -956,3 +956,8 @@ Imber CLI 的打包与发布系统提供了完整的 NPM 包管理解决方案�
 - 实现可靠的版本控制
 
 这为现代前端项目的包管理提供了完整的解决方案。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图或知识图（Mermaid）
+> DIAGRAM_DESCRIPTION：图中必须完整呈现“Imber CLI（2）- 项目打包与发布 NPM”涉及的核心节点、依赖方向、关键分支和异常路径，并与正文术语保持一致。

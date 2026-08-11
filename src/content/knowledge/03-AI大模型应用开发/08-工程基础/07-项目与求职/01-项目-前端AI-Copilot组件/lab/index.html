@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>订单详情 Copilot</title>
+  <style>
+    body { margin: 0; font: 15px/1.6 system-ui; background: #f5f5f5; color: #171717; }
+    main { max-width: 920px; margin: 40px auto; padding: 24px; background: white; border: 1px solid #ddd; }
+    .tag { color: #b42318; }
+    #toggle { position: fixed; right: 24px; bottom: 24px; width: 52px; height: 52px; border: 0; border-radius: 50%; color: white; background: #1769e0; }
+    #panel { display: none; position: fixed; inset: 0 0 0 auto; width: min(420px, 92vw); padding: 20px; background: white; box-shadow: -8px 0 24px #0002; }
+    #panel.open { display: block; }
+    #messages { height: 62vh; overflow: auto; white-space: pre-wrap; }
+    form { display: flex; gap: 8px; }
+    input { flex: 1; padding: 10px; }
+    .confirm { padding: 10px; background: #fff6d9; border: 1px solid #d9a400; }
+  </style>
+</head>
+<body>
+  <main><h1>订单 O-2026-0520</h1><p>状态：退款中 <span class="tag">异常</span></p><p>金额：89 元</p></main>
+  <button id="toggle" title="打开 AI Copilot">AI</button>
+  <aside id="panel"><h2>订单 Copilot</h2><div id="messages"></div><form id="form"><input id="input" placeholder="询问异常原因或创建工单"><button>发送</button></form></aside>
+  <script>
+    const panel = document.querySelector('#panel'); // Copilot 抽屉。
+    const messages = document.querySelector('#messages'); // 对话与 trace 容器。
+    const input = document.querySelector('#input'); // 用户指令输入框。
+    document.querySelector('#toggle').addEventListener('click', () => panel.classList.toggle('open'));
+
+    function getPageContext() {
+      return { selectedOrderId: 'O-2026-0520', routeName: 'order-detail', idCard: '310101199001011234' }; // 后端会丢弃敏感字段。
+    }
+
+    function appendMessage(payload) {
+      const block = document.createElement('div'); // 当前回答块。
+      block.textContent = `${payload.reply}\nTrace: ${payload.trace.join(' -> ')}`;
+      if (payload.needs_confirmation) {
+        const confirmButton = document.createElement('button'); // 写操作人工确认按钮。
+        confirmButton.className = 'confirm';
+        confirmButton.textContent = '确认创建';
+        confirmButton.addEventListener('click', () => { confirmButton.textContent = '已确认，模拟工单已创建'; confirmButton.disabled = true; });
+        block.append(document.createElement('br'), confirmButton);
+      }
+      messages.append(block, document.createElement('hr'));
+    }
+
+    document.querySelector('#form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = input.value.trim(); // 清洗后的用户指令。
+      if (!message) return;
+      try {
+        const response = await fetch('/api/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, pageContext: getPageContext() }) }); // Copilot 响应。
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        appendMessage(await response.json());
+      } catch (error) {
+        appendMessage({ reply: `Copilot 暂时不可用：${error.message}`, trace: [], needs_confirmation: false });
+      }
+    });
+  </script>
+</body>
+</html>

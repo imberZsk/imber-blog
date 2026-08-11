@@ -1,0 +1,392 @@
+# Python（31）- 测试
+
+> 你在前端写过 Jest/Vitest：`test()` 包一个用例、`expect().toBe()` 断言、`beforeEach` 准备数据、`test.each` 跑参数化、`jest.mock` 打桩——那 Python 的 pytest 你已经会了一大半，换的只是语法。本篇解决四个问题：pytest 怎么写一个用例（先用 Jest 锚直觉）、`fixture` 怎么替代 `beforeEach`、参数化和 mock 怎么写、以及怎么测一个 FastAPI 接口。顺带划清几处和 Jest 不一样的坑（断言不是链式 API、fixture 比 `beforeEach` 更"按需注入"）。
+
+# 一、先建立前端锚点
+
+pytest 和 Jest/Vitest 是同一类东西——**自动发现测试文件、跑用例、报告结果**。心智几乎可以平移：
+
+```javascript
+// Jest / Vitest：describe 分组，test 一个用例，expect 链式断言
+test('add 两数相加', () => {
+  expect(add(2, 3)).toBe(5)
+})
+```
+
+```python
+# pytest：一个 test_ 开头的函数就是一个用例，直接用 assert 断言
+def test_add():                 # 函数名以 test_ 开头，pytest 才会发现它
+    assert add(2, 3) == 5       # 直接用 Python 原生 assert，不是链式 API
+```
+
+最大的体感差异一眼可见：**pytest 没有 `expect().toBe()` 这套链式断言，直接用语言原生的 `assert`**。断言失败时 pytest 会智能地把 `2 + 3` 实际算出的值、期望值都打印出来，所以你不会因为"裸 assert"而丢失信息。
+
+| Jest / Vitest | pytest | 说明 |
+|---------------|--------|------|
+| `test('xx', fn)` | `def test_xx():` | 一个用例 |
+| `describe('组', ...)` | `class TestXxx:` 或按文件分 | 分组 |
+| `expect(a).toBe(b)` | `assert a == b` | 断言（原生关键字） |
+| `expect(fn).toThrow()` | `with pytest.raises(...)` | 断言抛异常 |
+| `beforeEach(fn)` | `@pytest.fixture` | 准备数据/环境 |
+| `test.each([...])` | `@pytest.mark.parametrize` | 参数化 |
+| `jest.mock(...)` | `monkeypatch` / `unittest.mock` | 打桩 |
+| `jest --coverage` | `pytest --cov` | 覆盖率 |
+
+一句话切入点：**pytest = Jest 的心智 + 用原生 `assert` 替代 `expect` + 用 `fixture` 替代 `beforeEach`**。
+
+---
+
+# 二、装与跑：约定大于配置
+
+pytest 是第三方库，不在标准库里，先装（参考第 12 篇虚拟环境与依赖管理）：
+
+```bash
+pip install pytest            # 安装 pytest 本体
+pytest                        # 在项目根目录直接跑，它会自动发现所有测试
+pytest -v                     # -v：verbose，逐条打印用例名和结果
+pytest tests/test_math.py     # 只跑某个文件
+pytest -k "add"               # 只跑名字里含 add 的用例（类似 jest -t）
+```
+
+pytest 靠**命名约定**自动发现测试，不用像 Jest 那样配 `testMatch`：
+
+| 约定项 | 规则 |
+|--------|------|
+| 测试文件 | `test_*.py` 或 `*_test.py` |
+| 测试函数 | 以 `test_` 开头 |
+| 测试类 | 以 `Test` 开头，且**不能写 `__init__`** |
+
+放一个完整最小例子。被测代码 `calc.py`：
+
+```python
+# calc.py：被测的业务代码
+# add：两数相加，a、b 是两个加数
+def add(a, b):
+    return a + b
+
+# divide：两数相除，a 是被除数，b 是除数
+def divide(a, b):
+    if b == 0:                          # 业务场景：除数为 0 时主动抛错，而非返回 inf
+        raise ValueError("除数不能为 0")
+    return a / b
+```
+
+测试文件 `test_calc.py`：
+
+```python
+# test_calc.py：calc 模块的测试
+import pytest                           # 引入 pytest，用它的 raises 等工具
+from calc import add, divide            # 导入被测函数
+
+# test_add：验证加法正常路径
+def test_add():
+    assert add(2, 3) == 5               # 期望 2+3 等于 5
+    assert add(-1, 1) == 0              # 顺带验证负数边界
+
+# test_divide_normal：验证除法正常路径
+def test_divide_normal():
+    assert divide(10, 2) == 5
+
+# test_divide_by_zero：验证除数为 0 时抛 ValueError
+def test_divide_by_zero():
+    # pytest.raises：断言代码块内必须抛出指定异常，否则用例失败
+    # 类比 Jest 的 expect(fn).toThrow()
+    with pytest.raises(ValueError):
+        divide(10, 0)
+```
+
+```javascript
+// Jest 等价写法对照
+test('divide by zero throws', () => {
+  expect(() => divide(10, 0)).toThrow()
+})
+```
+
+注意 `pytest.raises` 用的是 `with` 上下文管理器（第 09 篇讲过），把"期望抛错的代码"放进 `with` 块里，比 Jest 包一层箭头函数更直观。
+
+---
+
+# 三、fixture：比 beforeEach 更聪明的"按需注入"
+
+前端的 `beforeEach` 是"每个用例前都跑一遍准备逻辑"。pytest 的 `fixture` 思路升级了一层：**你声明一个 fixture，哪个用例需要它，就把 fixture 名字写进该用例的参数里——pytest 看到参数名就自动注入**。这其实就是第 18 篇讲过的依赖注入思想。
+
+```python
+import pytest
+
+# sample_user：一个 fixture，提供一份测试用的用户数据
+# @pytest.fixture 把普通函数标记成"可被注入的依赖"
+@pytest.fixture
+def sample_user():
+    # 这里可以做准备工作（建对象、连测试库等）
+    return {"id": 1, "name": "tom"}     # 返回值就是注入给用例的东西
+
+# test_user_name：参数名 sample_user 和上面 fixture 同名，pytest 自动把返回值注入进来
+def test_user_name(sample_user):        # 不用手动调用，写在参数里就拿到了
+    assert sample_user["name"] == "tom"
+
+# test_user_id：同一个 fixture 可被多个用例复用，每个用例拿到的都是新执行的结果
+def test_user_id(sample_user):
+    assert sample_user["id"] == 1
+```
+
+```javascript
+// Jest 对照：beforeEach 把数据塞到外层变量，所有用例共享
+let sampleUser
+beforeEach(() => { sampleUser = { id: 1, name: 'tom' } })
+test('user name', () => { expect(sampleUser.name).toBe('tom') })
+```
+
+**关键差异（边界）：**
+
+- Jest 的 `beforeEach` 是"无差别地每个用例前都跑"；pytest 的 fixture 是**"用例显式写了参数才注入，没写就不跑"**——更精准、更省。
+- fixture 可以**互相依赖**：一个 fixture 的参数里又可以写另一个 fixture 名，pytest 自动级联解析。这点 `beforeEach` 做不到。
+
+## 3.1 setup / teardown：用 yield 写"前置 + 收尾"
+
+需要"用完要清理"（关数据库、删临时文件）时，用 `yield`——`yield` 之前是 setup，之后是 teardown。这正好对标 Jest 的 `beforeEach` + `afterEach` 合体：
+
+```python
+import pytest
+
+# db_conn：提供一个测试数据库连接，并保证用例结束后关闭
+@pytest.fixture
+def db_conn():
+    conn = open_test_db()               # setup：yield 之前 = beforeEach
+    yield conn                          # 把 conn 交给用例使用（生成器只产出一次）
+    conn.close()                        # teardown：yield 之后 = afterEach，用例跑完才执行
+
+# test_query：用例拿到 conn，结束后 fixture 会自动 close
+def test_query(db_conn):
+    assert db_conn.query("select 1") == 1
+```
+
+> 这里的 `yield` 是第 06 篇生成器的同款语法：函数执行到 `yield` 暂停、把值交出去，用例跑完再回来执行后面的清理。pytest 巧妙地借生成器实现了"前后夹逻辑"。
+
+## 3.2 scope：控制 fixture 多久重建一次
+
+fixture 默认**每个用例都重新执行一次**（`scope="function"`）。如果准备成本高（比如起一个测试数据库），可以放宽作用域：
+
+```python
+# scope="module"：整个测试文件只执行一次这个 fixture，所有用例共享同一份
+@pytest.fixture(scope="module")
+def expensive_resource():
+    res = create_heavy_resource()       # 只建一次，省时间
+    yield res
+    res.cleanup()
+```
+
+| scope | 重建频率 | 类比 |
+|-------|----------|------|
+| `function`（默认） | 每个用例一次 | `beforeEach` |
+| `module` | 每个文件一次 | 文件级 `beforeAll` |
+| `session` | 整个 pytest 进程一次 | 全局 `beforeAll` |
+
+## 3.3 conftest.py：放公共 fixture 的地方
+
+跨多个测试文件复用的 fixture，放进一个叫 `conftest.py` 的文件里，pytest 会**自动加载、自动共享，不用 import**。它类似 Jest 的 `setup.js` / 全局 `jest.config` 里的公共配置。
+
+```
+tests/
+├── conftest.py        # 公共 fixture 放这里，同目录所有 test_*.py 自动可用
+├── test_user.py
+└── test_order.py
+```
+
+---
+
+# 四、参数化：一份逻辑，多组数据
+
+前端用 `test.each` 跑"同一逻辑、多组输入输出"。pytest 用 `@pytest.mark.parametrize` 装饰器（装饰器见第 10 篇）：
+
+```python
+import pytest
+from calc import add
+
+# @pytest.mark.parametrize：把多组数据喂给同一个用例，每组生成一个独立用例
+# 第一个参数 "a, b, expected"：声明要注入的参数名（对应函数形参）
+# 第二个参数：一个列表，每个元组是一组 (a, b, expected)
+@pytest.mark.parametrize("a, b, expected", [
+    (2, 3, 5),                          # 普通正数
+    (-1, 1, 0),                         # 含负数
+    (0, 0, 0),                          # 边界：全 0
+])
+# test_add_param：a、b 是输入，expected 是该组期望结果
+def test_add_param(a, b, expected):
+    assert add(a, b) == expected
+```
+
+```javascript
+// Jest 对照：test.each
+test.each([
+  [2, 3, 5],
+  [-1, 1, 0],
+  [0, 0, 0],
+])('add(%i, %i) = %i', (a, b, expected) => {
+  expect(add(a, b)).toBe(expected)
+})
+```
+
+跑起来你会看到**三个独立用例**（不是一个），哪组挂了报告会精确指出是哪组数据——这比手写三个 `assert` 强在定位。
+
+---
+
+# 五、mock：隔离外部依赖
+
+测试时不想真的发网络请求、真的查数据库，就要"打桩"。Python 有两种常见做法。
+
+## 5.1 方式一：monkeypatch（pytest 内置 fixture，最轻量）
+
+`monkeypatch` 是 pytest 自带的 fixture，用来**临时替换对象的属性/方法，用例结束自动还原**：
+
+```python
+import requests                          # 假设业务里用 requests 发请求
+
+# get_user_name：业务函数，内部真的发了 HTTP 请求
+def get_user_name(uid):
+    resp = requests.get(f"https://api.example.com/users/{uid}")  # 真实网络请求
+    return resp.json()["name"]
+
+# test_get_user_name：用 monkeypatch 把 requests.get 换成假函数，避免真发请求
+def test_get_user_name(monkeypatch):     # monkeypatch 由 pytest 自动注入
+    # fake_get：假的 requests.get，*args/**kwargs 接住任意调用参数（见第 10 篇）
+    # WHY：我们只关心业务逻辑，不想依赖真实网络，所以伪造一个返回固定数据的响应
+    def fake_get(*args, **kwargs):
+        class FakeResp:                  # 临时造一个有 json() 方法的假响应对象
+            # json：模拟真实响应的 json() 方法，返回固定测试数据
+            def json(self):
+                return {"name": "mock_tom"}
+        return FakeResp()
+    # setattr：把 requests 模块的 get 属性替换成 fake_get，用例结束自动恢复
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert get_user_name(1) == "mock_tom"  # 此刻 requests.get 已是假的，没发真请求
+```
+
+```javascript
+// Jest 对照：jest.spyOn 临时替换实现，afterEach 自动还原
+jest.spyOn(axios, 'get').mockResolvedValue({ data: { name: 'mock_tom' } })
+```
+
+## 5.2 方式二：unittest.mock（标准库，功能更全）
+
+需要"断言某函数被调用了几次、用什么参数调用"时，用标准库 `unittest.mock` 的 `Mock` / `patch`：
+
+```python
+from unittest.mock import patch
+
+# test_with_patch：用 @patch 把目标替换成自动 Mock 对象
+# "calc.requests.get"：要替换的目标路径（替换的是"被测模块里引用到的那个名字"）
+@patch("calc.requests.get")
+# mock_get：patch 自动注入的 Mock 对象，从右往左对应 @patch 的顺序
+def test_with_patch(mock_get):
+    mock_get.return_value.json.return_value = {"name": "mock_tom"}  # 配置假返回值
+    assert get_user_name(1) == "mock_tom"
+    mock_get.assert_called_once()        # 断言这个假 get 恰好被调用了一次
+```
+
+> ⚠️ 最易踩的坑：**patch 的路径要写"使用处"而不是"定义处"**。如果 `calc.py` 里 `import requests` 后用 `requests.get`，就 patch `"calc.requests.get"`，而不是 `"requests.get"`。这和 JS 里 mock 模块按引用路径生效是同一类陷阱。
+
+---
+
+# 六、测一个 FastAPI 接口
+
+前面是纯函数测试。后端真正高频的是测接口。FastAPI（第 14 篇）配套提供了 `TestClient`，用法几乎和前端用 supertest 测 Express 一样——**不用真起服务器**，直接在内存里发请求。
+
+```python
+# app.py：被测的 FastAPI 应用
+from fastapi import FastAPI
+
+app = FastAPI()                              # app：FastAPI 应用实例，承载所有路由
+
+# read_item：一个简单的 GET 接口，item_id 是路径参数
+@app.get("/items/{item_id}")
+def read_item(item_id: int):
+    return {"item_id": item_id, "name": f"item-{item_id}"}
+```
+
+```python
+# test_app.py：用 TestClient 测接口
+from fastapi.testclient import TestClient   # FastAPI 自带的测试客户端
+from app import app
+
+client = TestClient(app)                     # client：包裹 app 的测试客户端，内存里直连，不起真服务
+
+# test_read_item：验证接口返回的状态码和 JSON 结构
+def test_read_item():
+    resp = client.get("/items/42")           # 像 axios 一样发请求，但走的是内存
+    assert resp.status_code == 200           # 先断言 HTTP 状态码
+    assert resp.json() == {                   # 再断言响应体 JSON
+        "item_id": 42,
+        "name": "item-42",
+    }
+```
+
+```javascript
+// Express + supertest 对照：思路一模一样
+const res = await request(app).get('/items/42')
+expect(res.status).toBe(200)
+expect(res.body).toEqual({ item_id: 42, name: 'item-42' })
+```
+
+> `TestClient` 底层基于 httpx，能同步调用异步接口，所以即便你的 `read_item` 写成 `async def`（异步见第 17 篇），测试代码这里也无需写 `await`，照样同步调用——这是它帮你抹平的细节。
+
+测带参数校验的接口时，顺手验证"非法输入会被 Pydantic 拦下"（数据校验见第 15 篇）：
+
+```python
+# test_read_item_invalid：item_id 声明是 int，传非数字应返回 422
+def test_read_item_invalid():
+    resp = client.get("/items/abc")          # abc 不能转成 int
+    assert resp.status_code == 422           # FastAPI 校验失败的标准状态码
+```
+
+---
+
+# 七、覆盖率与常用命令速查
+
+覆盖率告诉你"代码有多少被测试跑到了"，装 `pytest-cov` 插件：
+
+```bash
+pip install pytest-cov            # 覆盖率插件
+pytest --cov=calc                 # 统计 calc 模块的覆盖率
+pytest --cov=. --cov-report=html  # 生成 HTML 报告，浏览器打开看红绿
+```
+
+高频命令汇总：
+
+| 命令 | 作用 | Jest 类比 |
+|------|------|-----------|
+| `pytest` | 跑全部测试 | `jest` |
+| `pytest -v` | 显示每条用例名 | `jest --verbose` |
+| `pytest -k "add"` | 按名字筛选用例 | `jest -t add` |
+| `pytest -x` | 一旦失败立即停止 | `jest --bail` |
+| `pytest --lf` | 只重跑上次失败的（last-failed） | `jest --onlyFailures` |
+| `pytest -s` | 不捕获输出，让 `print` 显示出来 | — |
+| `pytest --cov=.` | 覆盖率 | `jest --coverage` |
+
+---
+
+# 八、总结
+
+pytest 和 Jest/Vitest 是同一类测试框架，心智可平移：`def test_xx()` 是用例，`fixture` 替代 `beforeEach`，`@parametrize` 替代 `test.each`，`monkeypatch`/`patch` 替代 `jest.mock`。最大的体感差异是 **pytest 用语言原生的 `assert` 而非 `expect()` 链式断言**，且断言失败时会智能展开实际值。测接口用 FastAPI 自带的 `TestClient`，思路和 supertest 测 Express 一致。
+
+✅ 该掌握
+- 命名约定：文件 `test_*.py`、函数 `test_` 开头、类 `Test` 开头（不写 `__init__`）
+- 断言用原生 `assert a == b`；断言抛错用 `with pytest.raises(...)`
+- fixture：写进用例参数即自动注入；`yield` 实现 setup/teardown；`conftest.py` 放公共 fixture
+- 参数化：`@pytest.mark.parametrize("a, b, expected", [...])`，每组生成独立用例
+- mock：轻量用 `monkeypatch`，要断言调用次数/参数用 `unittest.mock.patch`
+- 测接口：`TestClient(app)` 在内存里直发请求，`async def` 接口也无需 `await`
+
+⚠️ 易混淆
+- 不是 `expect().toBe()`，是裸 `assert`——别去找链式 API
+- fixture 不像 `beforeEach` 无差别全跑，而是"用例写了参数才注入"
+- `patch` 路径写**使用处**（`"calc.requests.get"`），不是定义处（最常见的坑）
+- fixture 默认每个用例重建一次，成本高的资源用 `scope="module"/"session"` 放宽
+- 测试类里**不能写 `__init__`**，否则 pytest 不收集该类
+
+下一篇（第 32 篇）：打包与部署，Docker 与环境变量。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：思维导图（Mindmap）
+> DIAGRAM_DESCRIPTION：中心节点为“Python（31）- 测试”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

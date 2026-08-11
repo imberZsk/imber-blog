@@ -1,6 +1,6 @@
 # React 源码（4）- Fiber 架构和数据结构
 
-## fiber 的三种含义
+# 一、fiber 的三种含义
 
 先来看 FiberNode 这个构造函数，这个构造函数源码中有三个注释，翻译过来就是 实例，Fiber，副作用，再参考 React 技术中的理念
 
@@ -60,7 +60,7 @@ function FiberNode(
 }
 ```
 
-## 状态和属性
+# 二、状态和属性
 
 - `pendingProps` 和 `memoizedProps`：pendingProps 存储了新的、待处理的 props。memoizedProps 存储了上一次成功渲染时使用的 props。React 通过比较这两个属性来判断组件的 props 是否发生变化，从而决定是否需要重新渲染。
 
@@ -82,7 +82,7 @@ function FiberNode(
 
 - `alternate`：指向另一个 Fiber 树中对应的 Fiber 节点。例如，如果当前 Fiber 节点属于 Current Fiber Tree，那么 alternate 就指向 Work-in-Progress Fiber Tree 中对应的节点，反之亦然。这个属性是实现“双缓冲”机制的关键。
 
-## 工作标签系统（workTag）
+# 三、工作标签系统（workTag）
 
 React Fiber 的“工作标签系统”主要是指 Fiber 节点上的 tag 属性。这个 tag 是一个数字枚举值 (在源码中通常定义为 WorkTag 枚举)，它用来标识一个 Fiber 节点代表的是什么类型的工作单元或组件类型。不同的 tag 会导致 React Reconciler (协调器) 在 beginWork 和 completeWork 阶段对该 Fiber 节点采取不同的处理逻辑。
 
@@ -120,7 +120,7 @@ tag 属性是 Fiber 节点的核心属性之一，它决定了：
 - HostHoistable (22): (实验性/内部使用) 与静态提升优化相关，可能用于标记那些可以在构建时提升的静态子树或元素。
 - HostSingleton (23): (实验性/内部使用) 可能与确保某些类型的 HostComponent (如 <html>, <head>, <body>) 在文档中是单例的逻辑相关。
 
-#### 工作流程中的作用：
+### 工作流程中的作用：
 
 在 createFiberFromTypeAndProps 函数中，React 会根据传入的 type (组件构造函数、字符串标签名、或 React 内部类型如 REACT_FRAGMENT_TYPE) 来决定新创建的 Fiber 节点的 tag。
 
@@ -155,9 +155,9 @@ function beginWork(current, workInProgress, lanes) {
 
 同样，`completeWork` 函数中也会根据 tag 来执行不同的收尾工作，比如创建 DOM 实例、准备 DOM 更新、收集 effect 等。
 
-因此，WorkTag 是 React Fiber 架构中区分不同工作类型、指导协调过程和实现各种 React 特性的关键机制。
+所以，WorkTag 是 React Fiber 架构中区分不同工作类型、指导协调过程和实现各种 React 特性的关键机制。
 
-## fiber 的指针结构
+# 四、fiber 的指针结构
 
 Fiber 节点之间通过以下三个关键指针形成树结构，这使得 React 可以高效地遍历和处理组件：
 
@@ -194,7 +194,7 @@ App (FunctionComponent)
 │   └── return → App
 ```
 
-## Fiber 树的构建与遍历
+# 五、Fiber 树的构建与遍历
 
 Fiber 树的构建和遍历是协调阶段的核心。React 采用深度优先遍历（DFS）的方式来处理 Fiber 树，这个过程分为两个主要阶段：
 
@@ -208,9 +208,9 @@ Render Phase (渲染阶段 / 协调阶段)： 从根 Fiber 节点开始，自上
 
 通过这种深度优先遍历和双阶段提交的机制，Fiber 架构实现了高效且可控的 UI 更新。Render 阶段的“计算”与 Commit 阶段的“执行”分离，使得复杂的更新任务可以在不阻塞主线程的情况下分片完成。
 
-然而，如果每次更新都在唯一的一棵树上进行，那么中断和恢复就无从谈起，因为中断可能导致 UI 显示出不完整的中间状态。为了解决这个问题，React 引入了一个更为精妙的设计——双缓冲 Fiber 树。
+不过，如果每次更新都在唯一的一棵树上进行，那么中断和恢复就无从谈起，因为中断可能导致 UI 显示出不完整的中间状态。为了解决这个问题，React 引入了一个更为精妙的设计——双缓冲 Fiber 树。
 
-## 双缓冲 Fiber 树？
+# 六、双缓冲 Fiber 树？
 
 React 在内存中同时维护两棵 Fiber 树：
 
@@ -220,7 +220,7 @@ React 在内存中同时维护两棵 Fiber 树：
 
 每个 Fiber 节点都有一个 alternate 属性。这个属性非常关键，它将 current 树中的 Fiber 节点和 workInProgress 树中对应的 Fiber 节点连接起来。也就是说，current.alternate 指向 workInProgress 树中的对应节点，而 workInProgress.alternate 指向 current 树中的对应节点。
 
-### 双缓冲 Fiber 树有什么用？
+## 6.1 双缓冲 Fiber 树有什么用？
 
 双缓冲机制主要用于以下目的：
 
@@ -232,7 +232,7 @@ React 在内存中同时维护两棵 Fiber 树：
 
 4. 状态复用与优化: 在创建 workInProgress 树时，如果某个 Fiber 节点及其子树没有发生变化，React 可以直接复用 current 树中对应的 Fiber 节点（通过 alternate 指针），避免了不必要的重新创建和计算，从而提高性能。
 
-### 有什么优点？
+## 6.2 有什么优点？
 
 1. 提升用户体验:
    - 避免了 UI 渲染的中间状态，界面更新更平滑。
@@ -244,3 +244,15 @@ React 在内存中同时维护两棵 Fiber 树：
    - 错误处理机制使得单个组件的错误不容易导致整个应用崩溃。
 4. 实现高级特性:
    - 是 React 并发模式 (Concurrent Mode) 和 Suspense 等高级特性的基石。
+
+# 七、总结
+
+- **fiber 的三种含义**：先来看 FiberNode 这个构造函数，这个构造函数源码中有三个注释，翻译过来就是 实例，Fiber，副作用，再参考 React 技术中的理念
+- **状态和属性**：pendingProps 和 memoizedProps：pendingProps 存储了新的、待处理的 props。
+- **工作标签系统（workTag）**：React Fiber 的“工作标签系统”主要是指 Fiber 节点上的 tag 属性。
+- **fiber 的指针结构**：Fiber 节点之间通过以下三个关键指针形成树结构，这使得 React 可以高效地遍历和处理组件：
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（4）- Fiber 架构和数据结构”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 应用开发在线实验</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0f1211; color: #e8ecea; font-size: 13px; letter-spacing: 0; }
+    button, select, input { font: inherit; }
+    .shell { min-height: 100vh; padding: 16px; }
+    .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .code { color: #66deb3; font: 700 11px/1.4 ui-monospace, monospace; }
+    h1 { margin: 4px 0 0; font-size: 17px; line-height: 1.35; }
+    .summary { margin: 5px 0 0; max-width: 720px; color: #a5afa9; line-height: 1.5; }
+    .run { min-width: 92px; border: 1px solid #66deb3; border-radius: 6px; background: #66deb3; color: #07110d; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: minmax(210px, .75fr) minmax(0, 1.8fr); gap: 12px; }
+    .panel { min-width: 0; border: 1px solid #29322e; border-radius: 6px; background: #141817; padding: 12px; }
+    .panel h2 { margin: 0 0 10px; color: #cbd3cf; font-size: 12px; }
+    .control { display: grid; gap: 5px; margin-bottom: 10px; }
+    .head { display: flex; justify-content: space-between; gap: 8px; color: #aeb8b2; }
+    .value { color: #66deb3; font-family: ui-monospace, monospace; }
+    select { width: 100%; border: 1px solid #36413b; border-radius: 5px; background: #0d100f; color: #e8ecea; padding: 7px 8px; }
+    input[type="range"] { width: 100%; accent-color: #66deb3; }
+    .toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #29322e; padding-top: 9px; }
+    .toggle input { width: 18px; height: 18px; accent-color: #efb366; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .metric { min-width: 0; border: 1px solid #2b3530; background: #101412; padding: 8px; }
+    .metric b { display: block; color: #66deb3; font: 700 16px/1.2 ui-monospace, monospace; overflow-wrap: anywhere; }
+    .metric span { display: block; margin-top: 4px; color: #8f9a94; font-size: 10px; }
+    .stages { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
+    .stage { min-width: 92px; border: 1px solid #35413b; border-radius: 5px; padding: 7px; color: #a8b2ac; }
+    .stage.ok { border-color: #367a61; color: #8de9c7; }
+    .stage.warn { border-color: #8a6230; color: #efbd7e; }
+    .stage.fail { border-color: #8b4545; color: #ff9b9b; }
+    .stage small { display: block; margin-top: 3px; color: #7e8983; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border-top: 1px solid #29322e; padding: 7px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { color: #7f8b84; font-size: 10px; text-transform: uppercase; }
+    td:first-child { width: 25%; color: #cbd3cf; font-family: ui-monospace, monospace; }
+    .diagnosis { margin-top: 9px; border-left: 3px solid #66deb3; background: #101412; padding: 8px 10px; color: #b7c0bb; line-height: 1.5; }
+    .diagnosis.danger { border-left-color: #ef7f7f; }
+    .foot { margin-top: 8px; color: #68736d; font-size: 10px; }
+    @media (max-width: 680px) { .shell { padding: 12px; } .top { display: grid; } .run { width: 100%; } .grid { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body data-scenario=__KNOWLEDGE_LAB_SCENARIO__>
+  <main class="shell">
+    <header class="top">
+      <div><div class="code" id="scenario-id"></div><h1 id="title"></h1><p class="summary" id="summary"></p></div>
+      <button class="run" id="run" type="button">运行实验</button>
+    </header>
+    <section class="grid">
+      <div class="panel"><h2>实验参数</h2><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div>
+      <div class="panel">
+        <h2>执行结果</h2><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div>
+        <table><thead><tr><th>检查项</th><th>可观察结果</th></tr></thead><tbody id="rows"></tbody></table>
+        <div class="diagnosis" id="diagnosis"></div>
+        <div class="foot">数值由浏览器实时计算；外部模型、ES、Redis、Milvus 和可观测平台为明确标注的机制模拟。</div>
+      </div>
+    </section>
+  </main>
+  <script src="/knowledge-labs/ai-app.js"></script>
+</body>
+</html>
