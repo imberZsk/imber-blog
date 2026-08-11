@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { basename, extname, join, relative, sep } from 'node:path'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
 import { auditKnowledgeQuizQuestions, createKnowledgeQuiz } from '../src/lib/knowledge-quiz.ts'
+import { isBrowserRunnablePythonSource } from '../src/lib/knowledge-sandbox.ts'
 
 /** 知识库 Markdown 的绝对根目录。 */
 const KNOWLEDGE_CONTENT_ROOT = join(process.cwd(), 'src/content/knowledge')
@@ -56,8 +57,55 @@ let mindmapArticleCount = 0
 /** 成功生成知识点思维导图的 AI 应用开发文章数量。 */
 let aiAppMindmapArticleCount = 0
 
+/** 可由文章页 Pyodide Worker 直接执行的 Python Lab 数量。 */
+let browserRunnablePythonLabCount = 0
+
+/** 因启动服务或依赖外部环境而必须本地运行的 Python Lab 数量。 */
+let browserIncompatiblePythonLabCount = 0
+
 /** 全库审计发现的问题。 */
 const auditFailures = []
+
+/**
+ * 统计所有 Python Lab 的浏览器运行覆盖范围。
+ * @param directory 当前需要递归扫描的知识目录。
+ */
+function auditPythonLabSandboxCoverage(directory) {
+  for (const directoryEntry of readdirSync(directory, { withFileTypes: true })) {
+    /** 当前目录项的绝对路径。 */
+    const entryPath = join(directory, directoryEntry.name)
+    if (!directoryEntry.isDirectory()) {
+      continue
+    }
+
+    if (directoryEntry.name === '_shared-labs') {
+      continue
+    }
+
+    if (directoryEntry.name === 'lab') {
+      /** 当前 Lab 约定使用的 Python 入口。 */
+      const mainFilePath = join(entryPath, 'main.py')
+      try {
+        /** 用于判定 Pyodide 兼容性的完整入口源码。 */
+        const mainSourceCode = readFileSync(mainFilePath, 'utf8')
+        if (isBrowserRunnablePythonSource(mainSourceCode)) {
+          browserRunnablePythonLabCount += 1
+        } else {
+          browserIncompatiblePythonLabCount += 1
+        }
+      } catch (error) {
+        /** 不存在 main.py 的 HTML 或配置类 Lab 不参与 Python 覆盖率统计。 */
+        const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : null
+        if (errorCode !== 'ENOENT') {
+          throw error
+        }
+      }
+      continue
+    }
+
+    auditPythonLabSandboxCoverage(entryPath)
+  }
+}
 
 /**
  * 递归找出与网站构建规则一致的文章 Markdown。
@@ -329,6 +377,8 @@ for (const articleFile of articleFiles) {
   }
 }
 
+auditPythonLabSandboxCoverage(KNOWLEDGE_CONTENT_ROOT)
+
 if (auditFailures.length > 0) {
   console.error(`知识内容审计失败，共 ${auditFailures.length} 个问题：`)
   for (const auditFailure of auditFailures) {
@@ -344,4 +394,7 @@ if (auditFailures.length > 0) {
     `人工题 ${curatedQuizArticleCount} 篇，正文证据题 ${generatedQuizArticleCount} 篇，不强行出题 ${skippedQuizArticleCount} 篇。`
   )
   console.log(`知识点思维导图 ${mindmapArticleCount} 篇，其中 AI 应用开发 ${aiAppMindmapArticleCount} 篇。`)
+  console.log(
+    `Python 在线实验 ${browserRunnablePythonLabCount} 篇，本地服务型示例 ${browserIncompatiblePythonLabCount} 篇。`
+  )
 }

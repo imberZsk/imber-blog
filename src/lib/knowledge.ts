@@ -9,7 +9,13 @@ import html from 'remark-html'
 import { KNOWLEDGE_MODULE_LABELS, type KnowledgeTrackSlug } from '@/app/knowledge/config'
 import { createKnowledgeMindmap, type KnowledgeMindmapData } from '@/lib/knowledge-mindmap'
 import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge-quiz'
-import type { KnowledgeSandbox, KnowledgeSandboxFile, KnowledgeSandboxRuntime } from '@/lib/knowledge-sandbox'
+import {
+  BROWSER_PYTHON_SUPPORT_FILE_PATTERN,
+  isBrowserRunnablePythonSource,
+  type KnowledgeSandbox,
+  type KnowledgeSandboxFile,
+  type KnowledgeSandboxRuntime
+} from '@/lib/knowledge-sandbox'
 
 /** 知识文章在列表页和阅读页共用的元数据。 */
 export interface KnowledgeArticle {
@@ -2548,37 +2554,70 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
       `\`\`\`${sourceSection.language}\n${sourceSection.sourceCode.trimEnd()}\n\`\`\``
   )
 
-  return `${markdown.trimEnd()}\n\n## 可运行源码\n\n以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。\n\n${sourceSections.join('\n\n')}`
+  /** 当前文章附加的 Python 入口，用于解释在线或本地运行方式。 */
+  const pythonEntrySection = indexedSourceSections.find((sourceSection) => sourceSection.fileName === 'main.py')
+  /** 根据 Pyodide 兼容性生成的运行方式说明。 */
+  const executionDescription = !pythonEntrySection
+    ? '以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。'
+    : isBrowserRunnablePythonSource(pythonEntrySection.sourceCode)
+      ? '点击上方在线实验即可直接执行；以下源码来自同目录文件，页面展示与实际运行代码保持一致。'
+      : '以下示例会启动本地 HTTP 服务或依赖外部运行环境，浏览器沙盒不能安全提供对应能力；请按正文中的终端命令在本地运行。'
+
+  return `${markdown.trimEnd()}\n\n## 可运行源码\n\n${executionDescription}\n\n${sourceSections.join('\n\n')}`
 }
 
 /**
- * 根据显式白名单为当前文章构建可序列化的在线实验。
- * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
+ * 为未手工配置但可在 Pyodide 中结束运行的 main.py 创建在线实验定义。
+ * @param siblingLabSourcePath 当前文章同目录 Lab README 的无扩展名路径。
+ * @returns 可自动运行时返回 Python 实验定义，否则返回 null。
  */
-function createKnowledgeSandboxes(sourceArticlePath: string): KnowledgeSandbox[] {
-  /** 主文章同目录下、合并前实验 README 的稳定索引键。 */
-  const siblingLabSourcePath = posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
-  /** 直接绑定当前正文的在线实验白名单。 */
-  const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
-  /** 从已合并 Demo 继承的在线实验白名单。 */
-  const mergedLabSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(siblingLabSourcePath)
-  /** 当前文章最终使用的在线实验白名单；普通文章没有该配置。 */
-  const sandboxDefinition = articleSandboxDefinition || mergedLabSandboxDefinition
-  if (!sandboxDefinition) {
-    return []
+function createAutomaticPythonSandboxDefinition(siblingLabSourcePath: string): LabSandboxDefinition | null {
+  /** 当前 Lab 目录下可供沙盒读取的直接子文件。 */
+  const indexedFiles = LAB_SANDBOX_FILE_INDEX.get(siblingLabSourcePath) || []
+  /** 自动实验必须存在的 Python 入口源码。 */
+  const entryFile = indexedFiles.find((file) => file.name === 'main.py')
+  if (!entryFile || !isBrowserRunnablePythonSource(entryFile.content)) {
+    return null
   }
 
-  /**
-   * 实际提供运行文件的路径；继承 Demo 配置时必须同步切到 Lab 目录，
-   * 否则会错误地在正文目录中查找 main.py 或 sandbox.html。
-   */
-  const fileSourcePath =
-    sandboxDefinition.fileSourcePath || (articleSandboxDefinition ? sourceArticlePath : siblingLabSourcePath)
-  /** 构建期从关联 lab 目录读取的全部直接子文件。 */
+  /** 除入口外允许写入虚拟文件系统的 Python 和文本夹具。 */
+  const supportingFileNames = indexedFiles
+    .filter((file) => file.name !== 'main.py' && BROWSER_PYTHON_SUPPORT_FILE_PATTERN.test(file.name))
+    .map((file) => file.name)
+    .sort((leftFileName, rightFileName) => leftFileName.localeCompare(rightFileName, 'zh-CN'))
+  /** 去掉排序编号后的文章目录名，用作实验标题。 */
+  const articleDirectoryName = posix
+    .basename(posix.dirname(posix.dirname(siblingLabSourcePath)))
+    .replace(/^\d{2}[-_\s]*/, '')
+
+  return createPythonSandboxDefinition(
+    `${articleDirectoryName}在线实验`,
+    '直接运行正文同目录的 main.py，验证示例输出、关键分支和异常处理。',
+    supportingFileNames,
+    siblingLabSourcePath
+  )
+}
+
+/**
+ * 把一条实验定义转换为页面可序列化的在线实验。
+ * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
+ * @param sandboxDefinition 当前需要转换的可信实验定义。
+ * @param defaultFileSourcePath 未显式指定源码位置时使用的索引路径。
+ * @param sandboxIndex 当前实验在文章内从零开始的顺序。
+ */
+function createKnowledgeSandbox(
+  sourceArticlePath: string,
+  sandboxDefinition: LabSandboxDefinition,
+  defaultFileSourcePath: string,
+  sandboxIndex: number
+): KnowledgeSandbox {
+  /** 实际提供运行文件的 README 无扩展名路径。 */
+  const fileSourcePath = sandboxDefinition.fileSourcePath || defaultFileSourcePath
+  /** 构建期从关联 Lab 目录读取的全部直接子文件。 */
   const indexedFiles = LAB_SANDBOX_FILE_INDEX.get(fileSourcePath) || []
-  /** 严格按白名单顺序挑选入口和支持文件。 */
+  /** 严格按定义顺序挑选入口和支持文件。 */
   const sandboxFiles = sandboxDefinition.fileNames.map((fileName) => {
-    /** 与白名单文件名精确匹配的仓库文件。 */
+    /** 与定义文件名精确匹配的仓库文件。 */
     const indexedFile = indexedFiles.find((file) => file.name === fileName)
     if (!indexedFile) {
       throw new Error(`在线实验缺少白名单文件：${fileSourcePath}/${fileName}`)
@@ -2600,16 +2639,63 @@ function createKnowledgeSandboxes(sourceArticlePath: string): KnowledgeSandbox[]
     }
   })
 
-  return [
-    {
-      id: sourceArticlePath, // 使用文章源路径保证跨构建稳定且全局唯一。
-      runtime: sandboxDefinition.runtime, // 仅允许白名单声明的 Python 或 HTML 环境。
-      title: sandboxDefinition.title, // 显示与文章知识点匹配的实验名称。
-      description: sandboxDefinition.description, // 告知读者运行后应该验证什么。
-      entryFile: sandboxDefinition.entryFile, // 执行显式声明的入口，不接受页面输入。
-      files: sandboxFiles // 只携带入口运行必需的仓库可信文件。
-    }
-  ]
+  return {
+    id: `${sourceArticlePath}:${sandboxIndex + 1}`, // 多实验文章使用顺序后缀保持标识稳定且唯一。
+    runtime: sandboxDefinition.runtime, // 仅允许策略声明的 Python 或 HTML 环境。
+    title: sandboxDefinition.title, // 显示与文章知识点匹配的实验名称。
+    description: sandboxDefinition.description, // 告知读者运行后应该验证什么。
+    entryFile: sandboxDefinition.entryFile, // 执行仓库内可信入口，不接受页面输入。
+    files: sandboxFiles // 只携带入口运行必需的仓库可信文件。
+  }
+}
+
+/**
+ * 根据显式配置和浏览器兼容性策略为当前文章构建在线实验。
+ * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
+ */
+function createKnowledgeSandboxes(sourceArticlePath: string): KnowledgeSandbox[] {
+  /** 主文章同目录下、合并前实验 README 的稳定索引键。 */
+  const siblingLabSourcePath = posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
+  /** 直接绑定当前正文的在线实验白名单。 */
+  const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
+  /** 从已合并 Demo 继承的在线实验白名单。 */
+  const mergedLabSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(siblingLabSourcePath)
+  /** 正文定义是否已经直接运行当前 Lab 的 Python 入口。 */
+  const articleDefinitionUsesSiblingLab =
+    articleSandboxDefinition?.runtime === 'python' && articleSandboxDefinition.fileSourcePath === siblingLabSourcePath
+  /** 没有手工 Python 配置时按共享策略生成的浏览器实验。 */
+  const automaticPythonSandboxDefinition =
+    mergedLabSandboxDefinition || articleDefinitionUsesSiblingLab
+      ? null
+      : createAutomaticPythonSandboxDefinition(siblingLabSourcePath)
+  /** 当前文章需要按顺序展示的实验及其默认源码位置。 */
+  const sandboxDefinitions: Array<{
+    definition: LabSandboxDefinition
+    defaultFileSourcePath: string
+  }> = []
+
+  if (articleSandboxDefinition) {
+    sandboxDefinitions.push({
+      definition: articleSandboxDefinition, // 正文专用交互场景或手工 Python 实验。
+      defaultFileSourcePath: sourceArticlePath // 未声明来源时从正文同目录取文件。
+    })
+  }
+  if (mergedLabSandboxDefinition) {
+    sandboxDefinitions.push({
+      definition: mergedLabSandboxDefinition, // 已合并 Demo 的手工高质量实验定义。
+      defaultFileSourcePath: siblingLabSourcePath // 实际源码仍保存在同目录 Lab 中。
+    })
+  }
+  if (automaticPythonSandboxDefinition) {
+    sandboxDefinitions.push({
+      definition: automaticPythonSandboxDefinition, // 通过浏览器兼容性检查的 main.py 自动实验。
+      defaultFileSourcePath: siblingLabSourcePath // 自动实验始终运行同目录 Lab 源码。
+    })
+  }
+
+  return sandboxDefinitions.map(({ definition, defaultFileSourcePath }, sandboxIndex) =>
+    createKnowledgeSandbox(sourceArticlePath, definition, defaultFileSourcePath, sandboxIndex)
+  )
 }
 
 /**
