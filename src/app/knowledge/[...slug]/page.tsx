@@ -1,8 +1,12 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { getKnowledgeArticle, getKnowledgeArticles } from '@/lib/knowledge'
+import { notFound, redirect } from 'next/navigation'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { getKnowledgeArticle, getKnowledgeArticles, getLegacyKnowledgeArticlePath } from '@/lib/knowledge'
+import { KnowledgeArticleContent } from '../knowledge-article-content'
+import { KnowledgeQuiz } from '../knowledge-quiz'
+import { KNOWLEDGE_RETURN_LINK_CLASS_NAME, KnowledgeReturnLink } from '../knowledge-return-link'
 import '@/components/tiptap-templates/simple/simple-editor.scss'
 
 /** 知识文章路由接收的异步参数。 */
@@ -28,7 +32,18 @@ export async function generateMetadata({ params }: KnowledgeArticlePageProps): P
 
 /** 为构建阶段返回全部知识文章路径。 */
 export function generateStaticParams(): Array<{ slug: string[] }> {
-  return getKnowledgeArticles().map((article) => ({ slug: article.slug }))
+  return getKnowledgeArticles().flatMap((article) => {
+    /** 当前规范文章路径对应的旧版公开路径。 */
+    const legacyArticlePath = getLegacyKnowledgeArticlePath(article.path)
+    /** 构建阶段需要生成的规范路径。 */
+    const articleParams = [{ slug: article.slug }]
+
+    if (legacyArticlePath) {
+      articleParams.push({ slug: legacyArticlePath.split('/') })
+    }
+
+    return articleParams
+  })
 }
 
 /** 禁止访问未同步到仓库的动态文章路径。 */
@@ -48,22 +63,66 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
     notFound()
   }
 
+  /** 当前请求中的新版或旧版文章路径。 */
+  const requestedArticlePath = slug.map((pathSegment) => decodeURIComponent(pathSegment)).join('/')
+  // 修复规范路径自跳转：生产环境路由参数保留 URL 编码，必须解码后再与中文文章路径比较。
+  if (requestedArticlePath !== article.path) {
+    redirect(article.href)
+  }
+
   return (
     <main className="simple-editor-wrapper">
       <div className="simple-editor-content">
         <article className="tiptap ProseMirror simple-editor knowledge-article">
           <nav className="mb-8 border-b border-zinc-200 pb-5 dark:border-zinc-800" aria-label="知识文章路径">
-            <Link
-              href="/knowledge"
-              className="inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+            <Suspense
+              fallback={
+                <span className={KNOWLEDGE_RETURN_LINK_CLASS_NAME}>
+                  <ArrowLeft className="h-4 w-4" />
+                  返回知识库
+                </span>
+              }
             >
-              <ArrowLeft className="h-4 w-4" />
-              返回知识库
-            </Link>
+              <KnowledgeReturnLink
+                articlePath={article.path}
+                articleTrack={article.track}
+                articleTopic={article.topic}
+              />
+            </Suspense>
             <p className="mt-4 text-xs break-all text-zinc-500">{article.displayPath}</p>
           </nav>
 
-          <div dangerouslySetInnerHTML={{ __html: article.content }} />
+          <KnowledgeArticleContent content={article.content} />
+          <KnowledgeQuiz questions={article.quiz} />
+
+          <nav className="knowledge-article-navigation" aria-label="上一篇和下一篇">
+            {article.previousArticle ? (
+              <Link href={article.previousArticle.href} className="knowledge-article-navigation-link">
+                <span className="knowledge-article-navigation-label">
+                  <ArrowLeft aria-hidden="true" />
+                  上一篇
+                </span>
+                <span className="knowledge-article-navigation-title">{article.previousArticle.title}</span>
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+
+            {article.nextArticle ? (
+              <Link
+                href={article.nextArticle.href}
+                className="knowledge-article-navigation-link knowledge-article-navigation-link-next"
+              >
+                <span className="knowledge-article-navigation-label">
+                  下一篇
+                  <ArrowRight aria-hidden="true" />
+                </span>
+                <span className="knowledge-article-navigation-title">{article.nextArticle.title}</span>
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+          </nav>
         </article>
       </div>
     </main>

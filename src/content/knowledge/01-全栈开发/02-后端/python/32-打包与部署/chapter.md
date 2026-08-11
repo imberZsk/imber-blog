@@ -1,0 +1,297 @@
+# 第 32 课：打包与部署
+
+> 前端部署你早就熟了：`npm run build` 出一堆静态文件丢 CDN，或者 `node server.js` 起个进程。但 Python 后端部署的真正难题不是「怎么起进程」，而是「我本机跑得好好的，到了服务器为啥跑不起来」——解释器版本不对、系统少装了个 `libpq`、第三方包版本飘了。这篇把解决这件事的两件核心武器讲透：**Docker**（把整台机器连环境一起打包）和**环境变量**（让同一份代码在开发/生产跑出不同配置，且不把密钥写死进代码）。
+
+## 一、先建立直觉：Docker 镜像 ≈ 把「node + node_modules + 你的代码」连同操作系统一起打成一个能到处跑的盒子
+
+**类比**：前端部署 node 服务时，你最怕的是「我本地 Node 18，服务器 Node 14，跑挂了」。你解决它的方式通常是 `.nvmrc` 锁版本、`package-lock.json` 锁依赖。Docker 把这件事做到极致——它不只锁 Node 版本，而是把**整个运行环境（操作系统层 + 解释器 + 系统库 + 你装的包 + 你的代码）打成一个不可变的镜像（image）**，这个镜像在你笔记本、同事电脑、生产服务器上跑出来的行为**逐字节一致**。
+
+```
+镜像（image）   ≈ 一份打好包的「快照」，类似 npm publish 出去的那个 tarball，但里面连 OS 和运行时都有
+容器（container） ≈ 用镜像跑起来的一个实例进程，类似 node server.js 起来的那个进程
+Dockerfile      ≈ 构建镜像的「配方」，角色类似 package.json 的 scripts.build + 一份装机说明
+```
+
+**边界（这里和前端心智不一样）**：
+
+1. **前端的 `dist/` 是「产物」，Docker 镜像是「产物 + 环境」**。`npm run build` 出来的静态文件还得依赖目标机器上有对的 Node；Docker 镜像自带运行时，目标机器只要装了 Docker 就行，不关心它本身是什么系统。
+2. **Python 比前端更需要 Docker**。前端最终产物常常是纯静态文件（浏览器自带运行时），而 Python 后端**永远需要一个对的解释器 + 一堆可能依赖系统底层库的包**（比如 `psycopg2` 要 `libpq`、`Pillow` 要图像库）。在不同机器手动凑齐这些极易翻车，所以 Python 后端部署几乎默认上 Docker。
+
+---
+
+## 二、Dockerfile：构建镜像的配方（核心，必须会读会写）
+
+Dockerfile 是一行行的「指令」，从上到下执行，每一行大致生成镜像的一层（layer）。下面是一个 FastAPI 项目最典型的 Dockerfile，逐行注释：
+
+```dockerfile
+# 1. 选基础镜像：相当于「先装一台预装了 Python 3.12 的精简 Linux」
+#    -slim 是瘦身版（只留运行 Python 必需的系统库），镜像更小；别用默认的胖版
+FROM python:3.12-slim
+
+# 2. 设定容器内的工作目录，之后的 COPY / RUN 都以它为当前目录
+#    类比：相当于 cd /app，不存在会自动创建
+WORKDIR /app
+
+# 3. 关键优化：先单独 COPY 依赖清单，再装包，最后才 COPY 业务代码
+#    WHY：Docker 按层缓存，只要 requirements.txt 没变，pip install 这一层就直接命中缓存，
+#         不必每次改业务代码都重装全部依赖（和前端「先 COPY package.json 再 npm ci」同一招）
+COPY requirements.txt .
+
+# 4. 装依赖。--no-cache-dir 让 pip 不在镜像里留下载缓存，进一步缩小镜像体积
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. 现在才把业务代码拷进去（这一层变动频繁，放最后才不破坏上面的依赖缓存）
+COPY . .
+
+# 6. 声明容器对外暴露的端口（文档性质，真正映射靠 docker run -p）
+EXPOSE 8000
+
+# 7. 容器启动时执行的命令：用 uvicorn 起 FastAPI
+#    --host 0.0.0.0 是必须的——容器里只听 127.0.0.1 的话，宿主机根本连不进来（常见坑，见第六节）
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+并排对照一份前端 node 服务的 Dockerfile，你会发现结构几乎一模一样：
+
+```dockerfile
+# ——— 前端/node 服务版，结构同构，方便你对照记忆 ———
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./        # 先拷依赖清单（对应上面 COPY requirements.txt）
+RUN npm ci                   # 装依赖（对应 pip install）
+COPY . .                     # 再拷业务代码
+EXPOSE 3000
+CMD ["node", "server.js"]    # 启动命令（对应 uvicorn ...）
+```
+
+| 概念 | node / 前端 | Python |
+|------|-------------|--------|
+| 基础运行时镜像 | `FROM node:20-slim` | `FROM python:3.12-slim` |
+| 依赖清单 | `package.json` / `package-lock.json` | `requirements.txt`(或 `pyproject.toml`) |
+| 装依赖命令 | `npm ci` | `pip install -r requirements.txt` |
+| 启动命令 | `node server.js` | `uvicorn app.main:app ...` |
+| 忽略文件 | `.dockerignore` / `.npmignore` | `.dockerignore` |
+
+> `app.main:app` 的含义：`app/main.py` 这个文件里那个名为 `app` 的 FastAPI 实例（`app = FastAPI()`）。冒号左边是模块路径，右边是变量名——这套「模块:变量」寻址在 FastAPI 篇（第 14 篇）已出现过。
+
+---
+
+## 三、.dockerignore：别把垃圾拷进镜像（≈ .gitignore / .npmignore）
+
+`COPY . .` 会把当前目录**全部**拷进镜像。你绝对不想把本地虚拟环境 `.venv/`、`__pycache__/`、`.git/` 这些拷进去——既撑大镜像，又可能把本地环境的脏东西带进容器。
+
+```gitignore
+# .dockerignore —— 语法和 .gitignore 完全一样
+.venv/              # 本地虚拟环境，容器内会用 pip 重新装，绝不能拷（对应 node_modules）
+__pycache__/        # Python 字节码缓存，垃圾
+*.pyc
+.git/               # 版本历史，没必要进镜像
+.env                # 本地密钥文件！拷进镜像 = 密钥泄露，必须排除
+*.md
+tests/              # 测试代码一般不进生产镜像
+```
+
+**核心坑（前端直觉会害你）**：前端可能习惯「`node_modules` 拷不拷无所谓反正会被覆盖」，但在 Python 里**绝不能把本地 `.venv/` 拷进容器**。原因后面第六节细讲——一句话：虚拟环境里记的是你本机的绝对路径，拷进 Linux 容器直接失效。正确做法永远是容器内用 `pip install` 重装一份。
+
+---
+
+## 四、构建与运行：几条命令对照 npm
+
+```bash
+# 1. 构建镜像，-t 给镜像起名+打标签（≈ npm publish 前定个包名@版本）
+#    最后那个 . 是「构建上下文」——告诉 Docker 拿当前目录的文件来构建
+docker build -t my-api:1.0 .
+
+# 2. 跑容器
+#    -p 8000:8000  把宿主机 8000 端口映射到容器内 8000（左宿主:右容器）
+#    -d            后台跑（detached），不占终端
+#    --name        给容器实例起名，方便后续 stop/logs
+docker run -d -p 8000:8000 --name my-api my-api:1.0
+
+# 3. 看日志（容器里 print / 日志都打到这），等价于看 pm2 logs
+docker logs -f my-api
+
+# 4. 停掉并删除容器实例（镜像还在，随时能再 run）
+docker stop my-api && docker rm my-api
+```
+
+`-p 8000:8000` 这个映射是前端最容易忽略的点：容器有自己独立的网络命名空间，**容器内的 8000 默认外面访问不到**，必须显式用 `-p 宿主端口:容器端口` 打通，类似你给一台内网机器做端口转发。
+
+---
+
+## 五、环境变量：让同一份代码在开发/生产跑出不同配置，且不把密钥写死
+
+这块和前端心智几乎可以无痛平移。前端你早就在用 `.env` + `process.env`（Vite 的 `import.meta.env`、CRA 的 `process.env.REACT_APP_*`）来区分开发/生产。Python 是同一套思路。
+
+### 5.1 读环境变量：`os.environ` ≈ `process.env`
+
+```python
+import os  # 标准库，无需安装
+
+# os.environ 是一个类似字典的对象，存的是当前进程的全部环境变量（≈ process.env）
+db_url = os.environ["DATABASE_URL"]      # 取不到会直接抛 KeyError（强约束：必须配）
+
+# os.getenv(键, 默认值) 取不到返回默认值，不报错（≈ process.env.X ?? '默认'）
+port = os.getenv("PORT", "8000")          # port 存的是端口号字符串，注意是 str！
+debug = os.getenv("DEBUG", "false")       # debug 存的是开关字符串，同样是 str！
+```
+
+并排看 node：
+
+```javascript
+// node 版，逻辑一一对应
+const dbUrl = process.env.DATABASE_URL          // 取不到是 undefined（node 不会像 Python 那样抛错）
+const port = process.env.PORT ?? '8000'         // 同样默认是字符串
+const debug = process.env.DEBUG ?? 'false'
+```
+
+**核心坑（必记）**：环境变量**永远是字符串**，这点和 node 一样，但 Python 新手更容易栽。`os.getenv("DEBUG")` 拿到的是字符串 `"false"`，而非 Python 内置布尔常量 `False`——而**非空字符串 `"false"` 在 `if` 里是「真」**！
+
+```python
+# ❌ 永远为真：字符串 "false" 是非空字符串，布尔上下文里算 True
+if os.getenv("DEBUG", "false"):
+    print("永远会进这里，哪怕 DEBUG=false")
+
+# ✅ 正确：显式比较字符串内容，并兼容大小写
+debug = os.getenv("DEBUG", "false").lower() == "true"   # debug 存的是真正的布尔值
+# ✅ 数字同理，必须显式转换
+port = int(os.getenv("PORT", "8000"))                   # port 存的是 int 端口号
+```
+
+### 5.2 本地用 `.env` 文件：`python-dotenv` ≈ 前端的 dotenv
+
+生产环境的变量由部署平台/容器注入（见 5.3），但**本地开发**总不能每次手敲 `export`。前端用 `.env` 文件，Python 用 `python-dotenv` 库做同样的事：
+
+```bash
+pip install python-dotenv
+```
+
+```
+# .env 文件（语法和前端的 .env 一样：KEY=VALUE，一行一个）
+# ⚠️ 这个文件必须进 .gitignore 和 .dockerignore，里面是密钥！
+DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+OPENAI_API_KEY=sk-xxxxxxxx
+DEBUG=true
+```
+
+```python
+from dotenv import load_dotenv   # python-dotenv 提供的加载函数
+import os
+
+# load_dotenv() 读取项目根目录的 .env，把里面的键值塞进 os.environ
+# 必须在「读任何环境变量之前」调用一次（类比前端 import 'dotenv/config' 要尽早）
+load_dotenv()
+
+api_key = os.getenv("OPENAI_API_KEY")   # api_key 存的是大模型密钥，本地从 .env 来
+```
+
+### 5.3 进阶：用 Pydantic Settings 集中管理配置（推荐，FastAPI 生态标配）
+
+散在各处的 `os.getenv` 容易漏校验、漏类型转换。FastAPI 生态推荐用 `pydantic-settings`，把所有配置收进一个**带类型校验的类**——类比前端把零散的 `process.env.X` 收进一个 `config.ts` 并用 zod 校验。
+
+```bash
+# 注意带上 [dotenv] 这个 extra：读取 .env 文件的能力依赖 python-dotenv，
+# pydantic-settings 默认不装它，少了它下面的 env_file=".env" 会被静默忽略（.env 读不进来）
+pip install "pydantic-settings[dotenv]"
+```
+
+```python
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 一个集中管理配置的类：字段名即环境变量名（默认不区分大小写）
+# 它会自动从 os.environ / .env 读值，并按类型注解做转换+校验（这正是 Pydantic 的看家本领）
+class Settings(BaseSettings):
+    database_url: str                      # 必填项：缺了启动直接报错（比手写 if 早暴露问题）
+    openai_api_key: str                    # 必填项：大模型密钥
+    debug: bool = False                    # 选填，默认 False；"true"/"1" 会被自动转成 True（不用自己 .lower()）
+    port: int = 8000                       # 选填，默认 8000；字符串会被自动转成 int（省去 int() 转换）
+
+    # 告诉 Pydantic 同时去读 .env 文件（本地开发用；生产靠真实环境变量注入）
+    model_config = SettingsConfigDict(env_file=".env")
+
+# 实例化即触发「读取 + 转换 + 校验」，全项目共用这一个对象
+settings = Settings()
+
+print(settings.port)    # 这里拿到的是 int 8000，不是字符串——类型转换 Pydantic 替你做了
+print(settings.debug)   # 这里拿到的是 bool，DEBUG=true 自动成 True，彻底绕开第 5.1 节那个字符串坑
+```
+
+对照前端用 zod 校验配置的写法，你会发现是同一个套路：
+
+```typescript
+// 前端版：用 zod 把 process.env 校验成强类型 config
+import { z } from "zod"
+const Settings = z.object({
+  databaseUrl: z.string(),                       // 必填
+  port: z.coerce.number().default(8000),         // 字符串自动转 number（对应上面 int 的自动转换）
+  debug: z.string().default("false").transform((v) => v === "true"),  // 显式比对 "true"：注意 zod 的 z.coerce.boolean() 会把字符串 "false" 也当成 true（同 5.1 那个坑），所以不能用它
+})
+const settings = Settings.parse({               // 校验失败直接抛，启动即暴露
+  databaseUrl: process.env.DATABASE_URL,
+  port: process.env.PORT,
+  debug: process.env.DEBUG,
+})
+```
+
+### 5.4 把环境变量喂给容器：三种方式
+
+镜像里**绝不写死**密钥（写死 = 谁拿到镜像谁拿到密钥）。运行时再注入：
+
+```bash
+# 方式一：-e 单个传（适合临时/少量变量）
+docker run -d -p 8000:8000 -e DATABASE_URL="postgresql://..." -e DEBUG=false my-api:1.0
+
+# 方式二：--env-file 整个文件传（适合多变量，注意这个文件别进 git）
+docker run -d -p 8000:8000 --env-file .env.production my-api:1.0
+```
+
+```yaml
+# 方式三：docker-compose.yml（多容器编排时最常用，配置写成声明式文件）
+services:
+  api:                          # 服务名，相当于一个容器的逻辑名字
+    build: .                    # 用当前目录的 Dockerfile 构建（也可换成 image: 直接用现成镜像）
+    ports:
+      - "8000:8000"            # 端口映射，等价于 docker run -p 8000:8000
+    env_file:
+      - .env.production         # 从文件注入环境变量
+    environment:
+      - DEBUG=false             # 也可在这里直接写单个变量（会覆盖 env_file 同名项）
+```
+
+`docker-compose` 的角色 ≈ 前端的 `docker-compose`/`pm2 ecosystem` 配置：把「跑哪些服务、各自端口/环境/依赖关系」写成一份可提交的声明式文件，一句 `docker compose up -d` 全拉起来，不用记一长串 `docker run` 参数。
+
+---
+
+## 六、前端新手最容易踩的 5 个坑
+
+| 坑 | 现象 | 正确做法 |
+|----|------|---------|
+| `.venv/` 被拷进镜像 | 容器内报「找不到 python / 包路径错乱」 | `.venv` 写进 `.dockerignore`，容器内 `pip install` 重装 |
+| `uvicorn` 没加 `--host 0.0.0.0` | 容器跑着，宿主机 `curl` 却连不上 | 启动命令必须 `--host 0.0.0.0`，监听所有网卡 |
+| 忘了 `-p` 端口映射 | 容器正常，外面就是访问不到 | `docker run -p 宿主:容器`，否则容器网络与外界隔离 |
+| 把环境变量当布尔用 | `DEBUG=false` 却仍进了 debug 分支 | 显式 `.lower() == "true"`，或用 pydantic-settings 自动转 `bool` |
+| 密钥写死进代码/镜像 | 镜像泄露即密钥泄露 | `.env` 进 `.gitignore`+`.dockerignore`，运行时再注入 |
+
+**重点展开第一个坑（最反前端直觉）**：`.venv` 本质是一堆指向**你本机绝对路径**的软链和脚本（比如硬编码了 `/Users/imber/.../python`）。拷进一台 Linux 容器后，这些路径根本不存在，环境直接废掉。这和 `node_modules` 不同——`node_modules` 里多是平台无关的 JS 源码，跨机器拷常常还能用（原生模块除外），所以前端容易误以为「环境目录拷过去就能跑」。Python 必须在目标环境里用 `pip install` 现装。
+
+---
+
+## 小结
+
+Docker 把「解释器 + 系统库 + 依赖 + 代码」连同操作系统一起冻成不可变镜像，根治了 Python「我本机能跑」的顽疾；环境变量则让同一镜像在不同环境跑出不同配置，且密钥永不进代码。这两件事前端都有对应心智（`.nvmrc`/`package-lock` 对 Docker、`.env`/`process.env` 对环境变量），平移过来即可，重点盯住几个 Python 特有的差异点。
+
+✅ 该掌握
+- Dockerfile 五步骨架：`FROM` → `WORKDIR` → 先 COPY 依赖清单装包 → 再 COPY 代码 → `CMD` 启动
+- 「先拷 `requirements.txt` 再拷代码」是为了吃满 Docker 层缓存（同 `npm ci` 那招）
+- `docker build -t` / `docker run -p -d --name` / `docker logs` 对应 npm/pm2 那套命令
+- `os.environ` / `os.getenv` ≈ `process.env`；推荐用 `pydantic-settings` 集中校验配置
+- 密钥靠运行时 `-e` / `--env-file` / compose 注入，绝不写进镜像
+
+⚠️ 易混淆
+- 环境变量永远是**字符串**，`"false"` 在 `if` 里为真——别直接当 bool 用
+- `.venv/` 含本机绝对路径，**绝不能**拷进容器（和 `node_modules` 习惯相反）
+- 容器内 `uvicorn` 必须 `--host 0.0.0.0`，否则宿主机连不进来
+- 忘了 `-p` 端口映射，容器再正常外面也访问不到
+- 镜像是「产物 + 环境」，比前端 `dist/`（纯产物）多了整个运行时，别用 `dist/` 的心智去想它
+
+下一篇：33 - 实战-AI 生成一个接口 demo（需求 → FastAPI 接口 → 数据库 → 联调，把阶段三~七的零件串成一条线）。
