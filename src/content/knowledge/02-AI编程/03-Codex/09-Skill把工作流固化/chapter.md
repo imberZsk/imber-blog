@@ -1,5 +1,7 @@
 # Codex（8）- Skill 把工作流固化
 
+> 读完你能：围绕“Skill 把工作流固化”理解“概念解释”与“什么时候该写 Skill”，并结合正文示例完成实践与排障。
+
 当你发现自己总是在复制同一段提示词，就该考虑写 Skill 了。
 
 Skill 是一套可复用的任务说明和配套资源。它可以告诉 Codex：遇到某类任务时，按什么步骤做、读哪些参考文件、运行哪些脚本、输出什么格式。
@@ -132,7 +134,32 @@ Skill 是把经验从“聊天记录”沉淀成“可复用工作流”的方�
 - **常见错误**：这等于没写。
 - **最佳实践**：一个 Skill 只解决一类任务。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Codex（8）- Skill 把工作流固化”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：08 skill
+
+这个 demo 是一个最小 Skill 示例，用来整理 Markdown 学习笔记。
+
+## 目录内容
+
+- `skills/md-polish/SKILL.md`：Skill 定义。
+- `sample-note.md`：待优化笔记。
+
+## 使用方式
+
+你可以让 Codex 直接参考这个 Skill：
+
+```bash
+codex "请阅读 skills/md-polish/SKILL.md，然后按它的规则优化 sample-note.md"
+```
+
+如果只想看方案：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never "请阅读 skills/md-polish/SKILL.md 和 sample-note.md，只输出优化方案，不修改文件"
+```
+
+## 练习目标
+
+- 理解 Skill 的 description 要写清触发场景。
+- 理解 Skill 应该封装稳定工作流，而不是临时需求。

@@ -1,5 +1,7 @@
 # Python（19）- 文件与 IO 操作
 
+> 读完你能：围绕“文件与 IO 操作”理解“先给锚点：读文件的心智模型”与“open 的两个核心参数：mode 和 encoding”，并结合正文示例完成实践与排障。
+
 > 你在 Node 里读写文件靠 `fs.readFileSync` / `fs.promises.readFile`，解析 JSON 靠 `JSON.parse`，处理 CSV 还得装个 `papaparse`。到了数据处理阶段，读文件这件事会变得很频繁——读训练数据、读配置、把分析结果写回磁盘。本篇解决三个最常见的落地问题：**怎么用 Python 安全地读写文本文件、怎么读写 JSON、怎么读写 CSV**。好消息是 Python 把 JSON 和 CSV 都做进了标准库，连库都不用装。
 
 # 一、先给锚点：读文件的心智模型
@@ -326,8 +328,3 @@ Python 的文件 IO 心智模型很简单：**`with open(mode, encoding)` 一把
 - CSV 读出来全是字符串，要自己转类型；复杂表格分析交给下阶段的 Pandas
 
 下一篇：20 - NumPy 基础（ndarray ≈ 开了挂的"超级 Array"，向量化运算替代 for 循环）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（19）- 文件与 IO 操作”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

@@ -1,5 +1,7 @@
 # React 源码（4）- Fiber 架构和数据结构
 
+> 读完你能：围绕“Fiber 架构和数据结构”理解“fiber 的三种含义”与“状态和属性”，并结合正文示例完成实践与排障。
+
 # 一、fiber 的三种含义
 
 先来看 FiberNode 这个构造函数，这个构造函数源码中有三个注释，翻译过来就是 实例，Fiber，副作用，再参考 React 技术中的理念
@@ -251,8 +253,3 @@ React 在内存中同时维护两棵 Fiber 树：
 - **状态和属性**：pendingProps 和 memoizedProps：pendingProps 存储了新的、待处理的 props。
 - **工作标签系统（workTag）**：React Fiber 的“工作标签系统”主要是指 Fiber 节点上的 tag 属性。
 - **fiber 的指针结构**：Fiber 节点之间通过以下三个关键指针形成树结构，这使得 React 可以高效地遍历和处理组件：
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（4）- Fiber 架构和数据结构”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

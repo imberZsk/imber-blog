@@ -1,5 +1,7 @@
 # Java（12）- RESTful API 设计规范
 
+> 读完你能：围绕“RESTful API 设计规范”理解“为什么前端工程师更要懂 RESTful”与“HTTP 方法的语义：不只是「能用就行」”，并结合正文示例完成实践与排障。
+
 > 你在前端写了无数 `axios.get('/api/user/1')`，但接口为什么有的用 GET 有的用 POST、URL 该怎么命名、返回的 `code` 到底是什么含义？这一课站在后端视角把这些规则讲透，让你写出的接口前端同学一看就懂。
 
 ---
@@ -348,8 +350,3 @@ R<T> 结构 = 信封模型
 - **HTTP 方法的语义：不只是「能用就行」**：REST 的核心思想：把后端的一切都看作资源（Resource），用 HTTP 方法表达你想对资源做什么「动作」。
 - **GET vs POST：demo 里到底怎么选**：抛开标准 REST，看 demo 工程师实际是怎么在 GET 和 POST 之间做选择的。
 - **URL 设计规范**：即便走 RPC 风格，好的 URL 仍有章法。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（12）- RESTful API 设计规范”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

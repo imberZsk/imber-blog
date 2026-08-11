@@ -1,5 +1,7 @@
 # Python（13）- Web 后端概览
 
+> 读完你能：围绕“Web 后端概览”理解“先建直觉：node 把服务器和框架揉成了一坨”与“WSGI：同步时代的「请求处理函数签名」”，并结合正文示例完成实践与排障。
+
 > 你在 node 里 `app.listen(3000)` 一行就既起了服务器又跑了框架，从没分过家。进了 Python 后端世界，第一件要拧过来的事是：**「Web 服务器」和「你的应用框架」是两个东西，中间靠一份叫 WSGI/ASGI 的「接口契约」对接**。这篇先把这套地基讲清，再帮你在 Flask / Django / FastAPI 三选一里站好队——后面阶段三全程会用 FastAPI。
 
 # 一、先建直觉：node 把服务器和框架揉成了一坨
@@ -276,8 +278,3 @@ Python 后端的第一课不是某个框架，而是**「服务器 / 框架分�
 - async ≠ 自动多核变快：它只省「等待 IO」的时间，CPU 密集照样卡（详见第 17 篇）
 - 别用 WSGI 服务器（裸 gunicorn）直接跑 ASGI 应用（FastAPI），需指定 uvicorn worker
 - Django 全家桶虽强，但只撸 API 时是负担，按场景选而非无脑上重型框架
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（13）- Web 后端概览”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

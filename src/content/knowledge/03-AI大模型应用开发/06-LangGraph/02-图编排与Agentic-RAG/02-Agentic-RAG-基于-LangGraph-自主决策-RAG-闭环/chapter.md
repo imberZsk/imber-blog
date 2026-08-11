@@ -1,8 +1,6 @@
 # LangGraph（76）- Agentic RAG：基于 LangGraph 实现大模型自主决策的 RAG 闭环系统
 
 > 读完你能：理解 Agentic RAG 如何让系统自己判断是否检索、改写、重试、拒答。
-> 来源：`吃透 AI Agent 开发` 截图目录第 24 篇，2026/04/18，可试读 3%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@
 - **工程链路**：不够则改写 query 后重试。
 - **常见坑**：把 Agentic RAG 当成“多检索几次”。
 - **本篇定位**：这是 RAG 和 LangGraph 的融合篇，重点在闭环决策而不是一次检索。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（76）- Agentic RAG：基于 LangGraph 实现大模型自主决策的 RAG 闭环系统”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：LangGraph 检索闭环
 
@@ -132,3 +125,23 @@ print(graph.invoke({"question": "退款多久", "evidence": [], "attempts": 0, "
 ~~~
 
 生产图还要限制总步数、总 Token 和工具预算，并在写操作前增加 HIL 节点。每个节点只返回状态增量，便于持久化和回放。
+
+<!-- knowledge-lab-merged -->
+
+# 动手实践：Agentic RAG 自纠错闭环
+
+用显式状态图模拟 `route → retrieve → grade → rewrite → answer/refuse`。实验同时运行“改写后命中”和“达到上限仍无证据”两个场景。
+
+## 本地运行
+
+```bash
+python3 main.py
+```
+
+零依赖，Python 3.10+ 可运行。真实 LangGraph 会负责节点注册、条件边和 Checkpoint；这个实验保留相同状态与停止条件，便于先理解执行轨迹。
+
+## 重点观察
+
+- 原始问题始终保留，改写只更新 `search_query`。
+- 证据评分低于阈值才允许有限次改写。
+- 达到上限仍无证据时明确拒答，不把弱证据交给生成节点。

@@ -161,7 +161,23 @@ Redis Search 可对带 Embedding 的 JSON 建 HNSW 索引，同时按 `tenant_id
 - Redis 是热路径记忆层，不应成为订单、扣费、审批和审计的唯一事实源。
 - 生产验收必须覆盖并发、过期、故障、淘汰和跨租户隔离。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（85）- Redis Agent Memory：短期状态、长期召回与事件流”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：Redis Session Memory 机制
+
+用内存实现一个最小 Redis 语义模拟器，复现会话记忆真正依赖的四个行为：**租户键隔离、最近消息截断、滑动 TTL、过期降级**。
+
+## 本地运行
+
+```bash
+python3 main.py
+```
+
+零依赖，Python 3.10+ 可运行。这个实验用于观察 Redis 数据结构和生命周期，不会伪装成真实 Redis 网络连接；生产接入仍应使用 `redis-py`、事务管道和 Redis 故障测试。
+
+## 重点观察
+
+- 相同 `thread_id` 在不同租户下是两条不同的键。
+- 每次合法读写刷新 TTL，但越权读取不会刷新。
+- 消息超过窗口后淘汰最早内容。
+- TTL 到期返回空，应用可以明确降级为“无短期记忆”。

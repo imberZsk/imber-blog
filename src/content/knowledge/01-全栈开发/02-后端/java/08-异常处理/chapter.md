@@ -1,5 +1,7 @@
 # Java（7）- 异常处理
 
+> 读完你能：围绕“异常处理”理解“try-catch（和 JS 基本一样）”与“抛异常：throw”，并结合正文示例完成实践与排障。
+
 > try-catch 和 JS 几乎一样，重点是 Java 的"自定义业务异常"。用 demo 示例的 BusinessException 讲。
 
 # 一、try-catch（和 JS 基本一样）
@@ -196,8 +198,3 @@ Java 异常分两类：
 - **try-catch（和 JS 基本一样）**：唯一区别：Java 的 catch 要声明捕获的异常类型 catch (Exception e)，JS 不用。
 - **抛异常：throw**：几乎一样，都是 throw new 异常对象(...)。
 - **检查型异常 vs 运行时异常（了解即可）**：BusinessException extends RuntimeException，属于运行时异常，所以调用方不强制 try-catch，可以一路往上抛到全局处理器。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（7）- 异常处理”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

@@ -1,5 +1,7 @@
 # Python（8）- 模块与包管理
 
+> 读完你能：围绕“模块与包管理”理解“先建立直觉：模块 ≈ 一个 JS 文件”与“import 的几种写法（对照 JS）”，并结合正文示例完成实践与排障。
+
 > 你在前端里 `import { foo } from './bar'` 已经做了上千次。Python 的 `import` 长得几乎一样，但「什么算导出」「文件怎么被找到」「文件夹怎么变成包」这三件事和 JS 差得不少。这篇就把这些差异讲清楚，省得你被 `ModuleNotFoundError` 反复折磨。
 
 # 一、先建立直觉：模块 ≈ 一个 JS 文件
@@ -283,8 +285,3 @@ Python 的模块系统骨架和前端高度相似：一个 `.py` ≈ 一个 `.js
 - `from x import *` 不是好习惯，会污染命名空间
 - 相对导入 `from ..utils import x` 不能靠 `python 文件.py` 直接跑，要用 `python -m 包.模块`
 - 模块首次导入即执行并缓存，不是每次 import 都重跑
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Python（8）- 模块与包管理”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

@@ -1,5 +1,7 @@
 # React 源码（2）- JSX 和 ReactElement
 
+> 读完你能：围绕“JSX 和 ReactElement”理解“前言”与“JSX（函数组件） 会被编译成什么？”，并结合正文示例完成实践与排障。
+
 # 一、前言
 
 带着问题学习 React 源码，下面是一些参考资料
@@ -131,8 +133,3 @@ children)，jsx 的入参是 (type, config, maybeKey)，那它们有没有本质
 - **JSX（函数组件） 会被编译成什么？**：在从 ReactDOM.createRoot(document.getElementById('root'))
 - **React Element**：一个典型的 React Element 对象结构如下：
 - **前言**：带着问题学习 React 源码，下面是一些参考资料
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“React 源码（2）- JSX 和 ReactElement”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

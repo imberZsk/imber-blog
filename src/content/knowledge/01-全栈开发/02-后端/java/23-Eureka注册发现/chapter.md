@@ -1,5 +1,7 @@
 # Java（22）- Eureka 服务注册与发现
 
+> 读完你能：围绕“Eureka 服务注册与发现”理解“为什么需要注册中心？”与“1 先看一个前端早就遇到过的问题”，并结合正文示例完成实践与排障。
+
 > 微服务拆出来了，服务 A 怎么找到服务 B？答案不是写死 IP，而是让所有服务都去一个"通讯录"里登记和查询——这个通讯录就是 Eureka 注册中心。
 
 前面的课我们都在讲单个服务内部的事（Controller→Service→Mapper）。但 demo 示例环境里有几十个服务：`demo-basic`、`demo-order-v1`、`geo-service`、`analytics-service`……它们之间要互相调用。这一课我们就解决一个核心问题：**在一堆动态变化、随时扩缩容的服务里，一个服务如何稳定地找到另一个服务**。
@@ -420,8 +422,3 @@ public interface RemoteAccountService {
 - **客户端负载均衡：找到列表之后怎么选一台**：拉到 demo-basic 有 3 个实例 [10.0.1.5, 10.0.1.6, 10.0.1.7]，到底请求哪一台？
 - **把整个流程连起来看**：以 demo-order 调用 demo-basic 为例，从启动到完成一次跨服务调用：
 - **为什么需要注册中心？**：你在前端写 axios.get('https://api.example.com/users')，这个域名背后其实是一台或多台服务器。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（22）- Eureka 服务注册与发现”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

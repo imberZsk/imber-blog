@@ -1,5 +1,7 @@
 # Python（31）- 测试
 
+> 读完你能：围绕“测试”理解“先建立前端锚点”与“装与跑：约定大于配置”，并结合正文示例完成实践与排障。
+
 > 你在前端写过 Jest/Vitest：`test()` 包一个用例、`expect().toBe()` 断言、`beforeEach` 准备数据、`test.each` 跑参数化、`jest.mock` 打桩——那 Python 的 pytest 你已经会了一大半，换的只是语法。本篇解决四个问题：pytest 怎么写一个用例（先用 Jest 锚直觉）、`fixture` 怎么替代 `beforeEach`、参数化和 mock 怎么写、以及怎么测一个 FastAPI 接口。顺带划清几处和 Jest 不一样的坑（断言不是链式 API、fixture 比 `beforeEach` 更"按需注入"）。
 
 # 一、先建立前端锚点
@@ -385,8 +387,3 @@ pytest 和 Jest/Vitest 是同一类测试框架，心智可平移：`def test_xx
 - 测试类里**不能写 `__init__`**，否则 pytest 不收集该类
 
 下一篇（第 32 篇）：打包与部署，Docker 与环境变量。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Python（31）- 测试”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

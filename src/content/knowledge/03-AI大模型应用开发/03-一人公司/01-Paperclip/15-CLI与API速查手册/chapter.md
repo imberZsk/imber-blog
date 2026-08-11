@@ -253,8 +253,3 @@ curl -sS -X PATCH "$PAPERCLIP_API_URL/api/issues/$ISSUE_ID" \
 - **环境变量、状态值、curl 模板、口诀**：写脚本和排查时随手查。
 
 最后一章，把全书的坑和最佳实践收口成一份「自检清单」。👉 [15 · 避坑指南与最佳实践](../16-避坑指南与最佳实践/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（14）- CLI 与 API 速查手册”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -1,6 +1,7 @@
 # 企业级知识库（6）- RAG 离线建库：解析、切分、向量化与索引
 
-> 主分类：企业级知识库；关联标签：工程基础、RAG 优化、Embedding
+> 读完你能：围绕“RAG 离线建库：解析、切分、向量化与索引”理解“每一步保存什么”与“可执行示例”，并结合正文示例完成实践与排障。
+
 
 RAG 的离线链路负责把原始资料变成可检索索引，它不应该出现在每次问答请求里。稳定的顺序是：**加载文档 → 清洗 → 切分 Chunk
 → 补充 Metadata → 计算 Embedding → 写入索引**。
@@ -17,7 +18,6 @@ flowchart LR
     A --> R[发布读版本]
 ```
 
-> DIAGRAM_DESCRIPTION：流程图必须包含原始文档与权限、解析、结构化切分、批量 Embedding、VectorDB、ES、跨索引对账和版本发布；离线发布不得直接覆盖当前在线索引。
 
 # 一、每一步保存什么
 
@@ -113,11 +113,6 @@ print(f"已写入 {len(index_records)} 个 Chunk：{INDEX_PATH}")
 - 保存来源和页码，在线答案才能给出可核验引用。
 - Embedding 选型用真实问题集比较 Recall@K、语言覆盖、最大长度、吞吐、维度、私有化能力和单 Chunk 成本。
 - FAISS 适合单机验证，pgvector 适合数据规模可控且希望复用 PostgreSQL，Milvus 适合独立的大规模向量服务，Elasticsearch 适合统一混合检索；最终以过滤能力、运维能力和压测结果决定。
-
-# 四、继续阅读
-
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)
 
 # 五、总结
 

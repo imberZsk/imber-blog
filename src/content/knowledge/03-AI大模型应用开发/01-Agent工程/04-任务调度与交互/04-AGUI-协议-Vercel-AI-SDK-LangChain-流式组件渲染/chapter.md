@@ -1,8 +1,6 @@
 # Agent 工程（74）- AGUI 协议：Vercel AI SDK + LangChain 实现流式组件渲染
 
 > 读完你能：理解 Agent 不只能流式输出文字，也可以流式驱动前端组件状态。
-> 来源：`吃透 AI Agent 开发` 截图目录第 22 篇，2026/04/04，可试读 22%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@
 - **工程链路**：后端 chain 生成文本和工具事件。
 - **常见坑**：让模型直接生成 HTML/JS。
 - **本篇定位**：这是前端 AI 交互进阶篇，把 46 前端 AI Copilot 组件推到更结构化的协议层。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（74）- AGUI 协议：Vercel AI SDK + LangChain 实现流式组件渲染”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：AG-UI 事件生成器
 

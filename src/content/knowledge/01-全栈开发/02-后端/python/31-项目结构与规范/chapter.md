@@ -1,5 +1,7 @@
 # Python（30）- 项目结构与规范
 
+> 读完你能：围绕“项目结构与规范”理解“先建立直觉：Python 项目 ≈ 前端项目的目录组织”与“目录组织：一个标准 Python 项目长什么样”，并结合正文示例完成实践与排障。
+
 > 前端项目你闭着眼都能搭：`src/` 放代码、`package.json` 管依赖、`.env` 放配置、出问题翻控制台。Python 这套东西全都有，但叫法和习惯不一样——目录怎么分层、配置往哪放、密钥怎么不进 git、日志为什么不能用 `print`。这篇把「一个像样的 Python 项目长什么样」讲清楚，让你写出来的代码别人接手不骂街。
 
 # 一、先建立直觉：Python 项目 ≈ 前端项目的目录组织
@@ -346,8 +348,3 @@ logs/
 - `logging.basicConfig` 只在根日志器未配置时生效一次，重复调用默认无效
 - 日志用 `logger.info("%s", x)` 占位符而非 f-string（按级别延迟拼接）
 - src layout 比 flat 更稳（暴露打包问题），但需先 `pip install -e .` 才能 import
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（30）- 项目结构与规范”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

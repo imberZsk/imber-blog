@@ -1,7 +1,5 @@
 # 01 - LangGraph：状态机、循环与人工介入
 
-> 主分类：LangGraph
-> 关联标签：StateGraph、Checkpoint、循环、Human-in-the-loop、Agentic RAG
 
 # 一、学习目标
 
@@ -24,7 +22,6 @@ stateDiagram-v2
     Failed --> [*]
 ```
 
-> DIAGRAM_DESCRIPTION：状态图必须包含 Plan、Execute、Review、Approval、Done、Failed；Review 到 Execute 的循环必须标明证据不足和次数上限，高风险动作必须经过 Approval。
 
 # 三、验收标准
 

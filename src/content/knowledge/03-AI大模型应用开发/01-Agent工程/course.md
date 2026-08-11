@@ -1,7 +1,5 @@
 # 01 - Agent 工程：从 Tool Use 到 Multi-Agent
 
-> 主分类：Agent工程
-> 关联标签：ReAct、Tool Use、MCP、Multi-Agent、安全边界
 
 # 一、学习目标
 
@@ -21,7 +19,6 @@ flowchart LR
     H --> I[生产评测]
 ```
 
-> DIAGRAM_DESCRIPTION：流程图必须包含 Tool Schema、Function Calling、ReAct、多工具路由、状态、权限审批、MCP、Multi-Agent 和生产评测；箭头表示学习依赖，不表示所有项目都必须采用全部组件。
 
 # 三、验收标准
 

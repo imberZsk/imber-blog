@@ -1,5 +1,7 @@
 # Codex（4）- CLI 与非交互任务
 
+> 读完你能：围绕“CLI 与非交互任务”理解“概念解释”与“使用示例”，并结合正文示例完成实践与排障。
+
 Codex 不只能在交互界面里使用，也可以通过 CLI 执行任务。CLI 适合两类场景：
 
 - 你正在终端里工作，希望快速把当前目录交给 Codex。
@@ -121,7 +123,40 @@ codex exec -C "$(pwd)" "..."
 - **适合 CLI 的任务**：让 Codex 按 JSON Schema 输出结构化结果。
 - **常见错误**：Codex 会根据工作目录找上下文。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Codex（4）- CLI 与非交互任务”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：04 CLI exec
+
+这个 demo 展示如何用 `codex exec` 做一次性非交互任务。
+
+## 目录内容
+
+- `prompt.txt`：长提示词。
+- `project-notes.md`：待分析文件。
+- `summary.schema.json`：结构化输出 schema 示例。
+
+## 使用方式
+
+只读分析：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never - < prompt.txt
+```
+
+把最后回复写入文件：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never -o codex-summary.md - < prompt.txt
+```
+
+要求结构化输出：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never --output-schema summary.schema.json - < prompt.txt
+```
+
+## 练习目标
+
+- 学会用文件维护长提示词。
+- 学会把 Codex 输出保存成产物。
+- 了解结构化输出适合自动化场景。

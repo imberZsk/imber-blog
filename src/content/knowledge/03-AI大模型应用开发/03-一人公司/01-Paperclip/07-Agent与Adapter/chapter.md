@@ -165,8 +165,3 @@ UI 里有个「Test Environment」按钮，能验证适配器配置：检查 `cl
 - Paperclip 通过**环境变量**给 Agent 注入身份和唤醒原因。
 
 适配器搞定了，Agent 也知道「自己是谁」了。下一章揭开最核心的机制：Agent 醒来后到底按什么流程干活——**心跳协议**。👉 [07 · 心跳机制](../08-心跳机制/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（6）- Agent 与 Adapter：给每个员工选对「大脑」”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

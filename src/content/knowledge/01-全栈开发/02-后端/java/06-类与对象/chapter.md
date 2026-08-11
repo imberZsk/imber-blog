@@ -1,5 +1,7 @@
 # Java（5）- 类与对象
 
+> 读完你能：围绕“类与对象”理解“为什么 Java 一切都是"类"？”与“类 vs 对象：图纸 vs 实物”，并结合正文示例完成实践与排障。
+
 > Java 面向对象核心。用第 4 课看过的 OrganizationController/OrganizationService 匿名化示例代码理解。
 
 # 一、为什么 Java 一切都是"类"？
@@ -222,8 +224,3 @@ Integer id = null;   // ✅ 可以
 - **类 vs 对象：图纸 vs 实物**：一张图纸可造无数实物，每个属性值不同，但结构和能力相同。
 - **类的三大组成**：构造方法名必须和类名相同（不像 JS 用 constructor）
 - **static 静态：属于"图纸"而非"实物"**：static = 属于图纸，类名.方法 直接用
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Java（5）- 类与对象”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

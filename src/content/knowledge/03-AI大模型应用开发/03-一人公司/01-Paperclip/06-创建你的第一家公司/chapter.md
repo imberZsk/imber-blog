@@ -149,8 +149,3 @@ CEO 的 prompt 应该指示它：**review 公司健康度、制定策略、把�
 - 启动后第一件事通常是 **CEO 提交策略等你审批**。
 
 公司搭起来了，但我们一直说「适配器」却没细讲。下一章专门讲清：怎么给每个 Agent 选对「大脑」。👉 [06 · Agent 与 Adapter](../07-Agent与Adapter/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Paperclip（5）- 创建你的第一家公司：从目标到 CEO”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

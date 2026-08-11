@@ -88,8 +88,3 @@ Overlap 不能替代父子块。大比例重叠会扩大索引、制造重复候
 - 普通文本先用递归分块，结构化来源先保结构再做长度约束。
 - Chunk Size 与 Overlap 是评测参数，不是网上复制的常量。
 - 父子块、标题继承和 Token 预算共同决定检索与生成质量。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（60）- LangChain Splitter 选型：递归、结构化、Token 与语义分块”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

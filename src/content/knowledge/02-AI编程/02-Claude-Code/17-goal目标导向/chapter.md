@@ -101,7 +101,26 @@ claude -p "/goal CHANGELOG.md has an entry for every PR merged this week"
 
 下一章，让它不靠死等、而是**事件驱动**地盯着后台——Monitor 工具。👉 `18-Monitor工具与定时任务.md`
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Claude Code（16）- /goal：目标导向，跑到满足条件为止”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：Demo 16 · /goal 目标导向实战
+
+一个有失败测试 + 残留 console.log 的小项目，正好用来设一个「可判定」的目标，让 Claude 自己干到达标。
+
+## 文件
+- `calc.js`：几个计算函数，留了 bug + console.log
+- `calc.test.js`：测试（会失败）
+- `goal练习.md`：可判定 vs 不可判定目标对照
+
+## 怎么练
+1. 跑测试看失败：`node calc.test.js`
+2. 设一个可判定目标让它自己跑到成：
+   ```
+   /goal `node calc.test.js` 全部通过，且 calc.js 里不再有任何 console.log
+   ```
+3. 观察：它跑测试→改→再跑→清掉 console.log→再验证，直到两个条件都满足才停。
+
+## 非交互式（脚本/CI）
+```bash
+claude -p "/goal node calc.test.js 全部通过，且 calc.js 无 console.log"
+```

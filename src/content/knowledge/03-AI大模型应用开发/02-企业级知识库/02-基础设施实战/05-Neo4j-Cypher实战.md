@@ -1,6 +1,7 @@
 # 基础设施实战（5）- Neo4j GraphRAG：受控多跳检索与证据回链
 
-> 主分类：企业级知识库；关联标签：GraphRAG、Neo4j、混合检索
+> 读完你能：围绕“Neo4j GraphRAG：受控多跳检索与证据回链”理解“建模原则”与“参数化写入与查询”，并结合正文示例完成实践与排障。
+
 
 向量检索擅长找语义相近 Chunk，知识图谱擅长回答显式关系问题，例如“服务 A 依赖哪些组件，这些组件由谁维护”。GraphRAG 的价值不是把所有文本变成节点，而是用稳定实体和关系补足多跳结构，再回链到原始证据。
 
@@ -14,7 +15,6 @@ graph LR
     U[User ACL] -->|FILTER| D
 ```
 
-> DIAGRAM_DESCRIPTION：知识图谱必须包含 Document、Chunk、Service、Component、Team、来源页以及 User ACL；多跳关系最终必须回到有权限的 Chunk 证据。
 
 ## 一、建模原则
 

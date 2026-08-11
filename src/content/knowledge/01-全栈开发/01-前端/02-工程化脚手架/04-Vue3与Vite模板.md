@@ -1,5 +1,7 @@
 # Imber CLI（4）- Vue3 + Vite 模板
 
+> 读完你能：围绕“Vue3 + Vite 模板”理解“概述”与“模板特性”，并结合正文示例完成实践与排障。
+
 # 一、概述
 
 Imber CLI 的 Vue3 + Vite 模板是一个现代化的 Vue.js 开发模板，基于 Vue 3.4+ 和 Vite 5+ 构建。该模板集成了 TypeScript、Pinia、Vue Router、Element Plus 等现代 Vue 生态工具，为开发者提供了一个功能完整、性能优异的 Vue 应用开发基础。
@@ -878,8 +880,3 @@ Imber CLI 的 Vue3 + Vite 模板提供了一个完整的现代化 Vue 开发环�
 5. **性能优化**：代码分割、懒加载、构建优化
 
 通过这个模板，开发者可以快速启动一个高质量的 Vue 项目，享受 Vue 3 的 Composition API 和现代前端开发的最佳实践。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Imber CLI（4）- Vue3 + Vite 模板”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

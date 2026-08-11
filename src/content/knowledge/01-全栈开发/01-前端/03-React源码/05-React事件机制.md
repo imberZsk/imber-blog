@@ -1,5 +1,7 @@
 # React 源码（5）- React 事件机制
 
+> 读完你能：围绕“React 事件机制”理解“事件委托”与“源码实现”，并结合正文示例完成实践与排障。
+
 # 一、事件委托
 
 随着 React 18 的发布，事件系统带来了一些新的理念和更新。其中最引人注目的两大变化是：
@@ -157,8 +159,3 @@ function setState(newState) {
 
 - **源码实现**：createRoot 调用到createContainer 里有一个 listenToAllSupportedEvents 函数，说明初始化阶段，初始化了事件机制，接下来探究这部分代码。
 - **事件委托**：随着 React 18 的发布，事件系统带来了一些新的理念和更新。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（5）- React 事件机制”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

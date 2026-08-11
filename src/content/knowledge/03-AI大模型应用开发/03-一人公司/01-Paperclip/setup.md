@@ -1,5 +1,7 @@
 # Paperclip 安装信息
 
+> 读完你能：围绕“Paperclip 安装信息”理解“概述”与“关键路径”，并结合正文示例完成实践与排障。
+
 ## 概述
 
 Paperclip 是一个自治 AI 公司的控制平面（Control Plane），用于编排 AI Agent 团队来运营业务。
@@ -55,8 +57,3 @@ Paperclip 自身前端源码在 GitHub 仓库 `paperclipai/paperclip`，本地�
 - `github-webhook-worker/` — Cloudflare Worker（GitHub Webhook）
 - `changelog-page/` — 纯静态 HTML，部署到 Cloudflare Pages
 - `test/` — 集成测试（billing、prompts 等）
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Paperclip 安装信息”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

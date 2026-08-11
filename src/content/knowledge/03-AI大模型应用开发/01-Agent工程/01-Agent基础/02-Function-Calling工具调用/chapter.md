@@ -86,10 +86,6 @@ if definition.get("requires_confirmation") and not confirmed:
 
 > **Function Calling 的安全边界在哪？** 模型只输出"想调哪个工具、传什么参数"，不直接执行。真正的白名单、权限、参数校验、写操作确认全在后端。我会把读操作和写操作分级，写操作默认需要人工确认，并且把每次工具调用的入参和结果都记进 trace，方便审计和复盘。
 
-# 九、下一篇
-
-`29-ReAct模式.md` —— 单次工具调用讲完了，但复杂任务需要"想一步、做一步、看结果、再想下一步"。ReAct 就是把这个循环结构化。
-
 # 十、总结
 
 - **工程上真正会踩的坑**：模型把参数名拼错（customerId vs customerid），schema 校验直接挂。
@@ -97,7 +93,53 @@ if definition.get("requires_confirmation") and not confirmed:
 - **工具 schema 长什么样**：schema 是你和模型之间的契约，告诉它每个工具叫什么、干什么、要什么参数：
 - **四层校验，缺一不可**：模型可能拼错工具名、漏参数、调它没权限的工具，甚至被用户诱导调危险操作。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（28）- Function Calling 工具调用”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：28 Function Calling 工具调用
+
+演示工具调用最关键的认知：**模型只负责"提出调用"，后端负责"校验 + 执行"**。模型不直接碰数据库，所有权限、参数、确认都由你的代码把关。
+
+## 运行
+
+```bash
+python3 main.py
+```
+
+零依赖，纯标准库。
+
+## 预期输出（节选）
+
+```
+=== 场景 1：查订单（有权限，成功）===
+模型想调用：lookup_orders({"customer_id": "C1001"})
+执行成功：{"customer_id": "C1001", "orders": [...], "risk_count": 1}
+
+=== 场景 2：查订单（无权限，被拦）===
+模型想调用：lookup_orders({"customer_id": "C1001"})
+拦截：缺少权限：read:orders
+
+=== 场景 3：建工单（写操作，需确认）===
+拦截：这是写操作，需要人工确认后才执行。
+
+=== 场景 4：建工单（已确认，执行）===
+执行成功：{"ticket_id": "T-1001", ...}
+```
+
+同一句话（查订单），有权限就成功、没权限就被拦——这说明**权限不是模型管的，是后端管的**。这就是工具调用的安全核心。
+
+## 代码对应文章的哪些点
+
+| 概念 | 在 main.py 哪里 |
+|---|---|
+| 工具 schema 定义 | `TOOL_DEFINITIONS` |
+| 模型提出调用（name + arguments） | `fake_model_decide` |
+| 白名单校验 | `execute_tool` 校验 1 |
+| 权限校验 | `execute_tool` 校验 2 |
+| 必填参数校验 | `execute_tool` 校验 3 |
+| 写操作人工确认 | `execute_tool` 校验 4 |
+
+## 动手改
+
+- 把 `fake_model_decide` 换成真实模型的 tool_calls 返回（OpenAI / 通义都支持）。
+- 加一个 `calculate_reimbursement` 工具，体验"加工具只改 schema + 执行分支"。
+- 故意让模型传一个不存在的工具名，看白名单怎么拦。

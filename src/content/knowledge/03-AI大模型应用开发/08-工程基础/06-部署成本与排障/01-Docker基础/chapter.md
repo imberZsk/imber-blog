@@ -59,6 +59,8 @@ COPY main.py            →  代码变了 → 这层失效，重新拷（但这�
 你天天改的是代码（`main.py`），很少动依赖（`requirements.txt`）。把**不常变的依赖放前面、常变的代码放后面**，改代码时就能复用"装依赖"那层缓存，构建从几分钟变几秒。反过来排，每次改一行代码都要重装所有依赖，慢到崩溃。
 
 # 不装 Docker 也能先验证 app 本身
+
+```bash
 python3 main.py
 # 另开终端：curl http://localhost:8000/
 ```
@@ -91,10 +93,6 @@ demo 目录里的文件和概念对应：
 
 > **Docker 解决了 AI 应用的什么问题，Dockerfile 怎么写才高效？** AI 应用依赖多、版本敏感，最容易出"我电脑能跑线上不能跑"。Docker 把应用和整个运行环境打包成镜像，到哪都一样跑。写 Dockerfile 我会注意层缓存：先 COPY requirements.txt 装依赖、再 COPY 代码，因为依赖不常变、代码常变，这样改代码能复用装依赖的缓存层。另外服务要监听 0.0.0.0、密钥靠环境变量传入不打进镜像、用 .dockerignore 排除无关文件。
 
-# 九、下一篇
-
-`39-模型部署与本地调用.md` —— 应用能打包部署了，但它要调的模型在哪？下一篇做一个兼容 OpenAI 接口格式的本地 mock 模型服务，讲清「本地模型 / 自部署模型 / 云端 API」怎么用同一套代码调用。
-
 # 十、总结
 
 - **为什么"先拷依赖再拷代码"——层缓存**：第 3-5 行的顺序不是随便排的，这是 Docker 最重要的提速技巧。
@@ -102,7 +100,70 @@ demo 目录里的文件和概念对应：
 - **镜像和容器：模板和实例**：镜像（Image）：一个打包好的、只读的"应用环境快照"。
 - **Dockerfile 逐行拆解**：一个 Python 应用的最小 Dockerfile 就这么几行，每行都有明确职责：
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（38）- Docker 基础”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：38 Docker 基础
+
+一个最小的 Python HTTP 应用 + 可读正确的 Dockerfile，演示「把应用打成镜像，到处一样跑」。
+
+## 先跑应用本身（不需要 Docker）
+
+```bash
+python3 main.py
+```
+
+然后另开一个终端：
+
+```bash
+curl http://localhost:8000/
+```
+
+预期输出（hostname 在你本机就是你的机器名）：
+
+```json
+{"message": "Hello from a Dockerized Python app", "hostname": "imberdeMac-mini.local", "port": 8000}
+```
+
+按 Ctrl+C 停止服务。零依赖，纯标准库。
+
+## 再用 Docker 跑（需要装了 Docker）
+
+```bash
+# 1. 构建镜像，-t 给镜像起名 docker-demo
+docker build -t docker-demo .
+
+# 2. 运行容器，-p 把容器的 8000 映射到本机 8000
+docker run -p 8000:8000 docker-demo
+
+# 3. 另开终端访问
+curl http://localhost:8000/
+```
+
+容器里跑的预期输出（注意 hostname 变成了容器 ID，证明这是在容器里跑的）：
+
+```json
+{"message": "Hello from a Dockerized Python app", "hostname": "3f9a1c2b4d5e", "port": 8000}
+```
+
+本机跑和容器里跑，应用代码一字没改，输出格式完全一样，只有 hostname 不同。这就是 Docker 的核心价值：**环境一致，到处一样跑。**
+
+> 本 demo 的 Python app 已实测可跑（`python3 main.py` + curl 验证）。Dockerfile 语法正确、可读，但是否真的 `docker build` 取决于你本机装没装 Docker。
+
+## 代码 ↔ 概念对应
+
+| Docker 概念 | 在哪里 |
+|---|---|
+| 基础镜像（站在巨人肩上） | Dockerfile `FROM python:3.12-slim` |
+| 工作目录 | `WORKDIR /app` |
+| 层缓存（先拷依赖再拷代码） | `COPY requirements.txt` 在 `COPY main.py` 之前 |
+| 装依赖 | `RUN pip install` |
+| 暴露端口 | `EXPOSE 8000` + `docker run -p` |
+| 启动命令 | `CMD ["python3", "main.py"]` |
+| 端口可配置（12-factor） | `main.py` 里 `os.getenv("PORT")` |
+| 不打进镜像的文件 | `.dockerignore` |
+
+## 动手改
+
+- 用 `PORT=9000 python3 main.py` 跑，验证端口可通过环境变量改。
+- 故意把 `COPY main.py` 挪到 `COPY requirements.txt` 前面，体会层缓存失效（改代码也会重装依赖）。
+- 在 `requirements.txt` 写一个真实依赖（如 `fastapi`），看 `docker build` 时 `pip install` 这一层怎么跑。

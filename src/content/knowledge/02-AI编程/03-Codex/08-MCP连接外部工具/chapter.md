@@ -1,5 +1,7 @@
 # Codex（7）- MCP 连接外部工具
 
+> 读完你能：围绕“MCP 连接外部工具”理解“概念解释”与“使用示例”，并结合正文示例完成实践与排障。
+
 MCP 是 Model Context Protocol，可以把外部工具、数据源或服务接给 Codex 使用。简单说，MCP 像给 Codex 装“接口插件”：它不再只看本地文件，还能通过受控工具访问文档、数据库、浏览器、内部系统等。
 
 从前端视角类比：Codex 是页面，MCP server 是后端 API。页面不能凭空知道数据库内容，必须通过 API 调用；Codex 也一样。
@@ -111,7 +113,35 @@ MCP 的价值是让 Codex 接入真实工作流，但它也会扩大影响范围
 - **常见错误**：MCP 应该提供受控能力，而不是把所有系统权限都暴露给 Codex。
 - **最佳实践**：工具颗粒度小一点，名称清楚一点。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Codex（7）- MCP 连接外部工具”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：07 MCP
+
+这个 demo 用最小 Node 脚本模拟一个“本地知识库查询工具”的 MCP 思路。
+
+注意：`toy-docs-server.js` 是教学用伪实现，不是完整 MCP SDK server。它的目的是让你理解“把外部能力封装成受控工具”的设计方式。
+
+## 目录内容
+
+- `toy-docs-server.js`：本地文档查询脚本。
+- `docs.json`：模拟知识库。
+- `mcp-design.md`：真实 MCP server 设计清单。
+
+## 使用方式
+
+先直接运行脚本：
+
+```bash
+node toy-docs-server.js "Codex"
+```
+
+再让 Codex 阅读设计：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never "请阅读 mcp-design.md，并指出这个 MCP 设计还缺哪些安全约束"
+```
+
+## 练习目标
+
+- 理解 MCP 的核心不是“给无限权限”，而是“提供受控工具”。
+- 学会为工具设计清晰输入、输出和副作用说明。

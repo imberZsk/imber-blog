@@ -1,5 +1,7 @@
 # React 源码（10）- Commit 提交阶段
 
+> 读完你能：围绕“Commit 提交阶段”理解“CommitRoot”与“Before Mutation Effects”，并结合正文示例完成实践与排障。
+
 `packages/react-reconciler/src/ReactFiberWorkLoop.old.js` -> `performConcurrentWorkOnRoot` -> `finishConcurrentRender`-> `commitRoot`
 
 Commit Phase 是 React 更新流程的最后阶段，它负责将 Render Phase 计算出来的变更（记录在 finishedWork Fiber 树上）实际应用到 DOM 上。
@@ -516,8 +518,3 @@ commit 阶段可以按职责粗分为四个阶段，简单理解它们各自做�
 - 被动（Passive）
   - 异步调度，不阻塞绘制，用于非布局相关副作用。
   - 调用 useEffect 的清理与回调，建立订阅、事件与异步任务等。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（10）- Commit 提交阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

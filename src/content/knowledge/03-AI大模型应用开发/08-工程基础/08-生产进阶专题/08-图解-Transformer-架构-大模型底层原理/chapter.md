@@ -1,8 +1,6 @@
 # 工程基础（89）- 图解 Transformer 架构：大模型底层原理
 
 > 读完你能：用应用工程师需要的粒度理解 Transformer：token、embedding、attention、层叠和生成。
-> 来源：`吃透 AI Agent 开发` 截图目录第 37 篇，2026/06/15
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -54,8 +52,3 @@
 - **工程链路**：token 变 embedding。
 - **常见坑**：把 embedding 和模型内部 hidden states 混为一谈。
 - **本篇定位**：这是模型原理补课篇，不追论文细节，只讲和应用开发直接相关的底层概念。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（89）- 图解 Transformer 架构：大模型底层原理”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

@@ -1,5 +1,7 @@
 # Codex（5）- 权限、沙盒与安全边界
 
+> 读完你能：围绕“权限、沙盒与安全边界”理解“概念解释”与“使用示例”，并结合正文示例完成实践与排障。
+
 Codex 能运行命令、读写文件，所以安全边界非常重要。你需要理解两个概念：sandbox 和 approval。
 
 - sandbox 决定 Codex 能在什么范围内执行命令。
@@ -124,7 +126,34 @@ Authorization: Bearer <redacted-token>
 - **什么操作要特别小心**：处理密钥、cookie、token。
 - **常见错误**：danger-full-access 很方便，但它会让误操作的影响范围变大。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Codex（5）- 权限、沙盒与安全边界”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。
+# 动手实践：05 sandbox and approval
+
+这个 demo 用来练习不同权限组合下该如何给 Codex 任务。
+
+## 目录内容
+
+- `safe-review-prompt.md`：只读审查任务。
+- `write-task-prompt.md`：允许修改工作区的任务。
+- `notes.md`：示例文件。
+
+## 使用方式
+
+只读审查：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never - < safe-review-prompt.md
+```
+
+允许修改当前工作区：
+
+```bash
+codex --sandbox workspace-write --ask-for-approval on-request - < write-task-prompt.md
+```
+
+## 练习目标
+
+- 理解只读任务和写任务的区别。
+- 给高风险操作设置明确边界。
+- 学会在提示词里写禁止事项。

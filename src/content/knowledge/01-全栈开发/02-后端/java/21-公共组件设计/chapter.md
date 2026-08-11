@@ -1,5 +1,7 @@
 # Java（20）- 公共组件 demo-common
 
+> 读完你能：围绕“公共组件 demo-common”理解“为什么需要 demo-common？前端类比先行”与“1 demo-common 的子模块结构”，并结合正文示例完成实践与排障。
+
 > 每个微服务都重复写"统一返回格式""登录态获取""金额计算"太浪费了。demo 把这些抽进一个公共组件库 demo-common，所有服务依赖它即可——这就是后端版的"共享 utils 包 + 全局拦截器"。本课带你拆开它，顺便解开第 4 课埋的 `R.ok()` 伏笔。
 
 ---
@@ -471,8 +473,3 @@ public class DemoBigDecimalUtil {
 - **BusinessException —— 业务异常专用类**：第 7 课讲过异常和自定义 BusinessException，这里看 demo 的示例定义并把它和 R 串起来。
 - **UserInfoContext —— 当前登录人，随取随用**：这是后端最常用的工具之一：在任意一层代码（Service、工具方法）里直接拿到"当前是谁在请求"，不用层层传参。
 - **工具类 util 包**：demo-common-core/util/ 下是一堆静态工具方法集合，就是后端的 lodash / utils.ts。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（20）- 公共组件 demo-common”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

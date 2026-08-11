@@ -1,5 +1,7 @@
 # Java（3）- Java 与 JavaScript 对比
 
+> 读完你能：围绕“Java 与 JavaScript 对比”理解“核心思路”与“变量和类型”，并结合正文示例完成实践与排障。
+
 > 用前端知识快速建立 Java 语法全貌，遇到概念回来翻这张对照表。
 
 # 一、核心思路
@@ -378,8 +380,3 @@ try {
 - **变量和类型**：Java 类型在前面：类型 变量名 = 值;（TS 是 变量名: 类型）
 - **函数 vs 方法**：String[] args 不能省略，否则 JVM 找不到 main 方法
 - **类和对象**：没有 constructor 关键字，构造方法名 = 类名
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Java（3）- Java 与 JavaScript 对比”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

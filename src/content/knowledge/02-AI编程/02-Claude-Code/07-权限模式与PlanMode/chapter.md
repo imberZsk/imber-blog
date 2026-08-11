@@ -106,7 +106,18 @@ Plan Mode 是新手到进阶都极其好用的一招。它把 Claude Code 限制
 
 下一章进入日常最高频的实操：理解代码库、查找代码、修 Bug。👉 `08-核心工作流.md`
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Claude Code（6）- 权限模式与 Plan Mode：安全地放手”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：Demo 06 · 权限模式与 Plan Mode 演练
+
+本 Demo 给你一组**场景卡片**和一段适合用 Plan Mode 演练的「迁移需求」，帮你练习「按风险选模式」和「先规划后执行」。
+
+## 文件说明
+
+- `场景选模式.md`：给定若干任务，练习该用哪种权限模式。
+- `plan-mode演练.md`：一个适合 Plan Mode 的复杂需求脚本，照着和 Claude 对话。
+
+## 怎么用
+
+1. 打开 `场景选模式.md`，对每个场景先自己判断该用哪种模式，再看答案。
+2. 打开 `plan-mode演练.md`，进入 Plan Mode（只读），照脚本和 Claude 反复打磨方案——全程它不会改任何文件。

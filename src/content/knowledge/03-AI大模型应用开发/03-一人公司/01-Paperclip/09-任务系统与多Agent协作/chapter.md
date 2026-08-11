@@ -235,8 +235,3 @@ CEO 把目标拆成任务 ──▶ 分配给工程师（设 parentId/goalId，�
 - 协作卡壳两大根因：**任务树没挂好** + **下游没开 `wakeOnAssignment`**。
 
 任务能协作了，但谁来「管」这群 Agent、防止它们失控？下一章讲治理与审批——你作为董事会的方向盘。👉 [09 · 治理与审批](../10-治理与审批/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（8）- 任务系统与多 Agent 协作：Issue、签出与任务树”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

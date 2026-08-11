@@ -7,6 +7,7 @@ import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
 import html from 'remark-html'
 import { KNOWLEDGE_MODULE_LABELS, type KnowledgeTrackSlug } from '@/app/knowledge/config'
+import { createKnowledgeMindmap, type KnowledgeMindmapData } from '@/lib/knowledge-mindmap'
 import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge-quiz'
 import type { KnowledgeSandbox, KnowledgeSandboxFile, KnowledgeSandboxRuntime } from '@/lib/knowledge-sandbox'
 
@@ -44,6 +45,8 @@ export type KnowledgeArticleLink = Pick<KnowledgeArticle, 'href' | 'sequence' | 
 export interface KnowledgeArticlePageData extends KnowledgeArticle {
   /** Markdown 转换后的文章 HTML。 */
   content: string
+  /** 从正文知识结构生成的可交互思维导图。 */
+  mindmap: KnowledgeMindmapData | null
   /** 当前文章允许在浏览器隔离环境中运行的可信实验。 */
   sandboxes: KnowledgeSandbox[]
   /** 当前文章核心知识对应的最小题集。 */
@@ -386,6 +389,13 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     createPythonSandboxDefinition('AI Trace 观测', '记录一次 RAG 调用的阶段耗时、Token 和错误字段。')
   ],
   [
+    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/03-结构化输出与JSON/lab/README',
+    createPythonSandboxDefinition(
+      '结构化输出校验与兜底',
+      '运行五类模型输出，观察 JSON 解析、Schema 校验、错误标识和稳定兜底结果。'
+    )
+  ],
+  [
     '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/07-前端调用AI接口/lab/README',
     createHtmlSandboxDefinition('流式回答状态机', '直接操作提问、取消和重试，观察流式输出与 UI 状态切换。')
   ],
@@ -673,6 +683,15 @@ const OBSIDIAN_IMAGE_PATTERN = /!\[\[([^\]]+)\]\]/g
 
 /** 作为目录正文入口、不应直接出现在展示路径中的文件名。 */
 const DIRECTORY_ENTRY_NAMES = new Set(['chapter'])
+
+/** 已合并到主文章但仍保留真实源码的实验目录名称。 */
+const LAB_DIRECTORY_NAME = 'lab'
+
+/** 实验文档在源码索引和旧版公开路径中的固定文件名。 */
+const LAB_README_FILE_NAME = 'README'
+
+/** 正文中标记已吸收同目录 Demo 内容的注释。 */
+const MERGED_LAB_MARKER = '<!-- knowledge-lab-merged -->'
 
 /** 只保存配图或来源资料、不应作为知识文章发布的目录名称。 */
 const NON_ARTICLE_DIRECTORY_NAMES = new Set(['assets', '_shared-labs'])
@@ -1163,6 +1182,11 @@ function findMarkdownFiles(directory: string): string[] {
     const entryPath = join(directory, entry.name)
 
     if (entry.isDirectory()) {
+      // Demo 已合并进主文章，lab 目录只保留运行源码和夹具，不再生成独立文章页。
+      if (entry.name === LAB_DIRECTORY_NAME) {
+        continue
+      }
+
       /** 当前扫描目录的名称，用于识别 Lab 支持文件。 */
       const parentDirectoryName = directory.split(sep).at(-1) || ''
       /** 配图资料和 Lab 数据不会生成可访问文章页。 */
@@ -1189,6 +1213,40 @@ function findMarkdownFiles(directory: string): string[] {
   }
 
   return files
+}
+
+/**
+ * 把旧版 Demo 文章路径映射到已经吸收实践内容的主文章源路径。
+ * @param articlePath 当前请求或 Markdown 链接中的无扩展名文章路径。
+ */
+function getMergedDemoArticlePath(articlePath: string): string {
+  /** 旧 Demo 页面在知识库中的固定路径后缀。 */
+  const labReadmeSuffix = `/${LAB_DIRECTORY_NAME}/${LAB_README_FILE_NAME}`
+  if (!articlePath.endsWith(labReadmeSuffix)) {
+    return articlePath
+  }
+
+  /** 去掉 lab/README 后的课程目录路径。 */
+  const coursePath = articlePath.slice(0, -labReadmeSuffix.length)
+  /** 绝大多数课程使用 chapter，系列总览实验使用 course。 */
+  const mainArticleEntryNames = ['chapter', 'course']
+
+  for (const entryName of mainArticleEntryNames) {
+    /** 当前主文章入口的绝对无扩展名路径。 */
+    const candidateBasePath = resolve(KNOWLEDGE_CONTENT_ROOT, ...coursePath.split('/'), entryName)
+    /** 当前入口是否存在任一受支持的 Markdown 后缀。 */
+    const hasCandidateFile = [...MARKDOWN_EXTENSIONS].some((extension) => {
+      /** 当前扩展名对应的完整文件路径。 */
+      const candidatePath = `${candidateBasePath}${extension}`
+      return fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile()
+    })
+
+    if (hasCandidateFile) {
+      return `${coursePath}/${entryName}`
+    }
+  }
+
+  return coursePath
 }
 
 /**
@@ -1287,9 +1345,7 @@ function getBaseArticleTitle(rawTitle: string, sourceArticlePath: string): strin
       : titleWithoutSeriesPrefix.replace(PLAIN_ARTICLE_ORDER_PREFIX_PATTERN, '')
   /** 去掉旧课号、Demo 和学习指南标记后的标题正文。 */
   const normalizedTitle = (
-    matchingOrderPrefixPattern
-      ? titleWithoutPlainOrder.replace(matchingOrderPrefixPattern, '')
-      : titleWithoutPlainOrder
+    matchingOrderPrefixPattern ? titleWithoutPlainOrder.replace(matchingOrderPrefixPattern, '') : titleWithoutPlainOrder
   )
     .replace(GUIDE_TITLE_PREFIX_PATTERN, '')
     .trim()
@@ -1547,6 +1603,34 @@ export function getKnowledgeArticleAliasPaths(articlePath: string): string[] {
   )
 
   return [...aliasPaths]
+}
+
+/**
+ * 返回已合并 Demo 对应的旧 `/lab/README` 路径。
+ * @param sourceArticlePath 规范文章在知识库中的无扩展名源路径。
+ */
+export function getMergedDemoAliasPath(sourceArticlePath: string): string | null {
+  /** 只有目录入口文章可以吸收同目录的 Demo。 */
+  const articleEntryName = posix.basename(sourceArticlePath)
+  if (!['chapter', 'course'].includes(articleEntryName)) {
+    return null
+  }
+
+  /** 当前源文章任一受支持扩展名对应的绝对路径。 */
+  const articleFilePath = [...MARKDOWN_EXTENSIONS]
+    .map((extension) => resolve(KNOWLEDGE_CONTENT_ROOT, ...sourceArticlePath.split('/')) + extension)
+    .find((candidatePath) => fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile())
+  if (!articleFilePath) {
+    return null
+  }
+
+  /** 只为确实执行过 Demo 合并的正文保留历史路由。 */
+  const hasMergedDemo = fs.readFileSync(articleFilePath, 'utf8').includes(MERGED_LAB_MARKER)
+  if (!hasMergedDemo) {
+    return null
+  }
+
+  return posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
 }
 
 /**
@@ -2340,7 +2424,7 @@ function resolveArticleFile(slug: string[]): string | null {
   /** URL 中经过安全校验的新版或旧版文章路径。 */
   const requestedArticlePath = normalizedSlug.join('/')
   /** 旧版路径迁移后对应的实际规范文章路径。 */
-  const currentArticlePath = getCurrentKnowledgeArticlePath(requestedArticlePath)
+  const currentArticlePath = getMergedDemoArticlePath(getCurrentKnowledgeArticlePath(requestedArticlePath))
   /** 未携带扩展名的文章绝对路径。 */
   const articleBasePath = resolve(KNOWLEDGE_CONTENT_ROOT, ...currentArticlePath.split('/'))
   /** 知识库根目录的规范化前缀。 */
@@ -2420,7 +2504,9 @@ function rewriteKnowledgeLinks(articlePath: string) {
             node.url = `/knowledge-assets/${encodePath(resolvedPath)}${suffix}`
           } else if (MARKDOWN_EXTENSIONS.has(posix.extname(resolvedPath).toLowerCase())) {
             /** 去掉 Markdown 扩展名后的目标文章路径。 */
-            const targetArticlePath = resolvedPath.slice(0, -posix.extname(resolvedPath).length)
+            const targetArticlePath = getMergedDemoArticlePath(
+              resolvedPath.slice(0, -posix.extname(resolvedPath).length)
+            )
             /** 隐藏目录入口文件名后的目标公开路径。 */
             const publicTargetArticlePath = getPublicArticlePath(targetArticlePath)
             node.url = `/knowledge/${encodePath(publicTargetArticlePath)}${suffix}`
@@ -2446,7 +2532,10 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
   /** 当前 Markdown 相对知识根目录的路径。 */
   const readmePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath).split(sep).join('/')
   /** 构建期索引中与当前 README 对应的源码章节。 */
-  const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || []
+  /** 主文章同目录下、合并前实验 README 对应的源码索引键。 */
+  const siblingLabReadmePath = posix.join(posix.dirname(readmePath), LAB_DIRECTORY_NAME, `${LAB_README_FILE_NAME}.md`)
+  /** 优先兼容旧实验页，再为合并后的主文章读取同目录 lab 源码。 */
+  const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || LAB_SOURCE_INDEX.get(siblingLabReadmePath) || []
 
   if (indexedSourceSections.length === 0) {
     return markdown
@@ -2467,14 +2556,24 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
  * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
  */
 function createKnowledgeSandboxes(sourceArticlePath: string): KnowledgeSandbox[] {
-  /** 当前文章对应的在线实验白名单；普通文章没有该配置。 */
-  const sandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
+  /** 主文章同目录下、合并前实验 README 的稳定索引键。 */
+  const siblingLabSourcePath = posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
+  /** 直接绑定当前正文的在线实验白名单。 */
+  const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
+  /** 从已合并 Demo 继承的在线实验白名单。 */
+  const mergedLabSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(siblingLabSourcePath)
+  /** 当前文章最终使用的在线实验白名单；普通文章没有该配置。 */
+  const sandboxDefinition = articleSandboxDefinition || mergedLabSandboxDefinition
   if (!sandboxDefinition) {
     return []
   }
 
-  /** 实际提供运行文件的实验 README 路径。 */
-  const fileSourcePath = sandboxDefinition.fileSourcePath || sourceArticlePath
+  /**
+   * 实际提供运行文件的路径；继承 Demo 配置时必须同步切到 Lab 目录，
+   * 否则会错误地在正文目录中查找 main.py 或 sandbox.html。
+   */
+  const fileSourcePath =
+    sandboxDefinition.fileSourcePath || (articleSandboxDefinition ? sourceArticlePath : siblingLabSourcePath)
   /** 构建期从关联 lab 目录读取的全部直接子文件。 */
   const indexedFiles = LAB_SANDBOX_FILE_INDEX.get(fileSourcePath) || []
   /** 严格按白名单顺序挑选入口和支持文件。 */
@@ -2576,8 +2675,9 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
   return {
     ...metadata,
     content: processedContent.toString(),
+    mindmap: createKnowledgeMindmap(markdown, quizTitle, metadata.track === 'ai-apps', metadata.kind),
     sandboxes: createKnowledgeSandboxes(metadata.sourcePath),
-    quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle),
+    quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle, metadata.kind),
     previousArticle,
     nextArticle
   }

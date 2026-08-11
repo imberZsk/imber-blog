@@ -1,5 +1,7 @@
 # Superpowers（4）- Test Driven Development 与 Systematic Debugging：用证据约束修改
 
+> 读完你能：围绕“Test Driven Development 与 Systematic Debugging：用证据约束修改”理解“TDD 的最小循环”与“调试的四个阶段”，并结合正文示例完成实践与排障。
+
 TDD 用失败测试定义新行为，系统化调试用可复现证据定位已有故障。共同原则是：**没有看到问题，就不要声称修复；没有看到测试先失败，就不知道测试是否真的覆盖需求。**
 
 # 一、TDD 的最小循环
@@ -40,8 +42,3 @@ VERIFY：运行目标测试，再运行受影响模块测试。
 - **调试的四个阶段**：systematic-debugging
 - **选择哪一个**：新功能或明确新规则：先 TDD。
 - **官方资料**：test-driven-development
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Superpowers（4）- Test Driven Development 与 Systematic Debugging：用证据约束修改”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

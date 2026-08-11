@@ -40,8 +40,3 @@
 
 - **Brainstorming 的产物**：一次有效澄清至少要确定：目标用户、核心场景、明确不做什么、关键交互或数据流、异常场景以及可验证的验收标准。
 - **Writing Plans 的粒度**：计划里的每一步应在几分钟内完成，并写出准确文件、改动、验证方式和预期结果。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Superpowers（2）- Brainstorming 与 Writing Plans：把模糊需求变成可执行计划”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

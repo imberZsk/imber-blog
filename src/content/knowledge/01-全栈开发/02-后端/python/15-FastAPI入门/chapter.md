@@ -1,5 +1,7 @@
 # Python（14）- FastAPI 入门
 
+> 读完你能：围绕“FastAPI 入门”理解“先给锚点：FastAPI 路由 ≈ Express 路由”与“边界一：装饰器即路由（@app.get 到底是什么）”，并结合正文示例完成实践与排障。
+
 > 你在 Node 端写过 `app.get('/users', handler)`，用 Express 撸过几十个接口。FastAPI 的路由长得几乎一样——但它把「参数校验」「类型转换」「接口文档」这些你在 Express 里要手写或装一堆中间件才能搞定的事，靠 Python 的类型注解直接内置了。本篇帮你把 Express 的心智模型平移过来，并立刻划清三处关键差异：装饰器即路由、函数签名即参数、返回 dict 即响应。
 
 # 一、先给锚点：FastAPI 路由 ≈ Express 路由
@@ -303,8 +305,3 @@ FastAPI 的路由壳子和 Express 几乎一样，但它用 Python 的类型注�
 - 报错别去手动拼 res，用 `raise HTTPException(status_code=..., detail=...)` 表达
 
 下一篇：15 - 请求参数与数据校验（Pydantic 模型进阶：字段约束、嵌套模型、自定义校验，对比 zod / TS interface）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（14）- FastAPI 入门”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

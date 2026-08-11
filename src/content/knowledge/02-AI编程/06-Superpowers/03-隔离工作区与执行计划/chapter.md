@@ -1,5 +1,7 @@
 # Superpowers（3）- Using Git Worktrees 与 Executing Plans：隔离改动并分批执行
 
+> 读完你能：围绕“Using Git Worktrees 与 Executing Plans：隔离改动并分批执行”理解“创建独立工作树”与“分批执行计划”，并结合正文示例完成实践与排障。
+
 工作树解决“多个任务互相污染”，执行计划解决“长任务做着做着偏航”。两者结合后，每个任务有独立目录，每批实现结束都有验证和复盘点。
 
 # 一、创建独立工作树
@@ -46,8 +48,3 @@ git status --short
 - **创建独立工作树**：下面命令会从当前仓库创建一个独立分支和目录，不影响正在进行的其他任务：
 - **分批执行计划**：executing-plans 不是把计划一次性跑到底，而是：
 - **官方资料**：using-git-worktrees
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Superpowers（3）- Using Git Worktrees 与 Executing Plans：隔离改动并分批执行”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

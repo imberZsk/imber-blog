@@ -1,6 +1,7 @@
 # 企业级知识库（7）- RAG 在线问答：检索、组装证据与生成
 
-> 主分类：企业级知识库；关联标签：LangChain 实战、Retrieval、工程基础
+> 读完你能：围绕“RAG 在线问答：检索、组装证据与生成”理解“检索和生成要分开验收”与“可执行示例”，并结合正文示例完成实践与排障。
+
 
 在线链路只处理当前请求：**理解问题 → 查询改写 → 权限过滤 → 召回 → 重排 → 组装 Context
 → 模型生成 → 引用校验**。它读取离线索引，但不重新解析和向量化全部文档。
@@ -17,7 +18,6 @@ flowchart LR
     V --> T[答案/拒答/追问]
 ```
 
-> DIAGRAM_DESCRIPTION：流程图必须包含用户身份、查询改写、服务端权限过滤、多路召回、Rerank、Context Packing、生成、引用校验和拒答分支。
 
 # 一、检索和生成要分开验收
 
@@ -111,11 +111,6 @@ print(prompt)
 - 设置最低相关性阈值，证据不足时拒答或追问，不要强行生成。
 - 对召回、Rerank、生成分别设置超时与降级；ES 或 VectorDB 单路失败时允许降级，但两路都无可信证据必须拒答。
 - Trace 记录索引、Embedding、Rerank 和 Prompt 版本，并按租户脱敏，避免无法复现坏案例或泄露正文。
-
-# 四、继续阅读
-
-- [LangChain：From retrieval to RAG](https://docs.langchain.com/oss/python/langchain/retrieval#from-retrieval-to-rag)
-- [LangSmith RAG Evaluation](https://docs.langchain.com/langsmith/evaluation-approaches#evaluate-rag-applications)
 
 # 五、总结
 

@@ -1,5 +1,7 @@
 # Codex（6）- config 与 profile
 
+> 读完你能：围绕“config 与 profile”理解“概念解释”与“profile 是什么”，并结合正文示例完成实践与排障。
+
 如果你每次启动 Codex 都要手写一堆参数，说明这些参数应该进入配置。
 
 Codex 支持通过配置文件保存默认行为，也支持用 profile 为不同场景准备不同配置。你可以把它理解成前端项目里的 `.env.development`、`.env.production`：同一个工具，在不同环境下使用不同默认值。
@@ -122,7 +124,32 @@ config 适合机器可读的运行参数，项目规范适合 AGENTS.md。
 - **使用示例**：一个日常开发 profile 可以更开放：
 - **常见错误**：config 适合机器可读的运行参数，项目规范适合 AGENTS.md。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Codex（6）- config 与 profile”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：06 config and profile
+
+这个 demo 展示如何维护不同场景下的 Codex 配置片段。
+
+## 目录内容
+
+- `safe.config.toml`：只读审查配置示例。
+- `dev.config.toml`：日常开发配置示例。
+- `automation.config.toml`：自动化配置示例。
+
+## 使用方式
+
+这些文件是学习样例，不会自动生效。
+
+你可以参考它们，把适合自己的配置迁移到 Codex 配置目录，或者在命令行里临时覆盖：
+
+```bash
+codex exec \
+  --sandbox read-only \
+  --ask-for-approval never \
+  "请审查当前目录，不要修改文件"
+```
+
+## 练习目标
+
+- 区分 config、profile、AGENTS.md 的职责。
+- 为不同风险等级准备不同默认值。

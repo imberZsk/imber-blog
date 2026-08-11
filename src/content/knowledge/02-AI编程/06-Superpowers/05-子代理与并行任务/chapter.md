@@ -1,5 +1,7 @@
 # Superpowers（5）- Subagent Driven Development：把独立任务交给独立上下文
 
+> 读完你能：围绕“Subagent Driven Development：把独立任务交给独立上下文”理解“标准循环”与“何时可以并行”，并结合正文示例完成实践与排障。
+
 `subagent-driven-development`
 适合已经有明确计划、任务之间大体独立的实现。每个任务使用新的子代理上下文，完成后再经过规格审查和代码质量审查，避免一个长会话积累错误假设。
 
@@ -44,8 +46,3 @@
 - **何时可以并行**：dispatching-parallel-agents
 - **可直接使用的派发模板**：并行的目标不是让更多代理同时写代码，而是缩短真正独立工作的等待时间。
 - **官方资料**：subagent-driven-development
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Superpowers（5）- Subagent Driven Development：把独立任务交给独立上下文”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

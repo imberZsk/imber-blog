@@ -174,8 +174,3 @@ curl -sS "$PAPERCLIP_API_URL/llms/agent-configuration/claude_local.txt" \
 - 第三方技能有**安全风险**：先读再用、配受限环境、保留审批闸门。
 
 进阶篇到此结束。你已经掌握了创建公司、选适配器、心跳、协作、治理、技能这六大核心机制。下一篇进入**实战篇**，把这一切串成一条完整链路，亲手搭一家内容公司。👉 [11 · 实战：从 0 搭一家内容公司](../12-实战搭建内容公司/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（10）- 技能系统：给 Agent 装「外挂」”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

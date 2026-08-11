@@ -1,5 +1,7 @@
 # Python（1）- Python 环境配置
 
+> 读完你能：围绕“Python 环境配置”理解“先建立总类比”与“Python 解释器：装哪个版本”，并结合正文示例完成实践与排障。
+
 > 前端装好 node 就能 `npm i` 干活，Python 也差不多——但有一个你绝对想不到的坑：**pip 默认装到全局**。本篇解决「装什么、怎么隔离、用什么 IDE」三件事，并把每一步对回 node/npm 的心智模型。
 
 # 一、先建立总类比
@@ -264,8 +266,3 @@ python3 app.py     # 输出：状态码: 200
 - pyenv（管版本）≠ venv（管依赖隔离），职责不同、可叠加
 
 下一篇：写第一个 Python 程序，把语法和 JS 逐行对上号。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（1）- Python 环境配置”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

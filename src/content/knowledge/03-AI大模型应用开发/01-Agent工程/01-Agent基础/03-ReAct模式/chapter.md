@@ -64,10 +64,6 @@ ReAct 是 Reasoning（推理）+ Acting（行动）的缩写。它的核心是�
 
 > **ReAct 是什么、解决什么问题？** ReAct 是 Reasoning + Acting 的循环：每一轮模型先 Thought 推理下一步，再 Action 调工具，拿到真实的 Observation 回填，然后基于观察进入下一轮，直到信息够了给 Final Answer。它解决的是「多步、且后一步依赖前一步结果」的任务——模型走一步看一步、根据真实观察动态调整，比一次性规划全部步骤更鲁棒。工程上必须配步数上限防死循环，并把每一步的 trace 记下来方便复盘。
 
-# 七、下一篇
-
-`30-多工具Agent.md` —— ReAct 循环里模型要「选工具」。当工具从一个变成十个，怎么管理、怎么让模型选对？下一篇讲多工具的组织。
-
 # 八、总结
 
 - **为什么这个循环能处理多步任务**：回到开头那个问题，用 ReAct 跑一遍：
@@ -75,7 +71,53 @@ ReAct 是 Reasoning（推理）+ Acting（行动）的缩写。它的核心是�
 - **ReAct = 推理 + 行动的循环**：ReAct 是 Reasoning（推理）+ Acting（行动）的缩写。
 - **一个真实场景**：用户问：「帮我算一下客户 C1001 的订单总金额是多少。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（29）- ReAct 模式”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：29 ReAct 模式
+
+打印一个完整的 **Thought / Action / Observation** 循环 trace，演示 Agent 怎么「想一步、做一步、看结果、再想下一步」，直到给出 Final Answer。
+
+## 运行
+
+```bash
+python3 main.py
+```
+
+零依赖，纯标准库。
+
+## 预期输出
+
+```
+问题：帮我算一下客户 C1001 的订单总金额是多少
+
+--- 第 1 步 ---
+Thought: 要算总金额，得先知道 C1001 有哪些订单
+Action: lookup_orders(customer_id=C1001)
+Observation: 查到 2 笔订单 [{'id': 'O-001', 'amount': 1200}, {'id': 'O-002', 'amount': 800}]
+
+--- 第 2 步 ---
+Thought: 订单有了，现在把金额加起来
+Action: sum_amount(orders=上一步的订单)
+Observation: 总金额 2000
+
+--- 第 3 步 ---
+Thought: 总金额已经算出，可以回答了
+Final Answer: 客户 C1001 的订单总金额是 2000 元
+```
+
+这个问题需要两步工具，且第二步（求和）依赖第一步（查订单）的结果。ReAct 把它拆成循环：第一轮查订单，把结果作为 Observation；第二轮基于上一轮的 Observation 算总额；第三轮判断信息够了，给出 Final Answer。这就是 ReAct 处理「依赖中间结果」任务的方式。
+
+## 代码↔概念对应
+
+| 概念 | 在 main.py 哪里 |
+|---|---|
+| ReAct 主循环 | `react_loop` |
+| Thought（推理下一步） | 每个分支里的 `print("Thought: ...")` |
+| Action（调用工具） | `tool_lookup_orders` / `tool_sum_amount` |
+| Observation（工具结果回填） | 调工具后写入 `state` 并打印 |
+| 跨步骤传递中间结果 | `state` 字典 |
+| 防死循环兜底 | `react_loop` 的 `max_steps` |
+
+## 说明
+
+这里 Thought 和 Action 是写死的规则，只为把循环结构显示清楚。真实 ReAct 中，每一轮的 Thought 和 Action 由模型生成，程序负责执行 Action、把工具结果作为 Observation 拼回 prompt 再喂给模型，循环结构和这里完全一样。`max_steps` 不是可选项——模型有可能反复调同一个工具或绕不出来，必须有步数上限兜底。

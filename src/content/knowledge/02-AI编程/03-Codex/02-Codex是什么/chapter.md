@@ -114,7 +114,36 @@ Codex 的核心价值不是“替你写几行代码”，而是把一个开发�
 - **第一次使用建议**：如果你刚开始，不要直接让 Codex 重构整个项目。
 - **常见错误**：问题是“优化”没有方向。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Codex（1）- Codex 是什么”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：01 hello Codex
+
+这个 demo 用来练习“给 Codex 一个清晰小任务”。
+
+## 目录内容
+
+- `sample-task.md`：一份可以直接复制给 Codex 的任务。
+- `buggy-counter.js`：一个带小 bug 的示例文件。
+
+## 使用方式
+
+在本目录运行：
+
+```bash
+codex "请阅读 sample-task.md，并按里面的要求处理 buggy-counter.js"
+```
+
+如果只想让 Codex 解释，不修改：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never "请解释 buggy-counter.js 的问题，不要修改文件"
+```
+
+## 练习目标
+
+你要观察 Codex 是否能：
+
+- 读懂任务目标。
+- 找到 bug。
+- 给出最小修改。
+- 说明如何验证。

@@ -1,8 +1,6 @@
 # Agent 工程（82）- DeepAgents：开箱即用的 skill、上下文压缩等 middleware
 
 > 读完你能：理解 DeepAgents 这类高层框架封装了哪些 Agent 常见能力，以及何时适合使用。
-> 来源：`吃透 AI Agent 开发` 截图目录第 30 篇，2026/05/23
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@
 - **工程链路**：运行 Agent 并观察 trace。
 - **常见坑**：只会调用框架，不知道出错在哪层。
 - **本篇定位**：这是框架回看篇：在学过 Tool、Memory、RAG、Graph 后，再看高层封装才不容易被名词带跑。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（82）- DeepAgents：开箱即用的 skill、上下文压缩等 middleware”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：上下文压缩中间件
 

@@ -1,5 +1,7 @@
 # Python（15）- 请求参数与数据校验
 
+> 读完你能：围绕“请求参数与数据校验”理解“先建立直觉：Pydantic 模型 ≈ zod schema（不是 TS interface）”与“Pydantic 在 FastAPI 里到底管哪部分参数”，并结合正文示例完成实践与排障。
+
 > 前端拿到一个表单，你会先用 zod 校验一遍再提交；后端接到请求，同样要先校验参数再处理，否则脏数据会一路烂到数据库。这篇讲 FastAPI 的校验主力 **Pydantic**——它长得像 TS interface，干的活像 zod，但有一个本质区别你必须先记住：**它是运行时真校验，不是编译期摆设**。
 
 # 一、先建立直觉：Pydantic 模型 ≈ zod schema（不是 TS interface）
@@ -329,8 +331,3 @@ Pydantic 是 FastAPI 的校验中枢：你用「类型注解 + `Field`」声明�
 - 可变默认值（list/dict）用 `Field(default_factory=list)`，别直接 `= []`
 - `field_validator` 第一个参数是 `cls` 且要配 `@classmethod`，不是 `self`
 - 看教程先确认是不是 v1：`.dict()` / `@validator` / `orm_mode` 都是旧写法
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Python（15）- 请求参数与数据校验”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

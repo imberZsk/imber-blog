@@ -1,5 +1,7 @@
 # React 源码（9）- Reconciler 协调阶段
 
+> 读完你能：围绕“Reconciler 协调阶段”理解“核心流程”与“工作循环”，并结合正文示例完成实践与排障。
+
 `packages/react-reconciler/src/ReactFiberWorkLoop.old.js`
 
 # 一、核心流程
@@ -124,8 +126,3 @@ function completeWork(unitOfWork) {
 - **核心流程**：先是在 reconciler 里 updateContainer，然后调用 scheduleCallback 走到 scheduler，它传入的参数 performConcurrentWorkOnRoot.bind(null, root) 很重要，又回到 reconciler
 - **工作循环**：当调度器（Scheduler）确定当前更新任务具有足够的优先级并且浏览器有可用的时间片时，协调阶段就正式启动它的核心工作循环（workLoop）。
 - **协调阶段的完成**：当工作循环处理完 Root Fiber 的 completeWork 后，整个协调阶段（Render Phase）就结束了。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（9）- Reconciler 协调阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

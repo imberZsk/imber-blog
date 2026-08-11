@@ -1,5 +1,7 @@
 # Python（4）- 数据类型与变量
 
+> 读完你能：围绕“数据类型与变量”理解“先建立一个总锚点”与“变量：没有 let/const，直接赋值”，并结合正文示例完成实践与排障。
+
 > 你已经会 JS 的 `number / string / Array / Object / Map / Set`。这篇就把 Python 的 `int / float / str / list / dict / tuple / set` 一一对上号，重点不是"它们长什么样"，而是**哪里和 JS 不一样、哪里会让你踩坑**。
 
 # 一、先建立一个总锚点
@@ -374,8 +376,3 @@ let t = typeof n;          // "number"
 - 空列表 `[]`、空字典 `{}` 在 Python 里是**假值**（JS 里却是真值）
 
 下一篇：运算符与流程控制，把 `if / for / while` 和 JS 对齐，重点看 Python 用**缩进**代替花括号这件大事。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Python（4）- 数据类型与变量”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

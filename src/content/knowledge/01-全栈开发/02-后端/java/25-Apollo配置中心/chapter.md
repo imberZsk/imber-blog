@@ -1,5 +1,7 @@
 # Java（24）- Apollo 配置中心
 
+> 读完你能：围绕“Apollo 配置中心”理解“为什么不把配置写死在代码里”与“Apollo 是什么：一句话与一张图”，并结合正文示例完成实践与排障。
+
 > 配置不该写死在代码里。Apollo 让你把配置搬到云端，按环境隔离、运行时随改随生效——就像前端的环境变量，但能在线上动态修改、不用重新部署。
 
 ---
@@ -448,8 +450,3 @@ public class ApolloConfigRefreshListener {
 - **Apollo 是什么：一句话与一张图**：Apollo（阿波罗）是携程开源的分布式配置中心。
 - **demo 里怎么接入 Apollo（匿名化示例代码）**：demo-asset 的启动类上加了一个注解就打开了 Apollo（VehicleBizApplication.java）：
 - **环境隔离：test / staging / prod**：同一份代码，跑在不同环境要连不同的 Apollo 服务器。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（24）- Apollo 配置中心”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

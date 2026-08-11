@@ -1,8 +1,6 @@
 # LangChain 实战（67）- Runnable：把写逻辑变成组装 chain
 
 > 读完你能：理解 LangChain Runnable 的本质：统一输入输出接口，让组件可以像管道一样组合。
-> 来源：`吃透 AI Agent 开发` 截图目录第 15 篇，2026/02/19，可试读 4%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@
 - **本篇定位**：这是从组件到链的关键篇。
 - **落地建议**：Retriever 输出 documents，PromptTemplate 输入 documents 和 question。
 
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（67）- Runnable：把写逻辑变成组装 chain”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
-
 ## 十、最小可运行示例：Runnable 数据契约
 
 ~~~text
@@ -93,3 +86,22 @@ print(chain.invoke({"question": "退款   多久到账"}))
 ~~~
 
 Runnable 的边界要有稳定 Schema；生产链路使用 Callback/Trace 保存每步耗时和版本。出现循环、暂停或动态分支时改用 LangGraph，不继续堆匿名 Lambda。
+
+<!-- knowledge-lab-merged -->
+
+# 动手实践：Runnable 数据契约与分支
+
+用一个最小 `Runnable` 协议模拟 LCEL 的核心：统一 `invoke` 接口、管道组合、显式数据契约和可控 fallback。实验不依赖 LangChain，因此浏览器可以直接运行。
+
+## 本地运行
+
+```bash
+python3 main.py
+```
+
+## 重点观察
+
+- 每个组件只返回新的状态字段，不在匿名函数里隐藏业务副作用。
+- 下游读取字段前先校验输入契约。
+- 正常问题走检索链；空问题由 fallback 返回可恢复错误。
+- 换成真实 LCEL 时，对应 `RunnableLambda`、`|`、`with_fallbacks` 和 Callback。

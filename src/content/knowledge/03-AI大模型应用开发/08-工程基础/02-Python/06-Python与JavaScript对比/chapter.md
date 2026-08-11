@@ -83,10 +83,6 @@ JS 的依赖天然按项目隔离，Python 必须自己先 `python3 -m venv .ven
 
 > 语法层面迁移成本很低，变量、函数、条件、循环、JSON 处理都能对应上 JS。真正要换脑子的有几处：异步上 Python 要显式 asyncio.run 启动事件循环，不像 JS 运行时自带；包管理上 pip 默认装全局，必须先建虚拟环境隔离；还有布尔大写、空值用 None、join 方法挂在字符串上这些细节。把这几个差异点过一遍，剩下的精力就能放在 LLM API、RAG、Agent 这些真正的主线上。
 
-# 七、下一篇
-
-`10-大模型API基础.md` —— Python 基础到此打通，从下一篇开始进入正题：怎么调大模型 API，把前面练的脚本能力接到真实的 LLM 上。
-
 # 八、总结
 
 - **工程上真正会踩的坑**：join 写反：习惯性写 chunks.join("\n")，Python 里 list 没有 join 方法，要写 "\n".join(chunks)。
@@ -94,7 +90,45 @@ JS 的依赖天然按项目隔离，Python 必须自己先 `python3 -m venv .ven
 - **要换脑子的：四个真正的差异**：1. 异步：JS 自带事件循环，Python 要手动启动
 - **一个真实场景**：你接手一个 Python 写的 AI 服务，扫一眼代码，大部分能猜个八九不离十：变量、函数、if、循环都认识。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（9）- Python 与 JavaScript 对比”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：09 Python 与 JavaScript 对比
+
+同一段 AI 脚本逻辑（清洗消息 → 检索 → 拼提示词 → 异步调模型 → 解析 JSON）的 Python 写法，每个关键处都用注释标出 JS 里对应怎么写。拿前端经验一行行对照着读。
+
+## 运行
+
+```bash
+python3 main.py
+```
+
+零依赖，纯标准库。
+
+## 预期输出
+
+```
+清洗前 2 条，清洗后 1 条
+命中场景结果：{'answer': '30 天内提交', 'has_source': True}
+未命中场景结果：{'answer': '资料不足', 'has_source': False}
+```
+
+注意 `True`/`False` 是 Python 的大写写法，JSON 里的 `true` 被 `json.loads` 转成了 Python 的 `True`。
+
+## 代码对应文章的哪些点
+
+| 对照点 | Python | JS | 在 main.py 哪里 |
+|---|---|---|---|
+| 函数定义 | `def f():` | `function f(){}` | 每个函数 |
+| 数组过滤/映射 | 列表推导式 | `.filter` / `.map` | `clean_messages`、`search` |
+| 字符串拼接 | `"\n".join(list)` | `list.join("\n")` | `build_prompt` |
+| 模板字符串 | `f"{x}"` | `` `${x}` `` | `build_prompt` |
+| 异步函数 | `async def` + `await` | `async function` + `await` | `fake_model`、`handle` |
+| 启动事件循环 | `asyncio.run()` | 运行时自带 | `main` |
+| JSON 解析 | `json.loads` | `JSON.parse` | `parse_json` |
+| 异常捕获 | `except 具体类型` | `catch(e)` | `parse_json` |
+
+## 动手改
+
+- 把 `clean_messages` 的列表推导式改成普通 `for` 循环 + `append`，对照哪种更接近 JS 的 `.filter`。
+- 把两次 `asyncio.run` 合并成一次，体会 Python 必须显式管理事件循环，而 JS 不用。
+- 给 `parse_json` 喂一段非法 JSON，看 `except` 分支怎么兜底。

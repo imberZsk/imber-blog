@@ -1,7 +1,5 @@
 # 01 - 企业级知识库：从数据接入到可信问答
 
-> 主分类：企业级知识库
-> 关联标签：权限、Chunking、Embedding、VectorDB、混合检索、评测、成本
 
 # 一、学习目标
 
@@ -32,7 +30,6 @@ flowchart LR
     M --> N[Trace / Evaluation]
 ```
 
-> DIAGRAM_DESCRIPTION：架构图必须分离离线建库和在线问答；离线包含数据源、解析/OCR、Chunking、Metadata/ACL、Embedding、BM25、VectorDB；在线从用户身份开始，经过鉴权、多路召回、RRF/Rerank、Context Packing、生成和引用校验，最后进入 Trace/Evaluation。
 
 # 三、技术选型基线
 

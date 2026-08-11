@@ -128,8 +128,3 @@ def expand_parent_context(
 - 电子书 RAG 的核心是结构与引用，不是把整本书切成等长字符串。
 - 子块负责精确召回，父块负责完整回答，引用由 Metadata 和程序映射。
 - 离线对账、在线拒答和页码准确率是可交付系统的基本验收项。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（62）- Milvus RAG 实战：电子书离线建库与引用问答”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

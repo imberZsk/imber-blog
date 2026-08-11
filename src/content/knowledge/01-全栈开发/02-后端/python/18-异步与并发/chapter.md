@@ -1,5 +1,7 @@
 # Python（17）- 异步与并发
 
+> 读完你能：围绕“异步与并发”理解“先建立前端锚点”与“async/await：心智模型直接搬 JS”，并结合正文示例完成实践与排障。
+
 > 你在 Node 里写惯了 `async/await`，第一眼看 Python 的 `async def` 会觉得"这不就是一模一样吗"。语法层面确实几乎逐字对应，但底下藏着一个 JS 世界里完全不存在的东西——GIL（全局解释器锁）。本篇解决两个问题：怎么用和 JS 心智模型几乎一致的方式写异步代码；以及为什么 Python 有"真线程"却还是不能靠多线程跑满多核 CPU，到底该用 async、线程、还是进程。
 
 # 一、先建立前端锚点
@@ -346,8 +348,3 @@ Python 的 `asyncio` 把 JS 的"单线程 + 事件循环 + 协作式并发"几�
 - `gather` 默认遇错即抛，要容错加 `return_exceptions=True`
 
 下一篇：进入三·Web后端的框架部分（FastAPI / Pydantic）
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Python（17）- 异步与并发”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。
