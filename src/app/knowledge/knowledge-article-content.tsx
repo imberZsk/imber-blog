@@ -3,12 +3,95 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Copy } from 'lucide-react'
+import { common, createLowlight } from 'lowlight'
 import { KnowledgeCodeSandbox } from '@/components/knowledge-code-sandbox'
 import { Button } from '@/components/ui'
 import type { KnowledgeSandbox } from '@/lib/knowledge-sandbox'
 
 /** 复制成功状态保持的毫秒数。 */
 const COPY_SUCCESS_DURATION_MS = 1600
+
+/** Markdown 代码围栏转换为 class 时使用的语言前缀。 */
+const CODE_LANGUAGE_CLASS_PREFIX = 'language-'
+
+/** 未声明语言的代码块使用的展示名称。 */
+const DEFAULT_CODE_LANGUAGE = 'text'
+
+/** 知识文章正文使用的常见语言语法高亮器。 */
+const knowledgeCodeHighlighter = createLowlight(common)
+
+/** Lowlight 返回的安全语法树节点。 */
+interface KnowledgeSyntaxNode {
+  /** 文本或高亮元素节点类型。 */
+  type: 'text' | 'element'
+  /** 文本节点保存的源码片段。 */
+  value?: string
+  /** 元素节点携带的 hljs class。 */
+  properties?: {
+    /** Lowlight 生成的一个或多个样式类。 */
+    className?: string | string[]
+  }
+  /** 元素节点包含的嵌套语法片段。 */
+  children?: KnowledgeSyntaxNode[]
+}
+
+/**
+ * 从 Markdown 输出的 code class 中提取声明语言。
+ * @param codeElement 当前块级代码中的 code 元素。
+ * @returns 标准化为小写的语言名，未声明时返回 text。
+ */
+function getCodeLanguage(codeElement: HTMLElement | null): string {
+  /** 当前 code 元素上形如 language-python 的样式类。 */
+  const languageClassName = Array.from(codeElement?.classList || []).find((className) =>
+    className.startsWith(CODE_LANGUAGE_CLASS_PREFIX)
+  )
+  return languageClassName?.slice(CODE_LANGUAGE_CLASS_PREFIX.length).toLowerCase() || DEFAULT_CODE_LANGUAGE
+}
+
+/**
+ * 将 Lowlight 语法树安全转换为浏览器 DOM，不拼接或注入 HTML 字符串。
+ * @param parentNode 当前高亮片段应写入的父节点。
+ * @param syntaxNode 当前需要渲染的 Lowlight 节点。
+ */
+function appendSyntaxNode(parentNode: Node, syntaxNode: KnowledgeSyntaxNode): void {
+  if (syntaxNode.type === 'text') {
+    parentNode.appendChild(document.createTextNode(syntaxNode.value || ''))
+    return
+  }
+
+  /** Lowlight 语法元素统一使用 span，避免高亮结果引入其他标签。 */
+  const spanElement = document.createElement('span')
+  /** 仅保留 Lowlight 约定的 hljs class。 */
+  const classNames = Array.isArray(syntaxNode.properties?.className)
+    ? syntaxNode.properties.className
+    : syntaxNode.properties?.className
+      ? [syntaxNode.properties.className]
+      : []
+  spanElement.className = classNames.filter((className) => /^hljs-[a-z\d_-]+$/i.test(className)).join(' ')
+  syntaxNode.children?.forEach((childNode) => appendSyntaxNode(spanElement, childNode))
+  parentNode.appendChild(spanElement)
+}
+
+/**
+ * 按 Markdown 声明语言高亮代码；未注册语言使用常见语言自动识别。
+ * @param codeElement 当前需要替换子节点的 code 元素。
+ * @param language Markdown 围栏声明的语言。
+ * @param sourceCode 复制和高亮共用的原始源码。
+ */
+function highlightCodeElement(codeElement: HTMLElement, language: string, sourceCode: string): void {
+  try {
+    /** 已声明语言优先精确高亮，未知语言在常见语法中自动匹配。 */
+    const syntaxTree = knowledgeCodeHighlighter.registered(language)
+      ? knowledgeCodeHighlighter.highlight(language, sourceCode)
+      : knowledgeCodeHighlighter.highlightAuto(sourceCode)
+    codeElement.replaceChildren()
+    syntaxTree.children.forEach((syntaxNode) => appendSyntaxNode(codeElement, syntaxNode as KnowledgeSyntaxNode))
+    codeElement.classList.add('hljs')
+  } catch {
+    // 单个未知或异常语法不能影响文章阅读，失败时保留原始纯文本代码。
+    codeElement.textContent = sourceCode
+  }
+}
 
 /** 文章正文组件接收的服务端渲染 HTML。 */
 interface KnowledgeArticleContentProps {
@@ -179,19 +262,33 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
     const nextCodeBlockPortals = codeElements.map((codeElement, index) => {
       /** 包裹代码和悬浮操作按钮的容器。 */
       const codeBlockWrapper = document.createElement('div')
+      /** 当前 pre 内由 Markdown 生成的 code 元素。 */
+      const sourceCodeElement = codeElement.querySelector<HTMLElement>('code')
+      /** 当前代码块声明的语言。 */
+      const codeLanguage = getCodeLanguage(sourceCodeElement)
+      /** 高亮前保留的原始源码，同时用于复制。 */
+      const sourceCode = codeElement.textContent?.trimEnd() || ''
+      /** 代码块左上角的语言标识。 */
+      const languageLabelElement = document.createElement('span')
       /** React 复制按钮的挂载节点。 */
       const mountNode = document.createElement('div')
       /** 当前代码块在文章内的稳定标识。 */
       const codeBlockId = `knowledge-code-${index + 1}`
 
       codeBlockWrapper.className = 'knowledge-code-block'
+      codeBlockWrapper.dataset.language = codeLanguage
+      languageLabelElement.className = 'knowledge-code-language'
+      languageLabelElement.textContent = codeLanguage.toUpperCase()
       mountNode.className = 'knowledge-code-block-actions'
+      if (sourceCodeElement) {
+        highlightCodeElement(sourceCodeElement, codeLanguage, sourceCode)
+      }
       codeElement.before(codeBlockWrapper)
-      codeBlockWrapper.append(codeElement, mountNode)
+      codeBlockWrapper.append(languageLabelElement, codeElement, mountNode)
 
       return {
         id: codeBlockId,
-        code: codeElement.textContent?.trimEnd() || '',
+        code: sourceCode,
         mountNode,
         codeElement,
         wrapperNode: codeBlockWrapper
