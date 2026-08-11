@@ -21,7 +21,6 @@
 官方原话是：
 
 > Paperclip is the control plane for autonomous AI companies. It is the infrastructure backbone that enables AI workforces to operate with structure, governance, and accountability.
->
 > （Paperclip 是自治 AI 公司的控制平面，是让 AI 劳动力以「有结构、有治理、有问责」的方式运转的基础设施。）
 
 这里有三个关键词，记住它们，整本书都围着它们转：
@@ -129,8 +128,3 @@ Paperclip 创始人反复强调：模型再强，传达价值观和**个人审�
 - 你的角色是**董事会**：设目标、批决策、控预算、把关品味。
 
 下一章，我们就把它在本地真正跑起来，打开控制台看看长什么样。👉 [02 · 五分钟跑起来](../03-五分钟跑起来/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Paperclip（1）- 认识 Paperclip：把 AI 当员工招进来”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

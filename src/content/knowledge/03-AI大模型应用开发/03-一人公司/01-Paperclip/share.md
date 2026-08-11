@@ -1,3 +1,7 @@
+# Paperclip 安装、运行与 Agent 协作
+
+> 读完你能：在本地启动 Paperclip，理解 Company、Agent、Issue、Heartbeat 与 Governance 的关系，并能定位 Agent 协作卡住的常见原因。
+
 ## 一、Paperclip 是什么？
 
 Paperclip 是一个 **AI 员工管理平台**。
@@ -103,8 +107,3 @@ Agent 的执行器（Adapter）决定了它用什么 AI 来干活：
 | `http` | 调用外部 HTTP 接口 |
 
 使用 `claude_local` 前提：本机已安装并登录 `claude` CLI。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“安装依赖（需要 Node.js >= 20，pnpm 9.15.4）”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

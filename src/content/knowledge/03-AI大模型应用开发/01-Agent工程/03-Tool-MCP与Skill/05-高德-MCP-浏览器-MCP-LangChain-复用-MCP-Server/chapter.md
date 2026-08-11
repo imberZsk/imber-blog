@@ -1,8 +1,6 @@
 # Agent 工程（57）- 高德 MCP + 浏览器 MCP：LangChain 复用别人的 MCP Server 有多爽！
 
 > 读完你能：理解如何在 LangChain 等框架里复用现成 MCP Server，以及复用时要控制哪些风险。
-> 来源：`吃透 AI Agent 开发` 截图目录第 5 篇，2025/12/25，可试读 10%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -52,11 +50,6 @@
 - **工程链路**：选择 MCP Server 并确认工具清单。
 - **常见坑**：复用别人 Server 却不读工具 schema。
 - **本篇定位**：这是 MCP 的应用篇：从理解协议转到把地图、浏览器这类外部能力接进 Agent。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（57）- 高德 MCP + 浏览器 MCP：LangChain 复用别人的 MCP Server 有多爽！”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：调用 stdio MCP
 

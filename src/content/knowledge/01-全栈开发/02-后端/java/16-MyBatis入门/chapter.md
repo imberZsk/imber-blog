@@ -1,5 +1,7 @@
 # Java（15）- MyBatis 与 MyBatis-Plus 入门
 
+> 读完你能：围绕“MyBatis 与 MyBatis-Plus 入门”理解“先回忆：第 04 课的"五站"里，数据库是最后一站”与“1 前端类比：你早就用过"ORM"了”，并结合正文示例完成实践与排障。
+
 > 前 14 课我们一直在 Java 语言和 Spring 的世界里打转，这一课终于要碰数据库了。MyBatis 就是 Java 后端的"ORM 工具 + SQL 拼装器"，而 MyBatis-Plus 则是在它之上再包一层、把增删改查省到一行代码——类比前端，它俩合起来约等于 Prisma / TypeORM 之于 Node。
 
 ---
@@ -143,7 +145,6 @@ OrganizationMapper.java                OrganizationMapper.xml
 `resultMap` 就是这张"翻译表"。
 
 > **前端类比**：跟你用 axios 拦截器或 `humps` 库把后端返回的 `snake_case` 自动转成前端的 `camelCase` 是一模一样的诉求。只不过 MyBatis 把这层翻译写在了 XML 里。
->
 > 好消息：MyBatis-Plus 默认开启了"驼峰自动映射"，所以**简单字段根本不用手写 resultMap**——`organization_name` 会自动对上 `organizationName`。demo 这份 XML 写得这么全，是早期代码生成器一把梭生成的，实战中新表大多省掉。
 
 ---
@@ -465,8 +466,3 @@ demo 里三种方式并存，给你一张决策表：
 - **先回忆：第 04 课的"五站"里，数据库是最后一站**：第 04 课讲 HTTP 请求生命周期时，我们画过这条链路：
 - **MyBatis-Plus：把 CRUD 省到一行**：到这你可能想："就为查一条数据，还得写接口 + XML + resultMap？
 - **串起来：一次查询的完整数据流**：把本课的零件拼回第 04 课的"五站"图里：
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（15）- MyBatis 与 MyBatis-Plus 入门”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

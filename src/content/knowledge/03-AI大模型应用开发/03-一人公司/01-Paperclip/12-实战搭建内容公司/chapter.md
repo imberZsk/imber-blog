@@ -178,8 +178,3 @@ POST /api/companies/{companyId}/routines
 5. 用例行任务让公司持续产出
 
 这就是「零人工公司」的完整运转。接下来三章是「运营 + 上线 + 速查」：先讲怎么把成本和进度看得明明白白。👉 [12 · 成本控制与可观测性](../13-成本控制与可观测性/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（11）- 实战：从 0 搭一家内容公司（OpenAgent）”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

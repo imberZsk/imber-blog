@@ -113,8 +113,3 @@ def build_chunk_id(document_id: str, heading_path: list[str], text: str) -> str:
 - Loader 的责任是保真解析和统一契约，Splitter 的责任是生成可检索、可引用的证据单元。
 - 结构、来源、权限和稳定 ID 比“切成多少字符”更重要。
 - 解析与分块都要有自动指标和真实问题 Recall 回归。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（59）- 知识库 Loader 与 Splitter：解析契约、清洗和分块验收”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

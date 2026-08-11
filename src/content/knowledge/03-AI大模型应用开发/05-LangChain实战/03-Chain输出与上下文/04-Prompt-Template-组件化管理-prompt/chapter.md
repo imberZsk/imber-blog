@@ -1,8 +1,6 @@
 # LangChain 实战（66）- Prompt Template：组件化管理 prompt
 
 > 读完你能：把 prompt 从散落字符串升级成可复用、可测试、可版本化的组件。
-> 来源：`吃透 AI Agent 开发` 截图目录第 14 篇，2026/02/12，可试读 2%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -52,11 +50,6 @@
 - **工程链路**：抽出 system、task、context、format 四类片段。
 - **常见坑**：prompt 散落在业务代码里。
 - **本篇定位**：这是 LangChain 组件线的第一篇，讲 prompt 工程化，而不是堆提示词技巧。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（66）- Prompt Template：组件化管理 prompt”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：版本化 Prompt Template
 

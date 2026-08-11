@@ -1,5 +1,7 @@
 # React 源码（12）- Hooks
 
+> 读完你能：围绕“Hooks”理解“Hooks 分类”与“状态管理 (State Management)”，并结合正文示例完成实践与排障。
+
 packages/react-reconciler/src/ReactFiberWorkLoop.old.js
 
 `updateContainer` -> `ensureRootIsScheduled` -> `scheduleCallback(schedulerPriorityLevel,performConcurrentWorkOnRoot.bind(null, root))`-> `performConcurrentWorkOnRoot` -> `renderRootConcurrent` -> `workLoopConcurrent` -> `performUnitOfWork` -> `beginWork` -> `renderWithHooks` -> `updateFunctionComponent` -> `renderWithHooks`
@@ -74,8 +76,3 @@ setNumber 触发是 dispatchEvent 触发，然后 scheduleUpdateOnFiber 调度
 
 - **Hooks 分类**：这些 Hooks 用于在组件内部管理和更新状态。
 - **useState**：FunctionComponent 对应的 Fiber 节点（如 App 的 Fiber）的 memoizedState 指向一条“Hook 单向链表”。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“React 源码（12）- Hooks”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

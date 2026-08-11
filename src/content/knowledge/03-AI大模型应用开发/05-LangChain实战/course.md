@@ -1,7 +1,5 @@
 # 01 - LangChain 实战：LCEL、Retrieval 与 Memory
 
-> 主分类：LangChain实战
-> 关联标签：LCEL、Loader、Splitter、Retrieval、Memory、Output Parser
 
 # 一、学习目标
 
@@ -23,7 +21,6 @@ flowchart LR
     H --> I[Callback / Trace]
 ```
 
-> DIAGRAM_DESCRIPTION：流程图必须区分离线 Loader、Splitter、Embedding、Vector Store 与在线 Question、Retriever、Rerank、LCEL Chain；Memory 作为按需上下文进入 Chain，Output Parser 后接 Callback/Trace。
 
 # 三、验收标准
 

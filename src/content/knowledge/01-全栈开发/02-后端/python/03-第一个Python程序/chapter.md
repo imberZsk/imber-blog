@@ -1,5 +1,7 @@
 # Python（2）- 第一个 Python 程序
 
+> 读完你能：围绕“第一个 Python 程序”理解“先给个锚点：Python ≈ Node，不像 Java”与“你的第一行代码”，并结合正文示例完成实践与排障。
+
 > 写一个 HelloWorld，走通「怎么运行」全流程，然后搞懂 Python 最反直觉的一点：**没有花括号，靠缩进划分代码块**。
 
 # 一、先给个锚点：Python ≈ Node，不像 Java
@@ -216,8 +218,3 @@ if __name__ == "__main__":
 - `if __name__ == "__main__"` 现在只需脸熟，拆模块时再深究
 
 下一篇：**03 - Python 与 JavaScript 对比**，用一张大对照表把变量、函数、类型快速过一遍。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（2）- 第一个 Python 程序”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

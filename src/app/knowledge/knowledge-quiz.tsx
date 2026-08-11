@@ -93,13 +93,18 @@ export function KnowledgeQuiz({ questions }: KnowledgeQuizProps) {
     })
   }
 
+  // 学习指南和纯参考页没有适合评测的闭环知识点，不渲染空的自测外壳。
+  if (questions.length === 0) {
+    return null
+  }
+
   return (
     <section className="knowledge-quiz" aria-labelledby="knowledge-quiz-title">
       <div className="flex items-center gap-2">
         <CircleHelp className="text-mint size-4" aria-hidden="true" />
         <h2 id="knowledge-quiz-title">学完自测</h2>
       </div>
-      <p className="knowledge-quiz-intro">用一道实践判断题检验对本课知识的理解。</p>
+      <p className="knowledge-quiz-intro">选择所有正确答案；提交后逐项核对判断依据。</p>
 
       <div className="space-y-8">
         {questions.map((question, questionIndex) => {
@@ -177,21 +182,38 @@ export function KnowledgeQuiz({ questions }: KnowledgeQuizProps) {
 
               {isSubmitted && (
                 <div
-                  className={`flex items-start gap-2 rounded-md px-3 py-2.5 text-sm ${
+                  className={`rounded-md px-3 py-3 text-sm ${
                     isCorrect ? 'bg-mint/10 text-foreground' : 'bg-destructive/5 text-foreground'
                   }`}
                   role="status"
                   aria-live="polite"
                 >
-                  {isCorrect ? (
-                    <CheckCircle2 className="text-mint mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                  ) : (
-                    <XCircle className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                  )}
-                  <span>
-                    <strong className="mr-1">{isCorrect ? '回答正确。' : '再想一想。'}</strong>
-                    {question.explanation}
-                  </span>
+                  <div className="flex items-start gap-2">
+                    {isCorrect ? (
+                      <CheckCircle2 className="text-mint mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <XCircle className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>
+                      <strong className="mr-1">{isCorrect ? '回答正确。' : '答案不完整。'}</strong>
+                      {question.explanation}
+                    </span>
+                  </div>
+
+                  <ul className="border-border/70 mt-3 space-y-2 border-t pt-3">
+                    {question.options.map((option) => (
+                      <li key={option.id} className="flex items-start gap-2 leading-5">
+                        <span
+                          className={`shrink-0 font-mono text-xs font-semibold ${
+                            option.isCorrect ? 'text-mint' : 'text-destructive'
+                          }`}
+                        >
+                          {option.id} · {option.isCorrect ? '正确' : '错误'}
+                        </span>
+                        <span className="text-muted-foreground">{option.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </fieldset>

@@ -1,8 +1,6 @@
 # LangChain 实战（68）- 实战练习 LCEL 组装 chain
 
 > 读完你能：用 LCEL 思维组装一个 RAG chain，并知道什么时候该拆链、什么时候该上图。
-> 来源：`吃透 AI Agent 开发` 截图目录第 16 篇，2026/02/26，可试读 8%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@
 - **常见坑**：把所有逻辑塞进一个 chain，没人看得懂。
 - **本篇定位**：这是 LangChain 实战练习篇，重点练固定流程的组件串联。
 
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（68）- 实战练习 LCEL 组装 chain”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
-
 ## 十、最小可运行示例：LCEL RAG Chain
 
 ~~~text
@@ -99,3 +92,22 @@ print(chain.invoke("退款多久能到账"))
 ~~~
 
 分别测试 Retriever、Prompt、模型和 Parser；Trace 要保存召回证据，避免最终答案错误时无法判断问题属于检索还是生成。
+
+<!-- knowledge-lab-merged -->
+
+# 动手实践：LCEL RAG 与 Callback Trace
+
+把固定 RAG 流程拆成 `retrieve → prompt → model → parser` 四个可测试步骤，并通过 Callback 记录每一步的输入字段、输出字段和耗时。
+
+## 本地运行
+
+```bash
+python3 main.py
+```
+
+零依赖，Python 3.10+ 可运行。真实 LangChain 中可替换为 `RunnableParallel`、`PromptTemplate`、模型 Runnable、Parser 和 LangSmith/LangFuse Callback，数据契约保持一致。
+
+## 重点观察
+
+- Trace 同时保留召回证据和最终引用，答错时能区分检索问题与生成问题。
+- 固定流水线适合 LCEL；需要重试环路或人工审批时应切换 LangGraph。

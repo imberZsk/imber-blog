@@ -89,10 +89,6 @@ def run_plugin(call):
 
 > **Coze 的插件机制和 Function Calling 是什么关系？** 本质是同一套东西。Coze 给 Bot 挂插件，模型读插件的功能描述，自己决定调哪个、传什么参数，平台负责真正执行和参数校验——这就是 Function Calling 的「模型提议、后端执行」。Coze 只是把 schema 定义、参数抽取、执行回填封装成了可视化配置。配插件时最关键的是把功能描述写清楚，因为那是模型选对插件的唯一依据。
 
-# 八、下一篇
-
-`35-LangChain入门.md` —— Dify、Coze 是低代码平台，灵活度有天花板。需要用代码精细控制 chain、prompt、检索、工具时，就轮到 LangChain。下一篇用纯标准库实现 LangChain 几个核心概念的 mini 版，让你看清框架封装了什么。
-
 # 九、总结
 
 - **Bot 选插件，本质就是 Function Calling**：如果你读过第 28 篇 Function Calling，Coze 的插件机制会非常眼熟，因为它就是同一套东西换了个可视化外壳：
@@ -100,7 +96,69 @@ def run_plugin(call):
 - **插件描述是 Bot 选对插件的唯一依据**：Bot 没读过你的代码，它凭什么知道「问天气该调 getweather」？
 - **参数抽不全要拦住，别让插件空跑**：Bot 选对了插件，还得从问题里抽出插件要的参数。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（34）- Coze 入门”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：34 Coze 入门
+
+用纯 Python 标准库模拟 Coze「Bot + 插件（Plugin）」的调用流程：Bot 根据用户问题自己选插件、传参数，平台执行后用结果生成回答。
+
+## 运行
+
+```bash
+python3 main.py
+```
+
+零依赖，纯标准库，离线可跑。
+
+## 预期输出
+
+```
+=== 场景 1：问天气（命中天气插件）===
+用户：北京今天天气怎么样？
+  [Bot] 决定调用插件 get_weather({"city": "北京"})
+  [插件] 返回：北京今天晴，12 到 24 度
+Bot：为你查到：北京今天晴，12 到 24 度。
+
+=== 场景 2：问股价（命中股票插件）===
+用户：帮我查下 AAPL 股价
+  [Bot] 决定调用插件 get_stock({"symbol": "AAPL"})
+  [插件] 返回：AAPL 当前价格 $218.30
+Bot：为你查到：AAPL 当前价格 $218.30。
+
+=== 场景 3：问股价但没给代码（参数缺失被拦）===
+用户：帮我看看那支股票涨了没
+  [Bot] 决定调用插件 get_stock({"symbol": ""})
+  [插件] 失败：插件 get_stock 缺少参数：symbol
+Bot：抱歉，插件 get_stock 缺少参数：symbol。
+```
+
+同样的「Bot 选插件」机制，问天气走天气插件，问股价走股票插件，参数抽不全就被拦。
+
+## 代码 ↔ 概念对应
+
+| Coze 概念 | 在 main.py 哪里 |
+|---|---|
+| 插件市场 / 给 Bot 勾选的插件 | `PLUGINS` |
+| 插件的「功能描述」（Bot 选插件的依据） | 每个插件的 `triggers` |
+| Bot 自己决定调哪个插件 | `bot_select_plugin` |
+| 模型从问题里抽插件参数 | `_extract_args` |
+| 平台执行插件 + 参数校验 | `run_plugin` |
+| Bot 用插件结果生成回答 | `bot_reply` |
+
+## 真实 Coze 怎么用
+
+这个 demo 是「代码版的 Coze Bot」。真实使用时：
+
+1. 打开 Coze（coze.com 或国内 coze.cn），创建一个 Bot。
+2. 在「插件」里从插件市场添加现成插件（天气、搜索、画图），或自己上传一个插件（本质是一段 HTTP API + OpenAPI schema 描述，对应 `PLUGINS` 的定义）。
+3. 写 Bot 的人设和 Prompt，告诉它什么时候该用哪个插件（对应 `triggers`）。
+4. 用户提问时，Coze 的模型读插件描述，自己决定调哪个、传什么参数（对应 `bot_select_plugin` + `_extract_args`），平台执行后把结果回填给模型生成回答。
+5. 发布到豆包、飞书、微信等渠道。
+
+Coze 和 Function Calling（第 28 篇）是同一套机制：模型只提议调哪个工具/插件，真正执行和校验在平台/后端。Coze 把它做成了可视化配置。
+
+## 动手改
+
+- 给 `PLUGINS` 加一个「翻译」插件，写好 `triggers`，看 Bot 能不能选中。
+- 故意让一个插件的 `triggers` 和另一个重叠，观察 Bot 选错插件——这对应真实 Coze 里「插件描述写得含糊导致误调」。
+- 把 `run_plugin` 里的 mock 数据换成真实 HTTP 请求（`urllib.request`），体验插件接外部 API。

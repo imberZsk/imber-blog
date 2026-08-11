@@ -1,5 +1,7 @@
 # React 源码（8）- Scheduler 调度阶段
 
+> 读完你能：围绕“Scheduler 调度阶段”理解“两个队列，两个最小堆”与“优雅降级请求浏览器每一帧空闲时间”，并结合正文示例完成实践与排障。
+
 `/packages/scheduler/src/forks/Scheduler.js`
 
 # 一、两个队列，两个最小堆
@@ -89,8 +91,3 @@ function workLoop(hasTimeRemaining, initialTime) {
 - **两个队列，两个最小堆**：unstablescheduleCallback 是调度的逻辑，里面有两个队列
 - **优雅降级请求浏览器每一帧空闲时间**：/packages/scheduler/src/forks/Scheduler.js
 - **workLoop**：这是 scheduler 核心逻辑，从 flushWork->workLoop
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（8）- Scheduler 调度阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

@@ -127,7 +127,15 @@ PostToolUse 跑个几分钟的任务，会拖垮每次编辑的体验。→ Hook
 
 自主运行篇到此完成。下一篇「远程与无头篇」，让它彻底脱离你的终端——手机、网页、CI 里都能干活。👉 `20-远程控制.md`
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Claude Code（18）- Hooks + Skills + Automation：把流程固化下来”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。
+# 动手实践：Demo 18 · Hooks 配置（可直接用）+ Skill/Automation 说明
+
+提供一份**可直接复制**的 Hooks 配置：每次 Write/Edit 后自动跑 lint。外加 Skill 与 Automation 的设计清单。
+
+## 文件
+- `settings.hooks.example.json`：PostToolUse hook 示例，改完文件自动 lint。
+- `固化清单.md`：什么时候用 Hooks / Skills / Automation。
+
+## 怎么用 Hooks
+把 `settings.hooks.example.json` 里的 `hooks` 段合并进你项目的 `.claude/settings.json`，把命令换成你项目真实的 lint/格式化命令即可。

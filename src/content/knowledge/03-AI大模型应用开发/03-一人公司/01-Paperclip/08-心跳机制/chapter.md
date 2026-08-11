@@ -188,8 +188,3 @@ Agent 怎么「记得」上次干到哪？靠 **session 持久化**。
 - 铁律里最重要的两条：**干活前先 checkout、绝不重试 409**。
 
 心跳讲的是「单个 Agent 怎么干活」。下一章讲「多个 Agent 怎么协作不打架」——任务系统、签出冲突、任务树、@提及。👉 [08 · 任务系统与多 Agent 协作](../09-任务系统与多Agent协作/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Paperclip（7）- 心跳机制：AI 员工如何「上班打卡」”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

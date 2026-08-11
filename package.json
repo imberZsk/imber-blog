@@ -8,6 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "audit:knowledge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/audit-knowledge-quizzes.mjs",
+    "audit:quizzes": "pnpm audit:knowledge",
+    "optimize:knowledge": "node scripts/optimize-knowledge-articles.mjs",
+    "optimize:knowledge:write": "node scripts/optimize-knowledge-articles.mjs --write",
     "postinstall": "node scripts/sync-pyodide-assets.mjs && simple-git-hooks"
   },
   "dependencies": {

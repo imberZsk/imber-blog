@@ -1,5 +1,7 @@
 # Java（10）- 创建第一个项目 —— Spring Boot 项目结构详解
 
+> 读完你能：围绕“创建第一个项目 —— Spring Boot 项目结构详解”理解“先建立一个总览类比”与“Maven 项目骨架：约定优于配置”，并结合正文示例完成实践与排障。
+
 > 前 9 课你已经会写 Java 代码、用集合、抛异常、读注解了。但真正的后端项目不是一个 `Main.java` 跑天下，它有一套和前端工程化高度类似的"骨架"。这一课我们把 demo-basic 这个示例项目拆开，看清 Maven 骨架、`pom.xml`、`application` 配置、启动类和目录约定，让你从"会写 Java"过渡到"会搭 Java 项目"。
 
 ---
@@ -442,8 +444,3 @@ MySQL                            ← 真正的数据
 - **Maven 项目骨架：约定优于配置**：Maven（见第 01 课，它 ≈ npm + 构建工具）有一套雷打不动的目录约定。
 - **多模块项目：Monorepo 的 Java 版**：打开 demo-basic 你会发现它不是单个模块，而是一个父项目带四个子模块，这正是前端 monorepo（pnpm workspace / lerna）的思路。
 - **pom.xml 逐段拆解（对照 package.json）**：pom.xml 是 XML 格式（比 JSON 啰嗦，但结构清晰）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（10）- 创建第一个项目 —— Spring Boot 项目结构详解”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

@@ -1,5 +1,7 @@
 # Java（19）- 读懂一个完整接口
 
+> 读完你能：围绕“读懂一个完整接口”理解“先回到第 4 课埋的那个伏笔”与“三种 DTO：In / Out / Entity”，并结合正文示例完成实践与排障。
+
 > 前面 18 课把零件一个个拆给你看了。这一课我们把零件装回去——拿 demo-basic 的 `GET /organization/getById` 这个示例接口，从 Controller 一路追到数据库，再追回来，彻底搞懂数据在每一层换了几次"马甲"，以及为什么要换。
 
 ---
@@ -430,8 +432,3 @@ demo-basic/
 - **灵魂拷问：为什么不直接返回 Entity？**：你现在一定憋着这个问题：Organization 里字段更全，直接 return organization 不就完事了？
 - **先回到第 4 课埋的那个伏笔**：第 4 课讲 HTTP 生命周期时，我们画过这张"五站图"：
 - **三种 DTO：In / Out / Entity**：先上对照表，建立整体印象，后面逐个拆：
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（19）- 读懂一个完整接口”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

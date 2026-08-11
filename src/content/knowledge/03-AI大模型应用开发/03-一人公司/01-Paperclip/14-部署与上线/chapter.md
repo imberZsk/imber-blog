@@ -196,8 +196,3 @@ Agent 产出的文件（代码、落地页、图片等）需要落盘。
 - **绝不要把免登录的 `local_trusted` 暴露到公网。**
 
 部署讲完了。最后两章是工具书性质：先给一份能贴在显示器边的 CLI 与 API 速查。👉 [14 · CLI 与 API 速查手册](../15-CLI与API速查手册/chapter.md)
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Paperclip（13）- 部署与上线：从本地玩具到长期运行”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

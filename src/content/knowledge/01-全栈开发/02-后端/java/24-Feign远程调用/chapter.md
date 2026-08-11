@@ -1,5 +1,7 @@
 # Java（23）- Feign 声明式远程调用
 
+> 读完你能：围绕“Feign 声明式远程调用”理解“问题的起点：服务拆开了，怎么互相调用？”与“1 前端类比”，并结合正文示例完成实践与排障。
+
 > 还记得第 18 课说的微服务拆分吗？拆完之后服务 A 怎么调服务 B？答案就是 Feign —— 你只写一个接口，连函数体都不用写，就能像调本地方法一样调远程服务。它本质上就是后端版的「封装好的 axios」。
 
 ---
@@ -369,8 +371,3 @@ public class RemoteWalletServiceFallbackImpl implements RemoteWalletService {
 - **降级与熔断：远程调用会失败，怎么办？**：本地方法调用几乎不会「失败」（顶多抛异常）。
 - **不用 Feign 会有多痛？**：如果手写 HTTP 调用，每次都要这样（伪代码）：
 - **client 模块：服务间的「接口契约」**：第 18 课提到每个服务旁边都有一个 xxx-client 模块（比如 demo-basic-client、demo-billing-client）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（23）- Feign 声明式远程调用”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -1,7 +1,8 @@
 # Agent Harness（1）- 什么是 Harness：从"会聊天的模型"到"会干活的智能体"
 
+> 读完你能：围绕“什么是 Harness：从"会聊天的模型"到"会干活的智能体"”理解“先认识主角：LLM 到底会什么，不会什么”与“Harness 登场：给大脑装上身体”，并结合正文示例完成实践与排障。
+
 > 你有没有想过：ChatGPT 网页版只会跟你**聊天**，而 Claude Code 能直接**改你的代码、跑命令、读文件**——可它俩背后用的其实是同一类大模型。
->
 > 差别不在模型，在那层"外壳"。这层外壳，就叫 **Harness**。
 
 ---
@@ -161,14 +162,30 @@ while True:
 
 ---
 
-## 7.1 📝 作者自审（Step 4）
+<!-- knowledge-lab-merged -->
 
-- **逻辑是否清晰？** ✅ 按"先认识 LLM 的残疾 → harness 来补 → 图示对比 → 代码示意 → 误区 → 实践"递进，每一步都为下一步铺垫。
-- **是否"懂了就能用"？** ✅ 给出了可迁移的心智模型（大脑/身体、谁思考谁动手），读者拿这个框架去看任何 Agent 都能套上。
-- **是否啰嗦/重复？** 删掉了原稿里对"上下文"的展开解释（那是第 06 章的活），这里只点到为止，避免抢戏。
-- **结论**：合格。本章只负责建立直觉、不深挖实现，把"动手"留给 02、03 章，符合入门篇定位。
+# 动手实践：裸 LLM vs 带 Harness 的 Agent
 
-## 可视化规格
+> 问题：**"帮我看看当前目录下 config.json 里写了什么？"**
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent Harness（1）- 什么是 Harness：从"会聊天的模型"到"会干活的智能体"”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+- `bare_llm.py`：裸 LLM 调用。模型够不着文件，只能让你自己贴内容、或干脆瞎编。
+- `with_harness.py`：带一个 `read_file` 工具和一个最小循环。模型会"动嘴"说要读文件，由 harness "动手"真去读，再把内容喂回去得出答案。
+
+## 怎么跑
+
+本 demo 默认用**离线 Mock 模型**（`mock_llm.py`），无需 API Key、无需联网，直接跑就能看效果：
+
+```bash
+python bare_llm.py
+python with_harness.py
+```
+
+你会看到 `with_harness.py` 多打印了"🔧 模型请求调用工具 → harness 执行 → 把结果喂回"的过程，最后给出基于**真实文件内容**的回答；而 `bare_llm.py` 只能两手一摊。
+
+## 想换成真实模型？
+
+把脚本里 `from mock_llm import chat` 换成真实的 Anthropic SDK 调用即可（需要 `pip install anthropic` 并设置 `ANTHROPIC_API_KEY`）。Mock 的接口刻意做得和真实调用很像，方便你对照。
+
+## 看点
+
+对照着读两个文件的 `while` 循环部分——**裸 LLM 没有循环，harness 版本有循环**。这正是第 02 章"Agent Loop"的引子。

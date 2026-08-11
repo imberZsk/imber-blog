@@ -1,8 +1,6 @@
 # LangChain 实战（64）- 结构化大模型输出：output parser 还是 tool?
 
 > 读完你能：学会在 JSON parser、structured output 和 tool calling 之间做选择。
-> 来源：`吃透 AI Agent 开发` 截图目录第 12 篇，2026/01/27，可试读 1%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -52,11 +50,6 @@
 - **常见坑**：只靠 prompt 说“不要输出多余内容”。
 - **本篇定位**：这是结构化输出的进阶取舍篇。
 
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（64）- 结构化大模型输出：output parser 还是 tool?”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
-
 ## 十、最小可运行示例：结构化输出校验
 
 ~~~text
@@ -100,3 +93,23 @@ except (json.JSONDecodeError, ValidationError) as error:
 ~~~
 
 Parser 适合校验最终文本；Tool Calling 适合模型需要选择动作并给出参数。两者都不能替代后端权限检查和业务校验。
+
+<!-- knowledge-lab-merged -->
+
+# 动手实践：结构化输出校验与重试
+
+用标准库复现生产链路中的四层防线：**提取 JSON、语法解析、Schema 校验、业务规则校验**。实验包含一次可修复输出和一次必须拒绝的非法输出。
+
+## 本地运行
+
+```bash
+python3 main.py
+```
+
+零依赖，Python 3.10+ 可运行。真实项目可把 `validate_schema` 换成 Pydantic，把 `repair_json` 换成一次受限模型重试，但权限和业务规则仍必须由后端执行。
+
+## 重点观察
+
+- “能解析成 JSON”不等于“满足 Schema”。
+- “满足 Schema”也不等于“业务上允许执行”。
+- 修复重试应有次数上限，并保留原始输出供 Trace 排障。

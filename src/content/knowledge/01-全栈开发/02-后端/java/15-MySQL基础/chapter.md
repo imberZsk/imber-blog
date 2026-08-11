@@ -1,5 +1,7 @@
 # Java（14）- MySQL 基础
 
+> 读完你能：围绕“MySQL 基础”理解“为什么前端工程师必须懂 SQL”与“先认识一张真实的表：demo 的 organization 网点表”，并结合正文示例完成实践与排障。
+
 > 前 13 课我们一路从网关写到了 Mapper，但数据最终都"落"在 MySQL 里。这一课我们把目光投向这最后一站：学会用 SQL 对数据做增删改查，理解 JOIN、索引和事务——这是后端区别于前端最硬核的一块地基。
 
 ---
@@ -300,7 +302,6 @@ SELECT * FROM organization WHERE city = '北京';
 > ```js
 > // 没索引：每次都遍历整个数组
 > companies.filter(c => c.city === '北京');   // O(n)
->
 > // 有索引：提前按 city 分好组，直接取
 > const cityMap = new Map();  // { '北京': [...], '上海': [...] }
 > cityMap.get('北京');         // O(1) 近似
@@ -428,8 +429,3 @@ public void settle(String fromId, String toId, BigDecimal amount) {
 - **索引：为什么查询能"秒回"**：假设 organization 表有 100 万行。
 - **CRUD：增删改查四板斧**：CRUD = Create / Read / Update / Delete，对应四个 SQL 关键字。
 - **WHERE / ORDER BY / LIMIT —— 查询的三大修饰**：光会 SELECT  不够，真实查询都要过滤、排序、分页。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Java（14）- MySQL 基础”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

@@ -1,7 +1,5 @@
 # 01 - LangSmith / LangFuse：Tracing、Evaluation 与告警
 
-> 主分类：LangSmith/LangFuse
-> 关联标签：Trace、Dataset、Evaluation、成本、延迟、告警
 
 # 一、学习目标
 
@@ -22,11 +20,9 @@ flowchart LR
     H --> I[监控告警]
 ```
 
-> DIAGRAM_DESCRIPTION：流程图必须展示生产请求进入 Trace/Span，失败样本沉淀为 Dataset，离线 Evaluation 形成版本门禁并进入灰度发布；Trace 还要分流延迟、Token、成本到监控告警。
 
 # 三、截图策略
 
-> SCREENSHOT_DESCRIPTION：控制台截图应包含一次完整 Trace 的 Run 树、检索候选、模型 Token、节点耗时、错误状态和版本标签；必须脱敏用户正文、密钥、内部 URL 和租户标识。
 
 # 四、验收标准
 

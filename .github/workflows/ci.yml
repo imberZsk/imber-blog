@@ -36,5 +36,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # 阻止低信息题目、缺少解析或无法生成知识点思维导图的文章进入构建产物。
+      - name: Audit knowledge content
+        run: pnpm audit:knowledge
+
       - name: Build
         run: pnpm build

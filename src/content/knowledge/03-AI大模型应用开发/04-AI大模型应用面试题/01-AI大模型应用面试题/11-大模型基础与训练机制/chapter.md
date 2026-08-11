@@ -61,5 +61,3 @@ flowchart LR
     F[RAG / Tool / Memory] --> D
     D --> G[生成与校验]
 ```
-
-> DIAGRAM_DESCRIPTION：流程图必须区分参数学习阶段和运行时上下文，展示预训练、SFT、偏好对齐、RAG、工具、Memory、生成与校验之间的关系。

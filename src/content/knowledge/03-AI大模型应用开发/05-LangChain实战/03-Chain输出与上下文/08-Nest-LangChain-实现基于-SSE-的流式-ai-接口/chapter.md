@@ -1,8 +1,6 @@
 # LangChain 实战（70）- Nest + LangChain 实现基于 SSE 的流式 ai 接口
 
 > 读完你能：把 LangChain chain 接进 Nest 后端，并用 SSE 给前端提供流式响应。
-> 来源：`吃透 AI Agent 开发` 截图目录第 18 篇，2026/03/08，可试读 8%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,11 +51,6 @@ AI 接口一次性等完整回答再返回，用户会觉得卡。SSE 可以让�
 - **工程链路**：Service 调用 chain.stream。
 - **常见坑**：只推 token，不推结束事件，前端 loading 一直转。
 - **本篇定位**：这是前后端工程化篇，衔接 13 流式响应、16 前端调用 AI 接口和 35 LangChain。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（70）- Nest + LangChain 实现基于 SSE 的流式 ai 接口”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
 
 ## 十、最小可运行示例：SSE 流式接口契约
 

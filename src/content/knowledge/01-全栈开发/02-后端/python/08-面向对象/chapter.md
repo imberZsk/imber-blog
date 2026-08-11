@@ -1,5 +1,7 @@
 # Python（7）- 面向对象
 
+> 读完你能：围绕“面向对象”理解“先给锚点：和 ES6 class 几乎一一对应”与“边界一：self 不是 this，它必须"显式出现"”，并结合正文示例完成实践与排障。
+
 > 你在前端写过 `class extends`、`constructor`、`this`。Python 的 OOP 八成长得像，但有几个"看着一样、其实不一样"的坑：`self` 不是 `this`、类属性会被所有实例共享、还有一堆 `__xxx__` 魔术方法。本篇帮你把 JS 的 class 心智模型平移过来，并划清差异。
 
 # 一、先给锚点：和 ES6 class 几乎一一对应
@@ -290,8 +292,3 @@ Python 的 OOP 可以直接套用你的 ES6 class 心智模型，但务必记住
 - 没有真 private，下划线只是约定
 
 下一篇：08 - 模块与包管理（import / `__init__.py` / pip，对比 node 的 require/package.json）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Python（7）- 面向对象”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

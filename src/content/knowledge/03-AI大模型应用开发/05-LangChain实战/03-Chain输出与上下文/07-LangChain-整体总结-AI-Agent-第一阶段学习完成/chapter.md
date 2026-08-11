@@ -1,8 +1,6 @@
 # LangChain 实战（69）- LangChain 整体总结：AI Agent 第一阶段学习完成
 
 > 读完你能：把 Prompt、Tool、Retriever、Parser、Runnable 串成一张 LangChain 能力地图。
-> 来源：`吃透 AI Agent 开发` 截图目录第 17 篇，2026/03/03，可试读 14%
-> 导入与重写日期：2026/07/07
 
 # 一、本篇定位
 
@@ -53,8 +51,3 @@
 - **工程链路**：用 PromptTemplate 管提示词。
 - **常见坑**：以为 LangChain 默认会处理安全和评测。
 - **本篇定位**：这是 LangChain 小阶段总结，帮助你判断自己是否真的掌握了框架本质。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Agent 工程（69）- LangChain 整体总结：AI Agent 第一阶段学习完成”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

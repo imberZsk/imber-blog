@@ -1,5 +1,7 @@
 # Java（8）- 注解与反射
 
+> 读完你能：围绕“注解与反射”理解“注解是什么？”与“用前端类比理解”，并结合正文示例完成实践与排障。
+
 > 注解（@xxx）是 Spring 的基础。你在 demo 代码里见过的 @RestController、@Autowired 全是注解。
 
 # 一、注解是什么？
@@ -199,8 +201,3 @@ public class OrganizationOut {
 - **注解是什么？**：注解就是代码里的 @xxx 标记。
 - **用前端类比理解**：注解很像前端的装饰器（decorator），如果你用过 Angular 或 TS 装饰器：
 - **@RequestParam vs @RequestBody（前端联调必懂）**：这两个直接关系到你前端怎么传参，重点讲：
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（8）- 注解与反射”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

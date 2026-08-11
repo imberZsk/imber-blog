@@ -1,5 +1,7 @@
 # Python 学习路线
 
+> 读完你能：围绕“Python 学习路线”理解“学习方式”与“与 Java 学习的区别”，并结合正文示例完成实践与排障。
+
 > 前端 → Python，全面覆盖、中度深入，边学边让 AI 生成 demo 对照
 > 开始日期：2026/06/11
 
@@ -106,8 +108,3 @@ python/
 - 真实代码：让 AI 按章节主题生成 demo，对照阅读
 - 官方文档：[docs.python.org](https://docs.python.org/zh-cn/3/)、[FastAPI](https://fastapi.tiangolo.com/zh/)
 - 对照 Java 学习：`temp/learn/java学习/学习路线和目录.md`
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python 学习路线”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

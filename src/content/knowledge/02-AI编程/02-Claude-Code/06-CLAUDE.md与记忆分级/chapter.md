@@ -136,7 +136,26 @@ backend-api-rules          # 后端 API 规范
 
 下一章，我们讲怎么用权限模式和 Plan Mode，安全地把更多事交给它。👉 `07-权限模式与PlanMode.md`
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Claude Code（5）- CLAUDE.md 与记忆分级：给项目立规矩”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：Demo 05 · CLAUDE.md 模板与记忆分级
+
+本 Demo 给你一份**可直接抄改**的 `CLAUDE.md` 模板，以及一个用 `@` 导入拆分规则的示例结构。
+
+## 文件说明
+
+- `CLAUDE.md.example`：项目根级模板，复制成 `CLAUDE.md` 改改就能用。
+- `rules/`：拆分的规则文件，演示用 `@` 导入复用。
+  - `code-style.md`、`testing.md`
+
+## 怎么用
+
+1. 把 `CLAUDE.md.example` 复制为你项目根的 `CLAUDE.md`，按注释改成你项目的实际情况。
+2. 体会「可检查、可执行」的写法：对照里面每条规则，问自己「这条能验证对错吗」。
+3. 进阶：把规则拆进 `rules/`，在 `CLAUDE.md` 里用 `@rules/xxx.md` 导入。
+
+## 也可以让 Claude 帮你生成
+
+```
+读一遍这个项目，帮我起草一份 CLAUDE.md，规则要可检查、可执行。
+```

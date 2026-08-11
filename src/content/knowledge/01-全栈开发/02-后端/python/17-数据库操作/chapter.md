@@ -1,5 +1,7 @@
 # Python（16）- 数据库操作
 
+> 读完你能：围绕“数据库操作”理解“先给前端的「最小 SQL 集」”与“先给锚点：ORM ≈ Prisma / TypeORM”，并结合正文示例完成实践与排障。
+
 > 接口收到数据后总得存进数据库。前端时代你大概率没手写过 SQL，而是用 Prisma / TypeORM 这类 ORM：定义一个 model，然后 `prisma.user.create(...)` 就完事。Python 后端最主流的 ORM 叫 **SQLAlchemy**，思路一模一样——**把数据表映射成 class，把每行数据映射成对象，增删改查全用 Python 代码表达，不手写 SQL**。本篇帮你把 Prisma 的直觉平移过来，同时讲清一个前端 ORM 里很弱、但 SQLAlchemy 里极其核心的概念：**Session（会话/工作单元）**。
 
 # 一、先给前端的「最小 SQL 集」
@@ -279,14 +281,12 @@ with Session(engine) as session:
 ```
 
 > **N+1 查询坑（前端用 ORM 也会踩）**：上面 `for post in user.posts` 默认是"用到才查"（懒加载）。如果你在循环里对一批 user 逐个访问 `.posts`，会变成 1 次查用户 + N 次查文章，共 N+1 条 SQL，量大时很慢。解决办法是查询时显式预加载：
->
 > ```python
 > from sqlalchemy.orm import selectinload
 > # selectinload：一次性把关联的 posts 也批量查出来，避免逐个再查
 > stmt = select(User).options(selectinload(User.posts))
 > users = session.scalars(stmt).all()
 > ```
->
 > 这等价于 Prisma 的 `include: { posts: true }`。把 `echo=True` 打开看 SQL 条数，是验证有没有踩 N+1 的最直接办法。
 
 ---
@@ -341,8 +341,3 @@ SQLAlchemy 可以直接套用你的 Prisma 直觉：**类映射表、对象映�
 - 学习期开 `echo=True` 看背后真实 SQL，是理解 ORM、排查慢查询最有效的手段
 
 下一篇：17 - 异步与并发（`async/await` 语法像 JS，但机制和 GIL 不同；以及 SQLAlchemy 的异步版 `AsyncSession`）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Python（16）- 数据库操作”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

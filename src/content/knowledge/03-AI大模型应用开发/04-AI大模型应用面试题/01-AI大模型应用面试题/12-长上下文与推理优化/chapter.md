@@ -1,5 +1,7 @@
 # AI 大模型应用面试题（12）- 长上下文与推理优化（第 111～120 题）
 
+> 读完你能：围绕“长上下文与推理优化（第 111～120 题）”理解“第111题：Transformer 处理超长上下文时，主要瓶颈在哪里？”与“第112题：KV Cache 缓存了什么，为什么能加速自回归生成？”，并结合正文示例完成实践与排障。
+
 > 推理优化不是罗列量化名词，而是先分清 Prefill、Decode、显存和调度瓶颈，再选择手段。
 
 ## 第111题：Transformer 处理超长上下文时，主要瓶颈在哪里？
@@ -74,5 +76,3 @@ flowchart LR
     H[Paged Attention] --> D
     I[量化 / 推测解码] --> E
 ```
-
-> DIAGRAM_DESCRIPTION：流程图必须展示排队、Tokenize、Prefill、KV Cache、Decode 和流式输出，并标注连续批处理、Paged Attention、量化与推测解码分别作用在哪个阶段。

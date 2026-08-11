@@ -3,7 +3,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { getKnowledgeArticle, getKnowledgeArticleAliasPaths, getKnowledgeArticles } from '@/lib/knowledge'
+import { InteractiveMindmap } from '@/components/interactive-mindmap'
+import {
+  getKnowledgeArticle,
+  getKnowledgeArticleAliasPaths,
+  getKnowledgeArticles,
+  getMergedDemoAliasPath
+} from '@/lib/knowledge'
 import { KnowledgeArticleContent } from '../knowledge-article-content'
 import { KnowledgeQuiz } from '../knowledge-quiz'
 import { KNOWLEDGE_RETURN_LINK_CLASS_NAME, KnowledgeReturnLink } from '../knowledge-return-link'
@@ -37,8 +43,15 @@ export function generateStaticParams(): Array<{ slug: string[] }> {
   return getKnowledgeArticles().flatMap((article) => {
     /** 当前规范文章需要继续响应的全部历史路径。 */
     const aliasArticlePaths = getKnowledgeArticleAliasPaths(article.path)
+    /** 已吸收进正文的 Demo 需要继续响应的旧页面路径。 */
+    const mergedDemoAliasPath = getMergedDemoAliasPath(article.sourcePath)
     /** 构建阶段生成规范路径和所有不重复的历史别名。 */
-    return [article.path, ...aliasArticlePaths].map((articlePath) => ({ slug: articlePath.split('/') }))
+    const staticArticlePaths = new Set([
+      article.path,
+      ...aliasArticlePaths,
+      ...(mergedDemoAliasPath ? [mergedDemoAliasPath] : [])
+    ])
+    return [...staticArticlePaths].map((articlePath) => ({ slug: articlePath.split('/') }))
   })
 }
 
@@ -89,6 +102,14 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
             <p className="mt-4 text-xs break-all text-zinc-500">{article.displayPath}</p>
           </nav>
 
+          {article.mindmap && (
+            <InteractiveMindmap
+              markdown={article.mindmap.markdown}
+              title={article.title}
+              variant="article"
+              nodeCount={article.mindmap.nodeCount}
+            />
+          )}
           <KnowledgeArticleContent content={article.content} sandboxes={article.sandboxes} />
           <KnowledgeQuiz questions={article.quiz} />
 

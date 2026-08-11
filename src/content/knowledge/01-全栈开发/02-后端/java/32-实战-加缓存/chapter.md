@@ -1,5 +1,7 @@
 # Java（31）- 实战——给现有接口加 Redis 缓存
 
+> 读完你能：围绕“实战——给现有接口加 Redis 缓存”理解“先回顾：为什么要缓存”与“Cache Aside 模式：业界最常用的缓存套路”，并结合正文示例完成实践与排障。
+
 > 接口慢了不一定要优化 SQL，先想想：这个数据是不是「读多写少」？如果是，加一层缓存往往是性价比最高的提速手段。这一课我们给第 30 课的接口加 Redis 缓存，并对比加缓存前后的差别。
 
 ---
@@ -422,8 +424,3 @@ redis.opsForValue().set(key, value, Duration.ofSeconds(base + jitter));
 - **给第 30 课的接口加缓存（前后对比）**：第 30 课我们写了一个查询接口（这里以「根据公司 ID 查公司详情」为例，沿用第 04/05 课的 OrganizationService 风格）。
 - **缓存 key 设计与过期时间：两个最容易踩坑的点**：看 demo 的 key：line:stdroute:points:1001，公司的：basic:organization:info:1001。
 - **还要知道的两个坑（生产必遇）**：这一课先建立 Cache Aside 的正确心智，这两个进阶问题知道名字和大致思路即可，真正落地时再深入。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（31）- 实战——给现有接口加 Redis 缓存”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

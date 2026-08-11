@@ -1,5 +1,7 @@
 # Python（3）- Python 与 JavaScript 对比
 
+> 读完你能：围绕“Python 与 JavaScript 对比”理解“核心思路”与“变量和类型”，并结合正文示例完成实践与排障。
+
 > 你已经会 JS/TS，本篇用一张对照表帮你把 Python 的变量、函数、类型、常用操作一次性对上号。重点不是"记语法"，而是划清那些**长得像但行为不一样**的坑（比如 `self` 不是 `this`、`is` 不是 `===`）。
 
 # 一、核心思路
@@ -480,8 +482,3 @@ Python 对前端来说**比 Java 友好**：动态类型、写法简洁、控制
 - 字典取不存在的 key 会**抛异常**，不是返回 undefined。
 
 下一阶段开始接触真实库时，类比会越来越重要（NumPy ≈ 超级 Array、Pandas ≈ 加强版 Excel），到那几篇会重点加锚点。本篇先把基础语法对上号即可。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Python（3）- Python 与 JavaScript 对比”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

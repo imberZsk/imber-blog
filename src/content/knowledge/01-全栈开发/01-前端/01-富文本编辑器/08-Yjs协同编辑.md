@@ -1,5 +1,7 @@
 # TipTap 编辑器（8）- Yjs 协同编辑
 
+> 读完你能：围绕“Yjs 协同编辑”理解“前言”与“OT 算法”，并结合正文示例完成实践与排障。
+
 # 一、前言
 
 在多人协作的编辑场景中，如何保证文档的一致性是一个复杂的技术问题。当多个用户同时编辑同一个文档时，需要解决冲突、保持同步，并确保最终结果的一致性。目前主要有两种算法来解决这个问题：**OT（Operational Transformation）** 和 **CRDT（Conflict-free Replicated Data Types）**。
@@ -202,8 +204,3 @@ export default function Page() {
 - **CRDT 算法**：适合需要去中心化、简单可靠的场景
 
 Yjs 选择了 CRDT 算法，因为它更简单、更可靠，适合大多数协同编辑场景。在 TipTap 中集成 Yjs 可以轻松实现多人实时协作编辑功能。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“TipTap 编辑器（8）- Yjs 协同编辑”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

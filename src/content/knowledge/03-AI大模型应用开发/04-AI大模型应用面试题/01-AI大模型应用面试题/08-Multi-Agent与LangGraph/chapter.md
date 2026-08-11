@@ -1,5 +1,7 @@
 # AI 大模型应用面试题（8）- Multi-Agent 与 LangGraph（第 71～80 题）
 
+> 读完你能：围绕“Multi-Agent 与 LangGraph（第 71～80 题）”理解“题目与详细答案”与“第71题：什么情况下真正需要 Multi-Agent？”，并结合正文示例完成实践与排障。
+
 > 重点考察拆分依据、模式选型、状态同步、并行和失败处理。
 
 # 一、题目与详细答案
@@ -52,8 +54,3 @@
 # 三、总结
 
 Multi-Agent 的本质是上下文和控制权设计；状态、并发、失败和权限必须比角色 Prompt 更早确定。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“AI 大模型应用面试题（8）- Multi-Agent 与 LangGraph（第 71～80 题）”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

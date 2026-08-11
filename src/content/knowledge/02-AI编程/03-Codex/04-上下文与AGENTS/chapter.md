@@ -1,5 +1,7 @@
 # Codex（3）- 上下文与 AGENTS
 
+> 读完你能：围绕“上下文与 AGENTS”理解“概念解释”与“使用示例”，并结合正文示例完成实践与排障。
+
 Codex 的表现很大程度取决于上下文。上下文不是越多越好，而是越相关越好。
 
 你可以把上下文分成两类：
@@ -131,7 +133,33 @@ AGENTS.md 和项目代码一样会过期。目录变了、命令变了、测试�
 - **多层 AGENTS.md**：在复杂项目里，根目录可以有一个总 AGENTS.md，子目录也可以有更具体的 AGENTS.md。
 - **常见错误**：AGENTS.md 太长会降低可读性。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Codex（3）- 上下文与 AGENTS”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：03 context and AGENTS
+
+这个 demo 展示如何用 AGENTS.md 给 Codex 提供长期上下文。
+
+## 目录内容
+
+- `AGENTS.md`：项目规则。
+- `src/api/orders.ts`：示例业务文件。
+- `task.md`：一次性任务。
+
+## 使用方式
+
+在本目录运行：
+
+```bash
+codex "请阅读 AGENTS.md 和 task.md，然后给出修改方案。先不要改文件"
+```
+
+你也可以让 Codex 直接执行：
+
+```bash
+codex "请按 task.md 修改代码，并遵守 AGENTS.md"
+```
+
+## 练习目标
+
+- 区分长期规则和临时需求。
+- 观察 Codex 如何引用 AGENTS.md 里的项目约定。

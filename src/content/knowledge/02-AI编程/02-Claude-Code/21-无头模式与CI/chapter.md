@@ -123,7 +123,14 @@ claude -p "/goal CHANGELOG.md 为本周每个合并的 PR 都补上一条记录"
 
 下一章，给它接上外部世界——数据库、API、文档、issue：MCP。👉 `22-MCP外部工具集成.md`
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Claude Code（20）- 无头模式与 CI：claude -p、GitHub Actions、SDK”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：Demo 20 · 无头自动化（可直接用）
+
+## 文件
+- `summarize-diff.sh`：用 claude -p 在脚本里生成 diff 摘要（演示无头调用）。
+- `.github/workflows/claude-review.yml`：PR 自动审查工作流（复制到你仓库即可）。
+
+## 怎么用
+- 脚本：在 git 仓库里 `bash summarize-diff.sh`（需已装并登录 claude）。
+- Action：把 .github/workflows/claude-review.yml 复制到你的仓库，并在仓库 Secrets 配 ANTHROPIC_API_KEY。

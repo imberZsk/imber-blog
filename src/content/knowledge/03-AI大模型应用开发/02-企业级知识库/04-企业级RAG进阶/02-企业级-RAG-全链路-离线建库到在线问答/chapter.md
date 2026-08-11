@@ -1,7 +1,5 @@
 # 企业级知识库（92）- RAG 全链路：离线建库到在线问答
 
-> 主分类：企业级知识库；关联标签：工程基础、RAG 优化、LangChain 实战、Evaluation
->
 > 读完你能：设计一套可增量更新、可权限过滤、可引用和可评测的 RAG，把解析、分块、Embedding、ES/Milvus 多路召回、Rerank、生成校验串成完整系统。
 > 更新日期：2026/08/11
 
@@ -37,7 +35,6 @@ flowchart LR
     A --> H
 ```
 
-> DIAGRAM_DESCRIPTION：架构图必须分离离线与在线链路，包含 ACL、解析、Chunk、Embedding、VectorDB、ES、索引对账、多路召回、RRF/Rerank、生成、引用校验和拒答。
 
 # 二、先定义 Chunk 数据契约
 

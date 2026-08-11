@@ -114,8 +114,3 @@ def search_chunks(
 - Milvus 解决大规模向量近邻与 Metadata Filter，不等于完整 RAG。
 - Schema、索引参数、权限下推和 Embedding 版本必须共同设计。
 - 所有 ANN 参数都要用 Recall-延迟曲线而不是经验数字验收。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（61）- Milvus 向量数据库：Schema、索引、过滤与版本”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

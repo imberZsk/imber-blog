@@ -1,5 +1,7 @@
 # Java（6）- 集合与泛型
 
+> 读完你能：围绕“集合与泛型”理解“三种集合速览”与“List（动态数组）”，并结合正文示例完成实践与排障。
+
 > List/Map/Set 对比 JS 数组/对象。demo 里 stream 操作随处可见，正好对照 JS 数组方法。
 
 # 一、三种集合速览
@@ -172,8 +174,3 @@ organizationList = organizationList.filter(item => item.id !== parentId)
 - **泛型 `<>`：声明"装什么类型"**：你注意到 List<Integer>、Map<String, Integer> 里的尖括号了吗？
 - **Stream：Java 版的数组链式操作**：demo 代码里大量用 stream()，它就是 Java 版的数组方法链（map/filter/reduce）。
 - **本课小结**：List（≈数组）、Map（≈对象）、Set（≈去重集合）
-
-## 可视化规格
-
-> VISUAL_STRATEGY：思维导图（Mindmap）
-> DIAGRAM_DESCRIPTION：中心节点为“Java（6）- 集合与泛型”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

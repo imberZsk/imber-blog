@@ -1,5 +1,7 @@
 # Imber CLI（3）- NextJS 模板
 
+> 读完你能：围绕“NextJS 模板”理解“概述”与“模板特性”，并结合正文示例完成实践与排障。
+
 # 一、概述
 
 Imber CLI 的 NextJS 模板是一个现代化的 React 全栈开发模板，基于 Next.js 14+ 和最新的 React 18 特性构建。该模板集成了 TypeScript、Tailwind CSS、ESLint、Prettier 等现代开发工具，为开发者提供了一个开箱即用的生产级项目基础。
@@ -675,8 +677,3 @@ Imber CLI 的 NextJS 模板提供了一个完整的现代化 React 开发环境�
 5. **生产就绪**：SEO 优化、PWA 支持、部署配置
 
 通过这个模板，开发者可以快速启动一个高质量的 Next.js 项目，专注于业务逻辑而不是基础设施配置。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Imber CLI（3）- NextJS 模板”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

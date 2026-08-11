@@ -330,8 +330,3 @@ title = el.get_text(strip=True) if el else ""   # 先判空再取，缺失给空
 - 4xx/5xx 不会自动报错（和 `fetch` 一样），要自己 `raise_for_status()`
 - 包名 `beautifulsoup4`，导入却是 `from bs4 import BeautifulSoup`
 - 爬之前看 `robots.txt`、控制频率、别碰私密数据——合规是底线
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Python（28）- 爬虫入门”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

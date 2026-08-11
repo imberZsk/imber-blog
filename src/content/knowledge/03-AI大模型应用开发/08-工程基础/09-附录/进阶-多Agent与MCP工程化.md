@@ -150,8 +150,3 @@ Prompt 模板也要中心化。模板最好包含：
 3. 共享服务必须带 project_id、session_id、user_id、trace_id，否则多租户和排查都会失控。
 4. Prompt、记忆、工具都要有版本、权限、审计和回滚。
 5. 企业多 Agent 平台的核心指标是可复用、可观测、可控成本，而不是 Agent 数量多。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“进阶：多 Agent 与 MCP 工程化”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

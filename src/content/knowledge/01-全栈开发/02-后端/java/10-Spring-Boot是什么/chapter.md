@@ -1,5 +1,7 @@
 # Java（9）- Spring Boot 是什么
 
+> 读完你能：围绕“Spring Boot 是什么”理解“先回答：没有 Spring Boot 之前有多痛”与“IoC：控制反转——把「谁来 new」的权力交出去”，并结合正文示例完成实践与排障。
+
 > 前八课我们学的都是 Java「语言」本身；从这一课起，我们进入 Java「生态」——而 Spring Boot 就是 Java 后端世界的事实标准框架，类比一下，它在 Java 里的地位约等于 Nest.js + Vite 之于 Node。
 
 在第 04 课我们追踪过一个 HTTP 请求穿过「网关→Controller→Service→Mapper→MySQL」五站，在第 05 课你写下了 `@Autowired` 却被告知「先记住，第 9 课揭晓」。这一课就来还债：把 **IoC（控制反转）、DI（依赖注入）、Bean、容器、自动配置、starter** 这一整套 Spring Boot 的核心概念讲透。
@@ -341,8 +343,3 @@ main() 执行 SpringApplication.run()
 - **IoC：控制反转——把「谁来 new」的权力交出去**：IoC（Inversion of Control，控制反转） 是整套体系的灵魂。
 - **容器与 Bean：框架管理的对象池**：Bean 就是「由 Spring 容器创建并管理的对象」。
 - **DI：依赖注入——揭晓 `@Autowired` 之谜**：第 05 课的伏笔现在揭晓。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Java（9）- Spring Boot 是什么”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

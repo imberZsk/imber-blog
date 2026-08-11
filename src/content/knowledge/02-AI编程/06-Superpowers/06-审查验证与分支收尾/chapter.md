@@ -1,5 +1,7 @@
 # Superpowers（6）- Code Review、Verification 与 Finishing：完成不等于写完
 
+> 读完你能：围绕“Code Review、Verification 与 Finishing：完成不等于写完”理解“两类审查”与“完成前验证”，并结合正文示例完成实践与排障。
+
 交付阶段要回答三个不同问题：实现是否满足规格、代码是否存在质量问题、分支下一步怎样处理。一次“测试通过”不能替代这三项判断。
 
 # 一、两类审查
@@ -43,8 +45,3 @@ npm run build
 - **完成前验证**：verification-before-completion
 - **分支收尾**：finishing-a-development-branch
 - **官方资料**：requesting-code-review
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Superpowers（6）- Code Review、Verification 与 Finishing：完成不等于写完”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

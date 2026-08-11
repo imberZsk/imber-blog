@@ -1,5 +1,7 @@
 # Java（2）- 第一个 Java 程序
 
+> 读完你能：围绕“第一个 Java 程序”理解“你的代码”与“编译运行实操（实测过程）”，并结合正文示例完成实践与排障。
+
 > 用你自己写的 HelloWord 走通"编译 → 运行"全流程，理解 Java 和 JS 的本质区别。
 
 # 一、你的代码
@@ -132,8 +134,3 @@ System.out.println("Hello, World!");
 - **三个关键细节（避坑）**：因为 Java 运行的是类，不是文件。
 - **你的代码**：文件位置：java-learn/com/imber/helloword/HelloWord.java
 - **System.out.println 是什么？**：System.out = 标准输出（控制台）
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Java（2）- 第一个 Java 程序”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

@@ -1,5 +1,7 @@
 # React 源码（11）- Diff 算法
 
+> 读完你能：围绕“Diff 算法”理解“diff 的入口”与“单节点 diff”，并结合正文示例完成实践与排障。
+
 `packages/react-reconciler/src/ReactChildFiber.old.js`
 
 # 一、diff 的入口
@@ -97,8 +99,3 @@ React 会从左到右线性扫描新旧两个列表，尝试直接按位置进�
 - **单节点 diff**：diff 的时候，如果它是个 ReactElement 类型，则是单节点
 - **多节点 diff**：当一个组件的子节点列表发生变化时，Diff 算法会采用更复杂的策略来优化更新过程。
 - **第一阶段：线性扫描（顺序匹配、新节点耗尽删除旧节点、旧节点耗尽创建新节点）**：React 会从左到右线性扫描新旧两个列表，尝试直接按位置进行节点的复用。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“React 源码（11）- Diff 算法”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -173,7 +173,35 @@ Codex 可能会重构结构、改命名、移动文件。更好的说法：
 - **常见错误**：你心里想的是“别大改”，但提示词只写：
 - **最佳实践**：角色不是为了装饰，而是让 Codex 采用合适的判断标准。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Codex（2）- 如何写好 Codex 提示词”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
+# 动手实践：02 prompt workflow
+
+这个 demo 帮你练习“同一个需求，不同提示词会得到完全不同的结果”。
+
+## 目录内容
+
+- `bad-prompt.md`：模糊提示词。
+- `good-prompt.md`：结构化提示词。
+- `login-form.tsx`：示例代码。
+
+## 使用方式
+
+先试坏提示词：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never - < bad-prompt.md
+```
+
+再试好提示词：
+
+```bash
+codex exec --sandbox read-only --ask-for-approval never - < good-prompt.md
+```
+
+对比两次输出，观察结构化提示词带来的差异。
+
+## 练习目标
+
+- 体会目标、范围、约束、验收对结果的影响。
+- 学会在提示词里明确“不要修改文件”或“可以修改文件”。

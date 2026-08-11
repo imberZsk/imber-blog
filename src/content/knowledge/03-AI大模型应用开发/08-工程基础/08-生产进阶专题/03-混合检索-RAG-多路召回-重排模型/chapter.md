@@ -154,8 +154,3 @@ def rerank_candidates(
 - 混合检索的价值是召回路互补，不是堆更多组件。
 - RRF 用名次规避原始分数不可比；Cross-Encoder 只对小候选集精排。
 - 用分层指标和消融实验决定链路去留，每条召回都要记录贡献、延迟与失败原因。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（79）- 混合检索 RAG：多路召回、RRF 与重排”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

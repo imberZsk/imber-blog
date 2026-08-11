@@ -106,10 +106,6 @@ def chat(req: ChatRequest):
 
 > **用 Python 写 AI 后端接口要注意什么？** 一个接口无非四件事：路由分发、请求体解析、稳定响应结构、错误处理。我一般用 FastAPI，它用 Pydantic 模型自动解析和校验请求体、自动生成接口文档，比手写省很多。要点是：客户端错误用 4xx 别用 5xx，要有 health 健康检查接口，AI 接口因为模型调用慢要单独放宽超时、长回答走流式，响应结构统一成固定字段方便前端。
 
-# 七、下一篇
-
-`16-前端调用AI接口.md` —— 后端接口有了。下一篇回到前端主场，讲浏览器里怎么调这个接口、怎么处理 loading 和错误态。
-
 # 八、总结
 
 - **工程上真正会踩的坑**：客户端错误返回 500。
@@ -117,7 +113,103 @@ def chat(req: ChatRequest):
 - **FastAPI 帮你省了什么**：上面四件事，FastAPI 把后三件自动化了。
 - **一个真实场景**：前面几篇你写的都是「跑在终端里的函数」：调模型、管上下文、解析 JSON。
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（15）- FastAPI 入门”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：15 FastAPI 入门
+
+用 Python 标准库 `http.server` 写一个最小问答接口，讲清任何 Web 框架都绕不开的四件事：**路由、请求体解析、稳定的响应结构、错误处理**。这些概念和具体框架无关，所以这里用零依赖的标准库实现，README 末尾给了等价的 FastAPI 写法对照。
+
+## 运行
+
+第一步，启动服务：
+
+```bash
+python3 main.py
+```
+
+第二步，**另开一个终端**测试：
+
+```bash
+curl -X POST http://127.0.0.1:8015/api/chat -d '{"message":"报销要几天"}'
+curl http://127.0.0.1:8015/health
+```
+
+零依赖，纯标准库。
+
+## 预期输出
+
+启动后终端显示：
+
+```
+服务已启动：http://127.0.0.1:8015
+测试命令：
+  curl -X POST http://127.0.0.1:8015/api/chat -d '{"message":"报销要几天"}'
+  curl http://127.0.0.1:8015/health
+Ctrl+C 停止
+```
+
+四种请求的响应（依次为：正常、缺字段、非法 JSON、健康检查、404）：
+
+```
+{"answer": "报销需在费用产生后 30 天内提交。", "message": "报销要几天", "error": null}
+{"error": "missing_field", "detail": "message 不能为空"}
+{"error": "invalid_json", "detail": "请求体不是合法 JSON"}
+{"status": "ok"}
+{"error": "not_found", "path": "/foo"}
+```
+
+服务端打印的访问日志：
+
+```
+  [访问] POST /api/chat -> 200
+  [访问] GET /health -> 200
+```
+
+## 代码↔概念对应
+
+| 概念 | 在 main.py 哪里 | FastAPI 里对应 |
+|---|---|---|
+| 路由分发（按 path） | `do_GET` / `do_POST` 里的 `if self.path` | `@app.get` / `@app.post` 装饰器 |
+| 请求体解析 | `do_POST` 里读 `Content-Length` + `json.loads` | Pydantic 模型自动解析 |
+| 稳定响应结构 | `_send_json` | `response_model` |
+| 错误处理（400/404） | `invalid_json` / `missing_field` 分支 | `HTTPException` |
+| 健康检查 | `/health` 接口 | 同样写个 `@app.get("/health")` |
+| 业务逻辑 | `answer_question` | 一样，框架无关 |
+
+## 如果你想用 FastAPI
+
+标准库版是为了零依赖、一条命令跑通。生产项目通常用 FastAPI，它把请求体解析、校验、文档生成都自动化了。安装：
+
+```bash
+pip install fastapi uvicorn
+```
+
+等价实现：
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):          # 请求体模型，自动解析 + 校验
+    message: str
+
+@app.post("/api/chat")
+def chat(req: ChatRequest):
+    msg = req.message.strip()
+    if not msg:
+        raise HTTPException(400, "message 不能为空")   # 自动返回 400
+    return {"answer": answer_question(msg), "message": msg, "error": None}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+```
+
+启动：`uvicorn main:app --reload --port 8015`，并且自动有交互式文档 `http://127.0.0.1:8015/docs`。对比就能看出 FastAPI 帮你省了哪些手写代码：请求体解析、字段校验、错误码、接口文档全是自动的。
+
+## 动手改
+
+- 给标准库版加一个 `POST /api/echo` 接口，原样返回收到的 message，练习路由分发。
+- 把 `answer_question` 换成第 14 篇的多轮对话逻辑，让接口支持 sessionId。

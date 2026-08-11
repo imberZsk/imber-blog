@@ -1,5 +1,7 @@
 # Python（9）- 异常处理与上下文管理
 
+> 读完你能：围绕“异常处理与上下文管理”理解“先给锚点：try/except/finally 和 JS 几乎一一对应”与“边界一：except 要声明类型，且可以接多种”，并结合正文示例完成实践与排障。
+
 > 你在 JS 里写过 `try/catch/finally`，Python 的异常处理八成长得一样，迁移成本很低。但有几个"看着像、其实多了点东西"的地方：`catch` 要写成 `except` 还得声明类型、多了一个 JS 没有的 `else` 子句、`throw` 改叫 `raise`。另外本篇还要讲一个前端没有直接对应物的语法——`with`（上下文管理器），它专门解决"资源用完一定要关掉"这件事，比你手写 `finally` 优雅得多。
 
 # 一、先给锚点：try/except/finally 和 JS 几乎一一对应
@@ -328,8 +330,3 @@ Python 的异常处理可以直接套你的 JS `try/catch/finally` 心智模型�
 - 索引/键越界 Python 抛异常，不像 JS 返回 undefined
 
 下一篇：10 - 装饰器（对照 TS/Angular 的 `@Component`，长得一模一样）。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
-> DIAGRAM_DESCRIPTION：围绕“Python（9）- 异常处理与上下文管理”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

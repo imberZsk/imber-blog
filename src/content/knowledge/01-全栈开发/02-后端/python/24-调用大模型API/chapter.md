@@ -1,5 +1,7 @@
 # Python（23）- 调用大模型 API
 
+> 读完你能：围绕“调用大模型 API”理解“零、本篇在阶段五里的位置”与“先建立前端锚点：SDK ≈ 封装好的 axios”，并结合正文示例完成实践与排障。
+
 > 你在前端调后端接口，无非就是 `fetch` / `axios` 发个请求、拿 JSON、渲染。调大模型 API 本质上**完全一样**——只不过官方给你封了一个 SDK（≈ 一个 npm 包），让你不用手写 `fetch` 拼 headers。本篇解决三件事：怎么用 OpenAI / Claude 的 Python SDK 发一次对话请求；流式输出（打字机效果）在 Python 里怎么写、和前端的 `ReadableStream` / `EventSource` 有什么对应关系；以及新手最容易踩的几个坑（API Key、消息格式、同步 vs 异步）。
 
 # 一、零、本篇在阶段五里的位置
@@ -296,8 +298,3 @@ except APIError as e:
 - **同步 vs 异步**：`OpenAI()` 默认同步阻塞（无需 await），`AsyncOpenAI()` 才用 await；`for` 配同步、`async for` 配异步，混用报错
 - **OpenAI vs Claude**：Claude 的 `system` 是顶层参数、`max_tokens` 必填、取文本是 `content[0].text`
 - **流式不 flush**：忘了 `flush=True` 会攒着一次性输出，看不到打字机效果
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Python（23）- 调用大模型 API”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

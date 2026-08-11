@@ -127,10 +127,6 @@ chain.invoke({"question": "年假有几天"})
 
 > **LangChain 解决什么问题，它的核心抽象是什么？** 它把大模型应用里反复出现的零件做成了标准积木：PromptTemplate 管提示词模板、LLM 管模型调用、Retriever 管检索、Tool 管工具，再用 LCEL 的 `|` 把它们串成流水线。`prompt | llm` 这种写法本质是重载 `__or__` 运算符做的函数管道，前一步输出是后一步输入。它的价值是组件复用和编排，但版本迭代快、容易过度封装，简单需求我会直接裸写、不硬上框架。
 
-# 九、下一篇
-
-`36-LangGraph入门.md` —— LangChain 的链是「直线流水线」，适合固定流程。但 Agent 要循环、要根据状态分支、要回退，直线不够用。LangGraph 把应用建模成「带状态的图」，下一篇用标准库写一个最小状态机讲清它。
-
 # 十、总结
 
 - **五个核心积木**：挨个看，每个都用纯标准库还原它的本质。
@@ -138,7 +134,75 @@ chain.invoke({"question": "年假有几天"})
 - **工程上真正会踩的坑**：被版本变更坑。
 - **PromptTemplate、LLM、Retriever、Tool：各是一层薄封装**：PromptTemplate 就是带占位符的字符串模板，本质是 str.format：
 
-## 可视化规格
+<!-- knowledge-lab-merged -->
 
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“LangChain 实战（35）- LangChain 入门”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。
+# 动手实践：35 LangChain 入门
+
+用纯 Python 标准库实现 LangChain 五个核心概念的等价 mini 版：PromptTemplate、LLM、Retriever、Tool、Chain（LCEL 的 `|` 串联）。不装 langchain，让你看清框架那些类到底封装了什么。
+
+## 运行
+
+```bash
+python3 main.py
+```
+
+零依赖，纯标准库，离线可跑。**不需要 `pip install langchain`**。
+
+## 预期输出
+
+```
+=== 1. PromptTemplate：变量填充 ===
+把这句话翻译成英文：今天天气很好
+
+=== 2. FakeLLM：模型调用 ===
+（模型回答）你好
+
+=== 3. SimpleRetriever：检索 ===
+检索『报销发票几天』-> 员工报销需在消费后 7 天内提交发票。
+检索『年假几天』-> ''
+
+=== 4. Tool：工具调用 ===
+calculator（计算两数之和）-> 结果是 8
+
+=== 5. Chain：把 Retriever + Prompt + LLM 串成 RAG 流水线 ===
+问能命中的： 根据资料，员工报销需在消费后 7 天内提交发票。
+问命不中的： 资料不足，无法回答。
+```
+
+## 代码 ↔ 概念对应
+
+| LangChain 概念 | 本 demo 的 mini 实现 | 真实 LangChain 类 |
+|---|---|---|
+| 提示词模板 | `PromptTemplate` | `langchain.prompts.PromptTemplate` |
+| 模型调用 | `FakeLLM.invoke` | `ChatOpenAI` 等 LLM |
+| 检索器 | `SimpleRetriever.retrieve` | `VectorStoreRetriever` |
+| 工具 | `Tool` | `langchain.tools.Tool` / `@tool` |
+| `\|` 串联流水线（LCEL） | `Chain.__or__` | `prompt \| llm \| parser` |
+
+## 真实 LangChain 怎么用
+
+这个 demo 是「代码版的 mini LangChain」，帮你理解原理。真实项目里：
+
+```bash
+pip install langchain langchain-openai
+```
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+
+prompt = PromptTemplate.from_template("基于资料回答。\n资料：{context}\n问题：{question}")
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# LCEL：用 | 把组件串成链，和本 demo 的 Chain.__or__ 是一回事
+chain = prompt | llm
+chain.invoke({"context": "...", "question": "..."})
+```
+
+本 demo 的 `Chain.__or__` 重载 `|` 运算符，就是 LangChain LCEL（表达式语言）`prompt | llm | parser` 的实现原理：每个组件是一个可调用步骤，`|` 把它们串成流水线，`invoke` 时数据从头流到尾。
+
+## 动手改
+
+- 给 `SimpleRetriever` 多加几篇文档，调命中阈值 `best_score >= 3`，观察召回变化。
+- 在 RAG 链里再插一个「格式化」步骤（把回答包成 JSON），体会 `chain | step` 追加步骤有多自然。
+- 把 `FakeLLM` 换成真实 `urllib` 调用模型 API（带 `if not os.getenv("OPENAI_API_KEY")` 兜底）。

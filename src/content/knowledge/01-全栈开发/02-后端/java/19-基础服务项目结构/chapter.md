@@ -1,5 +1,7 @@
 # Java（18）- demo-basic 项目结构 —— 一个微服务的四个房间
 
+> 读完你能：围绕“demo-basic 项目结构 —— 一个微服务的四个房间”理解“先用前端心智建立直觉”与“四个房间各装什么（对照示例目录）”，并结合正文示例完成实践与排障。
+
 > 前 17 课我们一直在看单个类、单个方法。这一课往后退一步，看清整个 demo-basic 服务是怎么被拆成 biz / client / common / service 四个模块的，以及"为什么微服务非得这么拆"。
 
 # 一、先用前端心智建立直觉
@@ -171,7 +173,6 @@ public class OrganizationController extends BaseController {
 ```
 
 > 细节彩蛋：Controller 源码上写的是 `/organization/getById`，而 Feign 接口上是 `/api/organization/getById`，多了个 `api` 前缀。这个前缀不是手写的，也不是网关加的，而是 biz 模块自己的 Spring MVC 配置加的——`WebAppConfig.configurePathMatch()` 里调了 `configurer.addPathPrefix("api", ...)`，给 `controller` 包下的所有 Controller 统一拼上 `api`（但 `controller.inner` 包下的故意不加）。所以 Controller 真正生效的运行时路径就是 `/api/organization/getById`，Feign 接口照着这个示例路径写，自然就对得上了。
->
 > 【前端类比】等于你在前端路由表里写 `/getById`，但框架配了个 `basename: '/api'`，最终浏览器里访问的是 `/api/getById`——源码里的相对路径和实际生效路径不是一回事。
 
 # 三、四个模块的依赖关系（最重要的一张图）
@@ -284,8 +285,3 @@ demo-order-cost 服务里：
 - **先用前端心智建立直觉**：你在前端早就习惯"一个仓库拆成多个包"了。
 - **四个房间各装什么（对照示例目录）**：只放数据结构，不放逻辑。
 - **四个模块的依赖关系（最重要的一张图）**：依赖方向是单向的，绝不能反着来。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Java（18）- demo-basic 项目结构 —— 一个微服务的四个房间”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

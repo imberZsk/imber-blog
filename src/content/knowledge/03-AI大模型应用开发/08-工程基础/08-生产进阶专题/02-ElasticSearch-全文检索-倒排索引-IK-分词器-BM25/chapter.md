@@ -154,8 +154,3 @@ POST knowledge_chunks/_analyze
 - BM25 的核心价值是稳定保留精确词面信号，和向量语义召回互补。
 - 先把字段、分词、词典、权限过滤做对，再讨论参数调优。
 - 检索问题要用 Recall@K、MRR、查询 DSL 与索引版本定位，不能只凭最终回答好不好看。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“Agent 工程（78）- Elasticsearch 全文检索：倒排索引、中文分词与 BM25”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -1,5 +1,7 @@
 # TipTap 编辑器（3）- 菜单栏和 slash command
 
+> 读完你能：围绕“菜单栏和 slash command”理解“前言”与“基础 Demo”，并结合正文示例完成实践与排障。
+
 # 一、前言
 
 TipTap 编辑器 Notion 风格的时候，需要选中文本提供菜单栏，而不是固定在页面，是动态的，然后支持输入 / 唤醒垂直菜单栏，这些都是 simple tiptap 没有的，需要自己实现。
@@ -618,8 +620,3 @@ export default SlashCommand
 
 - **slash command**：参考官网的 Demo，基于 @tiptap/suggestion 实现，功能复杂，addProseMirrorPlugins 添加原生的插件
 - **前言**：TipTap 编辑器 Notion 风格的时候，需要选中文本提供菜单栏，而不是固定在页面，是动态的，然后支持输入 / 唤醒垂直菜单栏，这些都是 simple tiptap 没有的，需要自己实现。
-
-## 可视化规格
-
-> VISUAL_STRATEGY：架构图（Architecture）
-> DIAGRAM_DESCRIPTION：围绕“TipTap 编辑器（3）- 菜单栏和 slash command”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

@@ -1,5 +1,7 @@
 # Python（12）- 虚拟环境与依赖管理
 
+> 读完你能：围绕“虚拟环境与依赖管理”理解“先建立直觉：虚拟环境 ≈ 项目专属的 node_modules”与“为什么非要虚拟环境？（不像 node 可以省）”，并结合正文示例完成实践与排障。
+
 > 前端世界里你几乎不操心环境隔离：每个项目一个 `node_modules`，天然互不干扰。Python 不是这样——默认所有项目共用一套全局解释器和全局包，A 项目要 Django 3、B 项目要 Django 5，全局只能装一个，立刻打架。这篇把「虚拟环境」这件 Python 必修课讲透，并把三套主流工具（venv / poetry / uv）和你熟悉的 npm 生态一一对上号。
 
 # 一、先建立直觉：虚拟环境 ≈ 项目专属的 node_modules
@@ -280,8 +282,3 @@ Python 没有 node 那种「每个项目自动隔离」的福利，所以**虚�
 - `requirements.txt` ≠ `package.json`：不区分直接/间接依赖，原生不分生产/开发
 - `.venv/` 是本地生成物，**绝不提交 Git**（和 `node_modules` 一样进 `.gitignore`）
 - 项目依赖装进虚拟环境；命令行工具用 pipx / uv tool 装全局，别混
-
-## 可视化规格
-
-> VISUAL_STRATEGY：截图（Screenshot）
-> SCREENSHOT_DESCRIPTION：围绕“Python（12）- 虚拟环境与依赖管理”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
