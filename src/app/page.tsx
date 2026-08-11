@@ -141,13 +141,13 @@ export default function HomePage() {
                 <span className="bg-mint h-px w-10" aria-hidden="true" />
                 ENGINEERING NOTES / 2026
               </div>
-              <h1 data-hero-reveal className="text-foreground text-4xl font-semibold sm:text-6xl">
+              <h1 data-hero-reveal="heading" className="text-foreground text-4xl font-semibold sm:text-6xl">
                 Imber 的开发笔记
               </h1>
-              <p data-hero-reveal className="text-muted-foreground mt-5 max-w-lg text-base leading-7">
+              <p data-hero-reveal="description" className="text-muted-foreground mt-5 max-w-lg text-base leading-7">
                 记录全栈开发、AI 编程与大模型应用实践，把复杂问题沉淀成可复用的工程经验。
               </p>
-              <div data-hero-reveal className="mt-8 flex flex-wrap gap-3">
+              <div data-hero-reveal="actions" className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg">
                   <Link href="/knowledge">
                     浏览知识库
@@ -161,7 +161,7 @@ export default function HomePage() {
                   </Link>
                 </Button>
               </div>
-              <div data-hero-reveal className="mt-7 flex items-center gap-2">
+              <div data-hero-reveal="links" className="mt-7 flex items-center gap-2">
                 <Button asChild variant="outline" size="icon">
                   <Link
                     href="https://github.com/imberZsk"
