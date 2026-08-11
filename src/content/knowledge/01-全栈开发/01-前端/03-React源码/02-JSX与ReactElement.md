@@ -1,6 +1,6 @@
 # React 源码（2）- JSX 和 ReactElement
 
-## 前言
+# 一、前言
 
 带着问题学习 React 源码，下面是一些参考资料
 
@@ -12,7 +12,7 @@
   [源码流程图](https://www.processon.com/view/link/63bcef8cf27176074bb81a21)
 - [深入浅出 React 19 AI 视角下的源码解析与进阶](https://blog.xiguadev.com/)
 
-## JSX（函数组件） 会被编译成什么？
+# 二、JSX（函数组件） 会被编译成什么？
 
 在从 `ReactDOM.createRoot(document.getElementById('root'))`
 之前，需要先了解 JSX，JSX 也就是 JS 的扩展，它可以通过 babel 编译成 JS ，这个结果可以在
@@ -96,7 +96,7 @@ const list = jsxs("ul", {
 
 小结：classic 编译的代码里，没有手动引入 React，却使用了 React.createElement 方法，而 automatic 编译的代码里，自动引入了 react/jsx-runtime
 
-## React Element
+# 三、React Element
 
 一个典型的 React Element 对象结构如下：
 
@@ -116,7 +116,7 @@ const list = jsxs("ul", {
 }
 ```
 
-## createElement 和 jsx 方法有什么区别吗？
+# 四、createElement 和 jsx 方法有什么区别吗？
 
 它们的入参结构是不同的，createElement的入参是 (type, config,
 children)，jsx 的入参是 (type, config, maybeKey)，那它们有没有本质的区别呢？
@@ -124,3 +124,15 @@ children)，jsx 的入参是 (type, config, maybeKey)，那它们有没有本质
 ![jsx](/posts/react-source/jsx.png)
 
 小结：返回结果都是一样的，都是返回 ReactElement 对象，但是 jsx 的 props 参数 对应了 ReactElement 对象的 props 参数，而 createElement 会多做一些遍历生成 Props 参数，所以 jsx 方法性能会更好（这里也算一种看了源码之后，知道的性能优化）
+
+# 五、总结
+
+- **createElement 和 jsx 方法有什么区别吗？**：它们的入参结构是不同的，createElement的入参是 (type, config,
+- **JSX（函数组件） 会被编译成什么？**：在从 ReactDOM.createRoot(document.getElementById('root'))
+- **React Element**：一个典型的 React Element 对象结构如下：
+- **前言**：带着问题学习 React 源码，下面是一些参考资料
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“React 源码（2）- JSX 和 ReactElement”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

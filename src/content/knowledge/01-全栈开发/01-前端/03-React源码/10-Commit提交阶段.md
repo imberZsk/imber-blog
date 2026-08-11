@@ -6,7 +6,7 @@ Commit Phase 是 React 更新流程的最后阶段，它负责将 Render Phase �
 
 ![](/posts/react-source/commit.png)
 
-## CommitRoot
+# 一、CommitRoot
 
 ```js
 function commitRoot(
@@ -107,7 +107,7 @@ Commit Phase 是同步执行的，不能被打断。 这个阶段的主要任务
 - Layout Effects: 这是在 DOM 突变完成后，同步执行的副作用。
 - Passive Effects: 这是 React 用于异步执行副作用的阶段。
 
-## Before Mutation Effects
+# 二、Before Mutation Effects
 
 ```js
 // ... existing code ...
@@ -195,7 +195,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber, isViewTransitio
 
 总而言之，commitBeforeMutationEffects 负责驱动整个“变更前副作用”的遍历，而 commitBeforeMutationEffectsOnFiber 是实际执行单个 Fiber 节点特定副作用（主要是 `getSnapshotBeforeUpdate` 的调用、焦点处理和视图过渡准备）的核心函数。
 
-## Mutation Effects
+# 三、Mutation Effects
 
 核心函数源码解析
 
@@ -344,7 +344,7 @@ function commitMutationEffectsOnFiber(
 }
 ```
 
-#### 关键要点
+### 关键要点
 
 - 顺序：Mutation 阶段的操作遵循一定的顺序：通常是先处理删除 (自顶向下递归卸载，然后移除 DOM)，然后处理子节点的 Mutations，再处理当前节点的插入和更新。
 - DOM 操作：这是 React 实际修改浏览器 DOM 的阶段。
@@ -352,7 +352,7 @@ function commitMutationEffectsOnFiber(
 - componentWillUnmount：类组件的 componentWillUnmount 生命周期方法在此阶段被调用（在 commitDeletionEffects 内部）。
 - Hooks 清理：useEffect 和 useLayoutEffect 的清理函数逻辑上属于卸载的一部分，其执行时机虽然分别在 Passive 和 Layout 阶段，但触发点与此处的删除流程相关联。
 
-## Layout Effects
+# 四、Layout Effects
 
 在 DOM Mutations 阶段，React 已经将所有计算出的变更应用到了实际的 DOM 上。Layout Effects 阶段在浏览器进行下一次绘制（paint）之前同步执行。这意味着在此阶段执行的代码会阻塞浏览器的渲染。
 
@@ -481,11 +481,11 @@ function commitLayoutEffectOnFiber(
 - FunctionComponent, ForwardRef, SimpleMemoComponent：
   如果存在 Update flag，则调用 `commitHookLayoutEffects` 来执行 `useLayoutEffect` Hook 的回调函数。HookLayout | HookHasEffect 标记指示执行那些带有 Layout 标签且实际存在 effect 的 Hook。
 
-## Passive Effects
+# 五、Passive Effects
 
 这个阶段与 Layout Effects 不同，它的执行是异步的。这意味着 React 会在完成 DOM 突变和 Layout Effects 之后，允许浏览器先进行绘制（paint），然后再回来执行这些 Passive Effects。这样做的好处是它们不会阻塞浏览器的渲染，从而可以提升用户感知的性能。
 
-#### 核心特点：
+### 核心特点：
 
 1. 异步执行：这是 Passive Effects 与 Layout Effects 最显著的区别。Passive Effects 会在浏览器完成绘制（Paint）之后异步执行。这意味着它们不会阻塞浏览器的渲染流程，从而有助于提升用户感知的性能，特别适合数据获取、设置订阅、手动操作非 React 管理的 DOM（且不需要同步时）等操作。
 2. 清理机制：useEffect Hook 返回的清理函数（cleanup function）也是作为 Passive Effect 的一部分执行的。这个清理函数会在以下两种情况执行：
@@ -495,7 +495,7 @@ function commitLayoutEffectOnFiber(
    - 在一个组件内部，多个 useEffect 的执行顺序与它们在代码中定义的顺序一致。
    - 清理函数的执行顺序则与定义的顺序相反（即最后一个定义的 useEffect 的清理函数最先执行）。
 
-## 总结
+# 六、总结
 
 commit 阶段可以按职责粗分为四个阶段，简单理解它们各自做的事情：
 
@@ -516,3 +516,8 @@ commit 阶段可以按职责粗分为四个阶段，简单理解它们各自做�
 - 被动（Passive）
   - 异步调度，不阻塞绘制，用于非布局相关副作用。
   - 调用 useEffect 的清理与回调，建立订阅、事件与异步任务等。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（10）- Commit 提交阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

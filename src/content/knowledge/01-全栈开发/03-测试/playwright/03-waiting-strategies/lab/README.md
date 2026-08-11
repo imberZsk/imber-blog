@@ -45,3 +45,8 @@ npm run report
 2. **等真实条件**：联动字段用 `waitForFunction` 等「字段有值」，而非估算时间。
 3. **回调要传参**：`waitForFunction` 回调在浏览器上下文执行，外部变量必须通过第二个参数传入。
 4. **失败要可诊断**：超时时读取当前状态，抛出带字段名、当前值的错误。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“03 · 等待策略完全指南：告别 waitForTimeout（配套 Demo）”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

@@ -78,3 +78,8 @@ npx playwright show-report
 - **UI 模式只能本地用**：它需要图形界面，无法在 CI 无头环境运行。CI 上的失败靠 Trace Viewer 复盘。
 - **Watch Mode 只开 1~2 个用例**：对整个文件开 Watch 会每次保存全跑一遍，反而更慢（文章 3.4 节）。
 - **改了 `playwright.config.ts` 需重启 UI 模式**才能生效。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“02 - UI 模式完全指南：交互式调试工作流”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

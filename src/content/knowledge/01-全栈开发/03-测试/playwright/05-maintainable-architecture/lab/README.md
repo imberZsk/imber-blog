@@ -65,3 +65,8 @@ npx playwright show-report
 3. 最后看 `LoginOperator.ts`，理解复杂度被搬到了哪一层、怎么分层。
 
 > 真实项目中，`LoginOperator.ts` 里的公共库（`fillInput` 等）应拆到 `lib/interaction/`，Operator 拆到 `tests/<业务模块>/`。这里合并到一个文件只是为了 Demo 便于对照。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“05 · 可维护测试架构：Operator 模式与公共库”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。

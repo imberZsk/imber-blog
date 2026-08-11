@@ -27,8 +27,8 @@ export interface KnowledgeQuizQuestion {
   explanation: string
 }
 
-/** 匹配适合优先生成题目的总结、学习成果类二级标题。 */
-const SUMMARY_HEADING_PATTERN = /^##\s+.*(?:小结|总结|核心要点|关键要点|本章要点|你将能够|你能做什么).*$/m
+/** 匹配适合优先生成题目的总结、学习成果类一级或二级标题。 */
+const SUMMARY_HEADING_PATTERN = /^(#{1,2})\s+.*(?:小结|总结|核心要点|关键要点|本章要点|你将能够|你能做什么).*$/m
 
 /** 匹配作者明确写出的学习目标，避免用章节标题冒充知识结论。 */
 const LEARNING_OUTCOME_PATTERN = /^>\s*(?:本章目标|学习目标|学完你能|读完你能|目标)[:：]\s*(.+)$/gm
@@ -39,12 +39,35 @@ const NON_ASSESSABLE_STATEMENT_PATTERN = /^(?:下一(?:篇|章)|继续阅读|延
 /** 选择题选项使用的稳定标识。 */
 const QUIZ_OPTION_IDS = ['A', 'B', 'C', 'D'] as const
 
-/** 自动生成题中用于识别常见学习误区的错误陈述模板。 */
-const GENERIC_INCORRECT_OPTION_TEMPLATES = [
-  '学习“{title}”时，只记住术语或 API 名称即可，不必理解适用条件与失败边界。',
-  '使用“{title}”时，只要示例能运行，就无需验证输入、输出和异常路径。',
-  '遇到不同场景时，应直接照搬“{title}”中的示例，不需要结合约束调整方案。'
-] as const
+/** 匹配文章中专门解释误区、失败方式或使用边界的标题。 */
+const MISCONCEPTION_HEADING_PATTERN = /^#{1,4}\s+.*(?:坑|误区|错误|失败|边界|注意|不要|别).*/
+
+/** 匹配正文中可以安全反转成错误选项的明确否定关系。 */
+const REVERSIBLE_BOUNDARY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/不等于/, '等于'],
+  [/并不是/, '就是'],
+  [/不是/, '是'],
+  [/不能/, '可以'],
+  [/不需要/, '需要'],
+  [/无需/, '必须']
+]
+
+/** 没有独立误区章节时，用来反转核心陈述中明确逻辑关系的规则。 */
+const CORE_STATEMENT_CONTRADICTION_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/必须/, '不必'],
+  [/不能/, '可以'],
+  [/可以/, '不能'],
+  [/需要/, '不需要'],
+  [/应该/, '不应该'],
+  [/就是/, '并不是'],
+  [/是/, '不是']
+]
+
+/** 自动题最多展示的候选答案数量。 */
+const MAX_QUIZ_OPTION_COUNT = 4
+
+/** 一条自动生成选项允许使用的最大字符数。 */
+const MAX_QUIZ_STATEMENT_LENGTH = 140
 
 /** 重点课程人工设计的核心知识题。 */
 const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
@@ -202,9 +225,15 @@ function extractSummaryStatements(markdown: string): string[] {
     return []
   }
 
-  /** 总结标题之后、下一个二级标题之前的 Markdown。 */
+  /** 当前总结标题使用的 Markdown 层级。 */
+  const summaryHeadingDepth = summaryHeadingMatch[1]?.length || 2
+  /** 与总结同级或更高层级的下一个标题，用来确定总结章节边界。 */
+  const nextSectionHeadingPattern = summaryHeadingDepth === 1 ? /^#\s+/m : /^#{1,2}\s+/m
+  /** 总结标题之后、下一个同级或更高层级标题之前的 Markdown。 */
   const summarySection =
-    markdown.slice(summaryHeadingMatch.index + summaryHeadingMatch[0].length).split(/^##\s+/m)[0] || ''
+    markdown
+      .slice(summaryHeadingMatch.index + summaryHeadingMatch[0].length)
+      .split(nextSectionHeadingPattern)[0] || ''
   /** 总结章节中长度适合做选择题的列表陈述。 */
   const summaryStatements = summarySection
     .split('\n')
@@ -271,6 +300,134 @@ function extractOpeningStatement(markdown: string, title: string): string {
 }
 
 /**
+ * 截取适合作为选项的第一句，避免把整段解释塞进按钮。
+ * @param statement 已去除 Markdown 标记的正文陈述。
+ */
+function getQuizOptionSentence(statement: string): string {
+  /** 第一处中文句号、分号或感叹号的位置。 */
+  const sentenceEndIndex = statement.search(/[。；;！!]/)
+  /** 有完整短句时保留标点，否则按最大长度截断。 */
+  const optionSentence =
+    sentenceEndIndex >= 8 ? statement.slice(0, sentenceEndIndex + 1) : statement.slice(0, MAX_QUIZ_STATEMENT_LENGTH)
+
+  return optionSentence.trim()
+}
+
+/**
+ * 从“常见坑”等章节提取作者明确标记的错误理解。
+ * @param markdown 当前文章的原始 Markdown。
+ */
+function extractMisconceptionStatements(markdown: string): string[] {
+  /** 按行拆开的文章内容，用来保持标题和列表的原始顺序。 */
+  const markdownLines = markdown.split('\n')
+  /** 当前是否位于误区或边界章节中。 */
+  let isInsideMisconceptionSection = false
+  /** 当前误区章节的标题层级。 */
+  let misconceptionHeadingDepth = 0
+  /** 从文章中提取并去重后的错误理解。 */
+  const misconceptionStatements: string[] = []
+
+  for (const markdownLine of markdownLines) {
+    /** 当前行如果是标题，它携带的 Markdown 层级。 */
+    const headingMatch = markdownLine.match(/^(#{1,4})\s+/)
+
+    if (headingMatch) {
+      /** 当前标题的井号数量。 */
+      const headingDepth = headingMatch[1]?.length || 0
+
+      if (MISCONCEPTION_HEADING_PATTERN.test(markdownLine)) {
+        isInsideMisconceptionSection = true
+        misconceptionHeadingDepth = headingDepth
+        continue
+      }
+
+      if (isInsideMisconceptionSection && headingDepth <= misconceptionHeadingDepth) {
+        isInsideMisconceptionSection = false
+      }
+    }
+
+    if (!isInsideMisconceptionSection || !/^\s*[-*+]\s+/.test(markdownLine)) {
+      continue
+    }
+
+    /** 去除 Markdown 后保留的误区短句。 */
+    const misconceptionStatement = getQuizOptionSentence(normalizeQuizStatement(markdownLine))
+
+    if (
+      misconceptionStatement.length < 8 ||
+      misconceptionStatement.length > MAX_QUIZ_STATEMENT_LENGTH ||
+      misconceptionStatements.includes(misconceptionStatement)
+    ) {
+      continue
+    }
+
+    misconceptionStatements.push(misconceptionStatement)
+  }
+
+  return misconceptionStatements
+}
+
+/**
+ * 从正文明确写出的“不是/不能”等边界生成对应错误判断。
+ * @param markdown 当前文章的原始 Markdown。
+ */
+function extractReversedBoundaryStatements(markdown: string): Array<{ incorrect: string; evidence: string }> {
+  /** 正文中可以逐句检查的自然语言行。 */
+  const contentLines = markdown
+    .split('\n')
+    .map(normalizeQuizStatement)
+    .filter(
+      (line) =>
+        line.length >= 12 &&
+        line.length <= MAX_QUIZ_STATEMENT_LENGTH &&
+        !line.startsWith('#') &&
+        !line.startsWith('|') &&
+        !line.startsWith('![')
+    )
+  /** 由正文边界反转得到的错误判断及其原文证据。 */
+  const reversedBoundaries: Array<{ incorrect: string; evidence: string }> = []
+
+  for (const contentLine of contentLines) {
+    for (const [boundaryPattern, incorrectReplacement] of REVERSIBLE_BOUNDARY_PATTERNS) {
+      if (!boundaryPattern.test(contentLine)) {
+        continue
+      }
+
+      /** 将明确否定关系反转一次后得到的错误判断。 */
+      const incorrectStatement = getQuizOptionSentence(contentLine.replace(boundaryPattern, incorrectReplacement))
+      /** 用于解释当前错误判断的原文短句。 */
+      const evidenceStatement = getQuizOptionSentence(contentLine)
+
+      if (
+        incorrectStatement !== evidenceStatement &&
+        !reversedBoundaries.some((boundary) => boundary.incorrect === incorrectStatement)
+      ) {
+        reversedBoundaries.push({ incorrect: incorrectStatement, evidence: evidenceStatement })
+      }
+      break
+    }
+  }
+
+  return reversedBoundaries
+}
+
+/**
+ * 为没有显式误区的短练习页生成一条核心陈述的逻辑反例。
+ * @param correctStatement 从当前文章中提取的正确核心陈述。
+ */
+function createCoreStatementContradiction(correctStatement: string): string {
+  for (const [statementPattern, contradictionReplacement] of CORE_STATEMENT_CONTRADICTION_PATTERNS) {
+    if (statementPattern.test(correctStatement)) {
+      return getQuizOptionSentence(correctStatement.replace(statementPattern, contradictionReplacement))
+    }
+  }
+
+  /** 无法安全替换谓词时，明确否定整条文章结论。 */
+  const statementWithoutEnding = correctStatement.replace(/[。；;！!]$/, '')
+  return getQuizOptionSentence(`“${statementWithoutEnding}”并不是本文认可的判断。`)
+}
+
+/**
  * 为没有人工题库的文章生成一题基于知识结论的实践判断题。
  * @param markdown 当前文章的原始 Markdown。
  * @param title 已移除模块内课号的文章标题。
@@ -289,15 +446,27 @@ function createGeneratedQuiz(markdown: string, title: string): KnowledgeQuizQues
         : [extractOpeningStatement(markdown, title)]
   /** 多个独立知识结论使用多选，否则保持单选。 */
   const questionType: KnowledgeQuizQuestionType = correctStatements.length > 1 ? 'multiple' : 'single'
-  /** 与当前主题绑定的常见误区，避免出现和文章无关的占位干扰项。 */
-  const incorrectStatements = GENERIC_INCORRECT_OPTION_TEMPLATES.map((optionTemplate) =>
-    optionTemplate.replace('{title}', title)
+  /** 作者在文章中明确列出的常见误区。 */
+  const misconceptionStatements = extractMisconceptionStatements(markdown)
+  /** 正文边界反转后得到的错误判断及其可展示证据。 */
+  const reversedBoundaryStatements = extractReversedBoundaryStatements(markdown)
+  /** 没有独立误区时使用的核心陈述逻辑反例。 */
+  const coreStatementContradiction = createCoreStatementContradiction(correctStatements[0] || title)
+  /** 优先使用误区章节，数量不足时再用正文中的明确边界补齐。 */
+  const incorrectStatements = Array.from(
+    new Set([
+      ...misconceptionStatements,
+      ...reversedBoundaryStatements.map((boundary) => boundary.incorrect),
+      coreStatementContradiction
+    ])
   )
-  /** 知识结论与常见误区共同组成四个带判题信息的候选答案。 */
+    .filter((statement) => statement && !correctStatements.includes(statement))
+    .slice(0, Math.max(1, MAX_QUIZ_OPTION_COUNT - correctStatements.length))
+  /** 知识结论与文章内误区共同组成带判题信息的候选答案。 */
   const optionCandidates = [
     ...correctStatements.map((label) => ({ label, isCorrect: true })),
     ...incorrectStatements.map((label) => ({ label, isCorrect: false }))
-  ].slice(0, 4)
+  ].slice(0, MAX_QUIZ_OPTION_COUNT)
   /** 使用标题字符得到稳定偏移，避免所有自动题都把正确答案固定放在前面。 */
   const optionRotationOffset =
     Array.from(title).reduce((characterSum, character) => characterSum + (character.codePointAt(0) || 0), 0) %
@@ -312,6 +481,19 @@ function createGeneratedQuiz(markdown: string, title: string): KnowledgeQuizQues
     id: QUIZ_OPTION_IDS[index] || String(index + 1),
     ...optionCandidate
   }))
+  /** 每条错误判断在正文中的反例或误区章节依据。 */
+  const incorrectExplanations = incorrectStatements.map((incorrectStatement) => {
+    /** 当前错误判断如果来自边界反转，对应的原文陈述。 */
+    const boundaryEvidence = reversedBoundaryStatements.find(
+      (boundary) => boundary.incorrect === incorrectStatement
+    )?.evidence
+
+    return boundaryEvidence
+      ? `“${incorrectStatement}”不成立，原文明确说明“${boundaryEvidence}”。`
+      : incorrectStatement === coreStatementContradiction
+        ? `“${incorrectStatement}”直接否定了本文的核心结论“${correctStatements[0]}”。`
+      : `“${incorrectStatement}”是本文专门提醒要避开的误区。`
+  })
 
   return [
     {
@@ -322,7 +504,7 @@ function createGeneratedQuiz(markdown: string, title: string): KnowledgeQuizQues
           ? `在“${title}”的实际应用中，哪些判断符合本课内容？`
           : `以下关于“${title}”的判断，哪一项正确？`,
       options,
-      explanation: `正确判断是：${correctStatements.join('；')}。其余选项把记忆术语、跑通示例或照搬方案误当成了真正掌握，忽略了适用边界与验证。`
+      explanation: [`正确判断是：${correctStatements.join('；')}。`, ...incorrectExplanations].join(' ')
     }
   ]
 }

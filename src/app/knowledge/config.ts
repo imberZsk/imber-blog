@@ -28,9 +28,14 @@ export const KNOWLEDGE_MODULE_LABELS = {
     superpowers: 'Superpowers'
   },
   aiApps: {
+    engineeringFoundation: '工程基础',
     agentEngineering: 'Agent 工程',
+    langChainPractice: 'LangChain 实战',
+    langGraph: 'LangGraph',
+    observability: 'LangSmith / LangFuse',
     enterpriseKnowledge: '企业级知识库',
-    soloCompany: '一人公司'
+    soloCompany: '一人公司',
+    interviewQuestions: 'AI 大模型应用面试题'
   }
 } as const
 
@@ -55,7 +60,16 @@ export const KNOWLEDGE_TRACKS: KnowledgeTrack[] = [
     label: 'AI 大模型应用开发',
     description: '大模型应用工程',
     mindmapHref: '/mindmaps/03-AI%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%BA%94%E7%94%A8%E5%BC%80%E5%8F%91',
-    modules: Object.values(KNOWLEDGE_MODULE_LABELS.aiApps)
+    modules: [
+      KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
+      KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
+      KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice,
+      KNOWLEDGE_MODULE_LABELS.aiApps.langGraph,
+      KNOWLEDGE_MODULE_LABELS.aiApps.observability,
+      KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge,
+      KNOWLEDGE_MODULE_LABELS.aiApps.soloCompany,
+      KNOWLEDGE_MODULE_LABELS.aiApps.interviewQuestions
+    ]
   }
 ]
 

@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mem0 记忆生命周期</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --background: #f7f8f7;
+        --surface: #ffffff;
+        --text: #17201d;
+        --muted: #63706b;
+        --border: #d8dedb;
+        --accent: #0f766e;
+        --accent-soft: #dff4ef;
+        --warning: #b45309;
+        --danger: #b42318;
+        --info: #2563a6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--text);
+        font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      button,
+      input {
+        font: inherit;
+        letter-spacing: 0;
+      }
+
+      button {
+        min-height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        padding: 6px 12px;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      main {
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+        gap: 16px;
+        padding-top: 14px;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 28px;
+        margin: 0 0 8px;
+        font-size: 13px;
+      }
+
+      .counter {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 400;
+      }
+
+      .conversation,
+      .memory-list,
+      .recall-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .message,
+      .memory,
+      .recall {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        padding: 9px 10px;
+      }
+
+      .message-label,
+      .memory-meta,
+      .event-meta,
+      .recall-meta {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .message-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .message-text,
+      .memory-text {
+        margin-top: 3px;
+      }
+
+      .message {
+        padding: 6px 8px;
+      }
+
+      .message .message-text {
+        margin-top: 1px;
+      }
+
+      .message .event-meta {
+        line-height: 1.25;
+      }
+
+      .badge {
+        display: inline-block;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .badge.add {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .badge.update,
+      .badge.noop {
+        background: #fff3d6;
+        color: var(--warning);
+      }
+
+      .badge.delete {
+        background: #fee9e7;
+        color: var(--danger);
+      }
+
+      .search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        margin: 14px 0 8px;
+      }
+
+      .search input {
+        min-width: 0;
+        min-height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        padding: 6px 9px;
+      }
+
+      .empty {
+        border: 1px dashed var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        padding: 14px;
+        text-align: center;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #111513;
+          --surface: #171c19;
+          --text: #edf2ef;
+          --muted: #9aa8a1;
+          --border: #303a35;
+          --accent: #42b8a4;
+          --accent-soft: #163b34;
+          --warning: #f2b75d;
+          --danger: #ff8b82;
+          --info: #78afe9;
+        }
+
+        button.primary {
+          color: #071d18;
+        }
+
+        .badge.update,
+        .badge.noop {
+          background: #3c2d12;
+        }
+
+        .badge.delete {
+          background: #41201e;
+        }
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 12px;
+        }
+
+        .toolbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="toolbar">
+        <div>
+          <h1 class="title">Mem0 记忆生命周期</h1>
+          <p class="subtitle">离线机制模拟：候选抽取 → 冲突决策 → 存储 → 多路召回</p>
+        </div>
+        <div class="actions">
+          <button id="reset-button" type="button">重置</button>
+          <button id="next-button" class="primary" type="button">下一轮对话</button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section aria-labelledby="conversation-title">
+          <h2 id="conversation-title" class="section-title">
+            对话与写入决策
+            <span id="step-counter" class="counter">0 / 4</span>
+          </h2>
+          <div id="conversation" class="conversation"></div>
+        </section>
+
+        <section aria-labelledby="memory-title">
+          <h2 id="memory-title" class="section-title">
+            Active memories
+            <span id="memory-counter" class="counter">0 条</span>
+          </h2>
+          <div id="memory-list" class="memory-list"></div>
+          <div class="search">
+            <input id="recall-query" type="text" value="回答偏好" aria-label="记忆召回问题" />
+            <button id="recall-button" type="button">召回</button>
+          </div>
+          <div id="recall-list" class="recall-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      // 依次输入记忆处理层的教学对话。
+      const conversationSteps = [
+        {
+          message: "以后技术问题默认用中文，并先给结论。", // 用户本轮明确表达。
+          action: "ADD", // 当前候选产生的生命周期动作。
+          key: "answer_style", // 用于冲突合并的原子属性键。
+          value: "中文，先给结论", // 当前属性的新值。
+          reason: "明确、稳定且可跨会话复用的偏好。" // 写入决策的可审计理由。
+        },
+        {
+          message: "以后默认用英文回答。", // 用户用新陈述覆盖旧偏好。
+          action: "UPDATE", // 同属性冲突需要更新而非新增。
+          key: "answer_style", // 与旧记录相同的原子属性键。
+          value: "英文，先给结论", // 合并仍有效约束后的新值。
+          reason: "同一属性出现更新，旧记录标记为 superseded。" // 冲突处理理由。
+        },
+        {
+          message: "对，还是默认用英文回答。", // 与当前记录语义相同的重复陈述。
+          action: "NOOP", // 重复事实不创建新向量。
+          key: "answer_style", // 用来查重的原子属性键。
+          value: "英文，先给结论", // 与当前值相同的规范化结果。
+          reason: "规范化后与 active 记录一致，避免重复污染。" // 去重理由。
+        },
+        {
+          message: "忘掉我的回答语言偏好。", // 用户提出明确删除请求。
+          action: "DELETE", // 主记录、索引和缓存都应传播删除。
+          key: "answer_style", // 等待删除的原子属性键。
+          value: "", // 删除动作没有新值。
+          reason: "用户删除优先，记录退出召回并进入审计。" // 删除决策理由。
+        }
+      ];
+
+      // 当前仍可参与召回的记忆记录。
+      let activeMemories = [];
+      // 已经处理到的对话步骤下标。
+      let currentStepIndex = 0;
+      // 对话消息列表的 DOM 容器。
+      const conversationElement = document.querySelector("#conversation");
+      // Active memory 列表的 DOM 容器。
+      const memoryListElement = document.querySelector("#memory-list");
+      // 召回结果列表的 DOM 容器。
+      const recallListElement = document.querySelector("#recall-list");
+      // 当前实验进度文本节点。
+      const stepCounterElement = document.querySelector("#step-counter");
+      // 当前有效记忆数量文本节点。
+      const memoryCounterElement = document.querySelector("#memory-counter");
+      // 执行下一轮对话的按钮。
+      const nextButtonElement = document.querySelector("#next-button");
+      // 重置全部教学状态的按钮。
+      const resetButtonElement = document.querySelector("#reset-button");
+      // 提交多路召回的按钮。
+      const recallButtonElement = document.querySelector("#recall-button");
+      // 用户输入召回问题的文本框。
+      const recallQueryElement = document.querySelector("#recall-query");
+
+      /**
+       * 对动态文本执行 HTML 转义。
+       * @param {string} value 等待写入页面的非可信文本。
+       * @returns {string} 可安全放入模板的文本。
+       */
+      function escapeHtml(value) {
+        // 浏览器原生文本节点用于完成可靠转义。
+        const temporaryElement = document.createElement("div");
+        temporaryElement.textContent = value;
+        return temporaryElement.innerHTML;
+      }
+
+      /**
+       * 应用一条记忆生命周期动作。
+       * @param {{message: string, action: string, key: string, value: string, reason: string}} step 当前对话步骤。
+       */
+      function applyMemoryAction(step) {
+        // 与当前候选拥有相同属性键的有效记忆下标。
+        const existingIndex = activeMemories.findIndex((memory) => memory.key === step.key);
+        if (step.action === "ADD") {
+          activeMemories.push({
+            id: "mem-001", // 教学记录的稳定主键。
+            key: step.key, // 当前记忆的原子属性键。
+            text: step.value, // 经过规范化的记忆文本。
+            confidence: 1, // 明确用户陈述使用最高可信度。
+            updatedAt: currentStepIndex + 1 // 确定性新鲜度序号。
+          });
+        } else if (step.action === "UPDATE" && existingIndex >= 0) {
+          activeMemories[existingIndex] = {
+            ...activeMemories[existingIndex],
+            text: step.value, // 新偏好覆盖旧记录正文。
+            updatedAt: currentStepIndex + 1 // 更新后刷新新鲜度序号。
+          };
+        } else if (step.action === "DELETE" && existingIndex >= 0) {
+          activeMemories.splice(existingIndex, 1);
+        }
+
+      }
+
+      /** 渲染已经处理的用户对话。 */
+      function renderConversation() {
+        // 当前已经执行的对话步骤切片。
+        const visibleSteps = conversationSteps.slice(0, currentStepIndex);
+        conversationElement.innerHTML = visibleSteps.length
+          ? visibleSteps
+              .map(
+                (step, index) => `
+                  <article class="message">
+                    <div class="message-label">
+                      <span>user · turn ${index + 1}</span>
+                      <span class="badge ${step.action.toLowerCase()}">${step.action}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(step.message)}</div>
+                    <div class="event-meta">${escapeHtml(step.reason)}</div>
+                  </article>`
+              )
+              .join("")
+          : '<div class="empty">点击“下一轮对话”开始观察记忆变化。</div>';
+      }
+
+      /** 渲染当前仍可参与召回的记忆。 */
+      function renderMemories() {
+        memoryCounterElement.textContent = `${activeMemories.length} 条`;
+        memoryListElement.innerHTML = activeMemories.length
+          ? activeMemories
+              .map(
+                (memory) => `
+                  <article class="memory">
+                    <div class="memory-meta">${escapeHtml(memory.id)} · ${escapeHtml(memory.key)} · confidence ${memory.confidence.toFixed(2)}</div>
+                    <div class="memory-text">${escapeHtml(memory.text)}</div>
+                  </article>`
+              )
+              .join("")
+          : '<div class="empty">当前没有 active memory。</div>';
+      }
+
+      /**
+       * 对一条记忆计算三路召回分数。
+       * @param {{key: string, text: string, confidence: number, updatedAt: number}} memory 当前有效记忆。
+       * @param {string} query 用户检索问题。
+       * @returns {{exact: number, semantic: number, recency: number, total: number}} 分路和总分。
+       */
+      function scoreMemory(memory, query) {
+        // 查询是否直接命中回答偏好属性。
+        const exactScore = query.includes("回答") || query.includes("偏好") ? 1 : 0;
+        // 查询和记忆共享的教学语义词数量。
+        const sharedTerms = ["中文", "英文", "结论", "回答"].filter(
+          (term) => query.includes(term) && memory.text.includes(term)
+        ).length;
+        // 归一化后的教学语义分数。
+        const semanticScore = Math.min(1, sharedTerms / 2);
+        // 越晚更新的记录拥有越高的新鲜度分数。
+        const recencyScore = memory.updatedAt / conversationSteps.length;
+        // 精确属性、语义和新鲜度的加权总分。
+        const totalScore = exactScore * 0.45 + semanticScore * 0.4 + recencyScore * 0.15;
+        return { exact: exactScore, semantic: semanticScore, recency: recencyScore, total: totalScore };
+      }
+
+      /** 根据输入问题执行多路召回并显示分数。 */
+      function recallMemories() {
+        // 去除首尾空白后的召回问题。
+        const query = recallQueryElement.value.trim();
+        // 带分路评分并按总分降序排列的候选。
+        const scoredMemories = activeMemories
+          .map((memory) => ({ memory, scores: scoreMemory(memory, query) }))
+          .filter((candidate) => candidate.scores.total > 0)
+          .sort((left, right) => right.scores.total - left.scores.total);
+        recallListElement.innerHTML = scoredMemories.length
+          ? scoredMemories
+              .map(
+                ({ memory, scores }) => `
+                  <article class="recall">
+                    <div class="recall-meta">total ${scores.total.toFixed(2)} · exact ${scores.exact.toFixed(2)} · semantic ${scores.semantic.toFixed(2)} · recency ${scores.recency.toFixed(2)}</div>
+                    <div>${escapeHtml(memory.text)}</div>
+                  </article>`
+              )
+              .join("")
+          : '<div class="empty">没有可召回的 active memory。</div>';
+      }
+
+      /** 同步页面全部视图和按钮状态。 */
+      function render() {
+        stepCounterElement.textContent = `${currentStepIndex} / ${conversationSteps.length}`;
+        nextButtonElement.disabled = currentStepIndex >= conversationSteps.length;
+        nextButtonElement.textContent = currentStepIndex >= conversationSteps.length ? "演示完成" : "下一轮对话";
+        renderConversation();
+        renderMemories();
+        recallMemories();
+      }
+
+      /** 执行下一条预设对话及其记忆动作。 */
+      function runNextStep() {
+        if (currentStepIndex >= conversationSteps.length) {
+          return;
+        }
+        // 当前等待处理的教学步骤。
+        const step = conversationSteps[currentStepIndex];
+        applyMemoryAction(step);
+        currentStepIndex += 1;
+        render();
+      }
+
+      /** 清空全部状态并回到第一轮之前。 */
+      function resetDemo() {
+        activeMemories = [];
+        currentStepIndex = 0;
+        render();
+      }
+
+      nextButtonElement.addEventListener("click", runNextStep);
+      resetButtonElement.addEventListener("click", resetDemo);
+      recallButtonElement.addEventListener("click", recallMemories);
+      recallQueryElement.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          recallMemories();
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>

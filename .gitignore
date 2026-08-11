@@ -19,6 +19,9 @@
 
 # production
 /build
+/.playwright-cli/
+/output/
+/public/vendor/pyodide/
 
 # misc
 .DS_Store

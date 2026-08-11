@@ -1,6 +1,6 @@
 # React 源码（5）- React 事件机制
 
-## 事件委托
+# 一、事件委托
 
 随着 React 18 的发布，事件系统带来了一些新的理念和更新。其中最引人注目的两大变化是：
 
@@ -12,7 +12,7 @@
 - 减少内存消耗：只需在顶层容器上附加少量监听器，而非为成千上万个 DOM 元素都绑定事件。
 - 简化动态内容管理：对于动态添加或移除的元素，无需手动绑定或解绑事件，因为事件处理是在顶层统一管理的。
 
-## 源码实现
+# 二、源码实现
 
 createRoot 调用到createContainer 里有一个 listenToAllSupportedEvents 函数，说明初始化阶段，初始化了事件机制，接下来探究这部分代码。
 
@@ -152,3 +152,13 @@ function setState(newState) {
 如上图：accumulateSinglePhaseListeners 函数逻辑比较单一，就是根据传入的 fiber，向上遍历整棵 fiber 树，收集所有的冒泡事件，比如 click 了一个 div，那它收集的就是所有父级上的 click 事件，并且放到 `dispatchQueue`，接下来是 `processDispatchQueue`，如下图，其实就是看冒泡还是捕获，捕获就倒序执行，冒泡就顺序执行
 
 ![image-20250916232647562](/../../../Library/Application Support/typora-user-images/image-20250916232647562.png)
+
+# 三、总结
+
+- **源码实现**：createRoot 调用到createContainer 里有一个 listenToAllSupportedEvents 函数，说明初始化阶段，初始化了事件机制，接下来探究这部分代码。
+- **事件委托**：随着 React 18 的发布，事件系统带来了一些新的理念和更新。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（5）- React 事件机制”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

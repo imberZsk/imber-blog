@@ -2,7 +2,7 @@
 
 `packages/react-reconciler/src/ReactFiberWorkLoop.old.js`
 
-## 核心流程
+# 一、核心流程
 
 ![](/posts/react-source/workloop-concurrent.png)
 
@@ -11,7 +11,7 @@
 - 其中 `renderRootConcurrent` 有个函数 `prepareFreshStack` 是初始化 `workInProgress` 树的
 - `!shouldYield()` 来自 `scheduler` 里的 `shouldYieldToHost`，里面的比如 timeElapsed < frameInterval，是当前执行时间和默认的 5ms 对比，在5ms内则不让给宿主（浏览器一帧是 16.6ms，5ms 用来做 react 任务）
 
-## 工作循环
+# 二、工作循环
 
 当调度器（Scheduler）确定当前更新任务具有足够的优先级并且浏览器有可用的时间片时，协调阶段就正式启动它的核心工作循环（`workLoop`）。这个过程就像是在一个巨大的城市地图（Fiber 树）上寻路和规划。
 
@@ -35,7 +35,7 @@ function performUnitOfWork(unitOfWork) {
 }
 ```
 
-#### 1. "向下看" (Begin Phase - beginWork 函数):
+### "向下看" (Begin Phase - beginWork 函数):
 
 - 将虚拟 dom 变成 fiber， 从上往下创建 fiber
 - 协调算法（Reconciliation）： React 会比较当前 Fiber 节点与对应的旧 Fiber 节点，检查 props、state、context 等是否发生变化。
@@ -66,7 +66,7 @@ function beginWork(current, workInProgress, renderLanes) {
 
 updateXXX 也就是更新用的，mountXXX是挂载用的函数，重点关注 `updateFunctionComponent` 函数的更新
 
-#### 2. "向上走" (Complete Phase - completeWork 函数):
+### "向上走" (Complete Phase - completeWork 函数):
 
 - 将 fiber 变成真实 dom 节点 从下往上
 - 当一个 Fiber 节点的所有子节点都处理完毕后，或者该节点本身没有子节点，React 开始执行 completeWork。
@@ -105,7 +105,7 @@ function completeWork(unitOfWork) {
 
 这个"向下看"再"向上走"的过程会持续进行，直到整个地图（Fiber 树）都规划完毕。
 
-## 协调阶段的完成
+# 三、协调阶段的完成
 
 当工作循环处理完 Root Fiber 的 completeWork 后，整个协调阶段（Render Phase）就结束了。此时，React 已经：
 
@@ -118,3 +118,14 @@ function completeWork(unitOfWork) {
 关于 Diff，也就是 `beginWork` -> `updateFunctionComponent(updateHostComponent)` -> `reconcileSingleElement/reconcileChildrenArray`，在后面单独讲。
 
 关于 Hook，也就是 `beginWork` -> `updateFunctionComponent` -> `renderWithHooks` 中的逻辑，在后面单独讲。
+
+# 四、总结
+
+- **核心流程**：先是在 reconciler 里 updateContainer，然后调用 scheduleCallback 走到 scheduler，它传入的参数 performConcurrentWorkOnRoot.bind(null, root) 很重要，又回到 reconciler
+- **工作循环**：当调度器（Scheduler）确定当前更新任务具有足够的优先级并且浏览器有可用的时间片时，协调阶段就正式启动它的核心工作循环（workLoop）。
+- **协调阶段的完成**：当工作循环处理完 Root Fiber 的 completeWork 后，整个协调阶段（Render Phase）就结束了。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（9）- Reconciler 协调阶段”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

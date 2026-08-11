@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from 
 import Link from 'next/link'
 import { ArrowUpRight, Network, Search } from 'lucide-react'
 import type { KnowledgeArticleKind, KnowledgeListArticle } from '@/lib/knowledge'
-import { Button, Input } from '@/components/ui'
+import { Input } from '@/components/ui'
 import {
   getKnowledgeArticleAnchor,
   getKnowledgeListHref,
@@ -13,12 +13,6 @@ import {
 } from './article-anchor'
 import { isKnowledgeTrackSlug, KNOWLEDGE_TRACKS, type KnowledgeTrackSlug } from './config'
 import type { KnowledgeTrackArticleCounts } from './knowledge-page-view'
-
-/** 知识库列表每次展示或追加的文章数量。 */
-const ARTICLE_PAGE_SIZE = 40
-
-/** 匹配列表左侧已经单独展示、不应在标题中重复出现的模块内课号。 */
-const ARTICLE_TITLE_ORDER_PATTERN = /^第\s*\d+\s*课(?:实践|扩展)?[：:]\s*/
 
 /** 不参与正式模块编号的知识库总览名称。 */
 const OVERVIEW_MODULE_LABEL = '总览'
@@ -122,13 +116,6 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   const focusedArticleIndex = articles
     .filter((article) => activeModule === null || article.topic === activeModule)
     .findIndex((article) => article.path === focusedArticlePath)
-  /** 为确保返回锚点已进入 DOM 而需要预先展示的文章数量。 */
-  const initialVisibleCount =
-    focusedArticleIndex < 0
-      ? ARTICLE_PAGE_SIZE
-      : Math.ceil((focusedArticleIndex + 1) / ARTICLE_PAGE_SIZE) * ARTICLE_PAGE_SIZE
-  /** 当前允许展示的最大文章数量。 */
-  const [visibleCount, setVisibleCount] = useState(initialVisibleCount)
   /** 当前主线对应的标签和思维导图链接。 */
   const activeTrackConfig = KNOWLEDGE_TRACKS.find((track) => track.slug === activeTrack) || KNOWLEDGE_TRACKS[0]
   /** 当前主线按照实体内容目录顺序声明的一级模块。 */
@@ -187,8 +174,8 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
         return leftModuleOrder - rightModuleOrder
       })
   }, [activeModule, activeTrack, activeTrackModules, articles, query])
-  /** 当前已进入页面 DOM 的文章列表。 */
-  const visibleArticles = filteredArticles.slice(0, visibleCount)
+  /** 当前筛选范围内一次性进入页面 DOM 的完整文章列表。 */
+  const visibleArticles = filteredArticles
   /** 左侧模块导航当前应高亮的模块；显式筛选优先于滚动识别结果。 */
   const highlightedModule = activeModule ?? visibleModule
   /** 各一级模块内每个细分类对应的完整文章数量。 */
@@ -277,7 +264,6 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
     window.history.pushState(window.history.state, '', nextModuleHref)
     setActiveModule(nextModule)
     setFocusedArticlePath(null)
-    setVisibleCount(ARTICLE_PAGE_SIZE)
 
     /** 模块切换后让文章列表回到固定页头下方。 */
     const articleListTop = articleListRef.current
@@ -346,22 +332,11 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   }, [activeTrack, articles])
 
   useEffect(() => {
-    if (focusedArticleIndex < 0) {
+    if (!focusedArticlePath || focusedArticleIndex < 0) {
       return
     }
 
-    /** 为让返回目标进入 DOM 而需要展示的文章数量。 */
-    const requiredVisibleCount = Math.ceil((focusedArticleIndex + 1) / ARTICLE_PAGE_SIZE) * ARTICLE_PAGE_SIZE
-    // 修复客户端历史恢复复用旧分页状态：focus 更新后必须再次保证目标文章已经渲染。
-    setVisibleCount((currentVisibleCount) => Math.max(currentVisibleCount, requiredVisibleCount))
-  }, [focusedArticleIndex])
-
-  useEffect(() => {
-    if (!focusedArticlePath || focusedArticleIndex < 0 || focusedArticleIndex >= visibleCount) {
-      return
-    }
-
-    /** 等待分页扩容渲染完成后执行定位的动画帧。 */
+    /** 等待完整文章列表渲染完成后执行定位的动画帧。 */
     const animationFrameId = window.requestAnimationFrame(() => {
       /** 返回后需要重新定位并高亮的文章元素。 */
       const focusedArticleElement = document.getElementById(getKnowledgeArticleAnchor(focusedArticlePath))
@@ -376,7 +351,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
     })
 
     return () => window.cancelAnimationFrame(animationFrameId)
-  }, [focusedArticlePath, focusedArticleIndex, visibleCount])
+  }, [focusedArticlePath, focusedArticleIndex])
 
   useEffect(() => {
     if (!hasSyncedLocation) {
@@ -465,7 +440,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
         window.cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [activeModule, activeTrack, hasSyncedLocation, query, visibleCount])
+  }, [activeModule, activeTrack, hasSyncedLocation, query])
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_168px]">
@@ -580,10 +555,10 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
 
         <div ref={articleListRef}>
           {visibleArticles.map((article, index) => {
-            /** 当前文章在所属模块中稳定且从 01 开始的展示顺序。 */
+            /** 当前文章在所属模块中稳定且从 01 开始的 UI 展示顺序。 */
             const displayOrder = String(article.sequence).padStart(2, '0')
-            /** 去掉来源标题中不统一的顺序前缀后的列表标题。 */
-            const displayTitle = article.title.replace(ARTICLE_TITLE_ORDER_PATTERN, '')
+            /** 标题保留细分类内部独立生成的“（01） -”系列序号。 */
+            const displayTitle = article.title
             /** 首篇文章或模块切换处需要展示新的模块标题。 */
             const showsModuleHeading = index === 0 || visibleArticles[index - 1]?.topic !== article.topic
             /** 当前细分类在所属大模块中的完整文章数量。 */
@@ -662,17 +637,6 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
           <p className="text-muted-foreground py-16 text-center text-sm">没有找到匹配的文章</p>
         )}
 
-        {visibleArticles.length < filteredArticles.length && (
-          <div className="pt-6 text-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setVisibleCount((currentCount) => currentCount + ARTICLE_PAGE_SIZE)}
-            >
-              加载更多
-            </Button>
-          </div>
-        )}
       </section>
 
       <aside className="hidden min-w-0 xl:block">

@@ -1,6 +1,6 @@
 # React 源码（6）- Lane 车道模型
 
-## 车道模型
+# 一、车道模型
 
 想象一下一个繁忙的城市交通系统，既有需要紧急通行的救护车，也有日常通勤的公交车和私家车。为了保证交通顺畅，系统必须智能地为不同类型的车辆分配专用车道，并规定它们的通行优先级。React 的 Lanes 模型就扮演着类似的角色，它是 React 并发渲染和调度系统的核心与大脑。
 
@@ -8,7 +8,7 @@ Lanes 是一种用于表示和管理更新优先级、类型以及它们之间�
 
 所有与 Lanes 相关的核心逻辑都存放在 `react/packages/react-reconciler/src/ReactFiberLane.(old | new).js` 文件中。
 
-## 位掩码
+# 二、位掩码
 
 要实现如此高效灵活的“车道”管理系统，React 选择了位掩码（Bitmask）作为其技术基石。位掩码是一种利用二进制位的 0 和 1 来表示和操作状态集合的技术。在 React 中，Lanes 系统巧妙地利用一个31位的二进制数，其中每一位都代表一个独立的“车道”（Lane）。
 
@@ -41,7 +41,7 @@ const newLanes = lanes & ~InputContinuousLane
 
 位掩码为我们提供了表示和操作 Lanes 的高效工具，那么 React 中到底定义了哪些“车道”类型呢？
 
-## Lane 的类型分类
+# 三、Lane 的类型分类
 
 - SyncLane: 最高优先级，用于必须同步执行的更新（例如，由 flushSync 触发的更新，或某些离散的用户输入）。在 ReactFiberReconciler.js 中明确定义。
 - Input Lanes (如 InputContinuousLane, InputDiscreteLane): 用于处理用户输入，确保 UI 响应迅速。离散输入（如点击）通常比连续输入（如拖动）优先级更高。
@@ -55,7 +55,7 @@ const newLanes = lanes & ~InputContinuousLane
 
 既然 React 定义了如此多样的 Lane，那么当一个更新（如 setState）发生时，它到底是如何智能地为这次更新选择正确的“车道”呢？这就是 requestUpdateLane 函数的核心职责。
 
-## 如何分配一个合适的 Lane
+# 四、如何分配一个合适的 Lane
 
 `requestUpdateLane` 函数在 React 中扮演着为新的更新请求分配合适“通道”（Lane）的关键角色。这个分配过程并不是随机的，而是会综合考虑当前 React 应用的多种运行情况和上下文信息，以确保更新能够以恰当的优先级和方式进行处理。
 
@@ -93,13 +93,13 @@ export function requestUpdateLane(fiber: Fiber): Lane {
 
 可以看到其实默认情况跟上节的事件机制相关
 
-## 多车道协同作战：Lanes 的合并与选择
+# 五、多车道协同作战：Lanes 的合并与选择
 
 我们已经了解了 React 如何为单次更新分配一个合适的 Lane，但这只是故事的一部分。在真实的复杂应用中，多个不同来源的更新可能同时发生。React 需要一个更高维度的策略来管理这些并发的更新请求。这套策略的核心，就在于 Lanes 的合并与选择机制。
 
 想象一下，调度中心不仅要为每辆车分配车道，还要看着整个交通网络，决定在某个时刻，哪些车道的车可以通行。这就是 `root.pendingLanes` 和 `getNextLanes` 函数所扮演的角色。
 
-### 1. 作战地图: root.pendingLanes
+## 5.1 作战地图: root.pendingLanes
 
 在 React 的世界里，每一个应用的根节点（FiberRoot）都维护着一个名为 `pendingLanes` 的字段。你可以把它想象成一张包含了所有待处理任务的“作战地图”。
 
@@ -113,7 +113,7 @@ root.pendingLanes |= newLane // 使用 '|' 操作符将新车道并入地图
 
 这意味着 `pendingLanes` 是一个集合，它包含了当前所有等待被处理的更新的优先级信息。例如，如果一个 `DefaultLane` 的更新正在等待，此时用户又触发了一个 `SyncLane` 的更新，那么 `pendingLanes` 就会变成 `DefaultLane | SyncLane`。
 
-### 2. 作战指挥官: getNextLanes
+## 5.2 作战指挥官: getNextLanes
 
 有了作战地图，还需要一位指挥官来决定下一步的具体行动。这个指挥官就是 `getNextLanes` 函数（位于 ReactFiberLane.js）。在每次开始新的渲染工作前，调度器都会调用 `getNextLanes(root, wipLanes)` 来确定本次渲染要处理哪些 `Lanes`。
 
@@ -156,7 +156,7 @@ export function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes {
 }
 ```
 
-## 案例：调度策略的实际体现
+# 六、案例：调度策略的实际体现
 
 让我们回到之前的搜索组件案例，但这次我们用 getNextLanes 的视角来分析。
 
@@ -169,13 +169,13 @@ export function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes {
 
 通过这套机制，React 实现了高效、有序的并发任务处理，确保了用户体验的流畅。
 
-## 防止拥堵：饥饿问题与过期机制
+# 七、防止拥堵：饥饿问题与过期机制
 
 并发调度系统虽然强大，但存在一个潜在的风险：饥饿问题（Starvation）。如果高优先级的任务持续不断地涌入，那么低优先级的任务可能会一直被推迟，永远没有机会执行，就像在高速公路上，如果应急车道一直有车，普通车道的车就可能一直无法并线。
 
 为了解决这个问题，React 引入了一套巧妙的过期（Expiration）机制，确保即使是最低优先级的任务，最终也能得到执行的机会。
 
-### 1. 为任务标记“保质期”
+## 7.1 为任务标记“保质期”
 
 在 React 内部，当一个更新被创建时，除了分配 Lane，还会计算一个过期时间（expirationTime），并将其存储在 FiberRoot 上的 expirationTimes 映射中。这个过期时间代表了该任务最晚必须被执行的时间点。
 
@@ -191,7 +191,7 @@ export function markRootUpdated(root: FiberRoot, updateLane: Lane) {
 }
 ```
 
-### 2. 强制执行过期任务
+## 7.2 强制执行过期任务
 
 在 getNextLanes 的决策过程中，它不仅会检查各个 Lane 的优先级，还会检查是否有 Lane 已经过期。
 
@@ -217,7 +217,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 }
 ```
 
-## 案例：永不“饿死”的后台任务
+# 八、案例：永不“饿死”的后台任务
 
 想象一个新闻网站，页面上有一个“最新动态”模块，它通过一个低优先级的后台任务每 10 秒钟更新一次。同时，页面上有一个可以被用户拖拽的图表，拖拽会触发连续的、中等优先级的 InputContinuousLane 更新。
 
@@ -227,7 +227,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 - 强制执行: 在下一次调度中，getNextLanes 会选中这个被提升的 SyncLane，并以同步、不可中断的方式将其渲染完毕。这样就保证了“最新动态”最迟在约 5 秒后一定能被更新，避免了无限期的饥饿。
   通过这套优雅的过期机制，React 在保证高优先级任务优先响应的同时，也为低优先级任务提供了“最低生活保障”，构筑了一个既高效又鲁棒的并发调度系统。
 
-## 优先级与一致性：React 如何化解更新冲突
+# 九、优先级与一致性：React 如何化解更新冲突
 
 一个自然而然的问题是：如果高优先级任务可以中断低优先级任务，当它们操作同一份数据时，React 如何保证最终状态的正确性，避免数据错乱或更新丢失？
 
@@ -241,7 +241,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
 让我们通过具体的案例来剖析这个过程。
 
-### 案例：计数器更新冲突
+## 9.1 案例：计数器更新冲突
 
 想象一个组件，它在 useEffect 中以低优先级更新一个计数器，同时用户可以通过点击按钮以高优先级更新同一个计数器。
 
@@ -271,15 +271,15 @@ function ConflictingCounter() {
 2. 高优任务中断: 在 React 渲染 count 为 1 的过程中（比如只过了 10ms，渲染还没完成），用户点击了按钮。handleClick 触发了另一次 setCount。由于这是由用户交互触发的，requestUpdateLane 分配了 SyncLane。
 3. 丢弃与重做: React 检测到更高优先级的 SyncLane，立即暂停了 DefaultLane 的渲染工作，并丢弃了计算到一半的 workInProgress 树。
 4. 执行高优任务: React 同步执行 SyncLane 的更新。此时 count 的状态还是 0，执行 c => c + 1 后，count 变为 1。React 完成渲染并将 count 为 1 的结果提交到 DOM。
-5. 重启低优任务: 在完成 SyncLane 的任务后，root.pendingLanes 中还留着之前的 DefaultLane。React 在下一个调度周期会处理它。关键来了：它会从头开始执行 DefaultLane 的更新。此时，它读取到的 count 的当前值已经是 1。因此，它执行 c => c + 1，计算出的新状态是 2。
+5. 重启低优任务: 在完成 SyncLane 的任务后，root.pendingLanes 中还留着之前的 DefaultLane。React 在下一个调度周期会处理它。关键来了：它会从头开始执行 DefaultLane 的更新。此时，它读取到的 count 的当前值已经是 1。所以，它执行 c => c + 1，计算出的新状态是 2。
 
 最终结果：count 的值最终会正确地变为 2，而不是 1。React 通过“废弃重做”的机制，保证了两次更新都被正确应用，避免了“更新丢失”的问题。
 
-## 实战案例：Lane 如何协调更新冲突
+# 十、实战案例：Lane 如何协调更新冲突
 
 理论知识最终要服务于实践。让我们通过两个具体的案例，来看看 Lane 模型在实际开发中是如何工作的。
 
-### 案例一：用户输入与数据获取的优先级博弈
+## 10.1 案例一：用户输入与数据获取的优先级博弈
 
 想象一个场景：用户在一个搜索框中快速输入文本，同时应用在后台发起了一个数据请求，请求成功后需要更新页面上的一个列表。
 
@@ -324,7 +324,7 @@ function SearchComponent() {
 
 核心冲突与解决：如果在 setList 触发的低优先级渲染正在进行时，用户又输入了新的字符（高优先级更新），React 的调度器会毫不犹豫地中断正在进行的 DefaultLane 渲染任务，优先执行 SyncLane 的渲染任务，确保输入框的即时响应。待高优先级任务完成后，React 会在稍后的时间片重新尝试执行被中断的低优先级任务。
 
-### 案例二：使用 startTransition 优化耗时渲染
+## 10.2 案例二：使用 startTransition 优化耗时渲染
 
 现在考虑一个更复杂的情况：我们有一个按钮，点击后需要渲染一个非常庞大且计算量大的列表，直接渲染可能会导致页面卡顿。
 
@@ -372,10 +372,15 @@ function TransitionExample() {
 
 - Pending 状态反馈：useTransition 返回的 isPending 状态可以用来在过渡期间向用户显示加载指示（如 “Loading...”），提升了用户体验。
 
-## 总结：Lane 不仅仅是优先级
+# 十一、总结
 
-通过本文的探讨，我们可以看到，React 的 Lane 模型远不止是一个简单的优先级数字。它是一个高度精密的、基于位掩码的并发调度框架，是 React 实现以下特性的基石：
+读完这篇的探讨，我们可以看到，React 的 Lane 模型远不止是一个简单的优先级数字。它是一个高度精密的、基于位掩码的并发调度框架，是 React 实现以下特性的基石：
 
 - 差异化更新：能够区分用户输入、动画、数据获取等不同来源的更新，并赋予它们不同的行为（同步、并发、可中断）。
 - 并发与中断：使得低优先级的渲染任务可以在不阻塞用户界面的情况下执行，并在高优先级任务到来时被中断和恢复。
 - 高级特性支持：为 Suspense 的异步数据加载、useTransition 的平滑状态过渡以及未来可能出现的 Offscreen API 等高级功能提供了底层的调度能力。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“React 源码（6）- Lane 车道模型”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

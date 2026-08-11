@@ -1,6 +1,6 @@
-# Playwright 快速入门：从零到第一个测试
+# Playwright（1）- Playwright 快速入门：从零到第一个测试
 
-## 适合人群
+# 一、适合人群
 
 本文适合以下读者：
 
@@ -8,7 +8,7 @@
 - **从其他框架迁移的开发者**：有 Selenium、Puppeteer、Cypress 使用经验，想了解 Playwright 的优势
 - **前端/全栈开发者**：希望为自己的项目补充自动化测试的开发者
 
-## 前置知识
+# 二、前置知识
 
 阅读本文前，你需要：
 
@@ -18,13 +18,13 @@
 
 > Playwright 官方目前支持 Node.js 20.x、22.x、24.x，Node.js 16 已不再受支持，请确保本地版本不低于 20。
 
-## 什么是 Playwright 及其优势
+# 三、什么是 Playwright 及其优势
 
-### 什么是 Playwright
+## 3.1 什么是 Playwright
 
 Playwright 是微软开源的现代化 Web 自动化测试框架，支持 Chromium、Firefox 和 WebKit 三大浏览器引擎。它可以模拟真实用户操作（点击、输入、滚动等），验证页面行为是否符合预期。
 
-### 为什么选择 Playwright
+## 3.2 为什么选择 Playwright
 
 相比其他 E2E 测试框架，Playwright 有以下优势：
 
@@ -73,9 +73,9 @@ await expect(page.getByText('欢迎回来')).toBeVisible();
 - TypeScript 类型支持
 - 内置断言库
 
-## 安装与环境配置
+# 四、安装与环境配置
 
-### 初始化项目
+## 4.1 初始化项目
 
 `npm init playwright@latest` 本身就是脚手架命令，会自动创建 `package.json`、配置文件和示例测试，无需提前 `mkdir` + `npm init -y`。
 
@@ -97,7 +97,7 @@ npm init playwright@latest my-first-playwright-test
 ? Install Playwright browsers? › true
 ```
 
-### 目录结构
+## 4.2 目录结构
 
 安装完成后，项目结构如下：
 
@@ -111,7 +111,7 @@ my-first-playwright-test/
 └── node_modules/             # 依赖包
 ```
 
-### 验证安装
+## 4.3 验证安装
 
 运行示例测试，确认安装成功：
 
@@ -126,15 +126,15 @@ Running 6 tests using 3 workers
   6 passed (5.2s)
 ```
 
-## 编写第一个测试用例
+# 五、编写第一个测试用例
 
-### 测试场景
+## 5.1 测试场景
 
 我们将编写一个简单的测试：访问 Playwright 官方提供的 TodoMVC 演示站点，新增一条待办事项，验证它出现在列表中。
 
 > 为什么不用百度等真实网站作为入门示例？真实站点通常有反爬/风控（验证码、行为检测），自动化访问极易被拦截；而且它们的 DOM、占位符、URL 参数随时可能调整，示例很容易跑不通。入门阶段最重要的是「一次跑通带来正反馈」，因此选用官方维护、无反爬的稳定演示站点 `https://demo.playwright.dev/todomvc`。
 
-### 创建测试文件
+## 5.2 创建测试文件
 
 在 `tests/` 目录下创建 `todo.spec.ts`：
 
@@ -158,7 +158,7 @@ test('新增一条待办事项', async ({ page }) => {
 });
 ```
 
-### 代码详解
+## 5.3 代码详解
 
 让我们逐行解析：
 
@@ -198,9 +198,9 @@ await expect(page.getByTestId('todo-title')).toHaveText('学习 Playwright');
 
 > 这里**没有**使用 `page.waitForLoadState('networkidle')`。Playwright 官方已将 `networkidle` 标注为不推荐用于测试（DISCOURAGED），因为它依赖「网络静默」这一不可靠信号，长轮询、心跳、埋点等持续请求都会让它要么超时、要么提前结束，从而引入不稳定。正确做法是直接对最终结果断言（`expect(...).toBeVisible()` / `toHaveText()`）或等待具体导航（`waitForURL(...)`），让 Playwright 的自动等待机制处理时序。
 
-## 运行测试与查看结果
+# 六、运行测试与查看结果
 
-### 运行测试
+## 6.1 运行测试
 
 ```bash
 # 运行所有测试
@@ -216,7 +216,7 @@ npx playwright test --headed
 npx playwright test --debug
 ```
 
-### 查看测试报告
+## 6.2 查看测试报告
 
 测试完成后，查看 HTML 报告：
 
@@ -230,7 +230,7 @@ npx playwright show-report
 - 失败时的截图
 - 详细的错误堆栈
 
-### 使用 UI Mode（推荐）
+## 6.3 使用 UI Mode（推荐）
 
 UI Mode 是 Playwright 最强大的调试工具：
 
@@ -244,13 +244,13 @@ npx playwright test --ui
 - **定位器调试**：测试选择器是否正确
 - **逐步执行**：单步调试每个操作
 
-## 进阶技巧：优化测试代码
+# 七、进阶技巧：优化测试代码
 
-### 使用更好的定位器
+## 7.1 使用更好的定位器
 
 我们第一个示例已经用了 `getByPlaceholder` 和 `getByTestId` 这类语义化定位器。相比 CSS 选择器（`#kw`、`.s_btn`），它们更接近用户视角，也更抗前端重构。
 
-#### 不推荐的定位方式
+## 7.2 不推荐的定位方式
 
 ```typescript
 // ❌ 依赖 id（前端重构后可能变化）
@@ -263,7 +263,7 @@ await page.click('.btn-primary');
 await page.click('form > input:nth-child(2)');
 ```
 
-#### 推荐的定位方式
+## 7.3 推荐的定位方式
 
 ```typescript
 // ✅ 使用 role（最接近用户视角）
@@ -284,7 +284,7 @@ await page.getByTestId('todo-title');
 
 > 不确定页面上元素的真实属性时，先用 `npx playwright codegen <url>` 录制一遍，Codegen 会给出官方推荐的、确实能命中的定位器，避免凭猜测写出跑不通的选择器。
 
-### 提取公共逻辑
+## 7.4 提取公共逻辑
 
 当多个测试需要相同的前置步骤时，使用 `beforeEach`：
 
@@ -315,7 +315,7 @@ test.describe('TodoMVC 功能', () => {
 });
 ```
 
-### 封装 Page Object
+## 7.5 封装 Page Object
 
 当页面交互复杂时，使用 Page Object 模式封装：
 
@@ -375,9 +375,9 @@ test('使用 Page Object 新增待办', async ({ page }) => {
 });
 ```
 
-## 常见问题排查
+# 八、常见问题排查
 
-### 问题 1：元素找不到
+## 8.1 问题 1：元素找不到
 
 **错误信息：**
 ```
@@ -407,7 +407,7 @@ await page.getByRole('button', { name: '提交' }).click();
 await page.click('#submit', { timeout: 60000 });
 ```
 
-### 问题 2：测试不稳定（时而通过时而失败）
+## 8.2 问题 2：测试不稳定（时而通过时而失败）
 
 **常见原因：**
 - 使用固定等待时间（`waitForTimeout`）
@@ -445,7 +445,7 @@ await page.waitForURL('**/dashboard');
 
 > 核心原则：**等待真实的业务结果，而不是模糊的「网络空闲」或「固定毫秒」**。Playwright 的断言（`expect`）和 `waitForURL`、`waitForResponse` 都内置自动等待，能精准等到目标状态。
 
-### 问题 3：弹窗和对话框处理
+## 8.3 问题 3：弹窗和对话框处理
 
 **场景：** 点击按钮后弹出浏览器原生 alert/confirm 对话框
 
@@ -462,7 +462,7 @@ page.on('dialog', async dialog => {
 await page.click('#deleteButton');
 ```
 
-### 问题 4：截图和录屏调试
+## 8.4 问题 4：截图和录屏调试
 
 ```typescript
 // 测试失败时自动截图（playwright.config.ts 已默认配置）
@@ -481,7 +481,7 @@ await page.locator('.result').screenshot({ path: 'result.png' });
 // 位置：test-results/<测试名称>/
 ```
 
-## 完整 Demo：登录表单测试
+# 九、完整 Demo：登录表单测试
 
 下面是一个完整的实战示例，测试登录功能（以你自己的应用为例）：
 
@@ -533,9 +533,9 @@ test.describe('登录功能测试', () => {
 });
 ```
 
-## 小结
+# 十、总结
 
-通过本文，你已经掌握了：
+读完这篇，你已经掌握了：
 
 1. **Playwright 的核心优势**：跨浏览器、自动等待、强大定位器
 2. **环境安装和配置**：用一条 `npm init playwright@latest` 快速搭建
@@ -546,7 +546,7 @@ test.describe('登录功能测试', () => {
    - 使用 Page Object 封装复杂交互
 5. **调试技巧**：Codegen、UI Mode、Trace Viewer
 
-### 关键要点
+## 10.1 关键要点
 
 - **始终使用 `await`**：Playwright 操作都是异步的
 - **优先语义化定位**：`getByRole` > `getByLabel` > `getByText` > CSS 选择器
@@ -554,15 +554,15 @@ test.describe('登录功能测试', () => {
 - **断言才是校验**：`expect(...).toBeVisible()` 才能让测试失败；单独 `await locator.isVisible()` 只返回布尔值，不构成校验
 - **失败时查看报告**：`npx playwright show-report`
 
-## 延伸阅读
+# 十一、延伸阅读
 
-### 官方资源
+## 11.1 官方资源
 
 - [Playwright 官方文档](https://playwright.dev/)
 - [最佳实践指南](https://playwright.dev/docs/best-practices)
 - [API 参考](https://playwright.dev/docs/api/class-playwright)
 
-### 进阶主题
+## 11.2 进阶主题
 
 - **并行测试**：如何配置 workers 加速测试
 - **Mock 网络请求**：使用 `page.route()` 拦截和模拟 API
@@ -570,7 +570,7 @@ test.describe('登录功能测试', () => {
 - **视觉回归测试**：使用 `toHaveScreenshot()` 检测 UI 变化
 - **移动端测试**：模拟移动设备和触摸操作
 
-### 社区资源
+## 11.3 社区资源
 
 - [Playwright GitHub](https://github.com/microsoft/playwright)
 - [Awesome Playwright](https://github.com/mxschmitt/awesome-playwright)
@@ -579,3 +579,15 @@ test.describe('登录功能测试', () => {
 ---
 
 现在，打开你的编辑器，写下第一个测试吧！
+
+# 十二、总结
+
+- **常见问题排查**：选择器错误（拼写错误、id 变化）
+- **适合人群**：E2E 测试新手：想要学习 Web 自动化测试的开发者
+- **前置知识**：熟悉 JavaScript/TypeScript 基础语法
+- **什么是 Playwright 及其优势**：Playwright 是微软开源的现代化 Web 自动化测试框架，支持 Chromium、Firefox 和 WebKit 三大浏览器引擎。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“Playwright（1）- Playwright 快速入门：从零到第一个测试”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

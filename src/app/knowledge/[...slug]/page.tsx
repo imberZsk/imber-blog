@@ -3,11 +3,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { getKnowledgeArticle, getKnowledgeArticles, getLegacyKnowledgeArticlePath } from '@/lib/knowledge'
+import { getKnowledgeArticle, getKnowledgeArticleAliasPaths, getKnowledgeArticles } from '@/lib/knowledge'
 import { KnowledgeArticleContent } from '../knowledge-article-content'
 import { KnowledgeQuiz } from '../knowledge-quiz'
 import { KNOWLEDGE_RETURN_LINK_CLASS_NAME, KnowledgeReturnLink } from '../knowledge-return-link'
+import { TableOfContents } from '@/components/table-of-contents'
 import '@/components/tiptap-templates/simple/simple-editor.scss'
+import '@/components/table-of-contents.scss'
 
 /** 知识文章路由接收的异步参数。 */
 interface KnowledgeArticlePageProps {
@@ -33,16 +35,10 @@ export async function generateMetadata({ params }: KnowledgeArticlePageProps): P
 /** 为构建阶段返回全部知识文章路径。 */
 export function generateStaticParams(): Array<{ slug: string[] }> {
   return getKnowledgeArticles().flatMap((article) => {
-    /** 当前规范文章路径对应的旧版公开路径。 */
-    const legacyArticlePath = getLegacyKnowledgeArticlePath(article.path)
-    /** 构建阶段需要生成的规范路径。 */
-    const articleParams = [{ slug: article.slug }]
-
-    if (legacyArticlePath) {
-      articleParams.push({ slug: legacyArticlePath.split('/') })
-    }
-
-    return articleParams
+    /** 当前规范文章需要继续响应的全部历史路径。 */
+    const aliasArticlePaths = getKnowledgeArticleAliasPaths(article.path)
+    /** 构建阶段生成规范路径和所有不重复的历史别名。 */
+    return [article.path, ...aliasArticlePaths].map((articlePath) => ({ slug: articlePath.split('/') }))
   })
 }
 
@@ -72,6 +68,7 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
 
   return (
     <main className="simple-editor-wrapper">
+      <TableOfContents />
       <div className="simple-editor-content">
         <article className="tiptap ProseMirror simple-editor knowledge-article">
           <nav className="mb-8 border-b border-zinc-200 pb-5 dark:border-zinc-800" aria-label="知识文章路径">
@@ -92,7 +89,7 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
             <p className="mt-4 text-xs break-all text-zinc-500">{article.displayPath}</p>
           </nav>
 
-          <KnowledgeArticleContent content={article.content} />
+          <KnowledgeArticleContent content={article.content} sandboxes={article.sandboxes} />
           <KnowledgeQuiz questions={article.quiz} />
 
           <nav className="knowledge-article-navigation" aria-label="上一篇和下一篇">

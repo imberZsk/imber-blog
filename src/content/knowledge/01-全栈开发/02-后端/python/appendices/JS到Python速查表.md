@@ -730,3 +730,8 @@ tools = [{
 - 命名用 `snake_case`，别带 JS 的 `camelCase` 进来。
 
 > 想深入某个点：语法基础回第 03~11 篇，FastAPI 回第 14~18 篇，数据三件套回第 20~22 篇，AI 链路按 23→24→25→26→27 顺序补课。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：思维导图（Mindmap）
+> DIAGRAM_DESCRIPTION：中心节点为“A3 - 附录-JS到Python速查表”，一级分支使用本文主要章节，至少覆盖核心概念、适用场景、实现要点、选型取舍和常见误区。

@@ -727,3 +727,8 @@ public interface UserMapper {
 - **受检异常**：`IOException` 之类编译器强制处理，JS 没这概念。
 
 > 想深入某个点：语法基础回第 03~08 篇，Spring Boot 回第 09~13 篇，数据库回第 14~15 篇，demo 匿名化示例代码导读回第 17~20 篇。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：流程图（Flowchart / Mermaid）
+> DIAGRAM_DESCRIPTION：围绕“A3 - 附录-JS到Java速查表”展示输入、关键处理步骤、主要分支、输出和失败回退；箭头必须标明数据流或控制流方向。

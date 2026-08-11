@@ -1,12 +1,12 @@
-# Imber CLI NextJS 模板详解
+# Imber CLI（3）- NextJS 模板
 
-## 概述
+# 一、概述
 
 Imber CLI 的 NextJS 模板是一个现代化的 React 全栈开发模板，基于 Next.js 14+ 和最新的 React 18 特性构建。该模板集成了 TypeScript、Tailwind CSS、ESLint、Prettier 等现代开发工具，为开发者提供了一个开箱即用的生产级项目基础。
 
-## 模板特性
+# 二、模板特性
 
-### 核心特性
+## 2.1 核心特性
 
 - **Next.js 14+**：最新的 App Router 和 Server Components
 - **TypeScript**：完整的类型安全支持
@@ -17,7 +17,7 @@ Imber CLI 的 NextJS 模板是一个现代化的 React 全栈开发模板，基�
 - **PWA 支持**：渐进式 Web 应用
 - **SEO 优化**：内置 SEO 最佳实践
 
-### 技术栈
+## 2.2 技术栈
 
 ```json
 {
@@ -45,9 +45,9 @@ Imber CLI 的 NextJS 模板是一个现代化的 React 全栈开发模板，基�
 }
 ```
 
-## 项目结构
+# 三、项目结构
 
-### 目录结构
+## 3.1 目录结构
 
 ```
 {{projectNameKebab}}/
@@ -82,9 +82,9 @@ Imber CLI 的 NextJS 模板是一个现代化的 React 全栈开发模板，基�
 └── package.json              # 项目配置
 ```
 
-## 核心配置
+# 四、核心配置
 
-### 1. Next.js 配置
+## 4.1 Next.js 配置
 
 ```javascript
 // next.config.js
@@ -109,7 +109,7 @@ const nextConfig = {
 module.exports = nextConfig
 ```
 
-### 2. TypeScript 配置
+## 4.2 TypeScript 配置
 
 ```json
 // tsconfig.json
@@ -147,7 +147,7 @@ module.exports = nextConfig
 }
 ```
 
-### 3. Tailwind CSS 配置
+## 4.3 Tailwind CSS 配置
 
 ```javascript
 // tailwind.config.js
@@ -190,9 +190,9 @@ module.exports = {
 }
 ```
 
-## 核心组件
+# 五、核心组件
 
-### 1. 根布局组件
+## 5.1 根布局组件
 
 ```typescript
 // src/app/layout.tsx
@@ -254,7 +254,7 @@ export default function RootLayout({
 }
 ```
 
-### 2. 首页组件
+## 5.2 首页组件
 
 ```typescript
 // src/app/page.tsx
@@ -351,7 +351,7 @@ export default function HomePage() {
 }
 ```
 
-### 3. UI 组件库
+## 5.3 UI 组件库
 
 ```typescript
 // src/components/ui/button.tsx
@@ -409,9 +409,9 @@ Button.displayName = 'Button'
 export { Button, buttonVariants }
 ```
 
-## 开发工具配置
+# 六、开发工具配置
 
-### 1. ESLint 配置
+## 6.1 ESLint 配置
 
 ```javascript
 // .eslintrc.js
@@ -429,7 +429,7 @@ module.exports = {
 }
 ```
 
-### 2. Prettier 配置
+## 6.2 Prettier 配置
 
 ```json
 // .prettierrc
@@ -443,7 +443,7 @@ module.exports = {
 }
 ```
 
-### 3. Jest 配置
+## 6.3 Jest 配置
 
 ```javascript
 // jest.config.js
@@ -464,9 +464,9 @@ const customJestConfig = {
 module.exports = createJestConfig(customJestConfig)
 ```
 
-## 最佳实践
+# 七、最佳实践
 
-### 1. 组件设计原则
+## 7.1 组件设计原则
 
 ```typescript
 // 组件应该遵循单一职责原则
@@ -492,7 +492,7 @@ const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
 )
 ```
 
-### 2. 数据获取模式
+## 7.2 数据获取模式
 
 ```typescript
 // 使用 Server Components 进行数据获取
@@ -521,7 +521,7 @@ export default async function Page() {
 }
 ```
 
-### 3. 状态管理
+## 7.3 状态管理
 
 ```typescript
 // 使用 Zustand 进行状态管理
@@ -553,9 +553,9 @@ function Counter() {
 }
 ```
 
-## 部署配置
+# 八、部署配置
 
-### 1. Vercel 部署
+## 8.1 Vercel 部署
 
 ```json
 // vercel.json
@@ -573,7 +573,7 @@ function Counter() {
 }
 ```
 
-### 2. Docker 配置
+## 8.2 Docker 配置
 
 ```dockerfile
 # Dockerfile
@@ -624,9 +624,9 @@ ENV HOSTNAME "0.0.0.0"
 CMD ["node", "server.js"]
 ```
 
-## 性能优化
+# 九、性能优化
 
-### 1. 图片优化
+## 9.1 图片优化
 
 ```typescript
 import Image from 'next/image'
@@ -647,7 +647,7 @@ function OptimizedImage({ src, alt, width, height }) {
 }
 ```
 
-### 2. 代码分割
+## 9.2 代码分割
 
 ```typescript
 import dynamic from 'next/dynamic'
@@ -664,7 +664,7 @@ const AdminPanel = dynamic(() => import('./AdminPanel'), {
 })
 ```
 
-## 总结
+# 十、总结
 
 Imber CLI 的 NextJS 模板提供了一个完整的现代化 React 开发环境：
 
@@ -675,3 +675,8 @@ Imber CLI 的 NextJS 模板提供了一个完整的现代化 React 开发环境�
 5. **生产就绪**：SEO 优化、PWA 支持、部署配置
 
 通过这个模板，开发者可以快速启动一个高质量的 Next.js 项目，专注于业务逻辑而不是基础设施配置。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：架构图（Architecture）
+> DIAGRAM_DESCRIPTION：围绕“Imber CLI（3）- NextJS 模板”画出系统边界、核心组件、依赖方向、数据或控制流、外部服务和故障降级路径；权限边界与持久化位置必须明确。

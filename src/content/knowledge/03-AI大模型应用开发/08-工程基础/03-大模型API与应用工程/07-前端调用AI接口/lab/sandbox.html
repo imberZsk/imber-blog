@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; img-src data:"
+    />
+    <title>流式回答状态机</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #101312;
+        color: #f4f6f5;
+      }
+      main {
+        min-height: 350px;
+        padding: 20px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #a8b0ad;
+        font:
+          12px ui-monospace,
+          monospace;
+      }
+      .status::before {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6ee7b7;
+        content: '';
+      }
+      .status[data-state='streaming']::before {
+        animation: pulse 1s infinite;
+        background: #fbbf24;
+      }
+      .status[data-state='cancelled']::before {
+        background: #fb7185;
+      }
+      .prompt-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+      input {
+        min-width: 0;
+        border: 1px solid #353c39;
+        border-radius: 6px;
+        background: #171b19;
+        color: inherit;
+        padding: 10px 12px;
+        font: inherit;
+        outline: none;
+      }
+      input:focus {
+        border-color: #6ee7b7;
+      }
+      button {
+        border: 1px solid #3f4a45;
+        border-radius: 6px;
+        background: #202622;
+        color: inherit;
+        padding: 9px 13px;
+        cursor: pointer;
+        font: 13px inherit;
+      }
+      button.primary {
+        border-color: #6ee7b7;
+        background: #6ee7b7;
+        color: #07110d;
+        font-weight: 700;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      .quick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 10px 0 18px;
+      }
+      .quick button {
+        padding: 6px 9px;
+        color: #c5cdc9;
+        font-size: 12px;
+      }
+      .answer {
+        min-height: 150px;
+        border: 1px solid #2f3733;
+        border-radius: 6px;
+        background: #151917;
+        padding: 16px;
+        white-space: pre-wrap;
+        line-height: 1.7;
+      }
+      .answer:empty::before {
+        color: #727b77;
+        content: '回答会逐字显示在这里。';
+      }
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .meta {
+        color: #8b9590;
+        font:
+          12px ui-monospace,
+          monospace;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      @media (max-width: 520px) {
+        .prompt-row {
+          grid-template-columns: 1fr;
+        }
+        .controls {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>流式回答前端</h1>
+        <span id="status" class="status" data-state="idle">IDLE</span>
+      </header>
+      <div class="prompt-row">
+        <input id="question" value="RAG 为什么需要重排？" aria-label="问题" />
+        <button id="send" class="primary" type="button">发送</button>
+      </div>
+      <div class="quick" aria-label="快捷问题">
+        <button type="button" data-question="什么是混合检索？">混合检索</button>
+        <button type="button" data-question="Chunk overlap 有什么用？">Chunk overlap</button>
+      </div>
+      <section id="answer" class="answer" aria-live="polite"></section>
+      <div class="controls">
+        <span id="meta" class="meta">0 chars · 0 ms</span>
+        <div>
+          <button id="cancel" type="button" disabled>取消</button>
+          <button id="retry" type="button" disabled>重试</button>
+        </div>
+      </div>
+    </main>
+    <script>
+      /** 不同问题对应的确定性离线答案，保证沙盒无需后端即可运行。 */
+      const ANSWERS = {
+        'RAG 为什么需要重排？':
+          '初排负责从大规模语料中快速召回候选，重排再用更精细的相关性模型调整 Top-K。这样既控制延迟和成本，也能减少关键词命中但语义不相关的内容进入上下文。',
+        '什么是混合检索？':
+          '混合检索同时使用 BM25 关键词召回与向量语义召回，再通过 RRF 或加权归一化合并排序。它兼顾精确术语、编号匹配和语义改写。',
+        'Chunk overlap 有什么用？':
+          'Overlap 在相邻文本块间保留少量重复内容，降低答案证据刚好跨越切分边界时的信息损失。重叠过大会增加索引体积、重复召回和 Token 成本。'
+      }
+      /** 问题输入框。 */
+      const questionInput = document.querySelector('#question')
+      /** 发送按钮。 */
+      const sendButton = document.querySelector('#send')
+      /** 取消按钮。 */
+      const cancelButton = document.querySelector('#cancel')
+      /** 重试按钮。 */
+      const retryButton = document.querySelector('#retry')
+      /** 回答展示区域。 */
+      const answerElement = document.querySelector('#answer')
+      /** 当前状态标签。 */
+      const statusElement = document.querySelector('#status')
+      /** 字符数与耗时展示区域。 */
+      const metaElement = document.querySelector('#meta')
+      /** 当前流式输出的计时器。 */
+      let streamTimer = null
+      /** 最近一次实际发送的问题，用于重试。 */
+      let lastQuestion = questionInput.value
+
+      /**
+       * 更新完整 UI 状态，避免按钮和文案分别漂移。
+       * @param {'idle'|'streaming'|'done'|'cancelled'} state 当前请求状态。
+       */
+      function setState(state) {
+        statusElement.dataset.state = state
+        statusElement.textContent = state.toUpperCase()
+        sendButton.disabled = state === 'streaming'
+        cancelButton.disabled = state !== 'streaming'
+        retryButton.disabled = state === 'streaming' || !lastQuestion
+      }
+
+      /** 终止仍在执行的本地流式计时器。 */
+      function clearStream() {
+        if (streamTimer !== null) {
+          window.clearInterval(streamTimer)
+          streamTimer = null
+        }
+      }
+
+      /**
+       * 按字符流式输出当前问题的答案。
+       * @param {string} question 用户提交的问题。
+       */
+      function streamAnswer(question) {
+        clearStream()
+        /** 当前问题对应的离线答案。 */
+        const answer =
+          ANSWERS[question] || `生产环境会把“${question}”发送给后端；前端只负责请求状态、流式渲染、取消与重试。`
+        /** 当前已经输出的字符位置。 */
+        let cursor = 0
+        /** 当前请求开始时间。 */
+        const startedAt = performance.now()
+        answerElement.textContent = ''
+        lastQuestion = question
+        setState('streaming')
+
+        streamTimer = window.setInterval(() => {
+          cursor += 1
+          answerElement.textContent = answer.slice(0, cursor)
+          metaElement.textContent = `${cursor} chars · ${Math.round(performance.now() - startedAt)} ms`
+          if (cursor >= answer.length) {
+            clearStream()
+            setState('done')
+          }
+        }, 22)
+      }
+
+      sendButton.addEventListener('click', () => streamAnswer(questionInput.value.trim() || '未输入问题'))
+      cancelButton.addEventListener('click', () => {
+        clearStream()
+        setState('cancelled')
+      })
+      retryButton.addEventListener('click', () => streamAnswer(lastQuestion))
+      document.querySelectorAll('[data-question]').forEach((button) => {
+        button.addEventListener('click', () => {
+          questionInput.value = button.dataset.question
+          streamAnswer(button.dataset.question)
+        })
+      })
+      setState('idle')
+    </script>
+  </body>
+</html>

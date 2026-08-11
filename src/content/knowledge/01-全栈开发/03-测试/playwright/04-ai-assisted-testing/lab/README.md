@@ -82,3 +82,8 @@ npx tsc --noEmit
 为了让 Demo 离线可跑，这里用 `file://` 加载本地 HTML，没有真实登录与后端。
 真实项目中 `getTestContext()` 应从环境变量 / fixture 读取，登录走真实流程，
 但**分层结构、Operator 模式、ensure 幂等、避免重复点击**这些工程约定完全一致。
+
+## 可视化规格
+
+> VISUAL_STRATEGY：截图（Screenshot）
+> SCREENSHOT_DESCRIPTION：围绕“04 · AI 辅助测试开发：让 Claude 帮你写测试（可运行 Demo）”展示操作入口、关键配置、成功状态和一处典型错误；账号、密钥、租户与业务数据必须脱敏。
