@@ -2613,7 +2613,7 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
   const executionDescription = !pythonEntrySection
     ? '以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。'
     : isBrowserRunnablePythonSource(pythonEntrySection.sourceCode)
-      ? '点击上方在线实验即可直接执行；以下源码来自同目录文件，页面展示与实际运行代码保持一致。'
+      ? '下方代码单元直接读取同目录源码；点击“运行”即可执行，页面展示与实际运行代码保持一致。'
       : '以下示例会启动本地 HTTP 服务或依赖外部运行环境，浏览器沙盒不能安全提供对应能力；请按正文中的终端命令在本地运行。'
 
   return `${markdown.trimEnd()}\n\n## 可运行源码\n\n${executionDescription}\n\n${sourceSections.join('\n\n')}`

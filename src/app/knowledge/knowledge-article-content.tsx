@@ -119,8 +119,19 @@ interface KnowledgeMermaidDiagram {
 interface KnowledgeSandboxPortal {
   /** 当前白名单实验的完整配置。 */
   sandbox: KnowledgeSandbox
-  /** 插入“可运行源码”标题前的 React 挂载节点。 */
+  /** 替换入口源码或插入源码章节的 React 挂载节点。 */
   mountNode: HTMLDivElement
+  /** 被集成式沙盒替换的原始入口代码块。 */
+  sourceElement?: HTMLPreElement
+}
+
+/**
+ * 统一比较 Markdown 代码块与沙盒文件时的换行和首尾空白。
+ * @param sourceCode 正文代码块或实验文件的完整源码。
+ * @returns 可用于精确匹配的标准化源码。
+ */
+function normalizeSandboxSource(sourceCode: string): string {
+  return sourceCode.replace(/\r\n?/g, '\n').trim()
 }
 
 /**
@@ -231,25 +242,55 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
     const sourceHeading = Array.from(contentElement.querySelectorAll<HTMLHeadingElement>('h2')).find(
       (headingElement) => headingElement.textContent?.trim() === '可运行源码'
     )
+    /** 正文中可能与沙盒入口文件完全匹配的非 Mermaid 代码块。 */
+    const sourceCodeElements = Array.from(contentElement.querySelectorAll<HTMLPreElement>('pre')).filter(
+      (sourceElement) => !sourceElement.querySelector('code.language-mermaid')
+    )
+    /** 已分配给其他沙盒的源码块，防止多实验重复替换。 */
+    const claimedSourceElements = new Set<HTMLPreElement>()
+    /** 无匹配代码时的插入锚点，优先放在源码章节说明之后。 */
+    let fallbackAnchorElement: Element | null =
+      sourceHeading?.nextElementSibling?.tagName === 'P' ? sourceHeading.nextElementSibling : sourceHeading || null
     /** 为每个白名单实验创建的正文挂载点。 */
     const nextSandboxPortals = sandboxes.map((sandbox) => {
       /** 当前在线实验的 React 挂载节点。 */
       const mountNode = document.createElement('div')
+      /** 当前实验入口文件的仓库源码。 */
+      const entrySource = sandbox.files.find((file) => file.name === sandbox.entryFile)?.content || ''
+      /** 正文中与实际执行入口完全一致的代码块。 */
+      const matchingSourceElement = entrySource
+        ? sourceCodeElements.find(
+            (sourceElement) =>
+              !claimedSourceElements.has(sourceElement) &&
+              normalizeSandboxSource(sourceElement.textContent || '') === normalizeSandboxSource(entrySource)
+          )
+        : undefined
       mountNode.className = 'knowledge-code-sandbox-mount'
 
-      if (sourceHeading) {
-        sourceHeading.before(mountNode)
+      if (matchingSourceElement) {
+        claimedSourceElements.add(matchingSourceElement)
+        matchingSourceElement.replaceWith(mountNode)
+      } else if (fallbackAnchorElement) {
+        fallbackAnchorElement.after(mountNode)
+        fallbackAnchorElement = mountNode
       } else {
         contentElement.append(mountNode)
       }
 
-      return { sandbox, mountNode }
+      return { sandbox, mountNode, sourceElement: matchingSourceElement }
     })
 
     setSandboxPortals(nextSandboxPortals)
 
     return () => {
-      nextSandboxPortals.forEach(({ mountNode }) => mountNode.remove())
+      nextSandboxPortals.forEach(({ mountNode, sourceElement }) => {
+        if (sourceElement && mountNode.isConnected) {
+          mountNode.replaceWith(sourceElement)
+          return
+        }
+
+        mountNode.remove()
+      })
     }
   }, [content, sandboxes])
 
