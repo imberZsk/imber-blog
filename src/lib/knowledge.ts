@@ -299,7 +299,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     createPythonSandboxDefinition('多工具 Agent 路由', '让同一 Agent 按任务选择检索、计算和订单查询工具。')
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/05-Agent记忆与状态/chapter',
+    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/05-Agent记忆与状态',
     createPythonSandboxDefinition(
       '短期与长期记忆',
       '观察滑动窗口淘汰旧消息，以及用户偏好如何跨会话持久化和读取。',
@@ -316,7 +316,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     createPythonSandboxDefinition('LCEL 最小链', '运行 Retriever、Prompt、LLM、Parser 的管道组合。')
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索',
     createPythonSandboxDefinition(
       'Memory 三策略与 Token 预算',
       '对同一段历史执行截断、滚动摘要和长期记忆检索，再按预算组装最终上下文。',
@@ -325,7 +325,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool',
     createPythonSandboxDefinition(
       '结构化输出校验与重试',
       '依次观察脏 JSON 解析失败、修复重试、Schema 校验和业务规则拦截。',
@@ -334,7 +334,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain',
     createPythonSandboxDefinition(
       'Runnable 数据契约与分支',
       '查看组件如何通过统一输入输出串联，并在校验失败时走显式 fallback。',
@@ -343,7 +343,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/06-实战练习-LCEL-组装-chain/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/06-实战练习-LCEL-组装-chain',
     createPythonSandboxDefinition(
       'LCEL RAG 与 Callback Trace',
       '运行检索、Prompt、模型、Parser 固定流水线，并查看每一步的数据形状和耗时。',
@@ -352,7 +352,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案',
     createPythonSandboxDefinition(
       'Redis Session Memory 机制',
       '在离线存储中复现租户隔离、滑动窗口、TTL 刷新和过期降级。',
@@ -361,7 +361,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案/chapter',
+    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案',
     createHtmlSandboxDefinition(
       'Mem0 记忆生命周期',
       '逐轮写入偏好，直观看到 ADD、UPDATE、NOOP、DELETE 以及多路召回结果。',
@@ -373,7 +373,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     createPythonSandboxDefinition('LangGraph 状态机', '运行带条件分支、循环次数上限和终止节点的最小状态图。')
   ],
   [
-    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构/chapter',
+    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构',
     createPythonSandboxDefinition(
       'Multi-Agent、Checkpoint 与 HIL',
       '观察 Supervisor 路由、最小权限、状态归并、人工中断和断点恢复。',
@@ -382,7 +382,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环/chapter',
+    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环',
     createPythonSandboxDefinition(
       'Agentic RAG 自纠错闭环',
       '观察路由、检索、证据评分、Query 改写、有限重试、回答和拒答路径。',
@@ -410,7 +410,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     createHtmlSandboxDefinition('前端 AI Copilot', '体验上下文白名单、建议生成、Diff 预览和写入前确认。')
   ],
   [
-    '02-AI编程/01-提示词工程/04-提示词的结构化设计/chapter',
+    '02-AI编程/01-提示词工程/05-提示词的结构化设计',
     createScenarioSandboxDefinition(
       'Prompt 结构与回归对比器',
       '切换角色、上下文、约束、示例和输出契约，实时观察 Prompt 完整度与冲突诊断。',
@@ -419,7 +419,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/03-Codex/03-上下文与AGENTS/chapter',
+    '02-AI编程/03-Codex/04-上下文与AGENTS',
     createScenarioSandboxDefinition(
       '上下文预算与指令优先级',
       '调整上下文窗口和日志体积，观察保留、摘要、裁剪以及规则覆盖结果。',
@@ -428,7 +428,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/02-Claude-Code/06-权限模式与PlanMode/chapter',
+    '02-AI编程/02-Claude-Code/07-权限模式与PlanMode',
     createScenarioSandboxDefinition(
       '权限、Plan Mode 与 Diff 审批',
       '选择工具动作与授权模式，观察允许、询问、拒绝和审批后的状态迁移。',
@@ -437,7 +437,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/05-Agent-Harness/02-agent核心循环/chapter',
+    '02-AI编程/05-Agent-Harness/03-agent核心循环',
     createScenarioSandboxDefinition(
       'Agent Harness 核心循环',
       '逐步执行观察、计划、工具、验证、重试和终止，比较跳过验证造成的错误完成。',
@@ -446,7 +446,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/05-Agent-Harness/04-工具调用进阶/chapter',
+    '02-AI编程/05-Agent-Harness/05-工具调用进阶',
     createScenarioSandboxDefinition(
       '编程工具调用与路径安全',
       '验证工具 Schema、工作区边界、补丁检查和危险命令拦截。',
@@ -455,7 +455,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/05-Agent-Harness/09-子代理编排/chapter',
+    '02-AI编程/05-Agent-Harness/10-子代理编排',
     createScenarioSandboxDefinition(
       'Subagent 任务图与并发预算',
       '调整并发槽位和失败注入，观察 DAG 依赖、冲突、等待与取消传播。',
@@ -464,7 +464,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/04-Skills/05-description触发开关/chapter',
+    '02-AI编程/04-Skills/06-description触发开关',
     createScenarioSandboxDefinition(
       'Skill 触发与渐进式披露',
       '比较 Skill 描述的匹配质量、冲突与资源加载成本。',
@@ -473,7 +473,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/06-Superpowers/04-TDD与系统化调试/chapter',
+    '02-AI编程/06-Superpowers/04-TDD与系统化调试',
     createScenarioSandboxDefinition(
       'TDD 与系统化调试闭环',
       '观察失败测试、根因定位、最小修复与回归检查，识别只修表象的路径。',
@@ -482,7 +482,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/02-Claude-Code/13-GitWorktrees并行不打架/chapter',
+    '02-AI编程/02-Claude-Code/14-GitWorktrees并行不打架',
     createScenarioSandboxDefinition(
       'Git Worktree 并行冲突',
       '模拟并行分支、脏工作区、共享文件冲突与安全收尾。',
@@ -491,7 +491,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/02-Claude-Code/04-工作循环与检查点回溯/chapter',
+    '02-AI编程/02-Claude-Code/05-工作循环与检查点回溯',
     createScenarioSandboxDefinition(
       'Checkpoint、回溯与上下文压缩',
       '比较撤销代码、恢复执行状态和压缩对话三种操作的影响边界。',
@@ -500,7 +500,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/02-Claude-Code/18-Hooks与Skills与Automation/chapter',
+    '02-AI编程/02-Claude-Code/19-Hooks与Skills与Automation',
     createScenarioSandboxDefinition(
       'Hooks 与 CI 质量门禁',
       '查看 PreTool、PostTool、Stop、Lint、Test 和 Build 的触发顺序与阻断结果。',
@@ -509,7 +509,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/02-Claude-Code/21-MCP外部工具集成/chapter',
+    '02-AI编程/02-Claude-Code/22-MCP外部工具集成',
     createScenarioSandboxDefinition(
       'MCP 工具发现与权限检查',
       '检查 Server、Tool Schema、授权范围、超时与 Prompt Injection 防护。',
@@ -518,7 +518,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '02-AI编程/05-Agent-Harness/12-走向生产/chapter',
+    '02-AI编程/05-Agent-Harness/13-走向生产',
     createScenarioSandboxDefinition(
       'Prompt 与 Agent 回归评测矩阵',
       '对比多个版本的成功率、工具选择准确率、Token、延迟和回归项。',
@@ -527,7 +527,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/02-企业级-RAG-全链路-离线建库到在线问答/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/02-企业级-RAG-全链路-离线建库到在线问答',
     createScenarioSandboxDefinition(
       '企业 RAG 全链路控制台',
       '从解析、切分、Embedding、ACL 到检索、重排、生成和引用校验逐阶段观察数据流。',
@@ -536,7 +536,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/02-文档切分Chunk/chapter',
+    '03-AI大模型应用开发/08-工程基础/04-RAG基础/02-文档切分Chunk',
     createScenarioSandboxDefinition(
       'Chunking 策略实验室',
       '比较固定、递归、标题、父子和语义切分的边界、重复率与命中表现。',
@@ -545,7 +545,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/03-Embedding向量化/chapter',
+    '03-AI大模型应用开发/08-工程基础/04-RAG基础/03-Embedding向量化',
     createScenarioSandboxDefinition(
       'Embedding 选型与向量成本',
       '根据维度、文档规模、精度和模型版本计算存储、批次与重建成本。',
@@ -554,7 +554,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/02-ElasticSearch-全文检索-倒排索引-IK-分词器-BM25/chapter',
+    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/02-ElasticSearch-全文检索-倒排索引-IK-分词器-BM25',
     createScenarioSandboxDefinition(
       'ES 倒排索引与 BM25 拆解',
       '逐项查看分词、TF、DF、IDF、长度归一化和字段权重如何形成最终排名。',
@@ -563,7 +563,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/04-混合检索与RRF实战/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/04-混合检索与RRF实战',
     createScenarioSandboxDefinition(
       'BM25、Vector 与 RRF 混合检索',
       '调整两路 Top K、RRF k、元数据过滤与重排数量，观察候选排名变化。',
@@ -572,7 +572,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/03-企业知识库项目/01-项目-企业知识库RAG/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/03-企业知识库项目/01-项目-企业知识库RAG',
     createScenarioSandboxDefinition(
       'RAG ACL 与跨租户泄漏',
       '比较召回前鉴权和召回后过滤，并检查缓存键与引用接口的二次鉴权。',
@@ -581,7 +581,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/03-RAG-生产排障-坏案例与修复手册/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/03-RAG-生产排障-坏案例与修复手册',
     createScenarioSandboxDefinition(
       '增量建库、删除传播与索引版本',
       '对文档执行新增、更新和删除，观察 Chunk Diff、蓝绿切换、Tombstone 与回滚。',
@@ -590,7 +590,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/07-LangSmith-LangFuse/02-LangSmith实战/01-LangSmith-全链路观测-Agent-调试到-RAG-量化评估/chapter',
+    '03-AI大模型应用开发/07-LangSmith-LangFuse/02-LangSmith实战/01-LangSmith-全链路观测-Agent-调试到-RAG-量化评估',
     createScenarioSandboxDefinition(
       'LangSmith 与 LangFuse Trace 排障',
       '展开 Span、检索文档、Prompt、Token、耗时、费用与错误，完成根因定位。',
@@ -599,7 +599,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/04-生产问题排查清单/chapter',
+    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/04-生产问题排查清单',
     createScenarioSandboxDefinition(
       '模型路由、限流、重试与熔断',
       '注入 429、超时和 5xx，观察退避、熔断、备用模型与非幂等保护。',
@@ -608,7 +608,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/03-RAG在线问答链路/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/03-RAG在线问答链路',
     createScenarioSandboxDefinition(
       'Multi-Query、Rewrite 与 HyDE',
       '比较原始问题、多查询、查询改写和假设文档的召回与去重效果。',
@@ -617,7 +617,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/05-检索与重排Rerank/chapter',
+    '03-AI大模型应用开发/08-工程基础/04-RAG基础/05-检索与重排Rerank',
     createScenarioSandboxDefinition(
       'Rerank 阈值、预算与延迟',
       '调整召回量、Rerank Top N 和阈值，观察命中率、费用及延迟的权衡。',
@@ -626,7 +626,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/07-RAG评测与调优/chapter',
+    '03-AI大模型应用开发/08-工程基础/04-RAG基础/07-RAG评测与调优',
     createScenarioSandboxDefinition(
       'RAG 评测与坏案例归因',
       '计算 Hit@K、MRR、正确性、忠实度与引用准确率，并定位问题阶段。',
@@ -635,7 +635,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/09-异步任务与队列基础/chapter',
+    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/09-异步任务与队列基础',
     createScenarioSandboxDefinition(
       '异步建库队列与死信处理',
       '观察任务从 Pending 到 Done、Retry 或 Dead Letter 的状态和幂等处理。',
@@ -644,7 +644,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/05-DeepAgents与Multi-Agent/01-DeepAgents-开箱即用的-skill-上下文压缩-middleware/chapter',
+    '03-AI大模型应用开发/01-Agent工程/05-DeepAgents与Multi-Agent/01-DeepAgents-开箱即用的-skill-上下文压缩-middleware',
     createScenarioSandboxDefinition(
       'DeepAgents 上下文压缩与专家分工',
       '比较单 Agent、Subagents 和 Middleware 压缩后的上下文、调用次数和失败边界。',
@@ -653,7 +653,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/04-Neo4j-知识图谱和-Graph-RAG/chapter',
+    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/04-Neo4j-知识图谱和-Graph-RAG',
     createScenarioSandboxDefinition(
       'GraphRAG 实体关系与路径召回',
       '从文本抽取实体关系，比较向量候选、图路径和社区摘要融合结果。',
@@ -662,7 +662,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/01-企业级知识库项目-多模态-RAG-流程梳理/chapter',
+    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/01-企业级知识库项目-多模态-RAG-流程梳理',
     createScenarioSandboxDefinition(
       '多模态 RAG：OCR、表格与图片引用',
       '观察页面、图片、表格块解析、坐标保留、跨模态召回和可视化引用。',
@@ -671,7 +671,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/03-成本控制与缓存/chapter',
+    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/03-成本控制与缓存',
     createScenarioSandboxDefinition(
       '语义缓存与成本计算器',
       '比较精确缓存和语义缓存，并验证权限、模型、Prompt 与知识库版本对缓存键的影响。',
@@ -687,7 +687,7 @@ const EXTERNAL_URL_PATTERN = /^(?:[a-z][a-z\d+.-]*:|\/|#)/i
 /** 匹配 Obsidian 的图片嵌入语法，并保留可选的显示别名。 */
 const OBSIDIAN_IMAGE_PATTERN = /!\[\[([^\]]+)\]\]/g
 
-/** 作为目录正文入口、不应直接出现在展示路径中的文件名。 */
+/** 旧版目录正文入口名，仅用于兼容已发布的 chapter 路径。 */
 const DIRECTORY_ENTRY_NAMES = new Set(['chapter'])
 
 /** 已合并到主文章但仍保留真实源码的实验目录名称。 */
@@ -698,6 +698,9 @@ const LAB_README_FILE_NAME = 'README'
 
 /** 正文中标记已吸收同目录 Demo 内容的注释。 */
 const MERGED_LAB_MARKER = '<!-- knowledge-lab-merged -->'
+
+/** 正文中标记已吸收 Markdown 实践材料的注释。 */
+const MERGED_PRACTICE_MARKER = '<!-- knowledge-practice-materials-merged -->'
 
 /** 只保存配图或来源资料、不应作为知识文章发布的目录名称。 */
 const NON_ARTICLE_DIRECTORY_NAMES = new Set(['assets', '_shared-labs'])
@@ -832,12 +835,22 @@ const GUIDE_SEQUENCE_SERIES_PREFIXES = new Set([
 
 /** AI 编程学习指南改名前后的公开路径，用于兼容已发布链接。 */
 const KNOWLEDGE_GUIDE_PATH_MIGRATIONS = new Map<string, string>([
+  ['01-全栈开发/02-后端/java/course', '01-全栈开发/02-后端/java/01-学习指南'], // Java 旧 course.md 迁移为显式指南文件。
+  ['01-全栈开发/02-后端/python/course', '01-全栈开发/02-后端/python/01-学习指南'], // Python 旧 course.md 迁移为显式指南文件。
   ['02-AI编程/01-提示词工程/00-课程路线', '02-AI编程/01-提示词工程/01-学习指南'], // 保留原课程路线 URL。
   ['02-AI编程/01-提示词工程/00-学习指南', '02-AI编程/01-提示词工程/01-学习指南'], // 合并重复的旧学习指南 URL。
   ['02-AI编程/02-Claude-Code/00-课程路线', '02-AI编程/02-Claude-Code/01-学习指南'], // 保留 Claude Code 旧指南 URL。
   ['02-AI编程/03-Codex/00-课程路线', '02-AI编程/03-Codex/01-学习指南'], // 保留 Codex 旧指南 URL。
   ['02-AI编程/04-Skills/00-课程路线', '02-AI编程/04-Skills/01-学习指南'], // 保留 Skills 旧指南 URL。
-  ['02-AI编程/05-Agent-Harness/00-课程路线', '02-AI编程/05-Agent-Harness/01-学习指南'] // 保留 Agent Harness 旧指南 URL。
+  ['02-AI编程/05-Agent-Harness/00-课程路线', '02-AI编程/05-Agent-Harness/01-学习指南'], // 保留 Agent Harness 旧指南 URL。
+  ['03-AI大模型应用开发/01-Agent工程/course', '03-AI大模型应用开发/01-Agent工程/01-学习指南'], // Agent 工程旧 course URL。
+  ['03-AI大模型应用开发/02-企业级知识库/course', '03-AI大模型应用开发/02-企业级知识库/01-学习指南'], // 企业知识库旧 course URL。
+  ['03-AI大模型应用开发/03-一人公司/01-Paperclip/course', '03-AI大模型应用开发/03-一人公司/01-Paperclip/01-学习指南'], // Paperclip 旧 course URL。
+  ['03-AI大模型应用开发/04-AI大模型应用面试题/course', '03-AI大模型应用开发/04-AI大模型应用面试题/01-学习指南'], // 面试题旧 course URL。
+  ['03-AI大模型应用开发/05-LangChain实战/course', '03-AI大模型应用开发/05-LangChain实战/01-学习指南'], // LangChain 旧 course URL。
+  ['03-AI大模型应用开发/06-LangGraph/course', '03-AI大模型应用开发/06-LangGraph/01-学习指南'], // LangGraph 旧 course URL。
+  ['03-AI大模型应用开发/07-LangSmith-LangFuse/course', '03-AI大模型应用开发/07-LangSmith-LangFuse/01-学习指南'], // 可观测模块旧 course URL。
+  ['03-AI大模型应用开发/08-工程基础/course', '03-AI大模型应用开发/08-工程基础/01-学习指南'] // 工程基础旧 course URL。
 ])
 
 /** 路径中普通课程允许参与“指南后移一位”兼容转换的最小旧课号。 */
@@ -915,6 +928,10 @@ const KNOWLEDGE_SUBTOPIC_LABELS: Record<string, string> = {
   python: 'Python',
   playwright: 'Playwright'
 }
+
+/** 扁平化后仍属于工具书、不生成课程自测与思维导图的文件名。 */
+const REFERENCE_ARTICLE_FILE_PATTERN =
+  /(?:陷阱对照|常用命令|速查表|疑问记录|运行指南|项目结构速查|代码审查要点|配置模板)$/
 
 /**
  * 创建一条 AI 应用课程系列归组规则。
@@ -1234,7 +1251,18 @@ function getMergedDemoArticlePath(articlePath: string): string {
 
   /** 去掉 lab/README 后的课程目录路径。 */
   const coursePath = articlePath.slice(0, -labReadmeSuffix.length)
-  /** 绝大多数课程使用 chapter，系列总览实验使用 course。 */
+  /** 扁平化后课程正文与 Lab 所属目录使用同一语义名称。 */
+  if (hasKnowledgeArticlePath(coursePath)) {
+    return coursePath
+  }
+
+  /** 系列根目录 Lab 原来归属于 course.md，现在统一归入显式学习指南。 */
+  const guideArticlePath = posix.join(coursePath, '01-学习指南')
+  if (hasKnowledgeArticlePath(guideArticlePath)) {
+    return guideArticlePath
+  }
+
+  /** 继续兼容迁移前尚未扁平化的目录入口。 */
   const mainArticleEntryNames = ['chapter', 'course']
 
   for (const entryName of mainArticleEntryNames) {
@@ -1253,6 +1281,24 @@ function getMergedDemoArticlePath(articlePath: string): string {
   }
 
   return coursePath
+}
+
+/**
+ * 返回正文对应的 Lab README 索引路径。
+ * @param sourceArticlePath 当前正文相对知识根目录的无扩展名路径。
+ */
+function getArticleLabSourcePath(sourceArticlePath: string): string {
+  /** 扁平正文的配套源码保留在同名目录的 lab 中。 */
+  const articleLabSourcePath = posix.join(sourceArticlePath, LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
+  /** 当前文章专属 Lab 是否存在可展示源码或沙盒文件。 */
+  const hasArticleLab =
+    LAB_SANDBOX_FILE_INDEX.has(articleLabSourcePath) || LAB_SOURCE_INDEX.has(`${articleLabSourcePath}.md`)
+  if (hasArticleLab) {
+    return articleLabSourcePath
+  }
+
+  /** 学习指南等系列根文章使用父目录下的 Lab。 */
+  return posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
 }
 
 /**
@@ -1616,12 +1662,6 @@ export function getKnowledgeArticleAliasPaths(articlePath: string): string[] {
  * @param sourceArticlePath 规范文章在知识库中的无扩展名源路径。
  */
 export function getMergedDemoAliasPath(sourceArticlePath: string): string | null {
-  /** 只有目录入口文章可以吸收同目录的 Demo。 */
-  const articleEntryName = posix.basename(sourceArticlePath)
-  if (!['chapter', 'course'].includes(articleEntryName)) {
-    return null
-  }
-
   /** 当前源文章任一受支持扩展名对应的绝对路径。 */
   const articleFilePath = [...MARKDOWN_EXTENSIONS]
     .map((extension) => resolve(KNOWLEDGE_CONTENT_ROOT, ...sourceArticlePath.split('/')) + extension)
@@ -1631,12 +1671,18 @@ export function getMergedDemoAliasPath(sourceArticlePath: string): string | null
   }
 
   /** 只为确实执行过 Demo 合并的正文保留历史路由。 */
-  const hasMergedDemo = fs.readFileSync(articleFilePath, 'utf8').includes(MERGED_LAB_MARKER)
+  const articleMarkdown = fs.readFileSync(articleFilePath, 'utf8')
+  /** 正文是否吸收过实验说明或 Markdown 实践材料。 */
+  const hasMergedDemo = articleMarkdown.includes(MERGED_LAB_MARKER) || articleMarkdown.includes(MERGED_PRACTICE_MARKER)
   if (!hasMergedDemo) {
     return null
   }
 
-  return posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
+  /** 学习指南来自系列根 course.md，其他扁平正文来自同名课程目录。 */
+  const labOwnerPath = posix.basename(sourceArticlePath).endsWith('-学习指南')
+    ? posix.dirname(sourceArticlePath)
+    : sourceArticlePath
+  return posix.join(labOwnerPath, LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
 }
 
 /**
@@ -1663,7 +1709,11 @@ function getCurrentKnowledgeArticlePath(articlePath: string): string {
 
   /** AI 应用旧目录完成重分类后的中间路径。 */
   const currentAiAppArticlePath = getCurrentAiAppArticlePath(migratedArticlePath)
-  return getCurrentGuideSequenceArticlePath(currentAiAppArticlePath)
+  /** chapter 曾是内部目录入口；扁平化后旧请求直接落到同名正文。 */
+  const flattenedArticlePath = currentAiAppArticlePath.endsWith('/chapter')
+    ? currentAiAppArticlePath.slice(0, -'/chapter'.length)
+    : currentAiAppArticlePath
+  return getCurrentGuideSequenceArticlePath(flattenedArticlePath)
 }
 
 /**
@@ -2198,7 +2248,8 @@ function getArticleKind(sourceArticlePath: string): KnowledgeArticleKind {
     pathSegments.includes('appendices') ||
     pathSegments.some((segment) => getDisplayName(segment) === '附录') ||
     pathSegments.includes('extras') ||
-    pathSegments.includes('raw')
+    pathSegments.includes('raw') ||
+    REFERENCE_ARTICLE_FILE_PATTERN.test(fileName.replace(COURSE_ORDER_PATTERN, ''))
   ) {
     return 'reference'
   }
@@ -2538,10 +2589,12 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
   /** 当前 Markdown 相对知识根目录的路径。 */
   const readmePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath).split(sep).join('/')
   /** 构建期索引中与当前 README 对应的源码章节。 */
-  /** 主文章同目录下、合并前实验 README 对应的源码索引键。 */
-  const siblingLabReadmePath = posix.join(posix.dirname(readmePath), LAB_DIRECTORY_NAME, `${LAB_README_FILE_NAME}.md`)
-  /** 优先兼容旧实验页，再为合并后的主文章读取同目录 lab 源码。 */
-  const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || LAB_SOURCE_INDEX.get(siblingLabReadmePath) || []
+  /** 当前正文不含 Markdown 扩展名的源路径。 */
+  const sourceArticlePath = readmePath.slice(0, -posix.extname(readmePath).length)
+  /** 扁平正文对应的实验 README 源码索引键。 */
+  const articleLabReadmePath = `${getArticleLabSourcePath(sourceArticlePath)}.md`
+  /** 优先兼容旧实验页，再为扁平正文读取配套 Lab 源码。 */
+  const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || LAB_SOURCE_INDEX.get(articleLabReadmePath) || []
 
   if (indexedSourceSections.length === 0) {
     return markdown
@@ -2560,7 +2613,7 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
   const executionDescription = !pythonEntrySection
     ? '以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。'
     : isBrowserRunnablePythonSource(pythonEntrySection.sourceCode)
-      ? '点击上方在线实验即可直接执行；以下源码来自同目录文件，页面展示与实际运行代码保持一致。'
+      ? '下方代码单元直接读取同目录源码；点击“运行”即可执行，页面展示与实际运行代码保持一致。'
       : '以下示例会启动本地 HTTP 服务或依赖外部运行环境，浏览器沙盒不能安全提供对应能力；请按正文中的终端命令在本地运行。'
 
   return `${markdown.trimEnd()}\n\n## 可运行源码\n\n${executionDescription}\n\n${sourceSections.join('\n\n')}`
@@ -2654,8 +2707,8 @@ function createKnowledgeSandbox(
  * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
  */
 function createKnowledgeSandboxes(sourceArticlePath: string): KnowledgeSandbox[] {
-  /** 主文章同目录下、合并前实验 README 的稳定索引键。 */
-  const siblingLabSourcePath = posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
+  /** 扁平正文对应的实验 README 稳定索引键。 */
+  const siblingLabSourcePath = getArticleLabSourcePath(sourceArticlePath)
   /** 直接绑定当前正文的在线实验白名单。 */
   const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
   /** 从已合并 Demo 继承的在线实验白名单。 */

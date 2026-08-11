@@ -3,12 +3,95 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Copy } from 'lucide-react'
+import { common, createLowlight } from 'lowlight'
 import { KnowledgeCodeSandbox } from '@/components/knowledge-code-sandbox'
 import { Button } from '@/components/ui'
 import type { KnowledgeSandbox } from '@/lib/knowledge-sandbox'
 
 /** 复制成功状态保持的毫秒数。 */
 const COPY_SUCCESS_DURATION_MS = 1600
+
+/** Markdown 代码围栏转换为 class 时使用的语言前缀。 */
+const CODE_LANGUAGE_CLASS_PREFIX = 'language-'
+
+/** 未声明语言的代码块使用的展示名称。 */
+const DEFAULT_CODE_LANGUAGE = 'text'
+
+/** 知识文章正文使用的常见语言语法高亮器。 */
+const knowledgeCodeHighlighter = createLowlight(common)
+
+/** Lowlight 返回的安全语法树节点。 */
+interface KnowledgeSyntaxNode {
+  /** 文本或高亮元素节点类型。 */
+  type: 'text' | 'element'
+  /** 文本节点保存的源码片段。 */
+  value?: string
+  /** 元素节点携带的 hljs class。 */
+  properties?: {
+    /** Lowlight 生成的一个或多个样式类。 */
+    className?: string | string[]
+  }
+  /** 元素节点包含的嵌套语法片段。 */
+  children?: KnowledgeSyntaxNode[]
+}
+
+/**
+ * 从 Markdown 输出的 code class 中提取声明语言。
+ * @param codeElement 当前块级代码中的 code 元素。
+ * @returns 标准化为小写的语言名，未声明时返回 text。
+ */
+function getCodeLanguage(codeElement: HTMLElement | null): string {
+  /** 当前 code 元素上形如 language-python 的样式类。 */
+  const languageClassName = Array.from(codeElement?.classList || []).find((className) =>
+    className.startsWith(CODE_LANGUAGE_CLASS_PREFIX)
+  )
+  return languageClassName?.slice(CODE_LANGUAGE_CLASS_PREFIX.length).toLowerCase() || DEFAULT_CODE_LANGUAGE
+}
+
+/**
+ * 将 Lowlight 语法树安全转换为浏览器 DOM，不拼接或注入 HTML 字符串。
+ * @param parentNode 当前高亮片段应写入的父节点。
+ * @param syntaxNode 当前需要渲染的 Lowlight 节点。
+ */
+function appendSyntaxNode(parentNode: Node, syntaxNode: KnowledgeSyntaxNode): void {
+  if (syntaxNode.type === 'text') {
+    parentNode.appendChild(document.createTextNode(syntaxNode.value || ''))
+    return
+  }
+
+  /** Lowlight 语法元素统一使用 span，避免高亮结果引入其他标签。 */
+  const spanElement = document.createElement('span')
+  /** 仅保留 Lowlight 约定的 hljs class。 */
+  const classNames = Array.isArray(syntaxNode.properties?.className)
+    ? syntaxNode.properties.className
+    : syntaxNode.properties?.className
+      ? [syntaxNode.properties.className]
+      : []
+  spanElement.className = classNames.filter((className) => /^hljs-[a-z\d_-]+$/i.test(className)).join(' ')
+  syntaxNode.children?.forEach((childNode) => appendSyntaxNode(spanElement, childNode))
+  parentNode.appendChild(spanElement)
+}
+
+/**
+ * 按 Markdown 声明语言高亮代码；未注册语言使用常见语言自动识别。
+ * @param codeElement 当前需要替换子节点的 code 元素。
+ * @param language Markdown 围栏声明的语言。
+ * @param sourceCode 复制和高亮共用的原始源码。
+ */
+function highlightCodeElement(codeElement: HTMLElement, language: string, sourceCode: string): void {
+  try {
+    /** 已声明语言优先精确高亮，未知语言在常见语法中自动匹配。 */
+    const syntaxTree = knowledgeCodeHighlighter.registered(language)
+      ? knowledgeCodeHighlighter.highlight(language, sourceCode)
+      : knowledgeCodeHighlighter.highlightAuto(sourceCode)
+    codeElement.replaceChildren()
+    syntaxTree.children.forEach((syntaxNode) => appendSyntaxNode(codeElement, syntaxNode as KnowledgeSyntaxNode))
+    codeElement.classList.add('hljs')
+  } catch {
+    // 单个未知或异常语法不能影响文章阅读，失败时保留原始纯文本代码。
+    codeElement.textContent = sourceCode
+  }
+}
 
 /** 文章正文组件接收的服务端渲染 HTML。 */
 interface KnowledgeArticleContentProps {
@@ -36,8 +119,19 @@ interface KnowledgeMermaidDiagram {
 interface KnowledgeSandboxPortal {
   /** 当前白名单实验的完整配置。 */
   sandbox: KnowledgeSandbox
-  /** 插入“可运行源码”标题前的 React 挂载节点。 */
+  /** 替换入口源码或插入源码章节的 React 挂载节点。 */
   mountNode: HTMLDivElement
+  /** 被集成式沙盒替换的原始入口代码块。 */
+  sourceElement?: HTMLPreElement
+}
+
+/**
+ * 统一比较 Markdown 代码块与沙盒文件时的换行和首尾空白。
+ * @param sourceCode 正文代码块或实验文件的完整源码。
+ * @returns 可用于精确匹配的标准化源码。
+ */
+function normalizeSandboxSource(sourceCode: string): string {
+  return sourceCode.replace(/\r\n?/g, '\n').trim()
 }
 
 /**
@@ -148,25 +242,55 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
     const sourceHeading = Array.from(contentElement.querySelectorAll<HTMLHeadingElement>('h2')).find(
       (headingElement) => headingElement.textContent?.trim() === '可运行源码'
     )
+    /** 正文中可能与沙盒入口文件完全匹配的非 Mermaid 代码块。 */
+    const sourceCodeElements = Array.from(contentElement.querySelectorAll<HTMLPreElement>('pre')).filter(
+      (sourceElement) => !sourceElement.querySelector('code.language-mermaid')
+    )
+    /** 已分配给其他沙盒的源码块，防止多实验重复替换。 */
+    const claimedSourceElements = new Set<HTMLPreElement>()
+    /** 无匹配代码时的插入锚点，优先放在源码章节说明之后。 */
+    let fallbackAnchorElement: Element | null =
+      sourceHeading?.nextElementSibling?.tagName === 'P' ? sourceHeading.nextElementSibling : sourceHeading || null
     /** 为每个白名单实验创建的正文挂载点。 */
     const nextSandboxPortals = sandboxes.map((sandbox) => {
       /** 当前在线实验的 React 挂载节点。 */
       const mountNode = document.createElement('div')
+      /** 当前实验入口文件的仓库源码。 */
+      const entrySource = sandbox.files.find((file) => file.name === sandbox.entryFile)?.content || ''
+      /** 正文中与实际执行入口完全一致的代码块。 */
+      const matchingSourceElement = entrySource
+        ? sourceCodeElements.find(
+            (sourceElement) =>
+              !claimedSourceElements.has(sourceElement) &&
+              normalizeSandboxSource(sourceElement.textContent || '') === normalizeSandboxSource(entrySource)
+          )
+        : undefined
       mountNode.className = 'knowledge-code-sandbox-mount'
 
-      if (sourceHeading) {
-        sourceHeading.before(mountNode)
+      if (matchingSourceElement) {
+        claimedSourceElements.add(matchingSourceElement)
+        matchingSourceElement.replaceWith(mountNode)
+      } else if (fallbackAnchorElement) {
+        fallbackAnchorElement.after(mountNode)
+        fallbackAnchorElement = mountNode
       } else {
         contentElement.append(mountNode)
       }
 
-      return { sandbox, mountNode }
+      return { sandbox, mountNode, sourceElement: matchingSourceElement }
     })
 
     setSandboxPortals(nextSandboxPortals)
 
     return () => {
-      nextSandboxPortals.forEach(({ mountNode }) => mountNode.remove())
+      nextSandboxPortals.forEach(({ mountNode, sourceElement }) => {
+        if (sourceElement && mountNode.isConnected) {
+          mountNode.replaceWith(sourceElement)
+          return
+        }
+
+        mountNode.remove()
+      })
     }
   }, [content, sandboxes])
 
@@ -179,19 +303,33 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
     const nextCodeBlockPortals = codeElements.map((codeElement, index) => {
       /** 包裹代码和悬浮操作按钮的容器。 */
       const codeBlockWrapper = document.createElement('div')
+      /** 当前 pre 内由 Markdown 生成的 code 元素。 */
+      const sourceCodeElement = codeElement.querySelector<HTMLElement>('code')
+      /** 当前代码块声明的语言。 */
+      const codeLanguage = getCodeLanguage(sourceCodeElement)
+      /** 高亮前保留的原始源码，同时用于复制。 */
+      const sourceCode = codeElement.textContent?.trimEnd() || ''
+      /** 代码块左上角的语言标识。 */
+      const languageLabelElement = document.createElement('span')
       /** React 复制按钮的挂载节点。 */
       const mountNode = document.createElement('div')
       /** 当前代码块在文章内的稳定标识。 */
       const codeBlockId = `knowledge-code-${index + 1}`
 
       codeBlockWrapper.className = 'knowledge-code-block'
+      codeBlockWrapper.dataset.language = codeLanguage
+      languageLabelElement.className = 'knowledge-code-language'
+      languageLabelElement.textContent = codeLanguage.toUpperCase()
       mountNode.className = 'knowledge-code-block-actions'
+      if (sourceCodeElement) {
+        highlightCodeElement(sourceCodeElement, codeLanguage, sourceCode)
+      }
       codeElement.before(codeBlockWrapper)
-      codeBlockWrapper.append(codeElement, mountNode)
+      codeBlockWrapper.append(languageLabelElement, codeElement, mountNode)
 
       return {
         id: codeBlockId,
-        code: codeElement.textContent?.trimEnd() || '',
+        code: sourceCode,
         mountNode,
         codeElement,
         wrapperNode: codeBlockWrapper

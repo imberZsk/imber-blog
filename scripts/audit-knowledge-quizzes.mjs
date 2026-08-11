@@ -13,6 +13,10 @@ const NON_ARTICLE_DIRECTORY_NAMES = new Set(['assets', '_shared-labs'])
 /** 能被知识库读取的 Markdown 后缀。 */
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx'])
 
+/** 扁平化后仍属于工具书、不生成课程自测与思维导图的文件名。 */
+const REFERENCE_ARTICLE_FILE_PATTERN =
+  /(?:陷阱对照|常用命令|速查表|疑问记录|运行指南|项目结构速查|代码审查要点|配置模板)$/
+
 /** AI 大模型应用开发文章的稳定目录前缀。 */
 const AI_APP_ARTICLE_PATH_PREFIX = '03-AI大模型应用开发/'
 
@@ -242,7 +246,8 @@ function getArticleKind(sourceArticlePath) {
     pathSegments.includes('appendices') ||
     pathSegments.some((pathSegment) => getDisplayName(pathSegment) === '附录') ||
     pathSegments.includes('extras') ||
-    pathSegments.includes('raw')
+    pathSegments.includes('raw') ||
+    REFERENCE_ARTICLE_FILE_PATTERN.test(fileName.replace(/^\d{2}[-_\s]*/, ''))
   ) {
     return 'reference'
   }

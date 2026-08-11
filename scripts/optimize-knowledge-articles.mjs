@@ -271,10 +271,17 @@ function optimizeLabArticle(markdown) {
 function resolveMainArticlePath(labReadmePath) {
   /** lab 目录所属的课程目录。 */
   const courseDirectory = dirname(dirname(labReadmePath))
-  /** 项目约定的主文章文件候选。 */
-  const articleCandidates = ['chapter.md', 'course.md']
-    .map((fileName) => join(courseDirectory, fileName))
-    .filter((filePath) => existsSync(filePath) && statSync(filePath).isFile())
+  /** 扁平正文使用课程目录名作为同级文件名。 */
+  const flattenedArticlePath = `${courseDirectory}.md`
+  /** 系列根目录 Lab 对应的显式学习指南。 */
+  const guideArticlePath = join(courseDirectory, '01-学习指南.md')
+  /** 项目约定的主文章文件候选，末尾两项只兼容尚未迁移的旧目录。 */
+  const articleCandidates = [
+    flattenedArticlePath,
+    guideArticlePath,
+    join(courseDirectory, 'chapter.md'),
+    join(courseDirectory, 'course.md')
+  ].filter((filePath) => existsSync(filePath) && statSync(filePath).isFile())
 
   if (articleCandidates.length !== 1) {
     throw new Error(

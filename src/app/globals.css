@@ -61,6 +61,14 @@
   --accent-mint: #13795b;
   --accent-warm: #c85f35;
   --accent-ember: #e7000b;
+  --syntax-comment: #59636e;
+  --syntax-keyword: #cf222e;
+  --syntax-string: #116329;
+  --syntax-title: #0550ae;
+  --syntax-number: #953800;
+  --syntax-variable: #8250df;
+  --syntax-meta: #6e7781;
+  --syntax-tag: #116329;
   --font-geist: Geist, Inter, ui-sans-serif, system-ui, sans-serif;
   --radius: 0.5rem;
   --background: var(--color-canvas);
@@ -106,6 +114,14 @@
   --color-hairline: #343a36;
   --accent-mint: #71e6bd;
   --accent-warm: #ff9f76;
+  --syntax-comment: #8b949e;
+  --syntax-keyword: #ff7b72;
+  --syntax-string: #a5d6ff;
+  --syntax-title: #79c0ff;
+  --syntax-number: #d2a8ff;
+  --syntax-variable: #ffa657;
+  --syntax-meta: #c9d1d9;
+  --syntax-tag: #7ee787;
   --background: var(--color-canvas);
   --foreground: var(--color-ink);
   --card: var(--color-paper);
@@ -232,6 +248,70 @@
     @apply absolute top-2 right-2 z-10;
   }
 
+  .knowledge-code-language {
+    @apply text-muted-foreground pointer-events-none absolute top-3 left-4 font-mono text-[10px] leading-5 font-semibold uppercase;
+  }
+
+  .knowledge-article pre code.hljs {
+    color: var(--foreground);
+  }
+
+  .knowledge-article .hljs-comment,
+  .knowledge-article .hljs-quote {
+    color: var(--syntax-comment);
+    font-style: italic;
+  }
+
+  .knowledge-article .hljs-keyword,
+  .knowledge-article .hljs-selector-tag,
+  .knowledge-article .hljs-literal,
+  .knowledge-article .hljs-section,
+  .knowledge-article .hljs-link {
+    color: var(--syntax-keyword);
+  }
+
+  .knowledge-article .hljs-string,
+  .knowledge-article .hljs-attr,
+  .knowledge-article .hljs-symbol,
+  .knowledge-article .hljs-bullet,
+  .knowledge-article .hljs-addition {
+    color: var(--syntax-string);
+  }
+
+  .knowledge-article .hljs-title,
+  .knowledge-article .hljs-name,
+  .knowledge-article .hljs-selector-id,
+  .knowledge-article .hljs-selector-class,
+  .knowledge-article .hljs-type,
+  .knowledge-article .hljs-template-tag,
+  .knowledge-article .hljs-built_in,
+  .knowledge-article .hljs-builtin-name {
+    color: var(--syntax-title);
+  }
+
+  .knowledge-article .hljs-number,
+  .knowledge-article .hljs-regexp,
+  .knowledge-article .hljs-deletion {
+    color: var(--syntax-number);
+  }
+
+  .knowledge-article .hljs-variable,
+  .knowledge-article .hljs-template-variable,
+  .knowledge-article .hljs-params {
+    color: var(--syntax-variable);
+  }
+
+  .knowledge-article .hljs-meta,
+  .knowledge-article .hljs-subst,
+  .knowledge-article .hljs-attribute {
+    color: var(--syntax-meta);
+  }
+
+  .knowledge-article .hljs-tag,
+  .knowledge-article .hljs-tag .hljs-name {
+    color: var(--syntax-tag);
+  }
+
   .knowledge-mermaid-diagram {
     @apply border-border bg-card my-6 overflow-x-auto border p-4;
   }
@@ -274,7 +354,7 @@
   }
 
   .knowledge-code-sandbox-mount {
-    @apply my-8;
+    @apply my-6;
   }
 
   .knowledge-code-sandbox {
@@ -315,8 +395,112 @@
     border-radius: 6px;
   }
 
+  .knowledge-code-sandbox-workspace {
+    @apply grid min-w-0;
+  }
+
+  .knowledge-code-sandbox-source {
+    @apply border-border bg-background min-w-0 border-b;
+  }
+
+  .knowledge-code-sandbox-source-toolbar {
+    @apply border-border bg-muted/40 flex h-10 min-w-0 items-stretch border-b;
+  }
+
+  .knowledge-code-sandbox-file-tabs {
+    @apply flex min-w-0 flex-1 overflow-x-auto;
+  }
+
+  .knowledge-code-sandbox-file-tabs button {
+    @apply border-border text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 border-r px-3 font-mono text-[11px];
+  }
+
+  .knowledge-code-sandbox-file-tabs button[aria-selected='true'] {
+    @apply bg-background text-foreground font-semibold;
+    box-shadow: inset 0 -2px 0 var(--mint);
+  }
+
+  .knowledge-code-sandbox-source-actions {
+    @apply border-border bg-card flex shrink-0 items-center gap-1 border-l px-1.5;
+  }
+
+  .knowledge-code-sandbox-source-actions > span {
+    @apply text-muted-foreground px-1 font-mono text-[10px] font-semibold;
+  }
+
+  .knowledge-code-sandbox-source-actions button {
+    @apply size-8;
+    border-radius: 4px;
+  }
+
+  .knowledge-article .knowledge-code-sandbox-source pre,
+  .knowledge-code-sandbox-source pre {
+    @apply m-0 max-h-128 min-h-88 overflow-auto border-0 bg-transparent p-4 font-mono text-xs leading-5;
+  }
+
+  .knowledge-article .knowledge-code-sandbox-source pre code,
+  .knowledge-code-sandbox-source pre code {
+    @apply text-foreground block bg-transparent p-0;
+  }
+
+  .knowledge-code-sandbox-source .hljs-comment,
+  .knowledge-code-sandbox-source .hljs-quote {
+    color: var(--syntax-comment);
+    font-style: italic;
+  }
+
+  .knowledge-code-sandbox-source .hljs-keyword,
+  .knowledge-code-sandbox-source .hljs-selector-tag,
+  .knowledge-code-sandbox-source .hljs-literal,
+  .knowledge-code-sandbox-source .hljs-section,
+  .knowledge-code-sandbox-source .hljs-link {
+    color: var(--syntax-keyword);
+  }
+
+  .knowledge-code-sandbox-source .hljs-string,
+  .knowledge-code-sandbox-source .hljs-attr,
+  .knowledge-code-sandbox-source .hljs-symbol,
+  .knowledge-code-sandbox-source .hljs-bullet,
+  .knowledge-code-sandbox-source .hljs-addition {
+    color: var(--syntax-string);
+  }
+
+  .knowledge-code-sandbox-source .hljs-title,
+  .knowledge-code-sandbox-source .hljs-name,
+  .knowledge-code-sandbox-source .hljs-selector-id,
+  .knowledge-code-sandbox-source .hljs-selector-class,
+  .knowledge-code-sandbox-source .hljs-type,
+  .knowledge-code-sandbox-source .hljs-template-tag,
+  .knowledge-code-sandbox-source .hljs-built_in,
+  .knowledge-code-sandbox-source .hljs-builtin-name {
+    color: var(--syntax-title);
+  }
+
+  .knowledge-code-sandbox-source .hljs-number,
+  .knowledge-code-sandbox-source .hljs-regexp,
+  .knowledge-code-sandbox-source .hljs-deletion {
+    color: var(--syntax-number);
+  }
+
+  .knowledge-code-sandbox-source .hljs-variable,
+  .knowledge-code-sandbox-source .hljs-template-variable,
+  .knowledge-code-sandbox-source .hljs-params {
+    color: var(--syntax-variable);
+  }
+
+  .knowledge-code-sandbox-source .hljs-meta,
+  .knowledge-code-sandbox-source .hljs-subst,
+  .knowledge-code-sandbox-source .hljs-attribute {
+    color: var(--syntax-meta);
+  }
+
+  .knowledge-code-sandbox-source .hljs-tag,
+  .knowledge-code-sandbox-source .hljs-tag .hljs-name {
+    color: var(--syntax-tag);
+  }
+
   .knowledge-code-sandbox-placeholder {
-    @apply text-muted-foreground flex min-h-36 items-center justify-center gap-2 px-5 py-8 text-center text-sm;
+    @apply bg-muted/20 text-muted-foreground flex min-h-24 items-center justify-center gap-2 px-5 py-8 text-center text-sm;
   }
 
   .knowledge-code-sandbox-placeholder svg {
@@ -340,8 +524,18 @@
   }
 
   .knowledge-article .knowledge-code-sandbox-output pre {
-    @apply m-0 max-h-96 min-h-48 overflow-auto border-0 bg-transparent p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-zinc-200;
+    @apply m-0 max-h-128 min-h-79 overflow-auto border-0 bg-transparent p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-zinc-200;
     overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 900px) {
+    .knowledge-code-sandbox-workspace {
+      grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr);
+    }
+
+    .knowledge-code-sandbox-source {
+      @apply border-r border-b-0;
+    }
   }
 
   @media (max-width: 640px) {
@@ -358,7 +552,12 @@
     }
 
     .knowledge-code-sandbox-preview {
-      @apply h-125;
+      @apply h-96;
+    }
+
+    .knowledge-article .knowledge-code-sandbox-source pre,
+    .knowledge-code-sandbox-source pre {
+      @apply min-h-64;
     }
   }
 

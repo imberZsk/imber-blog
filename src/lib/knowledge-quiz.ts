@@ -124,6 +124,33 @@ function createCuratedQuizQuestion(
 
 /** 重点课程人工设计的核心知识题。 */
 const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
+  '01-全栈开发/02-后端/java/17-Spring事务与Transactional': [
+    createCuratedQuizQuestion(
+      'spring-transaction-boundary',
+      '转账服务先扣减付款账户，再增加收款账户；第二条更新失败后付款余额却已减少。哪些修复和排查动作正确？',
+      [
+        {
+          label: '把两条更新放进同一个 Service 公开方法，并配置 @Transactional(rollbackFor = Exception.class)。',
+          reason: 'Service 方法表达完整转账动作；统一事务边界和明确回滚类型，才能让第二步异常触发第一步回滚。'
+        },
+        {
+          label: '确认调用经过 Spring 代理、异常没有被吞掉，并检查两条 SQL 是否使用同一事务管理器和连接。',
+          reason: '注解存在不代表事务实际生效；代理、异常传播、数据源和连接是定位“未回滚”的关键证据。'
+        }
+      ],
+      [
+        {
+          label: '把入账方法改为 REQUIRES_NEW，使第二步独立提交，就能保证整个转账操作的原子性。',
+          reason: '独立事务会切断原子边界；外层失败时内层可能已经提交，反而更容易产生部分成功。'
+        },
+        {
+          label: '在 catch 中记录错误并正常 return，让 Controller 根据返回值决定是否回滚数据库。',
+          reason: '异常被吞掉后事务代理会把方法视为成功并提交；Controller 的返回值不能撤销已经提交的事务。'
+        }
+      ],
+      '事务问题要同时核对业务边界和代理执行链：同一 Service 事务覆盖全部写操作，失败异常必须穿过代理，并使用一致的数据源与连接。'
+    )
+  ],
   '02-AI编程/05-Agent-Harness/12-综合实战': [
     createCuratedQuizQuestion(
       'agent-harness-integration',
