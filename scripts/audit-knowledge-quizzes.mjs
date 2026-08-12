@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs'
-import { basename, extname, join, relative, sep } from 'node:path'
+import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { remark } from 'remark'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
 import { auditKnowledgeQuizQuestions, createKnowledgeQuiz } from '../src/lib/knowledge-quiz.ts'
@@ -34,6 +34,15 @@ const LEARNING_GOAL_PATTERN = /(?:读完你能|学完你能|学习目标|一句�
 
 /** 短于该长度的正文不足以独立解释一个知识点。 */
 const MIN_PROSE_CHARACTER_COUNT = 300
+
+/** AI 应用学习指南需要覆盖路径、边界、实践、风险和验收，使用更高的内容下限。 */
+const MIN_AI_APP_GUIDE_PROSE_CHARACTER_COUNT = 800
+
+/** AI 应用学习指南的知识地图至少需要覆盖主要学习分支和关键节点。 */
+const MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT = 12
+
+/** 98、99 是扩展阅读和模板保留号，不参与普通课程连续性审计。 */
+const FIRST_RESERVED_ARTICLE_ORDER = 98
 
 /** 普通课程的非代码字符上限，避免单页阅读负担过重。 */
 const MAX_ARTICLE_PROSE_CHARACTER_COUNT = 7500
@@ -211,6 +220,96 @@ function hasUnclosedCodeFence(markdown) {
 }
 
 /**
+ * 返回没有正文或子章节的 Markdown 标题。
+ * @param markdown 当前文章完整 Markdown。
+ * @returns 需要作者补充或删除的空标题文本。
+ */
+function findEmptySectionHeadings(markdown) {
+  /** Remark 解析后的顶层 Markdown 节点。 */
+  const markdownTree = remark().parse(markdown)
+  /** 当前文章中没有承载任何内容的章节标题。 */
+  const emptySectionHeadings = []
+  /** 文档第一个标题是文章标题，不作为可为空的正文章节。 */
+  const articleTitleNodeIndex = (markdownTree.children || []).findIndex((markdownNode) => markdownNode.type === 'heading')
+
+  for (const [nodeIndex, markdownNode] of (markdownTree.children || []).entries()) {
+    if (markdownNode.type !== 'heading' || nodeIndex === articleTitleNodeIndex) {
+      continue
+    }
+
+    /** 当前标题之后的第一个顶层节点。 */
+    const nextMarkdownNode = markdownTree.children?.[nodeIndex + 1]
+    /** 同级或更高层标题表示当前章节在开始正文前已经结束。 */
+    const isEmptySection =
+      !nextMarkdownNode ||
+      (nextMarkdownNode.type === 'heading' && nextMarkdownNode.depth <= markdownNode.depth)
+    if (!isEmptySection) {
+      continue
+    }
+
+    /** 当前空章节用于审计提示的纯文本标题。 */
+    const headingText = (markdownNode.children || []).map((childNode) => childNode.value || '').join('').trim()
+    emptySectionHeadings.push(headingText || '未命名标题')
+  }
+
+  return emptySectionHeadings
+}
+
+/**
+ * 审计所有“指南占 01”的目录是否存在同号或缺号。
+ * @param guideFilePath 01-学习指南.md 的绝对路径。
+ */
+function auditGuideSiblingSequence(guideFilePath) {
+  /** 指南与后续课程共同所在的系列目录。 */
+  const guideDirectory = dirname(guideFilePath)
+  /** 系列目录中按课号归组的 Markdown 和子目录名称。 */
+  const entryNamesByOrder = new Map()
+
+  for (const directoryEntry of readdirSync(guideDirectory, { withFileTypes: true })) {
+    /** 当前目录项是否属于网站可读取的课程或子目录。 */
+    const isKnowledgeEntry =
+      directoryEntry.isDirectory() ||
+      (directoryEntry.isFile() && MARKDOWN_EXTENSIONS.has(extname(directoryEntry.name).toLowerCase()))
+    if (!isKnowledgeEntry) {
+      continue
+    }
+
+    /** 当前目录项名称中声明的两位课程号。 */
+    const orderMatch = directoryEntry.name.match(/^(\d+)-/)
+    /** 当前目录项的数字课号；无课号资料不参与连续性判断。 */
+    const articleOrder = orderMatch ? Number.parseInt(orderMatch[1], 10) : null
+    if (articleOrder === null || articleOrder >= FIRST_RESERVED_ARTICLE_ORDER) {
+      continue
+    }
+
+    /** 与当前课号重复的目录或文件名称。 */
+    const entryNames = entryNamesByOrder.get(articleOrder) || []
+    entryNames.push(directoryEntry.name)
+    entryNamesByOrder.set(articleOrder, entryNames)
+  }
+
+  /** 系列目录相对知识根目录的稳定路径。 */
+  const guideDirectoryPath = relative(KNOWLEDGE_CONTENT_ROOT, guideDirectory).split(sep).join('/')
+  for (const [articleOrder, entryNames] of entryNamesByOrder) {
+    if (entryNames.length > 1) {
+      auditFailures.push(
+        `${guideDirectoryPath} 的 ${articleOrder.toString().padStart(2, '0')} 课号重复：${entryNames.join('、')}。`
+      )
+    }
+  }
+
+  /** 当前系列普通课程实际使用的最大课号。 */
+  const maximumArticleOrder = Math.max(0, ...entryNamesByOrder.keys())
+  for (let expectedOrder = 1; expectedOrder <= maximumArticleOrder; expectedOrder += 1) {
+    if (!entryNamesByOrder.has(expectedOrder)) {
+      auditFailures.push(
+        `${guideDirectoryPath} 缺少 ${expectedOrder.toString().padStart(2, '0')} 课号，指南和正文必须从 01 连续编号。`
+      )
+    }
+  }
+}
+
+/**
  * 统计当前正文会被页面自动转换为沙盒的 Python 代码块。
  * @param sourceArticlePath 当前文章无扩展名的知识库相对路径。
  * @param markdown 当前文章完整 Markdown。
@@ -330,6 +429,10 @@ const articleFiles = findArticleMarkdownFiles(KNOWLEDGE_CONTENT_ROOT)
 /** 仍以独立页面形式存在、必须合并回正文的 Demo README。 */
 const unmergedLabReadmes = findUnmergedLabReadmes(KNOWLEDGE_CONTENT_ROOT)
 
+for (const guideFilePath of articleFiles.filter((articleFile) => basename(articleFile) === '01-学习指南.md')) {
+  auditGuideSiblingSequence(guideFilePath)
+}
+
 for (const unmergedLabReadme of unmergedLabReadmes) {
   /** 便于开发者定位的知识库相对路径。 */
   const unmergedLabPath = relative(KNOWLEDGE_CONTENT_ROOT, unmergedLabReadme).split(sep).join('/')
@@ -357,6 +460,8 @@ for (const articleFile of articleFiles) {
   const articleTitle = getArticleTitle(markdown, sourceArticlePath)
   /** 当前文章是否属于 AI 大模型应用开发主线。 */
   const isAiAppArticle = sourceArticlePath.startsWith(AI_APP_ARTICLE_PATH_PREFIX)
+  /** 当前文章是否为 AI 应用模块或系列的第 01 篇学习指南。 */
+  const isAiAppGuide = isAiAppArticle && articleKind === 'guide' && sourceArticlePath.endsWith('/01-学习指南')
 
   articleKindCounts[articleKind] += 1
   inlinePythonSandboxCount += countInlinePythonSandboxes(sourceArticlePath, markdown)
@@ -364,6 +469,11 @@ for (const articleFile of articleFiles) {
   if (proseCharacterCount < MIN_PROSE_CHARACTER_COUNT) {
     auditFailures.push(
       `${articlePath} 正文只有 ${proseCharacterCount} 个非代码字符，低于 ${MIN_PROSE_CHARACTER_COUNT} 字。`
+    )
+  }
+  if (isAiAppGuide && proseCharacterCount < MIN_AI_APP_GUIDE_PROSE_CHARACTER_COUNT) {
+    auditFailures.push(
+      `${articlePath} 是 AI 应用学习指南，正文只有 ${proseCharacterCount} 个非代码字符，低于 ${MIN_AI_APP_GUIDE_PROSE_CHARACTER_COUNT} 字。`
     )
   }
   if (proseCharacterCount > maximumProseCharacterCount) {
@@ -379,6 +489,13 @@ for (const articleFile of articleFiles) {
   }
   if (hasUnclosedCodeFence(markdown)) {
     auditFailures.push(`${articlePath} 存在未闭合的 fenced code block。`)
+  }
+  if (articleKind === 'guide') {
+    /** 当前学习指南中没有正文或子章节的标题。 */
+    const emptySectionHeadings = findEmptySectionHeadings(markdown)
+    if (emptySectionHeadings.length > 0) {
+      auditFailures.push(`${articlePath} 存在空章节：${emptySectionHeadings.join('、')}。`)
+    }
   }
 
   try {
@@ -408,6 +525,11 @@ for (const articleFile of articleFiles) {
     } else {
       if (mindmap.nodeCount < 5) {
         auditFailures.push(`${articlePath} 的思维导图节点不足，实际为 ${mindmap.nodeCount} 个。`)
+      }
+      if (isAiAppGuide && mindmap.nodeCount < MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT) {
+        auditFailures.push(
+          `${articlePath} 是 AI 应用学习指南，思维导图只有 ${mindmap.nodeCount} 个节点，低于 ${MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT} 个。`
+        )
       }
       if (FORBIDDEN_MINDMAP_CONTENT_PATTERN.test(mindmap.markdown)) {
         auditFailures.push(`${articlePath} 的思维导图混入写作元数据。`)

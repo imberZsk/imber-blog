@@ -263,7 +263,7 @@ const AI_APP_LAB_SUITE_PATH = '_shared-labs/ai-app/lab/README'
  */
 const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new Map([
   [
-    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/08-文件上传与文档解析/lab/README',
+    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/08-文件上传与文档解析/lab/README',
     createPythonSandboxDefinition(
       '文档解析与切分',
       '读取同目录 Markdown、纯文本样例，输出带 source 与 section 元数据的 chunk。',
@@ -271,165 +271,165 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/02-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索',
+    '03-AI大模型应用开发/05-LangChain实战/03-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索',
     {
       ...createHtmlSandboxDefinition(
         '真实 Embedding Top-K',
         '在浏览器内加载 bge-small-zh-v1.5，计算 512 维中文语义向量、余弦相似度与 Top-2。',
-        '03-AI大模型应用开发/05-LangChain实战/02-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索/lab/README'
+        '03-AI大模型应用开发/05-LangChain实战/03-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索/lab/README'
       ),
       hiddenAppendedSourceFileNames: ['sandbox.html'] // 沙盒自身已提供可复制源码，正文不再重复追加同一文件。
     }
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/01-RAG是什么/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/01-RAG是什么/lab/README',
     createPythonSandboxDefinition('最小 RAG 链路', '运行离线检索、上下文拼装和带来源回答的完整闭环。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/02-文档切分Chunk/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/02-文档切分Chunk/lab/README',
     createPythonSandboxDefinition('Chunk 参数对比', '对同一文档比较过大、过小和带 overlap 三种切分结果。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/03-Embedding向量化/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/03-Embedding向量化/lab/README',
     createPythonSandboxDefinition('Embedding 相似度', '把问题和候选资料向量化，并按余弦相似度输出排序。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/04-向量数据库/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/04-向量数据库/lab/README',
     createPythonSandboxDefinition('内存向量检索', '完成向量写入、metadata 过滤和 Top-K 相似度检索。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/05-检索与重排Rerank/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/05-检索与重排Rerank/lab/README',
     createPythonSandboxDefinition('召回与 Rerank', '对比低成本初排和意图感知重排后的候选顺序。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/06-RAG回答生成与引用来源/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/06-RAG回答生成与引用来源/lab/README',
     createPythonSandboxDefinition('回答与引用校验', '生成带来源编号的回答，并验证每条引用都能回溯到证据。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/07-RAG评测与调优/lab/README',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/07-RAG评测与调优/lab/README',
     createPythonSandboxDefinition('RAG 离线评测', '计算命中率、答案覆盖和引用正确性等最小评测指标。')
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/02-Function-Calling工具调用/lab/README',
+    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/02-Function-Calling工具调用/lab/README',
     createPythonSandboxDefinition('Function Calling 安全闭环', '依次验证合法调用、参数错误、越权和未知工具。')
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/03-ReAct模式/lab/README',
+    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/03-ReAct模式/lab/README',
     createPythonSandboxDefinition('ReAct 决策循环', '观察 Thought、Action、Observation 到 Final Answer 的状态变化。')
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/04-多工具Agent/lab/README',
+    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/04-多工具Agent/lab/README',
     createPythonSandboxDefinition('多工具 Agent 路由', '让同一 Agent 按任务选择检索、计算和订单查询工具。')
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/05-Agent记忆与状态',
+    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/05-Agent记忆与状态',
     createPythonSandboxDefinition(
       '短期与长期记忆',
       '观察滑动窗口淘汰旧消息，以及用户偏好如何跨会话持久化和读取。',
       [],
-      '03-AI大模型应用开发/01-Agent工程/01-Agent基础/05-Agent记忆与状态/lab/README'
+      '03-AI大模型应用开发/01-Agent工程/02-Agent基础/05-Agent记忆与状态/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/01-Agent基础/06-Agent安全边界/lab/README',
+    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/06-Agent安全边界/lab/README',
     createPythonSandboxDefinition('Agent 安全边界', '验证工具白名单、参数校验、权限判断和高风险确认。')
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/01-LangChain入门/01-LangChain入门/lab/README',
+    '03-AI大模型应用开发/05-LangChain实战/02-LangChain入门/01-LangChain入门/lab/README',
     createPythonSandboxDefinition('LCEL 最小链', '运行 Retriever、Prompt、LLM、Parser 的管道组合。')
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索',
+    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索',
     createPythonSandboxDefinition(
       'Memory 三策略与 Token 预算',
       '对同一段历史执行截断、滚动摘要和长期记忆检索，再按预算组装最终上下文。',
       [],
-      '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool',
+    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool',
     createPythonSandboxDefinition(
       '结构化输出校验与重试',
       '依次观察脏 JSON 解析失败、修复重试、Schema 校验和业务规则拦截。',
       [],
-      '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain',
+    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain',
     createPythonSandboxDefinition(
       'Runnable 数据契约与分支',
       '查看组件如何通过统一输入输出串联，并在校验失败时走显式 fallback。',
       [],
-      '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/06-实战练习-LCEL-组装-chain',
+    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/06-实战练习-LCEL-组装-chain',
     createPythonSandboxDefinition(
       'LCEL RAG 与 Callback Trace',
       '运行检索、Prompt、模型、Parser 固定流水线，并查看每一步的数据形状和耗时。',
       [],
-      '03-AI大模型应用开发/05-LangChain实战/03-Chain输出与上下文/06-实战练习-LCEL-组装-chain/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/06-实战练习-LCEL-组装-chain/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案',
+    '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案',
     createPythonSandboxDefinition(
       'Redis Session Memory 机制',
       '在离线存储中复现租户隔离、滑动窗口、TTL 刷新和过期降级。',
       [],
-      '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案',
+    '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案',
     createHtmlSandboxDefinition(
       'Mem0 记忆生命周期',
       '逐轮写入偏好，直观看到 ADD、UPDATE、NOOP、DELETE 以及多路召回结果。',
-      '03-AI大模型应用开发/05-LangChain实战/04-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案/lab/README'
+      '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/06-LangGraph/01-LangGraph入门/01-LangGraph入门/lab/README',
+    '03-AI大模型应用开发/06-LangGraph/02-LangGraph入门/01-LangGraph入门/lab/README',
     createPythonSandboxDefinition('LangGraph 状态机', '运行带条件分支、循环次数上限和终止节点的最小状态图。')
   ],
   [
-    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构',
+    '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构',
     createPythonSandboxDefinition(
       'Multi-Agent、Checkpoint 与 HIL',
       '观察 Supervisor 路由、最小权限、状态归并、人工中断和断点恢复。',
       [],
-      '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构/lab/README'
+      '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环',
+    '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环',
     createPythonSandboxDefinition(
       'Agentic RAG 自纠错闭环',
       '观察路由、检索、证据评分、Query 改写、有限重试、回答和拒答路径。',
       [],
-      '03-AI大模型应用开发/06-LangGraph/02-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环/lab/README'
+      '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环/lab/README'
     )
   ],
   [
-    '03-AI大模型应用开发/07-LangSmith-LangFuse/01-可观测性入门/01-AI应用日志与可观测性/lab/README',
+    '03-AI大模型应用开发/07-LangSmith-LangFuse/02-可观测性入门/01-AI应用日志与可观测性/lab/README',
     createPythonSandboxDefinition('AI Trace 观测', '记录一次 RAG 调用的阶段耗时、Token 和错误字段。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/03-结构化输出与JSON/lab/README',
+    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/03-结构化输出与JSON/lab/README',
     createPythonSandboxDefinition(
       '结构化输出校验与兜底',
       '运行五类模型输出，观察 JSON 解析、Schema 校验、错误标识和稳定兜底结果。'
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/07-前端调用AI接口/lab/README',
+    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/07-前端调用AI接口/lab/README',
     createHtmlSandboxDefinition('流式回答状态机', '直接操作提问、取消和重试，观察流式输出与 UI 状态切换。')
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/07-项目与求职/01-项目-前端AI-Copilot组件/lab/README',
+    '03-AI大模型应用开发/08-工程基础/08-项目与求职/01-项目-前端AI-Copilot组件/lab/README',
     createHtmlSandboxDefinition('前端 AI Copilot', '体验上下文白名单、建议生成、Diff 预览和写入前确认。')
   ],
   [
@@ -550,7 +550,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/02-企业级-RAG-全链路-离线建库到在线问答',
+    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/02-企业级-RAG-全链路-离线建库到在线问答',
     createScenarioSandboxDefinition(
       '企业 RAG 全链路控制台',
       '从解析、切分、Embedding、ACL 到检索、重排、生成和引用校验逐阶段观察数据流。',
@@ -559,7 +559,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/02-文档切分Chunk',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/02-文档切分Chunk',
     createScenarioSandboxDefinition(
       'Chunking 策略实验室',
       '比较固定、递归、标题、父子和语义切分的边界、重复率与命中表现。',
@@ -568,7 +568,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/03-Embedding向量化',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/03-Embedding向量化',
     createScenarioSandboxDefinition(
       'Embedding 选型与向量成本',
       '根据维度、文档规模、精度和模型版本计算存储、批次与重建成本。',
@@ -577,7 +577,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/02-ElasticSearch-全文检索-倒排索引-IK-分词器-BM25',
+    '03-AI大模型应用开发/08-工程基础/09-生产进阶专题/02-ElasticSearch-全文检索-倒排索引-IK-分词器-BM25',
     createScenarioSandboxDefinition(
       'ES 倒排索引与 BM25 拆解',
       '逐项查看分词、TF、DF、IDF、长度归一化和字段权重如何形成最终排名。',
@@ -586,7 +586,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/04-混合检索与RRF实战',
+    '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/04-混合检索与RRF实战',
     createScenarioSandboxDefinition(
       'BM25、Vector 与 RRF 混合检索',
       '调整两路 Top K、RRF k、元数据过滤与重排数量，观察候选排名变化。',
@@ -595,7 +595,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/03-企业知识库项目/01-项目-企业知识库RAG',
+    '03-AI大模型应用开发/02-企业级知识库/04-企业知识库项目/01-项目-企业知识库RAG',
     createScenarioSandboxDefinition(
       'RAG ACL 与跨租户泄漏',
       '比较召回前鉴权和召回后过滤，并检查缓存键与引用接口的二次鉴权。',
@@ -604,7 +604,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/03-RAG-生产排障-坏案例与修复手册',
+    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/03-RAG-生产排障-坏案例与修复手册',
     createScenarioSandboxDefinition(
       '增量建库、删除传播与索引版本',
       '对文档执行新增、更新和删除，观察 Chunk Diff、蓝绿切换、Tombstone 与回滚。',
@@ -613,7 +613,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/07-LangSmith-LangFuse/02-LangSmith实战/01-LangSmith-全链路观测-Agent-调试到-RAG-量化评估',
+    '03-AI大模型应用开发/07-LangSmith-LangFuse/03-LangSmith实战/01-LangSmith-全链路观测-Agent-调试到-RAG-量化评估',
     createScenarioSandboxDefinition(
       'LangSmith 与 LangFuse Trace 排障',
       '展开 Span、检索文档、Prompt、Token、耗时、费用与错误，完成根因定位。',
@@ -622,7 +622,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/04-生产问题排查清单',
+    '03-AI大模型应用开发/08-工程基础/07-部署成本与排障/04-生产问题排查清单',
     createScenarioSandboxDefinition(
       '模型路由、限流、重试与熔断',
       '注入 429、超时和 5xx，观察退避、熔断、备用模型与非幂等保护。',
@@ -631,7 +631,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/03-RAG在线问答链路',
+    '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/03-RAG在线问答链路',
     createScenarioSandboxDefinition(
       'Multi-Query、Rewrite 与 HyDE',
       '比较原始问题、多查询、查询改写和假设文档的召回与去重效果。',
@@ -640,7 +640,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/05-检索与重排Rerank',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/05-检索与重排Rerank',
     createScenarioSandboxDefinition(
       'Rerank 阈值、预算与延迟',
       '调整召回量、Rerank Top N 和阈值，观察命中率、费用及延迟的权衡。',
@@ -649,7 +649,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/04-RAG基础/07-RAG评测与调优',
+    '03-AI大模型应用开发/08-工程基础/05-RAG基础/07-RAG评测与调优',
     createScenarioSandboxDefinition(
       'RAG 评测与坏案例归因',
       '计算 Hit@K、MRR、正确性、忠实度与引用准确率，并定位问题阶段。',
@@ -658,7 +658,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/03-大模型API与应用工程/09-异步任务与队列基础',
+    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/09-异步任务与队列基础',
     createScenarioSandboxDefinition(
       '异步建库队列与死信处理',
       '观察任务从 Pending 到 Done、Retry 或 Dead Letter 的状态和幂等处理。',
@@ -667,7 +667,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/01-Agent工程/05-DeepAgents与Multi-Agent/01-DeepAgents-开箱即用的-skill-上下文压缩-middleware',
+    '03-AI大模型应用开发/01-Agent工程/06-DeepAgents与Multi-Agent/01-DeepAgents-开箱即用的-skill-上下文压缩-middleware',
     createScenarioSandboxDefinition(
       'DeepAgents 上下文压缩与专家分工',
       '比较单 Agent、Subagents 和 Middleware 压缩后的上下文、调用次数和失败边界。',
@@ -676,7 +676,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/08-生产进阶专题/04-Neo4j-知识图谱和-Graph-RAG',
+    '03-AI大模型应用开发/08-工程基础/09-生产进阶专题/04-Neo4j-知识图谱和-Graph-RAG',
     createScenarioSandboxDefinition(
       'GraphRAG 实体关系与路径召回',
       '从文本抽取实体关系，比较向量候选、图路径和社区摘要融合结果。',
@@ -685,7 +685,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业级RAG进阶/01-企业级知识库项目-多模态-RAG-流程梳理',
+    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/01-企业级知识库项目-多模态-RAG-流程梳理',
     createScenarioSandboxDefinition(
       '多模态 RAG：OCR、表格与图片引用',
       '观察页面、图片、表格块解析、坐标保留、跨模态召回和可视化引用。',
@@ -694,7 +694,7 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
     )
   ],
   [
-    '03-AI大模型应用开发/08-工程基础/06-部署成本与排障/03-成本控制与缓存',
+    '03-AI大模型应用开发/08-工程基础/07-部署成本与排障/03-成本控制与缓存',
     createScenarioSandboxDefinition(
       '语义缓存与成本计算器',
       '比较精确缓存和语义缓存，并验证权限、模型、Prompt 与知识库版本对缓存键的影响。',
@@ -779,11 +779,8 @@ const AI_APP_LEGACY_PAPERCLIP_DIRECTORY = 'paperclip'
 /** Paperclip 系列重组后的实体目录名称。 */
 const AI_APP_PAPERCLIP_DIRECTORY = '01-Paperclip'
 
-/** 企业级知识库基础设施系列重组前使用的目录名称。 */
-const AI_APP_LEGACY_INFRASTRUCTURE_DIRECTORY = '03-基础设施实战'
-
 /** 企业级知识库基础设施系列重组后的实体目录名称。 */
-const AI_APP_INFRASTRUCTURE_DIRECTORY = '02-基础设施实战'
+const AI_APP_INFRASTRUCTURE_DIRECTORY = '03-基础设施实战'
 
 /** 工程基础附录重组前使用的目录名称。 */
 const AI_APP_LEGACY_APPENDIX_DIRECTORY = 'appendices'
@@ -792,7 +789,7 @@ const AI_APP_LEGACY_APPENDIX_DIRECTORY = 'appendices'
 const AI_APP_LEGACY_WRITING_GUIDE_NAME = 'writing-guide'
 
 /** 工程基础附录重组后的实体目录名称。 */
-const AI_APP_APPENDIX_DIRECTORY = '09-附录'
+const AI_APP_APPENDIX_DIRECTORY = '10-附录'
 
 /** 旧版 Agent 课程在当前知识目录中的统一前缀。 */
 const AI_APP_LEGACY_AGENT_CURRENT_PREFIX = '03-AI大模型应用开发/01-Agent工程'
@@ -853,7 +850,14 @@ const GUIDE_SEQUENCE_SERIES_PREFIXES = new Set([
   '02-AI编程/03-Codex', // Codex 使用 01-学习指南.md 作为第 01 篇。
   '02-AI编程/04-Skills', // Skills 使用 01-学习指南.md 作为第 01 篇。
   '02-AI编程/05-Agent-Harness', // Agent Harness 使用 01-学习指南.md 作为第 01 篇。
-  '03-AI大模型应用开发/03-一人公司/01-Paperclip' // Paperclip 的 course.md 作为第 01 篇学习指南。
+  '03-AI大模型应用开发/01-Agent工程', // Agent 工程模块指南占第 01 篇。
+  '03-AI大模型应用开发/02-企业级知识库', // 企业知识库模块指南占第 01 篇。
+  '03-AI大模型应用开发/03-一人公司/01-Paperclip', // Paperclip 的 course.md 作为第 01 篇学习指南。
+  '03-AI大模型应用开发/04-AI大模型应用面试题', // 面试题模块指南占第 01 篇。
+  '03-AI大模型应用开发/05-LangChain实战', // LangChain 模块指南占第 01 篇。
+  '03-AI大模型应用开发/06-LangGraph', // LangGraph 模块指南占第 01 篇。
+  '03-AI大模型应用开发/07-LangSmith-LangFuse', // 可观测模块指南占第 01 篇。
+  '03-AI大模型应用开发/08-工程基础' // 工程基础模块指南占第 01 篇。
 ])
 
 /** AI 编程学习指南改名前后的公开路径，用于兼容已发布链接。 */
@@ -976,132 +980,132 @@ function createAiAppSubtopicRule(
 const AI_APP_SUBTOPIC_RULES: readonly AiAppSubtopicRule[] = [
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '01-AI应用开发入门',
+    '02-AI应用开发入门',
     'AI 应用开发入门',
     [1, 2, 3]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '02-Python',
+    '03-Python',
     'Python',
     [4, 5, 6, 7, 8, 9]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '03-大模型API与应用工程',
+    '04-大模型API与应用工程',
     '大模型 API 与应用工程',
     [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '04-RAG基础',
+    '05-RAG基础',
     'RAG 基础',
     [20, 21, 22, 23, 24, 25, 26]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '05-应用框架',
+    '06-应用框架',
     '应用框架',
     [33, 34, 37]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '06-部署成本与排障',
+    '07-部署成本与排障',
     '部署、成本与排障',
     [38, 39, 41, 42]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '07-项目与求职',
+    '08-项目与求职',
     '项目与求职',
     [46, 48, 49, 51, 52]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-    '08-生产进阶专题',
+    '09-生产进阶专题',
     '生产进阶专题',
     [77, 78, 79, 80, 84, 87, 88, 89, 90]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-    '01-Agent基础',
+    '02-Agent基础',
     'Agent 基础',
     [27, 28, 29, 30, 31, 32]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-    '02-Agent项目与面试',
+    '03-Agent项目与面试',
     'Agent 项目与面试',
     [44, 45, 47, 50]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-    '03-Tool-MCP与Skill',
+    '04-Tool-MCP与Skill',
     'Tool、MCP 与 Skill',
     [53, 54, 55, 56, 57]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-    '04-任务调度与交互',
+    '05-任务调度与交互',
     '任务调度与交互',
     [71, 72, 73, 74]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-    '05-DeepAgents与Multi-Agent',
+    '06-DeepAgents与Multi-Agent',
     'DeepAgents 与 Multi-Agent',
     [82, 83]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge,
-    '01-RAG核心链路',
+    '02-RAG核心链路',
     'RAG 核心链路',
     [2, 6, 7, 8]
   ),
-  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge, '02-基础设施实战', '基础设施实战', [3]),
+  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge, '03-基础设施实战', '基础设施实战', [3]),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge,
-    '03-企业知识库项目',
+    '04-企业知识库项目',
     '企业知识库项目',
     [43]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge,
-    '04-企业级RAG进阶',
+    '05-企业级RAG进阶',
     '企业级 RAG 进阶',
     [91, 92, 93]
   ),
-  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice, '01-LangChain入门', 'LangChain 入门', [35]),
+  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice, '02-LangChain入门', 'LangChain 入门', [35]),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice,
-    '02-文档检索与向量库',
+    '03-文档检索与向量库',
     '文档检索与向量库',
     [58, 59, 60, 61, 62]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice,
-    '03-Chain输出与上下文',
+    '04-Chain输出与上下文',
     'Chain、输出与上下文',
     [63, 64, 65, 66, 67, 68, 69, 70]
   ),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice,
-    '04-短期与长期记忆',
+    '05-短期与长期记忆',
     '短期与长期记忆',
     [85, 86]
   ),
-  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.langGraph, '01-LangGraph入门', 'LangGraph 入门', [36]),
+  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.langGraph, '02-LangGraph入门', 'LangGraph 入门', [36]),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.langGraph,
-    '02-图编排与Agentic-RAG',
+    '03-图编排与Agentic-RAG',
     '图编排与 Agentic RAG',
     [75, 76]
   ),
-  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.observability, '01-可观测性入门', '可观测性入门', [40]),
-  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.observability, '02-LangSmith实战', 'LangSmith 实战', [81]),
+  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.observability, '02-可观测性入门', '可观测性入门', [40]),
+  createAiAppSubtopicRule(KNOWLEDGE_MODULE_LABELS.aiApps.observability, '03-LangSmith实战', 'LangSmith 实战', [81]),
   createAiAppSubtopicRule(
     KNOWLEDGE_MODULE_LABELS.aiApps.interviewQuestions,
-    '01-AI大模型应用面试题',
+    '02-AI大模型应用面试题',
     'AI 大模型应用面试题',
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
   )
@@ -1903,14 +1907,6 @@ function getCurrentAiAppSeriesArticlePath(articlePath: string): string {
   }
 
   if (
-    categoryDirectory === AI_APP_ENTERPRISE_CATEGORY_DIRECTORY &&
-    seriesOrCourseDirectory === AI_APP_LEGACY_INFRASTRUCTURE_DIRECTORY
-  ) {
-    pathSegments[2] = AI_APP_INFRASTRUCTURE_DIRECTORY
-    return pathSegments.join('/')
-  }
-
-  if (
     categoryDirectory === AI_APP_ENGINEERING_FOUNDATION_CATEGORY_DIRECTORY &&
     seriesOrCourseDirectory === AI_APP_LEGACY_APPENDIX_DIRECTORY
   ) {
@@ -2011,14 +2007,6 @@ function getLegacyFlatAiAppArticlePath(articlePath: string): string | null {
   }
 
   if (
-    categoryDirectory === AI_APP_ENTERPRISE_CATEGORY_DIRECTORY &&
-    seriesDirectory === AI_APP_INFRASTRUCTURE_DIRECTORY
-  ) {
-    pathSegments[2] = AI_APP_LEGACY_INFRASTRUCTURE_DIRECTORY
-    return pathSegments.join('/')
-  }
-
-  if (
     categoryDirectory === AI_APP_ENGINEERING_FOUNDATION_CATEGORY_DIRECTORY &&
     seriesDirectory === AI_APP_APPENDIX_DIRECTORY
   ) {
@@ -2064,13 +2052,6 @@ function getLegacyGlobalAiAppSeriesArticlePath(articlePath: string): string | nu
   const categoryDirectory = pathSegments[1] || ''
   /** 当前文章所在的实体系列目录。 */
   const seriesDirectory = pathSegments[2] || ''
-  if (
-    categoryDirectory === AI_APP_ENTERPRISE_CATEGORY_DIRECTORY &&
-    seriesDirectory === AI_APP_INFRASTRUCTURE_DIRECTORY
-  ) {
-    return null
-  }
-
   /** 当前实体模块对应的页面展示名称。 */
   const topic = getAiAppTopicByCategoryDirectory(categoryDirectory)
   /** 当前实体系列对应的归组规则。 */
@@ -2454,8 +2435,9 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
     const subtopicSequence = (sequenceBySubtopic.get(subtopicKey) || 0) + 1
     /** 实体目录中与路径保持一致的系列内课程号。 */
     const physicalCourseSequence = getPhysicalCourseSequence(article)
-    /** 有实体课程号时主课和 demo 共用课号，其他文章继续使用细分类顺序。 */
-    const titleSequence = physicalCourseSequence ?? subtopicSequence
+    /** AI 应用模块的指南和跨子目录正文共用模块连续课号，其他路线保持实体课程号语义。 */
+    const titleSequence =
+      article.track === 'ai-apps' ? moduleSequence : physicalCourseSequence ?? subtopicSequence
     sequenceByModule.set(moduleKey, moduleSequence)
     sequenceBySubtopic.set(subtopicKey, subtopicSequence)
 
