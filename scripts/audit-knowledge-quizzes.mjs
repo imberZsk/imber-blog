@@ -269,6 +269,16 @@ function auditGuideSiblingSequence(guideFilePath) {
   const entryNamesByOrder = new Map()
 
   for (const directoryEntry of readdirSync(guideDirectory, { withFileTypes: true })) {
+    /** 文章文件旁仅承载沙盒源码的同名目录不代表另一篇课程。 */
+    const isSandboxOwnerDirectory =
+      directoryEntry.isDirectory() &&
+      readdirSync(join(guideDirectory, directoryEntry.name), { withFileTypes: true }).every(
+        (childEntry) => childEntry.name === 'lab'
+      )
+    if (isSandboxOwnerDirectory) {
+      continue
+    }
+
     /** 当前目录项是否属于网站可读取的课程或子目录。 */
     const isKnowledgeEntry =
       directoryEntry.isDirectory() ||
