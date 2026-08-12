@@ -1,4 +1,4 @@
-# Agent 工程（29）- ReAct 模式
+# Agent（05） - ReAct 模式
 
 > 一句话目标：读完你能讲清 ReAct 的 Thought/Action/Observation 循环怎么运转、为什么它能处理多步任务，并能看懂一段 ReAct trace。
 

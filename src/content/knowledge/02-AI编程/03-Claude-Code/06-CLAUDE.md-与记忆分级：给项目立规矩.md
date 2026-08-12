@@ -1,4 +1,4 @@
-# Claude Code（5）- CLAUDE.md 与记忆分级：给项目立规矩
+# Claude Code（06） - CLAUDE.md 与记忆分级：给项目立规矩
 
 > 本章目标：用 `CLAUDE.md` 沉淀项目约定，理解记忆分级，把规则写成「可检查、可执行」。
 > 学完你能：写一份高质量 `CLAUDE.md`，让 Claude Code 每次都按你的规矩办事。

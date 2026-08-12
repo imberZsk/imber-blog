@@ -1,4 +1,4 @@
-# Claude Code（20）- 无头模式与 CI：claude -p、GitHub Actions、SDK
+# Claude Code（21） - 无头模式与 CI：claude -p、GitHub Actions、SDK
 
 > 本章目标：用 `claude -p` 做脚本/CI 自动化；接入 GitHub Action；了解 Agent SDK 编排。
 > 学完你能：在 CI 里让它自动 review PR、改代码，或用 SDK 把它嵌进自己的程序。

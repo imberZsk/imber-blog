@@ -1,4 +1,4 @@
-# Paperclip（6）- Agent 与 Adapter：给每个员工选对「大脑」
+# 项目实战（12） - Agent 与 Adapter：给每个员工选对「大脑」
 
 > 本章目标：看懂 Paperclip 的适配器（Adapter）体系，知道 `claude_local` / `codex_local` / `process` / `http` 四种内置适配器分别适合什么场景，会给不同角色的 Agent 选对大脑。
 

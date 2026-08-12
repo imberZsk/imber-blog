@@ -1,4 +1,4 @@
-# Codex（6）- config 与 profile
+# Codex（07） - config 与 profile
 
 > 读完你能：围绕“config 与 profile”理解“概念解释”与“profile 是什么”，并结合正文示例完成实践与排障。
 

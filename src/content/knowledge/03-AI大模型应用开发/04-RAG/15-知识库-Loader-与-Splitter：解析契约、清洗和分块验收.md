@@ -1,4 +1,4 @@
-# LangChain 实战（59）- 知识库 Loader 与 Splitter：解析契约、清洗和分块验收
+# RAG（15） - 知识库 Loader 与 Splitter：解析契约、清洗和分块验收
 
 > 读完你能：把 PDF、Markdown、网页和业务记录统一为 Document，再生成保留来源、权限和结构的 Chunk，并对解析与分块做自动验收。
 > 更新日期：2026/08/11

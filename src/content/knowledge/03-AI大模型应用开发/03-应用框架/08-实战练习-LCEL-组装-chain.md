@@ -1,4 +1,4 @@
-# LangChain 实战（68）- 实战练习 LCEL 组装 chain
+# 应用框架（08） - 实战练习 LCEL 组装 chain
 
 > 读完你能：用 LCEL 思维组装一个 RAG chain，并知道什么时候该拆链、什么时候该上图。
 

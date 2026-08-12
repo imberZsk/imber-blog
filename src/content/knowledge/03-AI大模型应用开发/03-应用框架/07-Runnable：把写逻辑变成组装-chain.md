@@ -1,4 +1,4 @@
-# LangChain 实战（67）- Runnable：把写逻辑变成组装 chain
+# 应用框架（07） - Runnable：把写逻辑变成组装 chain
 
 > 读完你能：理解 LangChain Runnable 的本质：统一输入输出接口，让组件可以像管道一样组合。
 

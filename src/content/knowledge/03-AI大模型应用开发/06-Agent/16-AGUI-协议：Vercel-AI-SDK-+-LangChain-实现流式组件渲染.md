@@ -1,4 +1,4 @@
-# Agent 工程（74）- AGUI 协议：Vercel AI SDK + LangChain 实现流式组件渲染
+# Agent（16） - AGUI 协议：Vercel AI SDK + LangChain 实现流式组件渲染
 
 > 读完你能：理解 Agent 不只能流式输出文字，也可以流式驱动前端组件状态。
 

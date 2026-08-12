@@ -7,6 +7,9 @@ const SHOULD_WRITE = process.argv.includes('--write')
 /** 只根据现有规范文章重新生成三张思维导图。 */
 const MINDMAPS_ONLY = process.argv.includes('--mindmaps-only')
 
+/** 只重建 AI 应用路线中由本脚本维护的核心补充文章。 */
+const REFRESH_SUPPLEMENTS = process.argv.includes('--refresh-supplements')
+
 /** 知识库文章根目录。 */
 const KNOWLEDGE_ROOT = path.join(process.cwd(), 'src', 'content', 'knowledge')
 
@@ -28,8 +31,9 @@ const H1_PATTERN = /^#\s+(.+)$/m
 /** Markdown 中的外部链接。 */
 const EXTERNAL_LINK_PATTERN = /https?:\/\//
 
-/** 不适合作为思维导图核心知识点的章节。 */
-const EXCLUDED_HEADING_PATTERN = /(?:参考资料|事实来源|总结|验收|自测|下一篇|延伸阅读|可运行源码|requirements)/i
+/** 不适合作为思维导图核心知识点的写作结构和实验操作章节。 */
+const EXCLUDED_HEADING_PATTERN =
+  /(?:参考资料|事实来源|总结|小结|验收|自测|下一篇|延伸阅读|可运行源码|requirements|学习目标|学习边界|在线运行|页面运行|本地查看|预期输出|重点观察|动手实践|动手改|代码\s*[↔<=>-]+\s*概念|作者自审)/i
 
 /** 三条路线的规范名称、目录和知识域顺序。 */
 const TRACKS = [
@@ -203,7 +207,7 @@ const AI_APP_SUPPLEMENTS = {
       decisions: ['TTFT 反映排队和 Prefill，TPOT 反映 Decode；两者优化手段不同。', '数据并行扩副本，张量并行拆单模型，流水线并行适合跨阶段部署。', '队列设置长度和等待上限，过载时拒绝或降级，不能让所有请求一起超时。'],
       steps: ['采集输入/输出 token 分位数和到达率。', '按交互与批处理流量拆池并设置优先级。', '压测到 SLO 临界点，保留故障和发布余量。'],
       pitfalls: ['平均延迟掩盖尾部排队。', '无限队列让错误从快速拒绝变成长时间超时。', '多卡通信开销可能抵消并行收益。'],
-      sources: [['NVIDIA Triton Performance', 'https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/performance_tuning/performance_tuning.html'], ['vLLM Optimization', 'https://docs.vllm.ai/en/latest/configuration/optimization/']]
+      sources: [['NVIDIA Triton Performance Analyzer', 'https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_analyzer/docs/README.html'], ['vLLM Optimization', 'https://docs.vllm.ai/en/latest/configuration/optimization/']]
     }
   ],
   可观测性: [
@@ -438,9 +442,42 @@ ${definition.decisions.map((item) => `- ${item}`).join('\n')}
 
 ${definition.steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}
 
+## 决策记录怎么写
+
+上线前不要只留下“采用 ${definition.title}”这一句结论。把每个决策和验收证据放在同一张表里，后续模型、数据或流量变化时才能重跑对比。
+
+| 需要回答的问题 | 当前决策 | 必须保留的证据 |
+| --- | --- | --- |
+${definition.decisions.map((item, index) => `| 决策 ${index + 1} | ${item} | 对应步骤 ${Math.min(index + 1, definition.steps.length)} 的数据集、日志或压测结果 |`).join('\n')}
+
+下面的记录可以直接放进项目设计文档。阈值由真实评测集和 SLO 决定，不使用脱离业务的固定“最佳值”。
+
+\`\`\`yaml
+topic: ${definition.title}
+baseline:
+  version: required
+  dataset: required
+candidate:
+  version: required
+  change: required
+acceptance:
+  quality: business_threshold
+  p95_latency_ms: service_slo
+  cost_per_success: budget_limit
+rollback:
+  trigger: any_acceptance_regression
+  owner: named_on_call
+\`\`\`
+
 ## 生产避坑
 
 ${definition.pitfalls.map((item) => `- ${item}`).join('\n')}
+
+## 故障演练
+
+${definition.pitfalls.map((item, index) => `${index + 1}. 注入与“${item}”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。`).join('\n')}
+
+演练必须能回答三个问题：故障是否在预算内快速失败，是否会越权或产生重复副作用，恢复后是否能用同一数据集证明质量没有退化。只有错误日志、没有用户影响和恢复证据，不能算完成排障。
 
 ## 验收清单
 
@@ -454,14 +491,49 @@ ${definition.sources.map(([label, url]) => `- [${label}](${url})`).join('\n')}
 `
 }
 
-/** 从文章正文提取最多两个能代表学习目标的章节。 */
+/** 刷新脚本维护的 AI 应用核心文章，避免一次性迁移模板长期漂移。 */
+function refreshAiAppSupplements() {
+  /** AI 应用路线实体根目录。 */
+  const trackRoot = path.join(KNOWLEDGE_ROOT, '03-AI大模型应用开发')
+
+  TRACKS[2].categories.forEach((category, categoryIndex) => {
+    /** 当前知识域中由脚本维护的补充文章定义。 */
+    const definitions = AI_APP_SUPPLEMENTS[category] || []
+    if (definitions.length === 0) return
+
+    /** 当前知识域实体目录。 */
+    const categoryDirectory = `${String(categoryIndex + 1).padStart(2, '0')}-${category.replaceAll(' ', '-')}`
+    /** 当前知识域的所有文章文件名。 */
+    const articleFiles = fs.readdirSync(path.join(trackRoot, categoryDirectory)).filter((fileName) => /\.mdx?$/i.test(fileName))
+
+    definitions.forEach((definition) => {
+      /** 与补充文章语义标题相同的当前文件名。 */
+      const matchingFileName = articleFiles.find((fileName) => sanitizeFileName(definition.title) === fileName.replace(/^\d+-/, '').replace(/\.mdx?$/i, ''))
+      if (!matchingFileName) throw new Error(`找不到需要刷新的补充文章：${category}/${definition.title}`)
+
+      fs.writeFileSync(path.join(trackRoot, categoryDirectory, matchingFileName), createSupplementMarkdown(definition))
+    })
+  })
+}
+
+/** 从文章正文提取最多两个能代表主题的知识章节。 */
 function getMindmapPoints(markdown) {
-  /** 文章全部二级标题。 */
-  const headings = [...markdown.matchAll(/^##\s+(.+)$/gm)]
+  /** 文章全部正文标题；首个 H1 是文章标题，不属于知识节点。 */
+  const headings = [...markdown.matchAll(/^#{1,3}\s+(.+)$/gm)]
     .map((match) => match[1].replace(/[`*_~]/g, '').trim())
+    .slice(1)
     .filter((heading) => !EXCLUDED_HEADING_PATTERN.test(heading))
-  /** 去重后用于导图的知识点。 */
-  return [...new Set(headings)].slice(0, 2)
+  /** 去重后优先使用真实章节名称。 */
+  const knowledgeHeadings = [...new Set(headings)].slice(0, 2)
+  if (knowledgeHeadings.length > 0) return knowledgeHeadings
+
+  /** 无可用章节时使用文章目标，避免导图退化成“在线运行/来源”目录。 */
+  const learningOutcome = markdown
+    .match(/^>\s*(?:读完你能(?:做到)?|本章目标|一句话目标|目标)[：:]?\s*(.+)$/m)?.[1]
+    ?.replace(/[`*_~]/g, '')
+    .trim()
+
+  return learningOutcome ? [learningOutcome.slice(0, 80)] : []
 }
 
 /** 从学习指南的目标清单提取思维导图必须保留的具体知识项。 */
@@ -506,8 +578,9 @@ function createMindmapMarkdown(track) {
       lines.push(`  - [${displayTitle}](/knowledge/${encodeKnowledgePath(articlePath)})`)
       if (sequence === '01') {
         getGuideMindmapPoints(markdown).forEach((point) => lines.push(`    - ${point}`))
+      } else {
+        getMindmapPoints(markdown).forEach((point) => lines.push(`    - ${point}`))
       }
-      getMindmapPoints(markdown).forEach((point) => lines.push(`    - ${point}`))
       if (sourceMatch) lines.push(`    - [来源：${sourceMatch[1]}](${sourceMatch[2]})`)
     })
   })
@@ -659,7 +732,10 @@ function restructureKnowledge() {
   fs.writeFileSync(MIGRATION_FILE, `${JSON.stringify(pathMigrations, null, 2)}\n`)
 }
 
-if (MINDMAPS_ONLY) {
+if (REFRESH_SUPPLEMENTS) {
+  refreshAiAppSupplements()
+  console.log('AI 应用路线核心补充文章已刷新。')
+} else if (MINDMAPS_ONLY) {
   TRACKS.forEach((track, trackIndex) => {
     /** 当前路线的思维导图文件名。 */
     const mindmapFileName = `${String(trackIndex + 1).padStart(2, '0')}-${track.title.replaceAll(' ', '')}.md`

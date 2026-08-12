@@ -1,4 +1,4 @@
-# Claude Code（19）- 远程控制：Web / 手机 App / --remote 并行云任务
+# Claude Code（20） - 远程控制：Web / 手机 App / --remote 并行云任务
 
 > 本章目标：用 `claude --remote "..."` 从终端开云端会话；了解 Claude Code on the web 和手机 App。
 > 学完你能：连发多条 `--remote` 并行跑云任务，通勤路上用手机也能盯进度、发指令。

@@ -1,4 +1,4 @@
-# Agent 工程（57）- 高德 MCP + 浏览器 MCP：LangChain 复用别人的 MCP Server 有多爽！
+# Agent（12） - 高德 MCP + 浏览器 MCP：LangChain 复用别人的 MCP Server 有多爽！
 
 > 读完你能：理解如何在 LangChain 等框架里复用现成 MCP Server，以及复用时要控制哪些风险。
 

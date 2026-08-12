@@ -1,4 +1,4 @@
-# LangChain 实战（65）- Output Parser 实战：智能录入 + 流式版 mini cursor
+# 应用框架（05） - Output Parser 实战：智能录入 + 流式版 mini cursor
 
 > 读完你能：用结构化输出解决智能录入，并理解流式输出下解析状态如何管理。
 

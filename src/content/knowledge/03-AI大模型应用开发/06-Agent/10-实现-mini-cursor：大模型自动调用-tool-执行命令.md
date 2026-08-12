@@ -1,4 +1,4 @@
-# Agent 工程（55）- 实现 mini cursor：大模型自动调用 tool 执行命令
+# Agent（10） - 实现 mini cursor：大模型自动调用 tool 执行命令
 
 > 读完你能：把读文件升级成“读、判断、执行命令、观察结果”的 mini coding agent，并理解命令执行为什么必须收紧。
 

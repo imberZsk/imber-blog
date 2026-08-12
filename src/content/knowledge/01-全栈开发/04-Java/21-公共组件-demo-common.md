@@ -1,4 +1,4 @@
-# Java（20）- 公共组件 demo-common
+# Java（21） - 公共组件 demo-common
 
 > 读完你能：围绕“公共组件 demo-common”理解“为什么需要 demo-common？前端类比先行”与“1 demo-common 的子模块结构”，并结合正文示例完成实践与排障。
 

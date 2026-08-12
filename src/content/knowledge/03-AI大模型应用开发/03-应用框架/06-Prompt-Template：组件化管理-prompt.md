@@ -1,4 +1,4 @@
-# LangChain 实战（66）- Prompt Template：组件化管理 prompt
+# 应用框架（06） - Prompt Template：组件化管理 prompt
 
 > 读完你能：把 prompt 从散落字符串升级成可复用、可测试、可版本化的组件。
 

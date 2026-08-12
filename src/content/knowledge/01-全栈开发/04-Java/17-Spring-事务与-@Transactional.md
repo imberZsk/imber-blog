@@ -1,4 +1,4 @@
-# Spring 事务与 @Transactional
+# Java（17） - Spring 事务与 @Transactional
 
 > 读完你能：为一组数据库写操作划定正确事务边界，解释 Spring 事务的代理机制，并定位“明明加了
 > `@Transactional` 却没有回滚”的常见问题。

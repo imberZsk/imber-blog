@@ -1,4 +1,4 @@
-# Playwright（1）- Playwright 快速入门：从零到第一个测试
+# Playwright（02） - Playwright 快速入门：从零到第一个测试
 
 > 读完你能：围绕“Playwright 快速入门：从零到第一个测试”理解“适合人群”与“前置知识”，并结合正文示例完成实践与排障。
 

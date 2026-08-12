@@ -1,4 +1,4 @@
-# Java（14）- MySQL 基础
+# Java（15） - MySQL 基础
 
 > 读完你能：围绕“MySQL 基础”理解“为什么前端工程师必须懂 SQL”与“先认识一张真实的表：demo 的 organization 网点表”，并结合正文示例完成实践与排障。
 

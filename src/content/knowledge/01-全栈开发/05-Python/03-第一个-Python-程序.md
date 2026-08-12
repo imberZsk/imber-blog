@@ -1,4 +1,4 @@
-# Python（2）- 第一个 Python 程序
+# Python（03） - 第一个 Python 程序
 
 > 读完你能：围绕“第一个 Python 程序”理解“先给个锚点：Python ≈ Node，不像 Java”与“你的第一行代码”，并结合正文示例完成实践与排障。
 

@@ -1,4 +1,4 @@
-# Agent Harness（5）- 系统提示词与指令设计：给 Agent 立规矩
+# Agent Harness（06） - 系统提示词与指令设计：给 Agent 立规矩
 
 > 读完你能：围绕“系统提示词与指令设计：给 Agent 立规矩”理解“System Prompt 是什么，凭什么这么重要”与“一个好的 System Prompt 该包含什么”，并结合正文示例完成实践与排障。
 

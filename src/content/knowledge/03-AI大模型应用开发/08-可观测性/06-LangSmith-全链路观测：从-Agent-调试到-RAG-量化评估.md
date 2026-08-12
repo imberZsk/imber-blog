@@ -1,4 +1,4 @@
-# LangSmith / LangFuse（81）- LangSmith 全链路观测：从 Agent 调试到 RAG 量化评估
+# 可观测性（06） - LangSmith 全链路观测：从 Agent 调试到 RAG 量化评估
 
 > 读完你能：理解 Agent/RAG 为什么必须有 trace，以及如何从调试走向量化评估。
 

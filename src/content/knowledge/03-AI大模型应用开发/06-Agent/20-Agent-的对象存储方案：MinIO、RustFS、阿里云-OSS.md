@@ -1,4 +1,4 @@
-# 工程基础（88）- Agent 的对象存储方案：MinIO、RustFS、阿里云 OSS
+# Agent（20） - Agent 的对象存储方案：MinIO、RustFS、阿里云 OSS
 
 > 读完你能：理解 Agent 项目为什么需要对象存储，以及本地、自建、云 OSS 如何选择。
 

@@ -1,4 +1,4 @@
-# Python（25）- 向量与 Embedding
+# Python（26） - 向量与 Embedding
 
 > 读完你能：围绕“向量与 Embedding”理解“先建立前端锚点：用 CSS 颜色破题”与“为什么不用关键词匹配？”，并结合正文示例完成实践与排障。
 

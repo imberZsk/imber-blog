@@ -1,4 +1,4 @@
-# 基础设施实战（6）- Neo4j 增量更新与安全删除：保持 GraphRAG 一致
+# RAG（11） - Neo4j 增量更新与安全删除：保持 GraphRAG 一致
 
 > 读完你能：围绕“Neo4j 增量更新与安全删除：保持 GraphRAG 一致”理解“数据模型与删除语义”与“可运行的幂等写入”，并结合正文示例完成实践与排障。
 
@@ -135,5 +135,5 @@ Neo4j、ES、VectorDB 无法共享普通 ACID 事务。推荐源库事务内同�
 
 ## 参考资料
 
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)
+- [Neo4j Cypher Manual：MERGE](https://neo4j.com/docs/cypher-manual/current/clauses/merge/)
+- [Neo4j Operations Manual：Backup and Restore](https://neo4j.com/docs/operations-manual/current/backup-restore/)

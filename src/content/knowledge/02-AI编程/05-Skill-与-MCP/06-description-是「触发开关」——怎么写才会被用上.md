@@ -1,4 +1,4 @@
-# Skills（5）- description 是「触发开关」——怎么写才会被用上
+# Skill 与 MCP（06） - description 是「触发开关」——怎么写才会被用上
 
 > 本章目标：理解 Claude 靠 `description` 决定要不要加载技能，并学会写出「触发率高」的描述。学完你会拿到好/坏案例对照 + 一个写作公式。
 

@@ -1,4 +1,4 @@
-# LangChain 实战（69）- LangChain 整体总结：AI Agent 第一阶段学习完成
+# 应用框架（09） - LangChain 整体总结：AI Agent 第一阶段学习完成
 
 > 读完你能：把 Prompt、Tool、Retriever、Parser、Runnable 串成一张 LangChain 能力地图。
 

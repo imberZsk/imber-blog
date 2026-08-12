@@ -1,4 +1,4 @@
-# React 源码（2）- JSX 和 ReactElement
+# React 源码（03） - JSX 和 ReactElement
 
 > 读完你能：围绕“JSX 和 ReactElement”理解“前言”与“JSX（函数组件） 会被编译成什么？”，并结合正文示例完成实践与排障。
 

@@ -952,14 +952,6 @@ const KNOWLEDGE_TRACK_BY_SECTION: Partial<Record<string, KnowledgeTrackSlug>> = 
   [AI_APP_TRACK_SECTION_NAME]: 'ai-apps'
 }
 
-/** 各文章用途在同一课程中的阅读阶段。 */
-const ARTICLE_SEQUENCE_GROUP: Record<KnowledgeArticleKind, number> = {
-  guide: 0,
-  lesson: 1,
-  practice: 1,
-  reference: 2
-}
-
 /** 匹配目录或文件名前用于控制顺序的数字前缀。 */
 const ORDER_PREFIX_PATTERN = /^\d+-/
 
@@ -2408,7 +2400,7 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
     return productionKnowledgeArticles
   }
 
-  /** 按实体模块、文章用途和源路径完成基础排序的文章。 */
+  /** 按实体模块和文件数字前缀完成基础排序的文章。 */
   const sortedArticles = findMarkdownFiles(KNOWLEDGE_CONTENT_ROOT)
     .map(createArticleMetadata)
     .sort((leftArticle, rightArticle) => {
@@ -2435,11 +2427,8 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
         return groupComparison
       }
 
-      /** 两篇文章所属阅读阶段的排序结果。 */
-      const sequenceGroupComparison =
-        ARTICLE_SEQUENCE_GROUP[leftArticle.kind] - ARTICLE_SEQUENCE_GROUP[rightArticle.kind]
-
-      return sequenceGroupComparison || leftArticle.path.localeCompare(rightArticle.path, 'zh-CN', { numeric: true })
+      // 扁平化后的文件数字前缀是标题、URL 和 UI 共用的唯一顺序，文章类型只影响标签，不能再次重排。
+      return leftArticle.path.localeCompare(rightArticle.path, 'zh-CN', { numeric: true })
     })
 
   /** 各学习主线与实体模块已经分配到的 UI 文章数量。 */
@@ -2458,16 +2447,15 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
     const subtopicSequence = (sequenceBySubtopic.get(subtopicKey) || 0) + 1
     /** 实体目录中与路径保持一致的系列内课程号。 */
     const physicalCourseSequence = getPhysicalCourseSequence(article)
-    /** AI 应用模块的指南和跨子目录正文共用模块连续课号，其他路线保持实体课程号语义。 */
-    const titleSequence =
-      article.track === 'ai-apps' ? moduleSequence : physicalCourseSequence ?? subtopicSequence
+    /** 页面列表、标题和 URL 共用的最终课号；非实体公共文章才回退到分组顺序。 */
+    const resolvedSequence = physicalCourseSequence ?? subtopicSequence
     sequenceByModule.set(moduleKey, moduleSequence)
     sequenceBySubtopic.set(subtopicKey, subtopicSequence)
 
     return {
       ...article,
-      sequence: moduleSequence,
-      title: getSequencedArticleTitle(article.title, article.kind, titleSequence, article.topic)
+      sequence: resolvedSequence,
+      title: getSequencedArticleTitle(article.title, article.kind, resolvedSequence, article.topic)
     }
   })
 

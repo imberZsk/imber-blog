@@ -1,4 +1,4 @@
-# 进阶：GraphRAG 与知识图谱增强
+# RAG（33） - 进阶：GraphRAG 与知识图谱增强
 
 > 读完你能：讲清知识图谱不是为了显得高级，而是为了解决多跳关系、实体消歧、证据路径这三类普通 RAG 难题。
 
@@ -123,5 +123,5 @@ GraphRAG 不是替代普通 RAG。更常见的组合是：图谱负责找关系�
 
 ## 参考资料
 
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)
+- [Neo4j GraphRAG Python Package](https://neo4j.com/docs/neo4j-graphrag-python/current/)
+- [Microsoft GraphRAG 官方仓库](https://github.com/microsoft/graphrag)

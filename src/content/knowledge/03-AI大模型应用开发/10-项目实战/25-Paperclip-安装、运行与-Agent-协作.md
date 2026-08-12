@@ -1,4 +1,4 @@
-# Paperclip 安装、运行与 Agent 协作
+# 项目实战（25） - Paperclip 安装、运行与 Agent 协作
 
 > 读完你能：在本地启动 Paperclip，理解 Company、Agent、Issue、Heartbeat 与 Governance 的关系，并能定位 Agent 协作卡住的常见原因。
 

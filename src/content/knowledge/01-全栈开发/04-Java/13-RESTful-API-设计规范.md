@@ -1,4 +1,4 @@
-# Java（12）- RESTful API 设计规范
+# Java（13） - RESTful API 设计规范
 
 > 读完你能：围绕“RESTful API 设计规范”理解“为什么前端工程师更要懂 RESTful”与“HTTP 方法的语义：不只是「能用就行」”，并结合正文示例完成实践与排障。
 

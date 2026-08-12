@@ -1,4 +1,4 @@
-# Python（3）- Python 与 JavaScript 对比
+# Python（04） - Python 与 JavaScript 对比
 
 > 读完你能：围绕“Python 与 JavaScript 对比”理解“核心思路”与“变量和类型”，并结合正文示例完成实践与排障。
 

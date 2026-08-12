@@ -1,4 +1,4 @@
-# 工程基础（34）- Coze 入门
+# 应用框架（12） - Coze 入门
 
 > 读完你能：讲清 Coze「Bot + 插件」的运行机制（它和 Function Calling 是一回事），用一个纯 Python 的 mini Bot 跑通「选插件 → 抽参数 → 执行 → 回答」，并知道插件描述为什么是 Bot 选对插件的关键。
 
@@ -8,11 +8,11 @@
 
 这种「对话 + 调外部能力」的需求，用 Coze 几乎是拖出来的：建个 Bot，从插件市场勾上「股票查询」和「天气查询」两个插件，写两句人设，发布到飞书。十几分钟的事。
 
-Coze 的定位和 Dify 类似（都是字节系低代码平台），但侧重点不同：**Dify 偏工作流和知识库，Coze 偏「Bot + 插件」生态——给一个对话机器人挂上各种外部能力。** 这一篇的核心就是搞懂：Bot 是怎么从一堆插件里挑对那一个的。
+Coze 和 Dify 都能用可视化方式构建 AI 应用，但两者不是同一公司的产品。Dify 是 LangGenius 维护的开源平台，Coze 是字节跳动推出的平台。这里不做脱离版本的功能优劣判断，只聚焦 Coze 中长期稳定的工程抽象：**Bot、插件、工作流以及插件调用的参数契约。**
 
 # 二、Bot 选插件，本质就是 Function Calling
 
-如果你读过第 28 篇 Function Calling，Coze 的插件机制会非常眼熟，因为它就是同一套东西换了个可视化外壳：
+如果你读过Agent（04）《Function Calling 工具调用》 Function Calling，Coze 的插件机制会非常眼熟，因为它就是同一套东西换了个可视化外壳：
 
 ```
 你给 Bot 挂了 N 个插件（每个插件有名字、功能描述、参数定义）
@@ -91,7 +91,7 @@ def run_plugin(call):
 
 # 九、总结
 
-- **Bot 选插件，本质就是 Function Calling**：如果你读过第 28 篇 Function Calling，Coze 的插件机制会非常眼熟，因为它就是同一套东西换了个可视化外壳：
+- **Bot 选插件，本质就是 Function Calling**：如果你读过Agent（04）《Function Calling 工具调用》 Function Calling，Coze 的插件机制会非常眼熟，因为它就是同一套东西换了个可视化外壳：
 - **工程上真正会踩的坑**：插件描述含糊导致误调。
 - **插件描述是 Bot 选对插件的唯一依据**：Bot 没读过你的代码，它凭什么知道「问天气该调 getweather」？
 - **参数抽不全要拦住，别让插件空跑**：Bot 选对了插件，还得从问题里抽出插件要的参数。
@@ -153,7 +153,7 @@ Bot：抱歉，插件 get_stock 缺少参数：symbol。
 4. 用户提问时，Coze 的模型读插件描述，自己决定调哪个、传什么参数（对应 `bot_select_plugin` + `_extract_args`），平台执行后把结果回填给模型生成回答。
 5. 发布到豆包、飞书、微信等渠道。
 
-Coze 和 Function Calling（第 28 篇）是同一套机制：模型只提议调哪个工具/插件，真正执行和校验在平台/后端。Coze 把它做成了可视化配置。
+Coze 和 Function Calling（Agent（04）《Function Calling 工具调用》）是同一套机制：模型只提议调哪个工具/插件，真正执行和校验在平台/后端。Coze 把它做成了可视化配置。
 
 ## 动手改
 
@@ -217,5 +217,5 @@ if __name__ == "__main__":
 
 ## 参考资料
 
-- [LangChain 文档](https://docs.langchain.com/oss/python/langchain/overview)
-- [Dify 文档](https://docs.dify.ai/)
+- [Coze 开发文档](https://www.coze.cn/docs/developer_guides/overview)
+- [Dify 官方仓库](https://github.com/langgenius/dify)

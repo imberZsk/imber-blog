@@ -1,4 +1,4 @@
-# Java（9）- Spring Boot 是什么
+# Java（10） - Spring Boot 是什么
 
 > 读完你能：围绕“Spring Boot 是什么”理解“先回答：没有 Spring Boot 之前有多痛”与“IoC：控制反转——把「谁来 new」的权力交出去”，并结合正文示例完成实践与排障。
 

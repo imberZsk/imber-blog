@@ -1,4 +1,4 @@
-# Superpowers（6）- Code Review、Verification 与 Finishing：完成不等于写完
+# 工程化工作流（07） - Code Review、Verification 与 Finishing：完成不等于写完
 
 > 读完你能：围绕“Code Review、Verification 与 Finishing：完成不等于写完”理解“两类审查”与“完成前验证”，并结合正文示例完成实践与排障。
 

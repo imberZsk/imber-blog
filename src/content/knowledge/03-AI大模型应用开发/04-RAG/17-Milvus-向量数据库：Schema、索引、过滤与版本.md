@@ -1,4 +1,4 @@
-# LangChain 实战（61）- Milvus 向量数据库：Schema、索引、过滤与版本
+# RAG（17） - Milvus 向量数据库：Schema、索引、过滤与版本
 
 > 读完你能：为 RAG 设计 Milvus Collection，理解 HNSW/IVF 参数，并实现带租户过滤、Embedding 版本和可观测结果的向量检索。
 > 更新日期：2026/08/11

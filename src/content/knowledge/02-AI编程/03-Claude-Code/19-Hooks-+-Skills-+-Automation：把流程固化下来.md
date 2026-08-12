@@ -1,4 +1,4 @@
-# Claude Code（18）- Hooks + Skills + Automation：把流程固化下来
+# Claude Code（19） - Hooks + Skills + Automation：把流程固化下来
 
 > 本章目标：用 Hooks 在工具调用前后插自动检查，用 Skills 沉淀可复用工作流，用 Automation 定时自动跑。
 > 学完你能：把团队规范和重复流程固化，让它从交互工具变成持续运行的助手。

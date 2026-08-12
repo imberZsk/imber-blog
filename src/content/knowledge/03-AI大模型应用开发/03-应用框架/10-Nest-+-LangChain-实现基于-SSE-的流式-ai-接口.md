@@ -1,4 +1,4 @@
-# LangChain 实战（70）- Nest + LangChain 实现基于 SSE 的流式 ai 接口
+# 应用框架（10） - Nest + LangChain 实现基于 SSE 的流式 ai 接口
 
 > 读完你能：把 LangChain chain 接进 Nest 后端，并用 SSE 给前端提供流式响应。
 
@@ -101,5 +101,6 @@ async def chat() -> StreamingResponse:
 
 ## 参考资料
 
-- [LangChain 文档](https://docs.langchain.com/oss/python/langchain/overview)
-- [Dify 文档](https://docs.dify.ai/)
+- [MDN：使用 Server-Sent Events](https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events/Using_server-sent_events)
+- [NestJS：Server-Sent Events](https://docs.nestjs.com/techniques/server-sent-events)
+- [LangChain：Streaming](https://docs.langchain.com/oss/python/langchain/streaming)

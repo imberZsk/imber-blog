@@ -1,4 +1,4 @@
-# Superpowers（3）- Using Git Worktrees 与 Executing Plans：隔离改动并分批执行
+# 工程化工作流（04） - Using Git Worktrees 与 Executing Plans：隔离改动并分批执行
 
 > 读完你能：围绕“Using Git Worktrees 与 Executing Plans：隔离改动并分批执行”理解“创建独立工作树”与“分批执行计划”，并结合正文示例完成实践与排障。
 

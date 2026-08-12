@@ -1,4 +1,4 @@
-# 基础设施实战（5）- Neo4j GraphRAG：受控多跳检索与证据回链
+# RAG（10） - Neo4j GraphRAG：受控多跳检索与证据回链
 
 > 读完你能：围绕“Neo4j GraphRAG：受控多跳检索与证据回链”理解“建模原则”与“参数化写入与查询”，并结合正文示例完成实践与排障。
 
@@ -125,5 +125,5 @@ def find_dependency_evidence(
 
 ## 参考资料
 
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)
+- [Neo4j Cypher Manual](https://neo4j.com/docs/cypher-manual/current/)
+- [Neo4j GraphRAG Python Package](https://neo4j.com/docs/neo4j-graphrag-python/current/)

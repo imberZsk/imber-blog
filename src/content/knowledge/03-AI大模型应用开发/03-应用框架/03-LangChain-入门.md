@@ -1,4 +1,4 @@
-# LangChain 实战（35）- LangChain 入门
+# 应用框架（03） - LangChain 入门
 
 > 读完你能：讲清 LangChain 五个核心积木（PromptTemplate、LLM、Retriever、Tool、Chain）各自封装了什么，看懂 LCEL 的 `prompt | llm` 这种 `|` 串联写法的本质，并用纯标准库写出它们的 mini 等价实现。
 
@@ -65,7 +65,7 @@ class SimpleRetriever:
         return best_doc if best_score >= 3 else ""
 ```
 
-**Tool** 就是给一个普通函数包上「名字 + 描述」，让模型能识别和调用，这和第 28 篇的工具 schema 是同一回事：
+**Tool** 就是给一个普通函数包上「名字 + 描述」，让模型能识别和调用，这和Agent（04）《Function Calling 工具调用》的工具 schema 是同一回事：
 
 ```python
 class Tool:

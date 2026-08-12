@@ -1,4 +1,4 @@
-# Java（27）- Elasticsearch 全文检索
+# Java（28） - Elasticsearch 全文检索
 
 > 读完你能：围绕“Elasticsearch 全文检索”理解“先问一个问题：为什么不用 MySQL 搜？”与“1 【前端类比】”，并结合正文示例完成实践与排障。
 

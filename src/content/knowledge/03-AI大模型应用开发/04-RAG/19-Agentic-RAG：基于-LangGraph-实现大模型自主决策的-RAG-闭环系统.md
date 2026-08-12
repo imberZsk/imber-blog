@@ -1,4 +1,4 @@
-# LangGraph（76）- Agentic RAG：基于 LangGraph 实现大模型自主决策的 RAG 闭环系统
+# RAG（19） - Agentic RAG：基于 LangGraph 实现大模型自主决策的 RAG 闭环系统
 
 > 读完你能：理解 Agentic RAG 如何让系统自己判断是否检索、改写、重试、拒答。
 

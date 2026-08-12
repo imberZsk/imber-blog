@@ -1,4 +1,4 @@
-# Claude Code（12）- Agent Team：多代理协作
+# Claude Code（13） - Agent Team：多代理协作
 
 > 本章目标：理解 Agent Team 与 Subagent 的区别，知道何时组队。
 > 学完你能：为「需要讨论协作」的复杂工作组建一支会自我协调的代理小队。

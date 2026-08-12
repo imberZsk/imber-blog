@@ -1,4 +1,4 @@
-# Claude Code（14）- 后台会话与车队监控：claude agents
+# Claude Code（15） - 后台会话与车队监控：claude agents
 
 > 本章目标：把任务丢后台跑，用 `claude agents` 一屏监控所有后台会话状态。
 > 学完你能：同时派发多个后台任务，一眼看清谁在跑、谁要你拍板、谁完成了。

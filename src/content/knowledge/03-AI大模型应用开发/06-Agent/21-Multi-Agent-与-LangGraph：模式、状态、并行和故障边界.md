@@ -1,4 +1,4 @@
-# LangGraph（75）- Multi-Agent 与 LangGraph：模式、状态、并行和故障边界
+# Agent（21） - Multi-Agent 与 LangGraph：模式、状态、并行和故障边界
 
 > 读完你能：判断何时应该拆多 Agent，在 Subagents、Router、Handoffs 与自定义工作流间选型，并用显式状态、并行上限和停止条件约束系统。
 > 更新日期：2026/08/11

@@ -1,4 +1,4 @@
-# LangChain 实战（85）- Redis Agent Memory：短期状态、长期召回与事件流
+# 记忆系统（05） - Redis Agent Memory：短期状态、长期召回与事件流
 
 > 读完你能：用 Redis Hash、JSON/Vector、Stream 和 TTL 分别承载 Agent 工作状态、长期记忆和事件日志，并知道哪些数据绝不能只放 Redis。
 > 更新日期：2026/08/11

@@ -1,4 +1,4 @@
-# TipTap 编辑器（3）- 菜单栏和 slash command
+# 富文本编辑器（04） - 菜单栏和 slash command
 
 > 读完你能：围绕“菜单栏和 slash command”理解“前言”与“基础 Demo”，并结合正文示例完成实践与排障。
 

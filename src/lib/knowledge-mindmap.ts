@@ -55,6 +55,14 @@ const EXCLUDED_SECTION_PATTERN = /(?:下一篇|继续阅读|参考资料|可视�
 const EXCLUDED_POINT_PATTERN =
   /^(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|本文围绕|本章将|本 demo 配套|更新日期)/i
 
+/** 学习指南只保留能回答“学什么”和“学到什么程度”的知识分支。 */
+const GUIDE_SECTION_LABELS = new Map([
+  ['学习目标', '核心知识'],
+  ['实践方法', '验证方法'],
+  ['常见误区', '失败边界'],
+  ['学完验收', '验收能力']
+])
+
 /**
  * 递归提取 Markdown 节点中的可见文本。
  * @param node 当前需要读取的 Markdown AST 节点。
@@ -188,6 +196,19 @@ export function createKnowledgeMindmap(
 
       if (!headingText || EXCLUDED_SECTION_PATTERN.test(headingText)) {
         currentSection = null
+        continue
+      }
+
+      if (articleKind === 'guide' && headingDepth <= 2) {
+        /** 当前指南章节映射后的知识分支名称。 */
+        const guideSectionLabel = GUIDE_SECTION_LABELS.get(headingText)
+        if (!guideSectionLabel || sections.some((section) => section.title === guideSectionLabel)) {
+          currentSection = null
+          continue
+        }
+
+        currentSection = { title: guideSectionLabel, points: [] }
+        sections.push(currentSection)
         continue
       }
 

@@ -1,4 +1,4 @@
-# Playwright（3）- 等待策略完全指南:告别 waitForTimeout
+# Playwright（04） - 等待策略完全指南:告别 waitForTimeout
 
 > 读完你能：围绕“等待策略完全指南:告别 waitForTimeout”理解“适合人群”与“前置知识”，并结合正文示例完成实践与排障。
 

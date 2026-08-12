@@ -1,4 +1,4 @@
-# Agent Harness（3）- 动手搭一个最小 Harness（50 行代码跑通第一个 Agent）
+# Agent Harness（04） - 动手搭一个最小 Harness（50 行代码跑通第一个 Agent）
 
 > 读完你能：围绕“动手搭一个最小 Harness（50 行代码跑通第一个 Agent）”理解“我们要造什么”与“动手前：装好家伙”，并结合正文示例完成实践与排障。
 

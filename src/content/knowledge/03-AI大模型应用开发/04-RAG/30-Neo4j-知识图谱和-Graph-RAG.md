@@ -1,10 +1,10 @@
-# 工程基础（80）- Neo4j 知识图谱和 Graph RAG
+# RAG（30） - Neo4j 知识图谱和 Graph RAG
 
 > 读完你能：理解知识图谱解决什么问题，以及 Graph RAG 何时值得引入。
 
 # 一、本篇定位
 
-这是 GraphRAG 专项篇，和 appendices 里的进阶 GraphRAG 形成互补。
+这是 GraphRAG 专项篇，和 RAG（33）《进阶：GraphRAG 与知识图谱增强》 形成互补。
 
 # 二、一个真实场景
 
@@ -53,7 +53,7 @@ Graph RAG 最适合“关系先于文本”的问题。如果用户只是问制�
 
 - **核心拆解**：Neo4j 存的是节点和关系。
 - **常见坑**：实体抽取错误后不做人工校正，图越建越脏。
-- **本篇定位**：这是 GraphRAG 专项篇，和 appendices 里的进阶 GraphRAG 形成互补。
+- **本篇定位**：这是 GraphRAG 专项篇，和 RAG（33）《进阶：GraphRAG 与知识图谱增强》 形成互补。
 - **落地建议**：先从小范围核心实体建图，不要全量抽取。
 
 ## 十、最小可运行示例：参数化 GraphRAG 查询
@@ -100,5 +100,5 @@ def find_evidence(driver: Driver, tenant_id: str, entity_id: str, groups: list[s
 
 ## 参考资料
 
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)
+- [Neo4j Cypher Manual](https://neo4j.com/docs/cypher-manual/current/)
+- [Neo4j GraphRAG for Python](https://neo4j.com/docs/neo4j-graphrag-python/current/)

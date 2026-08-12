@@ -1,4 +1,4 @@
-# React 源码（5）- React 事件机制
+# React 源码（06） - React 事件机制
 
 > 读完你能：围绕“React 事件机制”理解“事件委托”与“源码实现”，并结合正文示例完成实践与排障。
 
@@ -153,7 +153,16 @@ function setState(newState) {
 
 如上图：accumulateSinglePhaseListeners 函数逻辑比较单一，就是根据传入的 fiber，向上遍历整棵 fiber 树，收集所有的冒泡事件，比如 click 了一个 div，那它收集的就是所有父级上的 click 事件，并且放到 `dispatchQueue`，接下来是 `processDispatchQueue`，如下图，其实就是看冒泡还是捕获，捕获就倒序执行，冒泡就顺序执行
 
-![image-20250916232647562](/../../../Library/Application Support/typora-user-images/image-20250916232647562.png)
+```mermaid
+flowchart LR
+  root[React 根 DOM] --> capture[捕获阶段]
+  root --> bubble[冒泡阶段]
+  capture --> priority[事件优先级映射]
+  bubble --> priority
+  priority --> update[调度 Fiber 更新]
+```
+
+图示说明：React 在根 DOM 统一接收捕获和冒泡事件，将事件映射为更新优先级，再进入 Fiber 调度流程。
 
 # 三、总结
 

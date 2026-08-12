@@ -1,4 +1,4 @@
-# LangChain 实战（60）- LangChain Splitter 选型：递归、结构化、Token 与语义分块
+# RAG（16） - LangChain Splitter 选型：递归、结构化、Token 与语义分块
 
 > 读完你能：根据普通文本、Markdown、代码和表格选择分块器，并用同一评测集确定 Chunk Size 与 Overlap。
 > 更新日期：2026/08/11

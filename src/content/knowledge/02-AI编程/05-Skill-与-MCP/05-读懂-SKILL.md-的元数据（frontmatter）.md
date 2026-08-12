@@ -1,4 +1,4 @@
-# Skills（4）- 读懂 SKILL.md 的元数据（frontmatter）
+# Skill 与 MCP（05） - 读懂 SKILL.md 的元数据（frontmatter）
 
 > 本章目标：把 `SKILL.md` 开头那段被 `---` 包起来的元数据讲清楚——哪些必填、哪些可选、各自怎么写。学完你会拿到一份字段速查表。
 

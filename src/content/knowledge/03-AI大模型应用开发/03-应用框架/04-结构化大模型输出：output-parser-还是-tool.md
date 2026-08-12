@@ -1,4 +1,4 @@
-# LangChain 实战（64）- 结构化大模型输出：output parser 还是 tool?
+# 应用框架（04） - 结构化大模型输出：output parser 还是 tool?
 
 > 读完你能：学会在 JSON parser、structured output 和 tool calling 之间做选择。
 

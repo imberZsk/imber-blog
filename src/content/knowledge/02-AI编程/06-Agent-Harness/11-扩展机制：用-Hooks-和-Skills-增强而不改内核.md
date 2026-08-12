@@ -1,4 +1,4 @@
-# Agent Harness（10）- 扩展机制：用 Hooks 和 Skills 增强而不改内核
+# Agent Harness（11） - 扩展机制：用 Hooks 和 Skills 增强而不改内核
 
 > 读完你能：围绕“扩展机制：用 Hooks 和 Skills 增强而不改内核”理解“为什么扩展机制很重要”与“Hooks：在循环的关键节点"拦一道"”，并结合正文示例完成实践与排障。
 

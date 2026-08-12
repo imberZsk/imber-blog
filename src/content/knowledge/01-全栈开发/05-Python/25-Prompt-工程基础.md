@@ -1,4 +1,4 @@
-# Python（24）- Prompt 工程基础
+# Python（25） - Prompt 工程基础
 
 > 读完你能：围绕“Prompt 工程基础”理解“先给锚点：Prompt ≈ 给函数传参 + 写接口契约”与“三种 role：system / user / assistant 怎么用”，并结合正文示例完成实践与排障。
 

@@ -1,4 +1,4 @@
-# Agent 工程（28）- Function Calling 工具调用
+# Agent（04） - Function Calling 工具调用
 
 > 读完你能：定义工具 schema，让模型提出调用，由后端做白名单、权限、参数、确认四层校验后再执行，并跑通一个能拦住越权请求的 demo。
 

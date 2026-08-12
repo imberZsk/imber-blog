@@ -1,4 +1,4 @@
-# Agent Harness（2）- Agent 的心脏：理解核心循环（Agent Loop）
+# Agent Harness（03） - Agent 的心脏：理解核心循环（Agent Loop）
 
 > 读完你能：围绕“Agent 的心脏：理解核心循环（Agent Loop）”理解“为什么必须是"循环"，而不是"一条直线"”与“循环的四个动作：想 → 做 → 看 → 再想”，并结合正文示例完成实践与排障。
 

@@ -1,4 +1,4 @@
-# Superpowers（5）- Subagent Driven Development：把独立任务交给独立上下文
+# 工程化工作流（06） - Subagent Driven Development：把独立任务交给独立上下文
 
 > 读完你能：围绕“Subagent Driven Development：把独立任务交给独立上下文”理解“标准循环”与“何时可以并行”，并结合正文示例完成实践与排障。
 

@@ -1,4 +1,4 @@
-# LangGraph（36）- LangGraph 入门
+# Agent（19） - LangGraph 入门
 
 > 读完你能：讲清 LangGraph 的四个核心概念（State、Node、Edge、Graph），说明它和 LangChain 直线链的本质区别（**条件分支 + 循环**），并用纯标准库写出一个能「检索不到就改写重试」的最小状态机。
 

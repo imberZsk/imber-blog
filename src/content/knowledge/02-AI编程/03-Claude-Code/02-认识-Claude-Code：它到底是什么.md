@@ -1,4 +1,4 @@
-# Claude Code（1）- 认识 Claude Code：它到底是什么
+# Claude Code（02） - 认识 Claude Code：它到底是什么
 
 > 本章目标：搞清楚 Claude Code 是什么、和你用过的 AI 工具有什么不同、适合解决哪类问题。
 > 学完你能：用一句话向同事解释它，并判断手头的任务适不适合交给它。

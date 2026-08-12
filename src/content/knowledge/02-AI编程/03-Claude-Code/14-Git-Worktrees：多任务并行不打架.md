@@ -1,4 +1,4 @@
-# Claude Code（13）- Git Worktrees：多任务并行不打架
+# Claude Code（14） - Git Worktrees：多任务并行不打架
 
 > 本章目标：用 `claude --worktree` 给每个并行会话开独立工作区，改文件互不冲突。
 > 学完你能：同时推进多个功能/修复分支，互不干扰，干完再合并。

@@ -1,4 +1,4 @@
-# Agent Harness（4）- 工具调用进阶：让 Agent 优雅地使用多个工具
+# Agent Harness（05） - 工具调用进阶：让 Agent 优雅地使用多个工具
 
 > 读完你能：围绕“工具调用进阶：让 Agent 优雅地使用多个工具”理解“工具调用的本质：模型只是"点菜"，上菜的是 harness”与“写好工具 schema：description 是重灾区”，并结合正文示例完成实践与排障。
 

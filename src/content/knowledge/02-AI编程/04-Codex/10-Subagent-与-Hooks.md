@@ -1,4 +1,4 @@
-# Codex（9）- Subagent 与 Hooks
+# Codex（10） - Subagent 与 Hooks
 
 > 读完你能：围绕“Subagent 与 Hooks”理解“概念解释”与“1 Subagent 是什么”，并结合正文示例完成实践与排障。
 

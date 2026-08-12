@@ -1,4 +1,4 @@
-# Superpowers（2）- Brainstorming 与 Writing Plans：把模糊需求变成可执行计划
+# 工程化工作流（03） - Brainstorming 与 Writing Plans：把模糊需求变成可执行计划
 
 `brainstorming` 负责决定“做什么”，`writing-plans`
 负责决定“怎样一步步做”。两者不能合并：过早写计划会把未经确认的假设固化成任务。
