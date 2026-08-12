@@ -73,11 +73,9 @@ Agent 灵活，但也更难控、更贵、更慢。别一上来就用。判断�
 
 用同一个问题，对比 **Chatbot / Workflow / Agent** 三种系统的处理轨迹。核心区别只有一句话：谁来决定下一步。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -116,3 +114,50 @@ python3 main.py
 ## 说明
 
 这个 demo 里 Agent 的「思考」是写死的规则，只为把决策轨迹显示出来。真实 Agent 的「要不要用工具、用哪个、用完怎么办」由模型自己判断（就是下一篇 ReAct 模式做的事），但「根据观察动态决定下一步」这个本质是一样的。Agent 不是更高级的 Chatbot，而是把「决策权」交给了模型 + 工具循环。
+
+## 可运行源码：Agent 是什么
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""对比 Chatbot、Workflow 与 Agent 的控制权。"""
+
+from __future__ import annotations
+
+
+def chatbot(question: str) -> list[str]:
+    """返回单次生成轨迹；question 是用户问题。"""
+    return [f"输入：{question}", "模型直接生成回答", "结束"]
+
+
+def workflow(question: str) -> list[str]:
+    """返回开发者预先固定的步骤轨迹。"""
+    return [f"输入：{question}", "固定步骤1：检索", "固定步骤2：生成", "固定步骤3：格式化", "结束"]
+
+
+def agent(question: str) -> list[str]:
+    """根据当前问题动态选择下一步。"""
+    # Agent 根据意图决定是否需要外部工具。
+    needs_tool = "订单" in question
+    # 动态执行轨迹。
+    trace = [f"输入：{question}", "模型判断下一步"]
+    trace.extend(["选择工具：query_order", "观察工具结果", "再次判断"] if needs_tool else ["无需工具"])
+    trace.extend(["生成最终回答", "结束"])
+    return trace
+
+
+def main() -> None:
+    """用同一问题打印三类系统轨迹。"""
+    # 同时包含知识问答与业务查询意图的问题。
+    question = "我的订单为什么还没发货？"
+    for name, runner in (("Chatbot", chatbot), ("Workflow", workflow), ("Agent", agent)):
+        print(f"\n{name}（下一步由{'模型' if name == 'Agent' else '程序/固定流程'}决定）")
+        for step in runner(question):
+            print("  ->", step)
+
+
+if __name__ == "__main__":
+    main()
+```

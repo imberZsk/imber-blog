@@ -140,11 +140,9 @@ chain.invoke({"question": "年假有几天"})
 
 用纯 Python 标准库实现 LangChain 五个核心概念的等价 mini 版：PromptTemplate、LLM、Retriever、Tool、Chain（LCEL 的 `|` 串联）。不装 langchain，让你看清框架那些类到底封装了什么。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库，离线可跑。**不需要 `pip install langchain`**。
 
@@ -206,3 +204,69 @@ chain.invoke({"context": "...", "question": "..."})
 - 给 `SimpleRetriever` 多加几篇文档，调命中阈值 `best_score >= 3`，观察召回变化。
 - 在 RAG 链里再插一个「格式化」步骤（把回答包成 JSON），体会 `chain | step` 追加步骤有多自然。
 - 把 `FakeLLM` 换成真实 `urllib` 调用模型 API（带 `if not os.getenv("OPENAI_API_KEY")` 兜底）。
+
+## 可运行源码：LangChain 入门
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用标准库实现 LangChain 核心抽象的等价 mini 版。"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(frozen=True, slots=True)
+class PromptTemplate:
+    """保存并格式化提示词模板。"""
+
+    # 使用 str.format 变量的模板文本。
+    template: str
+
+    def invoke(self, values: dict[str, Any]) -> str:
+        """把输入字典填入模板。"""
+        return self.template.format(**values)
+
+
+class Runnable:
+    """支持 LCEL 风格竖线组合的可运行单元。"""
+
+    def __init__(self, function: Callable[[Any], Any]) -> None:
+        """保存单元函数；function 接收上游输出。"""
+        # 当前节点实际执行的函数。
+        self.function = function
+
+    def invoke(self, value: Any) -> Any:
+        """执行当前单元。"""
+        return self.function(value)
+
+    def __or__(self, next_runnable: "Runnable") -> "Runnable":
+        """把当前输出传给下一个 Runnable。"""
+        return Runnable(lambda value: next_runnable.invoke(self.invoke(value)))
+
+
+def main() -> None:
+    """组装 Retriever | Prompt | LLM | Parser 链。"""
+    # 模拟 Retriever 的可运行节点。
+    retriever = Runnable(lambda question: {"question": question, "context": "报销需在 30 天内提交。"})
+    # 格式化检索证据和问题的提示词模板。
+    prompt_template = PromptTemplate("只按资料回答。资料：{context}\n问题：{question}")
+    # Prompt 节点。
+    prompt = Runnable(prompt_template.invoke)
+    # 离线 LLM 节点。
+    llm = Runnable(lambda formatted_prompt: f"模型收到提示词：{formatted_prompt}")
+    # 输出解析节点。
+    parser = Runnable(lambda output: {"answer": output, "parsed": True})
+    # LCEL 风格组合后的完整链。
+    chain = retriever | prompt | llm | parser
+    print(chain.invoke("报销期限？"))
+
+
+if __name__ == "__main__":
+    main()
+```

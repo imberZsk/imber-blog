@@ -85,11 +85,9 @@
 
 同一个任务（给用户反馈分类），同一个 mock 模型，用「烂 prompt」和「好 prompt」分别跑，对比输出能不能被前端代码稳定解析。结论很直观：**模型能力一样，差距全在 prompt 的结构**。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -133,3 +131,50 @@ python3 main.py
 - 给 `good_prompt` 删掉「示例」那两行，再删掉「category 只能是...」的枚举约束，体会每删一项约束输出就松一截（在真实模型上效果更明显）。
 - 加一条新反馈（比如夸奖类），看 `mock_model` 兜底到 question——这说明分类没覆盖全时要补枚举值。
 - 把 `good_prompt` 的输出字段改成你自己业务要的（比如加 `need_reply`），同步改 `mock_model` 的返回。
+
+## 可运行源码：Prompt 工程基础
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""对比模糊提示词和可验证提示词的输出稳定性。"""
+
+from __future__ import annotations
+
+import json
+
+
+def mock_model(prompt: str, feedback: str) -> str:
+    """根据 prompt 约束程度返回模拟结果；feedback 是待分类反馈。"""
+    # 结构化约束存在时返回可由程序稳定解析的 JSON。
+    if "只输出 JSON" in prompt and "category" in prompt:
+        # 根据反馈关键词决定离线分类。
+        category = "refund" if "退款" in feedback else "other"
+        return json.dumps({"category": category, "urgency": "high", "reason": "用户明确要求退款"}, ensure_ascii=False)
+    return f"我认为这条反馈很紧急，可能与退款有关：{feedback}"
+
+
+def main() -> None:
+    """用同一条输入运行两类提示词并验证 JSON。"""
+    # 待分类的真实用户反馈。
+    feedback = "扣款两次，请马上退款"
+    # 缺少角色、边界和格式约束的提示词。
+    weak_prompt = "帮我分类用户反馈"
+    # 包含任务、枚举、输出 schema 和禁止项的提示词。
+    strong_prompt = '你是分类器。category 只能是 refund/other；只输出 JSON：{"category":"","urgency":"","reason":""}'
+    for name, prompt in (("烂 prompt", weak_prompt), ("好 prompt", strong_prompt)):
+        # 当前提示词对应的模型输出。
+        output = mock_model(prompt, feedback)
+        try:
+            json.loads(output)
+            parse_status = "可稳定解析"
+        except json.JSONDecodeError:
+            parse_status = "解析失败"
+        print(f"{name}: {output}\n前端结果: {parse_status}\n")
+
+
+if __name__ == "__main__":
+    main()
+```

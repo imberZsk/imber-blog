@@ -88,11 +88,9 @@ if hits[0]["score"] < min_score:      # 检索到了但相关性不足
 
 把检索结果变成**有据可查、可拒答**的回答，演示三件事合一：grounding（基于资料答）、citation（引用实际用到的 chunk）、拒答（无资料或证据弱时不硬凑）。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -129,3 +127,56 @@ python3 main.py
 ## 说明
 
 真实项目里正常分支会把命中的 chunk 拼进 prompt 发给模型，让模型用自然语言基于资料作答；citation 仍然从实际传入的 chunk 元数据生成，不能让模型自己「编」一个来源。拒答阈值（`min_score`）需要结合评测集调，太高会误拒、太低会放进弱证据。这部分调优见下一篇 26。
+
+## 可运行源码：RAG 回答生成与引用来源
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""根据证据生成可引用、可拒答的 RAG 回答。"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+MIN_EVIDENCE_SCORE = 0.6
+
+
+@dataclass(frozen=True, slots=True)
+class Evidence:
+    """表示带来源和相关性分数的检索结果。"""
+
+    # 检索到的正文片段。
+    text: str
+    # 可追溯的文档与章节。
+    source: str
+    # 检索或重排分数。
+    score: float
+
+
+def generate_answer(question: str, evidence: list[Evidence]) -> dict[str, object]:
+    """只使用达标证据回答；question 用于输出追踪，evidence 是候选资料。"""
+    # 达到最低证据阈值的片段。
+    usable_evidence = [item for item in evidence if item.score >= MIN_EVIDENCE_SCORE]
+    if not usable_evidence:
+        return {"question": question, "answer": "资料不足，无法回答。", "citations": []}
+    # 最小示例直接抽取证据文本；真实系统会把证据交给模型总结。
+    answer = "；".join(item.text for item in usable_evidence)
+    # 引用只包含实际进入回答的片段来源。
+    citations = [item.source for item in usable_evidence]
+    return {"question": question, "answer": answer, "citations": citations}
+
+
+def main() -> None:
+    """运行有强证据和无证据两种问答。"""
+    # 当前示例检索结果。
+    evidence = [Evidence("报销需在30天内提交。", "employee-policy.md#报销", 0.91), Evidence("食堂菜单", "canteen.md", 0.2)]
+    print(generate_answer("报销期限？", evidence))
+    print(generate_answer("班车几点？", []))
+
+
+if __name__ == "__main__":
+    main()
+```

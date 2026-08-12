@@ -80,11 +80,9 @@ overlap 让边界信息在两个 chunk 里都出现一次，检索到任意一�
 
 用同一段文档跑三组切分参数，直观对比 **chunk_size 太大、太小、折中带 overlap** 的区别。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -128,3 +126,42 @@ python3 main.py
 ## 说明
 
 这里用「按字符数固定窗口」切分，是最基础的策略。真实项目通常先按标题、段落、句子等语义边界切，再用 size/overlap 兜底。但理解了窗口和 overlap，再看语义切分就不难。
+
+## 可运行源码：文档切分 Chunk
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""比较不同 chunk_size 与 overlap 的切分效果。"""
+
+from __future__ import annotations
+
+
+def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
+    """按固定窗口切分；chunk_size 是块长，overlap 是相邻重叠字符数。"""
+    if chunk_size <= 0 or overlap < 0 or overlap >= chunk_size:
+        raise ValueError("需要满足 chunk_size > overlap >= 0")
+    # 每次窗口向前移动的字符数。
+    step = chunk_size - overlap
+    return [text[start : start + chunk_size] for start in range(0, len(text), step) if text[start : start + chunk_size]]
+
+
+def main() -> None:
+    """用同一文档运行三组参数并打印边界。"""
+    # 包含多个事实的示例制度文本。
+    document = "报销需要在30天内提交。交通费需附行程单。住宿费需附酒店发票。超过标准需要经理审批。"
+    # 代表过大、过小和折中的三组参数。
+    strategies = ((80, 0, "太大"), (12, 0, "太小"), (24, 6, "折中+overlap"))
+    for chunk_size, overlap, label in strategies:
+        # 当前策略生成的文本块。
+        chunks = chunk_text(document, chunk_size, overlap)
+        print(f"\n{label}: chunk_size={chunk_size}, overlap={overlap}, count={len(chunks)}")
+        for index, chunk in enumerate(chunks, start=1):
+            print(f"  [{index}] {chunk}")
+
+
+if __name__ == "__main__":
+    main()
+```

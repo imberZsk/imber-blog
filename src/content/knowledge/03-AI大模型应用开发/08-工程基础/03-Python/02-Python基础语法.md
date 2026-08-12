@@ -95,11 +95,9 @@ prompt = f"""你是知识库助手，只能基于资料回答。
 
 用最小的 Python 语法（变量、条件、循环、函数、字符串格式化）写一个知识库问答脚本骨架，让你看到写 AI 应用脚本前期不需要复杂语法。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -134,3 +132,44 @@ python3 main.py
 
 - 往 `knowledge` 里加一个「考勤」主题，再加一个问题验证能命中。
 - 把 `fake_model` 换成真实模型调用（保留无 Key 时走 mock 的兜底）。
+
+## 可运行源码：Python 基础语法
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用基础 Python 语法实现一个最小知识库问答。"""
+
+from __future__ import annotations
+
+
+def answer_question(question: str, knowledge: dict[str, str]) -> str:
+    """根据关键词返回知识库答案；question 是用户问题，knowledge 是关键词到答案的映射。"""
+    # 去掉用户输入两端空白后的问题。
+    normalized_question = question.strip()
+    if not normalized_question:
+        return "问题不能为空。"
+
+    for keyword, answer in knowledge.items():
+        if keyword in normalized_question:
+            return answer
+    return "知识库中没有足够资料，暂时无法回答。"
+
+
+def main() -> None:
+    """依次运行三个问题，展示变量、循环、条件和函数调用。"""
+    # 最小企业制度知识库。
+    knowledge = {"报销": "费用发生后 30 天内提交。", "年假": "年假需提前 3 天申请。"}
+    # 待处理的示例问题列表。
+    questions = ["报销最晚多久提交？", "年假怎么申请？", "食堂几点关门？"]
+    for index, question in enumerate(questions, start=1):
+        # 当前问题对应的知识库回答。
+        answer = answer_question(question, knowledge)
+        print(f"{index}. 问：{question}\n   答：{answer}")
+
+
+if __name__ == "__main__":
+    main()
+```

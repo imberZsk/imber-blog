@@ -90,11 +90,9 @@ demo 里 `route` 用关键词匹配模拟路由。真实项目里这一步交给
 
 用**工具注册表 + 意图路由**，把不同意图的问题分发给不同工具。加工具只需往注册表加一项，不改分发主逻辑。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -133,3 +131,61 @@ python3 main.py
 ## 说明
 
 这个 demo 的路由用关键词匹配模拟。真实项目里这一步交给模型的 Function Calling：把注册表里每个工具的 `name` 和 `desc` 作为 schema 发给模型，模型读说明自己决定调哪个、传什么参数（见第 28 篇）。但「注册表 + 路由 + 参数抽取 + 兜底」这个骨架不变。加一个新工具时，你只往 `TOOL_REGISTRY` 加一项，`route` 和 `run` 一行都不用动——这就是注册表设计的价值。
+
+## 可运行源码：多工具 Agent
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用工具注册表和意图路由实现多工具 Agent。"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+Tool = Callable[[str], str]
+
+
+def search_policy(question: str) -> str:
+    """查询制度；question 是用户原始问题。"""
+    return "报销需在 30 天内提交。"
+
+
+def query_order(question: str) -> str:
+    """查询订单；question 中应包含订单语义。"""
+    return "订单 A100 已发货。"
+
+
+def create_ticket(question: str) -> str:
+    """创建人工工单；question 会作为工单摘要。"""
+    return f"已创建工单：{question[:20]}"
+
+
+def route_intent(question: str) -> str:
+    """把问题映射到注册表工具名。"""
+    if "订单" in question:
+        return "query_order"
+    if "报销" in question or "制度" in question:
+        return "search_policy"
+    return "create_ticket"
+
+
+def main() -> None:
+    """用统一分发逻辑调用三个工具。"""
+    # 工具名到可执行函数的注册表。
+    tool_registry: dict[str, Tool] = {"search_policy": search_policy, "query_order": query_order, "create_ticket": create_ticket}
+    # 三类意图的示例问题。
+    questions = ["报销期限？", "订单 A100 到哪了？", "我要投诉"]
+    for question in questions:
+        # 路由器选出的工具名。
+        tool_name = route_intent(question)
+        # 只有注册表中的工具才能被执行。
+        result = tool_registry[tool_name](question)
+        print(f"问题={question} 工具={tool_name} 结果={result}")
+
+
+if __name__ == "__main__":
+    main()
+```

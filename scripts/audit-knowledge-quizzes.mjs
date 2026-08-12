@@ -107,6 +107,9 @@ function auditPythonLabSandboxCoverage(directory) {
         const mainSourceCode = readFileSync(mainFilePath, 'utf8')
         if (isBrowserRunnablePythonSource(mainSourceCode)) {
           browserRunnablePythonLabCount += 1
+          /** 可结束运行的入口必须写回文章，避免页面源码依赖隐藏的外部副本。 */
+          const labPath = relative(KNOWLEDGE_CONTENT_ROOT, entryPath).split(sep).join('/')
+          auditFailures.push(`${labPath}/main.py 可在浏览器运行，但仍未合并进正文。`)
         } else {
           browserIncompatiblePythonLabCount += 1
         }
@@ -320,6 +323,8 @@ function countInlinePythonSandboxes(sourceArticlePath, markdown) {
   const markdownTree = remark().parse(markdown)
   /** 遍历时最近的标题，用于判断代码是否明确声明可运行。 */
   let currentHeading = '正文 Python 示例'
+  /** 当前代码块所属“可运行源码”章节的标题。 */
+  let runnableSourceHeading = ''
   /** 当前文章符合自动沙盒规则的代码块数量。 */
   let sandboxCount = 0
 
@@ -330,6 +335,11 @@ function countInlinePythonSandboxes(sourceArticlePath, markdown) {
         .join('')
         .replace(/^(?:[一-十]+|\d+)[、.\s．-]*/, '')
         .trim()
+      if (/可运行源码/.test(currentHeading)) {
+        runnableSourceHeading = currentHeading
+      } else if (markdownNode.depth <= 2) {
+        runnableSourceHeading = ''
+      }
       continue
     }
 
@@ -338,9 +348,17 @@ function countInlinePythonSandboxes(sourceArticlePath, markdown) {
     if (
       isPythonCodeBlock &&
       markdownNode.value &&
-      isInlinePythonSandboxCandidate(sourceArticlePath, currentHeading, markdownNode.value.trim())
+      isInlinePythonSandboxCandidate(
+        sourceArticlePath,
+        runnableSourceHeading || currentHeading,
+        markdownNode.value.trim()
+      )
     ) {
       sandboxCount += 1
+      /** 一个源码章节只生成一个多文件沙盒。 */
+      if (runnableSourceHeading) {
+        runnableSourceHeading = ''
+      }
     }
   }
 

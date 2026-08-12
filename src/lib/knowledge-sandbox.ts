@@ -10,7 +10,7 @@ const INLINE_PYTHON_SANDBOX_MINIMUM_LINE_COUNT = 12
 
 /** 会导致正文 Python 示例无法独立执行的占位或未完成特征。 */
 const INLINE_PYTHON_INCOMPLETE_SOURCE_PATTERN =
-  /(?:\.\.\.|YOUR_[A-Z_]+|sk-[a-z\d]|API_KEY\s*=\s*['"][^'"]+|raise\s+NotImplementedError)/i
+  /(?:YOUR_[A-Z_]+|API_KEY\s*=\s*['"][^'"]+|raise\s+NotImplementedError)/i
 
 /** 正文 Python 示例必须包含可观察输出或显式程序入口。 */
 const INLINE_PYTHON_EXECUTION_SIGNAL_PATTERN = /(?:\bprint\s*\(|__name__\s*==\s*['"]__main__['"])/
@@ -35,14 +35,17 @@ const INLINE_PYTHON_STANDARD_LIBRARY_MODULES = new Set([
   'functools',
   'hashlib',
   'heapq',
+  'importlib',
   'itertools',
   'json',
   'math',
   'operator',
   'os',
   'pathlib',
+  'platform',
   'random',
   're',
+  'shutil',
   'sqlite3',
   'statistics',
   'string',

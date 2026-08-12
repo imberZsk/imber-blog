@@ -120,11 +120,9 @@ def llm_node(state: dict) -> dict:
 
 用纯 Python 标准库模拟 Dify 工作流（Workflow）的节点串联，让你看清平台拖拽的每个节点底下在做什么。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库，离线可跑。
 
@@ -179,3 +177,63 @@ python3 main.py
 - 给 `KNOWLEDGE_BASE` 加一篇文档，看检索节点能不能命中。
 - 把命中阈值 `best_score >= 3` 调高，观察更多问题落到拒答分支。
 - 在 `workflow` 列表里插入一个「问题分类」节点，体会节点串联的可组合性。
+
+## 可运行源码：Dify 入门
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用标准库模拟 Dify Workflow 节点串联。"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
+Node = Callable[[dict[str, Any]], dict[str, Any]]
+
+
+def input_node(state: dict[str, Any]) -> dict[str, Any]:
+    """校验工作流输入。"""
+    if not str(state.get("question", "")).strip():
+        raise ValueError("question_required")
+    return state
+
+
+def knowledge_node(state: dict[str, Any]) -> dict[str, Any]:
+    """模拟知识库检索节点。"""
+    # 当前问题检索到的证据。
+    evidence = "报销需在30天内提交" if "报销" in state["question"] else None
+    return {**state, "evidence": evidence}
+
+
+def condition_node(state: dict[str, Any]) -> dict[str, Any]:
+    """根据证据决定回答或拒答。"""
+    # 最终工作流输出。
+    answer = f"根据资料：{state['evidence']}" if state.get("evidence") else "资料不足，无法回答。"
+    return {**state, "answer": answer}
+
+
+def run_workflow(question: str) -> dict[str, Any]:
+    """按可视化节点顺序运行工作流。"""
+    # Dify 画布中从开始到结束的节点列表。
+    nodes: list[Node] = [input_node, knowledge_node, condition_node]
+    # 节点间共享的变量集合。
+    state: dict[str, Any] = {"question": question}
+    for node in nodes:
+        state = node(state)
+        print(f"node={node.__name__} outputs={state}")
+    return state
+
+
+def main() -> None:
+    """运行命中和拒答两条分支。"""
+    run_workflow("报销期限？")
+    run_workflow("食堂菜单？")
+
+
+if __name__ == "__main__":
+    main()
+```
