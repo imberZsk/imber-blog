@@ -13,3 +13,16 @@
     Content-Disposition = "attachment"
     Cache-Control = "public, max-age=31536000, immutable"
 
+# 允许不具备同源权限的知识文章 iframe 读取公开模型文件。
+[[headers]]
+  for = "/models/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*" # 目录内只有公开、无凭据的模型静态资产。
+    Cross-Origin-Resource-Policy = "cross-origin" # 不放宽页面、API 或用户资源。
+
+# 允许隔离 iframe 加载 Transformers.js、ONNX 模块和 WASM 运行时。
+[[headers]]
+  for = "/vendor/transformers/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*" # 模块脚本由来源为 null 的 sandbox iframe 发起。
+    Cross-Origin-Resource-Policy = "cross-origin" # 仅允许当前公开运行时目录跨源读取。
