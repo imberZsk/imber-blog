@@ -39,6 +39,24 @@ const nextConfig = {
         pathname: '/**'
       }
     ]
+  },
+  /** 为不透明来源的在线实验提供公开只读模型资产，不扩大到其他站点路由。 */
+  async headers() {
+    /** 只允许跨源读取的公开静态资产目录。 */
+    const publicSandboxAssetSources = ['/models/:path*', '/vendor/transformers/:path*']
+    return publicSandboxAssetSources.map((source) => ({
+      source, // 限定为模型和 Transformers.js 运行时。
+      headers: [
+        {
+          key: 'Access-Control-Allow-Origin', // 允许 sandbox iframe 的唯一不透明来源读取。
+          value: '*' // 目录内只有公开、无凭据的静态资产。
+        },
+        {
+          key: 'Cross-Origin-Resource-Policy', // 显式允许公开资产被隔离预览读取。
+          value: 'cross-origin' // 不放宽页面、API 或用户资源。
+        }
+      ]
+    }))
   }
 }
 

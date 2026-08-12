@@ -1,8 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { basename, extname, join, relative, sep } from 'node:path'
+import { remark } from 'remark'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
 import { auditKnowledgeQuizQuestions, createKnowledgeQuiz } from '../src/lib/knowledge-quiz.ts'
-import { isBrowserRunnablePythonSource } from '../src/lib/knowledge-sandbox.ts'
+import { isBrowserRunnablePythonSource, isInlinePythonSandboxCandidate } from '../src/lib/knowledge-sandbox.ts'
 
 /** 知识库 Markdown 的绝对根目录。 */
 const KNOWLEDGE_CONTENT_ROOT = join(process.cwd(), 'src/content/knowledge')
@@ -66,6 +67,9 @@ let browserRunnablePythonLabCount = 0
 
 /** 因启动服务或依赖外部环境而必须本地运行的 Python Lab 数量。 */
 let browserIncompatiblePythonLabCount = 0
+
+/** 从正文完整代码块自动接入的 Python 在线实验数量。 */
+let inlinePythonSandboxCount = 0
 
 /** 全库审计发现的问题。 */
 const auditFailures = []
@@ -207,6 +211,44 @@ function hasUnclosedCodeFence(markdown) {
 }
 
 /**
+ * 统计当前正文会被页面自动转换为沙盒的 Python 代码块。
+ * @param sourceArticlePath 当前文章无扩展名的知识库相对路径。
+ * @param markdown 当前文章完整 Markdown。
+ * @returns 当前文章的正文自动 Python 实验数量。
+ */
+function countInlinePythonSandboxes(sourceArticlePath, markdown) {
+  /** Remark 解析后的顶层 Markdown 节点。 */
+  const markdownTree = remark().parse(markdown)
+  /** 遍历时最近的标题，用于判断代码是否明确声明可运行。 */
+  let currentHeading = '正文 Python 示例'
+  /** 当前文章符合自动沙盒规则的代码块数量。 */
+  let sandboxCount = 0
+
+  for (const markdownNode of markdownTree.children || []) {
+    if (markdownNode.type === 'heading') {
+      currentHeading = (markdownNode.children || [])
+        .map((childNode) => childNode.value || '')
+        .join('')
+        .replace(/^(?:[一-十]+|\d+)[、.\s．-]*/, '')
+        .trim()
+      continue
+    }
+
+    /** 当前顶层节点是否为明确标注语言的 Python 代码块。 */
+    const isPythonCodeBlock = markdownNode.type === 'code' && /^(?:python|py)$/i.test(markdownNode.lang || '')
+    if (
+      isPythonCodeBlock &&
+      markdownNode.value &&
+      isInlinePythonSandboxCandidate(sourceArticlePath, currentHeading, markdownNode.value.trim())
+    ) {
+      sandboxCount += 1
+    }
+  }
+
+  return sandboxCount
+}
+
+/**
  * 去掉路径分段前的排序编号。
  * @param pathSegment 可能含两位排序号的目录名。
  * @returns 用于识别“附录”的展示名称。
@@ -317,6 +359,7 @@ for (const articleFile of articleFiles) {
   const isAiAppArticle = sourceArticlePath.startsWith(AI_APP_ARTICLE_PATH_PREFIX)
 
   articleKindCounts[articleKind] += 1
+  inlinePythonSandboxCount += countInlinePythonSandboxes(sourceArticlePath, markdown)
 
   if (proseCharacterCount < MIN_PROSE_CHARACTER_COUNT) {
     auditFailures.push(
@@ -400,6 +443,6 @@ if (auditFailures.length > 0) {
   )
   console.log(`知识点思维导图 ${mindmapArticleCount} 篇，其中 AI 应用开发 ${aiAppMindmapArticleCount} 篇。`)
   console.log(
-    `Python 在线实验 ${browserRunnablePythonLabCount} 篇，本地服务型示例 ${browserIncompatiblePythonLabCount} 篇。`
+    `Python Lab 在线实验 ${browserRunnablePythonLabCount} 篇，正文自动 Python 实验 ${inlinePythonSandboxCount} 个，本地服务型示例 ${browserIncompatiblePythonLabCount} 篇。`
   )
 }

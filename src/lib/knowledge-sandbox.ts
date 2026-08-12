@@ -5,6 +5,53 @@ export type KnowledgeSandboxRuntime = 'python' | 'html'
 const BROWSER_UNSUPPORTED_PYTHON_SOURCE_PATTERN =
   /(?:\bserve_forever\s*\(|\bThreadingHTTPServer\b|\bHTTPServer\b|\bBaseHTTPRequestHandler\b|\binput\s*\(|\bos\.(?:system|popen|fork|exec\w*)\s*\(|(?:^|\n)\s*from\s+(?:subprocess|socket|urllib|requests|fastapi|uvicorn|langchain|langgraph|openai|pymilvus|redis|neo4j|sqlalchemy|sentence_transformers|numpy|pandas|pydantic|httpx|multiprocessing|threading|ctypes|webbrowser)\b|(?:^|\n)\s*import\s+[^\n]*(?:\bsubprocess\b|\bsocket\b|\burllib\b|\brequests\b|\bfastapi\b|\buvicorn\b|\blangchain\b|\blanggraph\b|\bopenai\b|\bpymilvus\b|\bredis\b|\bneo4j\b|\bsqlalchemy\b|\bsentence_transformers\b|\bnumpy\b|\bpandas\b|\bpydantic\b|\bhttpx\b|\bmultiprocessing\b|\bthreading\b|\bctypes\b|\bwebbrowser\b))/i
 
+/** 正文自动实验只接入足够完整的 Python 程序。 */
+const INLINE_PYTHON_SANDBOX_MINIMUM_LINE_COUNT = 12
+
+/** 会导致正文 Python 示例无法独立执行的占位或未完成特征。 */
+const INLINE_PYTHON_INCOMPLETE_SOURCE_PATTERN =
+  /(?:\.\.\.|YOUR_[A-Z_]+|sk-[a-z\d]|API_KEY\s*=\s*['"][^'"]+|raise\s+NotImplementedError)/i
+
+/** 正文 Python 示例必须包含可观察输出或显式程序入口。 */
+const INLINE_PYTHON_EXECUTION_SIGNAL_PATTERN = /(?:\bprint\s*\(|__name__\s*==\s*['"]__main__['"])/
+
+/** 自动实验只覆盖用户重点关注的 AI 编程与 AI 应用主线。 */
+const INLINE_SANDBOX_ARTICLE_PATH_PATTERN = /^(?:02-AI编程|03-AI大模型应用开发)\//
+
+/** 只把文档明确声明可独立执行的章节识别为在线实验。 */
+const INLINE_SANDBOX_HEADING_PATTERN = /(?:可运行|可执行|完整示例|综合示例)/
+
+/** Pyodide 默认可直接使用的 Python 标准库根模块。 */
+const INLINE_PYTHON_STANDARD_LIBRARY_MODULES = new Set([
+  '__future__',
+  'argparse',
+  'asyncio',
+  'collections',
+  'contextlib',
+  'csv',
+  'dataclasses',
+  'datetime',
+  'enum',
+  'functools',
+  'hashlib',
+  'heapq',
+  'itertools',
+  'json',
+  'math',
+  'operator',
+  'os',
+  'pathlib',
+  'random',
+  're',
+  'sqlite3',
+  'statistics',
+  'string',
+  'sys',
+  'time',
+  'typing',
+  'uuid'
+])
+
 /** 自动写入 Python 虚拟文件系统的可信文本文件名。 */
 export const BROWSER_PYTHON_SUPPORT_FILE_PATTERN = /\.(?:py|json|txt|md|csv|ya?ml)$/i
 
@@ -15,6 +62,39 @@ export const BROWSER_PYTHON_SUPPORT_FILE_PATTERN = /\.(?:py|json|txt|md|csv|ya?m
  */
 export function isBrowserRunnablePythonSource(sourceCode: string): boolean {
   return !BROWSER_UNSUPPORTED_PYTHON_SOURCE_PATTERN.test(sourceCode)
+}
+
+/**
+ * 判断正文 Python 代码块是否适合自动转换为在线实验。
+ * @param sourceArticlePath 当前文章无扩展名的知识库相对路径。
+ * @param headingText 代码块之前最近的标题文本。
+ * @param sourceCode 代码块的完整 Python 源码。
+ * @returns 同时满足范围、完整性、依赖和浏览器兼容性时返回 true。
+ */
+export function isInlinePythonSandboxCandidate(
+  sourceArticlePath: string,
+  headingText: string,
+  sourceCode: string
+): boolean {
+  /** 源码中 import 和 from 声明引用的根模块名。 */
+  const importedModuleNames = Array.from(
+    sourceCode.matchAll(/^\s*(?:from|import)\s+([a-zA-Z_]\w*)/gm),
+    (match) => match[1]
+  )
+  /** 当前程序是否只使用 Pyodide 默认可用的标准库。 */
+  const usesOnlyStandardLibrary = importedModuleNames.every((moduleName) =>
+    INLINE_PYTHON_STANDARD_LIBRARY_MODULES.has(moduleName)
+  )
+
+  return (
+    INLINE_SANDBOX_ARTICLE_PATH_PATTERN.test(sourceArticlePath) &&
+    INLINE_SANDBOX_HEADING_PATTERN.test(headingText) &&
+    sourceCode.split('\n').length >= INLINE_PYTHON_SANDBOX_MINIMUM_LINE_COUNT &&
+    INLINE_PYTHON_EXECUTION_SIGNAL_PATTERN.test(sourceCode) &&
+    !INLINE_PYTHON_INCOMPLETE_SOURCE_PATTERN.test(sourceCode) &&
+    usesOnlyStandardLibrary &&
+    isBrowserRunnablePythonSource(sourceCode)
+  )
 }
 
 /** 在线实验需要写入隔离运行环境的单个文件。 */

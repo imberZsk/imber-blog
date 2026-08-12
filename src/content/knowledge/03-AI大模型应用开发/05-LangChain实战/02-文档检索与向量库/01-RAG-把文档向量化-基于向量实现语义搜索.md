@@ -54,13 +54,13 @@
 
 ## 十、最小可运行示例：真实 Embedding Top-K
 
-~~~text
+```text
 # requirements.txt
 sentence-transformers
 numpy
-~~~
+```
 
-~~~python
+```python
 from __future__ import annotations
 
 import numpy as np
@@ -95,6 +95,9 @@ def search(query: str, top_k: int = 2) -> list[tuple[str, float]]:
 
 
 print(search("退款多久能到账"))
-~~~
+```
+
+点击下方在线实验可直接运行同一条检索链路：浏览器会加载站点内置的量化中文
+`bge-small-zh-v1.5`，生成真实的 512 维向量并返回 Top-2；它不是关键词匹配或手写假向量。
 
 生产建库把文档向量离线生成并写 VectorDB，在线只生成查询向量；同时记录模型版本、维度、前缀和归一化方式，任一变化都通过新索引重建发布。
