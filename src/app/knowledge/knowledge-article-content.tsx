@@ -265,11 +265,33 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
               normalizeSandboxSource(sourceElement.textContent || '') === normalizeSandboxSource(entrySource)
           )
         : undefined
+      /** 与实验标题匹配的正文知识点标题。 */
+      const contextualHeadingElement = Array.from(
+        contentElement.querySelectorAll<HTMLHeadingElement>('h1, h2, h3, h4, h5, h6')
+      ).find((headingElement) => headingElement.textContent?.includes(sandbox.title))
+      /** 知识点标题后第一个代码块，HTML 实验会紧跟它展示且保留服务端示例。 */
+      let contextualSourceElement: HTMLPreElement | null = null
+      /** 知识点标题后最后一个 Python 代码块，优先于依赖清单等辅助代码。 */
+      let contextualPythonSourceElement: HTMLPreElement | null = null
+      /** 从标题后的同级内容中寻找当前知识点代码块。 */
+      let contextualSiblingElement = contextualHeadingElement?.nextElementSibling || null
+      while (contextualSiblingElement && !/^H[1-6]$/.test(contextualSiblingElement.tagName)) {
+        if (contextualSiblingElement.tagName === 'PRE') {
+          contextualSourceElement = contextualSiblingElement as HTMLPreElement
+          if (contextualSiblingElement.querySelector('code.language-python')) {
+            contextualPythonSourceElement = contextualSourceElement
+          }
+        }
+        contextualSiblingElement = contextualSiblingElement.nextElementSibling
+      }
+      contextualSourceElement = contextualPythonSourceElement || contextualSourceElement
       mountNode.className = 'knowledge-code-sandbox-mount'
 
       if (matchingSourceElement) {
         claimedSourceElements.add(matchingSourceElement)
         matchingSourceElement.replaceWith(mountNode)
+      } else if (sandbox.runtime === 'html' && contextualSourceElement) {
+        contextualSourceElement.after(mountNode)
       } else if (fallbackAnchorElement) {
         fallbackAnchorElement.after(mountNode)
         fallbackAnchorElement = mountNode

@@ -12,6 +12,7 @@ import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge
 import {
   BROWSER_PYTHON_SUPPORT_FILE_PATTERN,
   isBrowserRunnablePythonSource,
+  isInlinePythonSandboxCandidate,
   type KnowledgeSandbox,
   type KnowledgeSandboxFile,
   type KnowledgeSandboxRuntime
@@ -68,8 +69,17 @@ interface MarkdownNode {
   type?: string
   depth?: number
   value?: string
+  lang?: string
   url?: string
   children?: MarkdownNode[]
+}
+
+/** 从正文完整 Python 代码块生成的浏览器实验候选。 */
+interface InlinePythonSandboxCandidate {
+  /** 最近一个标题提供的实验名称。 */
+  title: string
+  /** 直接交给 Pyodide 的完整 Python 源码。 */
+  sourceCode: string
 }
 
 /** 新知识目录前缀与已发布旧路径之间的映射。 */
@@ -122,6 +132,8 @@ interface LabSandboxDefinition {
   fileNames: readonly string[]
   /** 提供运行文件的实验 README 路径；正文直接运行 lab 源码时使用。 */
   fileSourcePath?: string
+  /** 已由在线实验源码面板展示、不再重复附加到正文的文件。 */
+  hiddenAppendedSourceFileNames?: readonly string[]
   /** 共享 HTML 实验套件需要激活的场景编号。 */
   scenarioId?: string
 }
@@ -257,6 +269,17 @@ const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new M
       '读取同目录 Markdown、纯文本样例，输出带 source 与 section 元数据的 chunk。',
       ['sample.md', 'sample.txt']
     )
+  ],
+  [
+    '03-AI大模型应用开发/05-LangChain实战/02-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索',
+    {
+      ...createHtmlSandboxDefinition(
+        '真实 Embedding Top-K',
+        '在浏览器内加载 bge-small-zh-v1.5，计算 512 维中文语义向量、余弦相似度与 Top-2。',
+        '03-AI大模型应用开发/05-LangChain实战/02-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索/lab/README'
+      ),
+      hiddenAppendedSourceFileNames: ['sandbox.html'] // 沙盒自身已提供可复制源码，正文不再重复追加同一文件。
+    }
   ],
   [
     '03-AI大模型应用开发/08-工程基础/04-RAG基础/01-RAG是什么/lab/README',
@@ -2595,20 +2618,28 @@ function appendLabSourceFiles(filePath: string, markdown: string): string {
   const articleLabReadmePath = `${getArticleLabSourcePath(sourceArticlePath)}.md`
   /** 优先兼容旧实验页，再为扁平正文读取配套 Lab 源码。 */
   const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || LAB_SOURCE_INDEX.get(articleLabReadmePath) || []
+  /** 当前正文直接绑定的实验定义。 */
+  const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
+  /** 已由实验源码标签展示、不需要再次追加到正文的文件名。 */
+  const hiddenSourceFileNames = new Set(articleSandboxDefinition?.hiddenAppendedSourceFileNames || [])
+  /** 仍需作为静态源码章节附加的文件。 */
+  const visibleSourceSections = indexedSourceSections.filter(
+    (sourceSection) => !hiddenSourceFileNames.has(sourceSection.fileName)
+  )
 
-  if (indexedSourceSections.length === 0) {
+  if (visibleSourceSections.length === 0) {
     return markdown
   }
 
   /** 转换为 Markdown 代码围栏后的源码章节。 */
-  const sourceSections = indexedSourceSections.map(
+  const sourceSections = visibleSourceSections.map(
     (sourceSection) =>
       `### \`${sourceSection.fileName}\`\n\n` +
       `\`\`\`${sourceSection.language}\n${sourceSection.sourceCode.trimEnd()}\n\`\`\``
   )
 
   /** 当前文章附加的 Python 入口，用于解释在线或本地运行方式。 */
-  const pythonEntrySection = indexedSourceSections.find((sourceSection) => sourceSection.fileName === 'main.py')
+  const pythonEntrySection = visibleSourceSections.find((sourceSection) => sourceSection.fileName === 'main.py')
   /** 根据 Pyodide 兼容性生成的运行方式说明。 */
   const executionDescription = !pythonEntrySection
     ? '以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。'
@@ -2649,6 +2680,94 @@ function createAutomaticPythonSandboxDefinition(siblingLabSourcePath: string): L
     supportingFileNames,
     siblingLabSourcePath
   )
+}
+
+/**
+ * 把 Markdown 标题节点转为纯文本实验名。
+ * @param headingNode 当前 Python 代码块之前最近的标题节点。
+ * @returns 去掉序号后的简洁标题。
+ */
+function getInlineSandboxHeadingText(headingNode: MarkdownNode): string {
+  /** 标题中所有直接文本节点的拼接结果。 */
+  const headingText = (headingNode.children || [])
+    .map((childNode) => childNode.value || '')
+    .join('')
+    .trim()
+  return headingText.replace(/^(?:[一-十]+|\d+)[、.\s．-]*/, '').trim()
+}
+
+/**
+ * 从正文 Markdown 中找到可在 Pyodide 内独立结束运行的完整 Python 示例。
+ * @param markdown 当前文章原始 Markdown。
+ * @returns 按文章顺序排列的高信心实验候选。
+ */
+function findInlinePythonSandboxCandidates(
+  sourceArticlePath: string,
+  markdown: string
+): InlinePythonSandboxCandidate[] {
+  /** Remark 解析后的文章根节点。 */
+  const markdownTree = remark().parse(markdown) as MarkdownNode
+  /** 遍历时最近的结构标题，用于命名代码单元。 */
+  let currentHeading = '正文 Python 示例'
+  /** 符合安全与完整性标准的正文程序。 */
+  const candidates: InlinePythonSandboxCandidate[] = []
+
+  for (const node of markdownTree.children || []) {
+    if (node.type === 'heading') {
+      currentHeading = getInlineSandboxHeadingText(node) || currentHeading
+      continue
+    }
+
+    /** 只对明确声明为 Python 的围栏代码做自动执行。 */
+    const isPythonCodeBlock = node.type === 'code' && /^(?:python|py)$/i.test(node.lang || '')
+    if (!isPythonCodeBlock || !node.value) {
+      continue
+    }
+
+    /** 当前候选程序的完整源码。 */
+    const sourceCode = node.value.trim()
+    if (!isInlinePythonSandboxCandidate(sourceArticlePath, currentHeading, sourceCode)) {
+      continue
+    }
+
+    candidates.push({
+      title: currentHeading, // 沿用文章原有知识点名称，不生成空泛标题。
+      sourceCode // 运行与正文展示共用同一份内容。
+    })
+  }
+
+  return candidates
+}
+
+/**
+ * 将正文完整 Python 程序转换为集成式在线代码单元。
+ * @param sourceArticlePath 当前文章无扩展名路径。
+ * @param markdown 当前文章 Markdown。
+ * @param sandboxOffset 文章已有实验数，用于生成唯一标识。
+ * @param excludedSourceCodes 已由 Lab 或显式白名单运行的入口源码。
+ * @returns 可交给前端替换对应代码块的实验数组。
+ */
+function createInlinePythonSandboxes(
+  sourceArticlePath: string,
+  markdown: string,
+  sandboxOffset: number,
+  excludedSourceCodes: readonly string[]
+): KnowledgeSandbox[] {
+  /** 标准化后的已接入源码，防止自动附加的 main.py 再生成第二个沙盒。 */
+  const excludedSourceCodeSet = new Set(excludedSourceCodes.map((sourceCode) => sourceCode.trim()))
+  /** 去掉与现有实验重复的正文候选。 */
+  const uniqueCandidates = findInlinePythonSandboxCandidates(sourceArticlePath, markdown).filter(
+    (candidate) => !excludedSourceCodeSet.has(candidate.sourceCode.trim())
+  )
+
+  return uniqueCandidates.map((candidate, candidateIndex) => ({
+    id: `${sourceArticlePath}:inline-${sandboxOffset + candidateIndex + 1}`, // 与 Lab 实验共用顺序空间避免重复。
+    runtime: 'python', // 已通过 Pyodide 兼容性筛选。
+    title: `${candidate.title}·在线运行`, // 明确该单元属于当前知识点。
+    description: '运行正文中的完整 Python 示例，对照源码观察真实输出。', // 不暗示使用外部服务。
+    entryFile: 'main.py', // 正文 Python 单元统一使用 main.py 作为虚拟入口。
+    files: [{ name: 'main.py', content: candidate.sourceCode }] // 只携带已在正文公开的仓库内容。
+  }))
 }
 
 /**
@@ -2810,12 +2929,23 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
     .use(() => rewriteKnowledgeLinks(metadata.sourcePath))
     .use(html)
     .process(normalizedMarkdown)
+  /** 完全来自 Lab 或显式白名单的现有实验。 */
+  const configuredSandboxes = createKnowledgeSandboxes(metadata.sourcePath)
+  /** 正文中经完整性与浏览器安全筛选的 Python 实验。 */
+  const inlinePythonSandboxes = createInlinePythonSandboxes(
+    metadata.sourcePath,
+    normalizedMarkdown,
+    configuredSandboxes.length,
+    configuredSandboxes.flatMap((sandbox) =>
+      sandbox.files.filter((file) => file.name === sandbox.entryFile).map((file) => file.content)
+    )
+  )
 
   return {
     ...metadata,
     content: processedContent.toString(),
     mindmap: createKnowledgeMindmap(markdown, quizTitle, metadata.track === 'ai-apps', metadata.kind),
-    sandboxes: createKnowledgeSandboxes(metadata.sourcePath),
+    sandboxes: [...configuredSandboxes, ...inlinePythonSandboxes],
     quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle, metadata.kind),
     previousArticle,
     nextArticle
