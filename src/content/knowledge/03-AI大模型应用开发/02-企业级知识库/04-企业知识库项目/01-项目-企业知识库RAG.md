@@ -218,7 +218,7 @@ GET  /api/rag/logs/:requestId   查看单次检索和生成日志
 ## 启动
 
 ```bash
-cd /Users/imber/Desktop/ai-lab/worktrees/knowledge-categories/imber-blog/src/content/knowledge/03-AI大模型应用开发/02-企业级知识库/03-企业知识库项目/01-项目-企业知识库RAG/lab
+cd /Users/imber/Desktop/ai-lab/worktrees/knowledge-categories/imber-blog/src/content/knowledge/03-AI大模型应用开发/02-企业级知识库/04-企业知识库项目/01-项目-企业知识库RAG/lab
 docker compose up -d qdrant
 python3 main.py
 ```

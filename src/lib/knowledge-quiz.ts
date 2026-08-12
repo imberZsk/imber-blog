@@ -205,7 +205,7 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
       '从 mock 切到真实模型时只替换不确定的模型层，权限、终止、日志和错误处理应作为稳定控制面继续保留。'
     )
   ],
-  '03-AI大模型应用开发/08-工程基础/02-Python/06-Python与JavaScript对比': [
+  '03-AI大模型应用开发/08-工程基础/03-Python/06-Python与JavaScript对比': [
     createCuratedQuizQuestion(
       'python-javascript-engineering-differences',
       '前端工程师开始维护 Python AI 服务。哪些迁移判断可以直接用于代码审查？',
@@ -232,7 +232,7 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
       '迁移重点不是背语法，而是弄清运行时语义：协程驱动、类型校验、对象身份和值相等、依赖隔离都不能照搬 JS。'
     )
   ],
-  '03-AI大模型应用开发/08-工程基础/02-Python/06-Python与JavaScript对比/lab/README': [
+  '03-AI大模型应用开发/08-工程基础/03-Python/06-Python与JavaScript对比/lab/README': [
     createCuratedQuizQuestion(
       'python-javascript-demo-review',
       '你要把对照 demo 改成真实的异步 AI 脚本。哪些代码与验收判断正确？',
@@ -448,7 +448,7 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
       '完成前验证要求能够直接支持当前结论的新鲜证据，而不是推测、旧结果或自我声明。'
     )
   ],
-  '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/02-RAG文档向量化与语义搜索': [
+  '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/02-RAG文档向量化与语义搜索': [
     createCuratedQuizQuestion(
       'rag-offline-indexing',
       '设计 RAG 离线建库任务时，哪些工作必须在用户提问前完成？',
@@ -475,7 +475,7 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
       '离线链路生产可版本化的检索索引；问题改写、Context 组装和答案校验属于在线问答。'
     )
   ],
-  '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/03-RAG在线问答链路': [
+  '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/03-RAG在线问答链路': [
     createCuratedQuizQuestion(
       'rag-online-diagnosis',
       '线上回答缺少正确证据时，哪些排查动作能区分检索问题和生成问题？',
@@ -502,7 +502,7 @@ const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
       '先检查证据是否被正确召回和送入上下文，再判断是否需要调整生成规则。'
     )
   ],
-  '03-AI大模型应用开发/02-企业级知识库/01-RAG核心链路/04-混合检索与RRF实战': [
+  '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/04-混合检索与RRF实战': [
     createCuratedQuizQuestion(
       'hybrid-rrf',
       '企业文档同时包含自然语言、错误码和产品型号。哪些混合检索设计合理？',
