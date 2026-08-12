@@ -155,6 +155,24 @@ interface LabSandboxDefinition {
 /** 知识文章的仓库内根目录。 */
 const KNOWLEDGE_CONTENT_ROOT = join(process.cwd(), 'src', 'content', 'knowledge')
 
+/** 本次知识域扁平化生成的旧路径到规范路径映射文件。 */
+const KNOWLEDGE_PATH_MIGRATION_FILE = join(process.cwd(), 'src', 'content', 'knowledge-path-migrations.json')
+
+/** 旧文章路径到当前规范路径的精确映射。 */
+const KNOWLEDGE_PATH_MIGRATIONS_BY_LEGACY = new Map<string, string>(
+  Object.entries(JSON.parse(fs.readFileSync(KNOWLEDGE_PATH_MIGRATION_FILE, 'utf8')) as Record<string, string>)
+)
+
+/** 当前规范路径到全部旧文章路径的反向映射。 */
+const KNOWLEDGE_LEGACY_PATHS_BY_CURRENT = new Map<string, string[]>()
+
+for (const [legacyPath, currentPath] of KNOWLEDGE_PATH_MIGRATIONS_BY_LEGACY) {
+  /** 当前文章已经登记的历史路径。 */
+  const legacyPaths = KNOWLEDGE_LEGACY_PATHS_BY_CURRENT.get(currentPath) || []
+  legacyPaths.push(legacyPath)
+  KNOWLEDGE_LEGACY_PATHS_BY_CURRENT.set(currentPath, legacyPaths)
+}
+
 /** 知识文章引用的本地媒体根目录。 */
 const KNOWLEDGE_ASSET_ROOT = join(process.cwd(), 'public', 'knowledge-assets')
 
@@ -909,9 +927,9 @@ const NESTED_COURSE_PATH_SEGMENT_INDEX = 3
 /** AI 编程的实体课程目录或指南文件位于公开路径第 3 段。 */
 const AI_CODING_COURSE_PATH_SEGMENT_INDEX = 2
 
-/** 三条路线中用于聚合同一系统课程的目录深度。 */
+/** 三条路线都按“知识域/文章”分组，避免旧目录深度制造重复小标题。 */
 const COURSE_GROUP_DEPTH_BY_TRACK_SECTION: Partial<Record<string, number>> = {
-  [FULL_STACK_SECTION_NAME]: 3,
+  [FULL_STACK_SECTION_NAME]: 2,
   [AI_CODING_SECTION_NAME]: 2,
   [AI_APP_TRACK_SECTION_NAME]: 2
 }
@@ -1455,15 +1473,20 @@ function getBaseArticleTitle(rawTitle: string, sourceArticlePath: string): strin
  * @param kind 当前文章在学习路径中的用途。
  * @param sequence 当前文章标题需要展示的课程顺序。
  */
-function getSequencedArticleTitle(baseTitle: string, kind: KnowledgeArticleKind, sequence: number): string {
+function getSequencedArticleTitle(
+  baseTitle: string,
+  kind: KnowledgeArticleKind,
+  sequence: number,
+  topic: string
+): string {
   /** 统一使用两位数展示的细分类内顺序。 */
   const sequenceLabel = sequence.toString().padStart(2, '0')
 
   if (kind === 'guide') {
-    return `（${sequenceLabel}） - 学习指南：${baseTitle}`
+    return `${topic}（${sequenceLabel}） - 学习指南`
   }
 
-  return `（${sequenceLabel}） - ${baseTitle}`
+  return `${topic}（${sequenceLabel}） - ${baseTitle}`
 }
 
 /**
@@ -1672,6 +1695,13 @@ export function getLegacyKnowledgeArticlePath(articlePath: string): string | nul
  * @param articlePath 重组后的规范文章路径。
  */
 export function getKnowledgeArticleAliasPaths(articlePath: string): string[] {
+  /** 本次扁平化前位于旧实体目录中的文章路径。 */
+  const taxonomyLegacyPaths = KNOWLEDGE_LEGACY_PATHS_BY_CURRENT.get(articlePath) || []
+  /** 更早版本使用的短目录或指南重编号路径。 */
+  const taxonomyHistoricalPaths = taxonomyLegacyPaths.flatMap((taxonomyLegacyPath) => [
+    getLegacyKnowledgeArticlePath(taxonomyLegacyPath),
+    ...getLegacyGuideSequenceArticlePaths(taxonomyLegacyPath)
+  ])
   /** 已发布的短公开路径，例如旧版 `/02-Agent/...`。 */
   const legacyPublicPath = getLegacyKnowledgeArticlePath(articlePath)
   /** 新增实体系列目录之前使用的完整扁平路径。 */
@@ -1693,6 +1723,8 @@ export function getKnowledgeArticleAliasPaths(articlePath: string): string[] {
       legacyFlatAiAppPath,
       legacyGlobalAiAppSeriesPath,
       legacyAiAppCurrentPath,
+      ...taxonomyLegacyPaths,
+      ...taxonomyHistoricalPaths,
       ...legacyGuideSequencePaths,
       ...legacyGuideSequencePublicPaths
     ].filter((aliasPath): aliasPath is string => Boolean(aliasPath && aliasPath !== articlePath))
@@ -1734,6 +1766,12 @@ export function getMergedDemoAliasPath(sourceArticlePath: string): string | null
  * @param articlePath URL 中请求的新版或旧版文章路径。
  */
 function getCurrentKnowledgeArticlePath(articlePath: string): string {
+  /** 本次扁平化后与旧实体文章精确对应的规范路径。 */
+  const taxonomyCurrentPath = KNOWLEDGE_PATH_MIGRATIONS_BY_LEGACY.get(articlePath)
+  if (taxonomyCurrentPath) {
+    return taxonomyCurrentPath
+  }
+
   /** 旧版公开路径按通用目录规则转换后的规范路径。 */
   let migratedArticlePath = articlePath
 
@@ -2227,16 +2265,12 @@ function getFullStackTopic(sectionName: string): string {
  * @param contentSectionName 当前文章在路线中的模块目录名称。
  */
 function getArticleTopic(trackSectionName: string, contentSectionName: string): string {
-  if (trackSectionName === AI_CODING_SECTION_NAME) {
-    // 修复带连字符的实体目录无法命中页面模块配置：目录仍保留 URL 语义，展示名称统一使用空格。
+  if (KNOWLEDGE_TRACK_BY_SECTION[trackSectionName]) {
+    // 扁平化后第二层目录就是三条路线共用的规范知识域，页面和思维导图必须读取同一名称。
     return contentSectionName.replaceAll('-', ' ')
   }
 
-  if (trackSectionName === AI_APP_TRACK_SECTION_NAME) {
-    return AI_APP_TOPIC_BY_SECTION_NAME[contentSectionName] || contentSectionName
-  }
-
-  return getFullStackTopic(contentSectionName)
+  return contentSectionName
 }
 
 /**
@@ -2309,28 +2343,8 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
   const contentSectionName = getDisplayName(slug[1] || trackSectionName)
   /** 与实体目录一一对应的模块名称。 */
   const topic = getArticleTopic(trackSectionName, contentSectionName)
-  /** 全栈与 AI 应用路线使用第三层实体目录生成可导航的课程细分类。 */
-  const subtopicPathSegment =
-    trackSectionName === FULL_STACK_SECTION_NAME || trackSectionName === AI_APP_TRACK_SECTION_NAME ? slug[2] : slug[1]
-  /** 文章路径对应的原始课程或技术细分类名称。 */
-  const rawSubtopic = getDisplayName(subtopicPathSegment || contentSectionName)
-  /** 使用标准技术名称或去除路径分隔符后的细分类展示名称。 */
-  const normalizedSubtopic = KNOWLEDGE_SUBTOPIC_LABELS[rawSubtopic.toLowerCase()] || rawSubtopic.replaceAll('-', ' ')
-  /** AI 应用实体系列目录对应的归组配置。 */
-  const physicalAiAppSubtopicRule =
-    trackSectionName === AI_APP_TRACK_SECTION_NAME && subtopicPathSegment
-      ? getAiAppSubtopicRuleByDirectory(topic, subtopicPathSegment)
-      : undefined
-  /** 第四层路径存在时，第三层就是实体系列目录，不能把系列序号误当成旧课号。 */
-  const hasPhysicalAiAppSubtopic = trackSectionName === AI_APP_TRACK_SECTION_NAME && Boolean(slug[3])
-  /** AI 应用优先使用实体系列名称，旧扁平路径仍可按课程编号回退归组。 */
-  const subtopic =
-    trackSectionName === AI_APP_TRACK_SECTION_NAME
-      ? physicalAiAppSubtopicRule?.label ||
-        (hasPhysicalAiAppSubtopic
-          ? normalizedSubtopic
-          : getAiAppSubtopic(topic, subtopicPathSegment, normalizedSubtopic))
-      : normalizedSubtopic
+  /** 扁平化后的知识域已经是列表和导图的最小分组，不再用文章文件名制造重复小标题。 */
+  const subtopic = topic
   /** 当前文章所属的公开学习主线；总览等公共文章不限定主线。 */
   const track = KNOWLEDGE_TRACK_BY_SECTION[trackSectionName] || null
 
@@ -2377,22 +2391,14 @@ function rewriteArticleHeading(orderedTitle: string) {
  * @param article 当前需要生成标题的文章元数据。
  */
 function getPhysicalCourseSequence(article: KnowledgeArticle): number | null {
-  /** 当前路线的课程目录在公开路径中的固定下标。 */
-  const coursePathSegmentIndex =
-    article.track === 'ai-coding'
-      ? AI_CODING_COURSE_PATH_SEGMENT_INDEX
-      : article.track === 'full-stack' || article.track === 'ai-apps'
-        ? NESTED_COURSE_PATH_SEGMENT_INDEX
-        : null
-
-  if (coursePathSegmentIndex === null) {
+  if (!article.track) {
     return null
   }
 
   /** 文章规范路径按目录拆分后的片段。 */
   const pathSegments = article.path.split('/')
-  /** 文章所属实体课程的目录或文件名。 */
-  const coursePathSegment = pathSegments[coursePathSegmentIndex] || ''
+  /** 扁平化后第三个路径片段就是带顺序的文章文件名。 */
+  const coursePathSegment = pathSegments[2] || ''
   return getCourseOrder(coursePathSegment)
 }
 
@@ -2461,7 +2467,7 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
     return {
       ...article,
       sequence: moduleSequence,
-      title: getSequencedArticleTitle(article.title, article.kind, titleSequence)
+      title: getSequencedArticleTitle(article.title, article.kind, titleSequence, article.topic)
     }
   })
 

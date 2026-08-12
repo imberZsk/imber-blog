@@ -39,6 +39,13 @@ export const KNOWLEDGE_MODULE_LABELS = {
   }
 } as const
 
+/** 三条学习路线重构后与实体目录一一对应的知识域。 */
+export const KNOWLEDGE_TRACK_MODULES = {
+  fullStack: ['富文本编辑器', '工程化脚手架', 'React 源码', 'Java', 'Python', 'Playwright', '测试工程'],
+  aiCoding: ['AI 编程基础', 'Prompt 工程', 'Claude Code', 'Codex', 'Skill 与 MCP', 'Agent Harness', '工程化工作流'],
+  aiApps: ['大模型基础', 'Prompt 工程', '应用框架', 'RAG', '记忆系统', 'Agent', '模型工程', '可观测性', '生产工程', '项目实战', '面试题']
+} as const
+
 /** 与三张思维导图一一对应的知识库主线。 */
 export const KNOWLEDGE_TRACKS: KnowledgeTrack[] = [
   {
@@ -46,30 +53,21 @@ export const KNOWLEDGE_TRACKS: KnowledgeTrack[] = [
     label: '全栈开发',
     description: '前后端工程实践',
     mindmapHref: '/mindmaps/01-%E5%85%A8%E6%A0%88%E5%BC%80%E5%8F%91',
-    modules: Object.values(KNOWLEDGE_MODULE_LABELS.fullStack)
+    modules: KNOWLEDGE_TRACK_MODULES.fullStack
   },
   {
     slug: 'ai-coding',
     label: 'AI 编程',
     description: 'AI 驱动研发实践',
     mindmapHref: '/mindmaps/02-AI%E7%BC%96%E7%A8%8B',
-    modules: Object.values(KNOWLEDGE_MODULE_LABELS.aiCoding)
+    modules: KNOWLEDGE_TRACK_MODULES.aiCoding
   },
   {
     slug: 'ai-apps',
     label: 'AI 大模型应用开发',
     description: '大模型应用工程',
     mindmapHref: '/mindmaps/03-AI%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%BA%94%E7%94%A8%E5%BC%80%E5%8F%91',
-    modules: [
-      KNOWLEDGE_MODULE_LABELS.aiApps.engineeringFoundation,
-      KNOWLEDGE_MODULE_LABELS.aiApps.agentEngineering,
-      KNOWLEDGE_MODULE_LABELS.aiApps.langChainPractice,
-      KNOWLEDGE_MODULE_LABELS.aiApps.langGraph,
-      KNOWLEDGE_MODULE_LABELS.aiApps.observability,
-      KNOWLEDGE_MODULE_LABELS.aiApps.enterpriseKnowledge,
-      KNOWLEDGE_MODULE_LABELS.aiApps.soloCompany,
-      KNOWLEDGE_MODULE_LABELS.aiApps.interviewQuestions
-    ]
+    modules: KNOWLEDGE_TRACK_MODULES.aiApps
   }
 ]
 
