@@ -94,11 +94,9 @@ def call_model(messages, temperature=0.2):
 
 用一个离线的 mock chat API 讲清三件事：**message 的角色结构**、**token 怎么估算**、**多轮上下文为什么越聊越贵**。没有真实模型，无需 API Key。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -151,3 +149,50 @@ python3 main.py
 - 把 `mock_chat` 换成真实模型 HTTP 调用（OpenAI / 通义），保留 `usage` 字段结构不变，上层代码一行不用改。
 - 在场景 2 后面再追加两轮对话，观察 `input_tokens` 怎么持续涨——这就是下一篇「上下文管理」要解决的问题。
 - 把 `estimate_tokens` 的英文系数从 4 改成 3，看看估算差多少；真实项目应换成模型自带的分词器。
+
+## 可运行源码：大模型 API 基础
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""离线演示 Chat API 消息结构与上下文成本。"""
+
+from __future__ import annotations
+
+
+def estimate_tokens(messages: list[dict[str, str]]) -> int:
+    """粗略估算 token；messages 是发送给模型的完整消息列表。"""
+    # 教学近似：中文字符按一个 token、英文按四字符一个 token。
+    character_count = sum(len(message["content"]) for message in messages)
+    return max(1, character_count // 2)
+
+
+def mock_chat(messages: list[dict[str, str]]) -> dict[str, object]:
+    """模拟兼容 Chat API 的响应；messages 包含 system/user/assistant 角色。"""
+    # 最近一条用户消息决定本次离线回答。
+    last_user_message = next(message["content"] for message in reversed(messages) if message["role"] == "user")
+    # 请求输入 token 的近似值。
+    prompt_tokens = estimate_tokens(messages)
+    return {"message": {"role": "assistant", "content": f"已收到：{last_user_message}"}, "usage": {"prompt_tokens": prompt_tokens}}
+
+
+def main() -> None:
+    """连续发送三轮消息并展示上下文增长。"""
+    # 每一轮都会原样再次发送的消息历史。
+    messages = [{"role": "system", "content": "你是企业制度助手，只基于资料回答。"}]
+    for question in ("报销期限？", "需要哪些材料？", "刚才两点总结一下"):
+        messages.append({"role": "user", "content": question})
+        # 当前轮的模拟 API 响应。
+        response = mock_chat(messages)
+        # 响应中的 assistant 消息需要加入下一轮上下文。
+        assistant_message = response["message"]
+        assert isinstance(assistant_message, dict)
+        messages.append(assistant_message)
+        print(f"轮次={len(messages) // 2} prompt_tokens≈{response['usage']['prompt_tokens']} 回答={assistant_message['content']}")
+
+
+if __name__ == "__main__":
+    main()
+```

@@ -79,11 +79,9 @@ RAG 系统在两个时刻干两件事，别混在一起：
 
 用最小代码把 **RAG 全流程**跑一遍，并和「裸模型」做对照：同一个问题，裸模型凭记忆编，RAG 先检索资料再基于资料回答，没资料就拒答。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -122,3 +120,45 @@ python3 main.py
 ## 说明
 
 真实项目里 `score` 会换成 embedding 余弦相似度（OpenAI / bge 等），`KNOWLEDGE` 会换成向量数据库。这个 demo 用关键词重叠打分只为讲清流程，不代表生产检索质量。
+
+## 可运行源码：RAG 是什么
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用最小代码对比裸模型与 RAG 问答。"""
+
+from __future__ import annotations
+
+
+def retrieve(question: str, documents: list[str]) -> list[str]:
+    """按关键词召回资料；question 是问题，documents 是候选文档。"""
+    # 从问题中提取的非空字符集合用于离线匹配。
+    query_characters = {character for character in question if character.strip()}
+    return [document for document in documents if len(query_characters & set(document)) >= 3]
+
+
+def answer_with_rag(question: str, documents: list[str]) -> str:
+    """只基于召回资料回答；无证据时拒答。"""
+    # 当前问题命中的资料。
+    evidence = retrieve(question, documents)
+    if not evidence:
+        return "资料不足，无法回答。"
+    return f"根据资料：{evidence[0]} [来源 1]"
+
+
+def main() -> None:
+    """对两个问题展示裸模型和 RAG 的行为差异。"""
+    # 可检索的企业私有知识。
+    documents = ["公司报销需在费用发生后 30 天内提交。", "年假需提前 3 天申请。"]
+    for question in ("公司报销期限是什么？", "公司食堂几点关门？"):
+        print(f"问题：{question}")
+        print("裸模型：我猜可能是 7 天。（无依据）")
+        print("RAG：", answer_with_rag(question, documents), "\n")
+
+
+if __name__ == "__main__":
+    main()
+```

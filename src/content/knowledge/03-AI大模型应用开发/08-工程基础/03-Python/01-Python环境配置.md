@@ -86,11 +86,9 @@ api_key = os.getenv("OPENAI_API_KEY")  # 没设置时返回 None，代码可以�
 
 一个「环境体检」脚本：不装任何东西，只把 Python、pip、虚拟环境、标准库、API Key 的真实状态打印出来，给你一个「现在能不能开始写 AI 脚本」的明确结论。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -130,3 +128,44 @@ python3 main.py
 - 把 `check_stdlib_modules` 的列表换成 `["fastapi", "uvicorn"]`，没装时会看到 `[!!]`，体会「依赖缺失」长什么样。
 - 先激活虚拟环境再跑，对比虚拟环境那一项从 `[!!]` 变 `[OK]`。
 - 临时 `export OPENAI_API_KEY=xxx` 再跑，确认脚本只说「已设置」、不回显你的 Key。
+
+## 可运行源码：Python 环境配置
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""检查运行 AI 应用脚本所需的本地 Python 环境。"""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+import platform
+import shutil
+import sys
+
+
+def main() -> None:
+    """打印解释器、虚拟环境、pip、标准库和 API Key 的检查结果。"""
+    # 当前解释器是否运行在虚拟环境中。
+    in_virtual_environment = sys.prefix != sys.base_prefix
+    # 当前 PATH 中解析到的 pip 命令。
+    pip_path = shutil.which("pip3") or shutil.which("pip")
+    # json 是后续示例依赖的标准库模块。
+    json_available = importlib.util.find_spec("json") is not None
+    # 只判断密钥是否配置，绝不打印密钥内容。
+    api_key_configured = bool(os.getenv("OPENAI_API_KEY"))
+
+    print(f"Python: {platform.python_version()} ({sys.executable})")
+    print(f"版本要求: {'通过' if sys.version_info >= (3, 10) else '需要 Python 3.10+'}")
+    print(f"虚拟环境: {'已激活' if in_virtual_environment else '未激活'}")
+    print(f"pip: {pip_path or '未找到'}")
+    print(f"标准库 json: {'可用' if json_available else '不可用'}")
+    print(f"OPENAI_API_KEY: {'已配置' if api_key_configured else '未配置（离线实验不受影响）'}")
+
+
+if __name__ == "__main__":
+    main()
+```

@@ -102,11 +102,9 @@ def run_plugin(call):
 
 用纯 Python 标准库模拟 Coze「Bot + 插件（Plugin）」的调用流程：Bot 根据用户问题自己选插件、传参数，平台执行后用结果生成回答。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库，离线可跑。
 
@@ -162,3 +160,57 @@ Coze 和 Function Calling（第 28 篇）是同一套机制：模型只提议调
 - 给 `PLUGINS` 加一个「翻译」插件，写好 `triggers`，看 Bot 能不能选中。
 - 故意让一个插件的 `triggers` 和另一个重叠，观察 Bot 选错插件——这对应真实 Coze 里「插件描述写得含糊导致误调」。
 - 把 `run_plugin` 里的 mock 数据换成真实 HTTP 请求（`urllib.request`），体验插件接外部 API。
+
+## 可运行源码：Coze 入门
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""模拟 Coze Bot 选择并执行插件的调用流程。"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+Plugin = Callable[[dict[str, str]], dict[str, str]]
+
+
+def weather_plugin(arguments: dict[str, str]) -> dict[str, str]:
+    """返回离线天气；arguments 必须包含 city。"""
+    # Bot 从问题中抽取并传入的城市。
+    city = arguments.get("city", "未知城市")
+    return {"city": city, "weather": "晴", "temperature": "26°C"}
+
+
+def policy_plugin(arguments: dict[str, str]) -> dict[str, str]:
+    """返回企业制度；arguments 必须包含 topic。"""
+    # Bot 从问题中抽取的制度主题。
+    topic = arguments.get("topic", "未知主题")
+    return {"topic": topic, "content": "报销需在30天内提交"}
+
+
+def run_bot(question: str, plugins: dict[str, Plugin]) -> str:
+    """选择插件、构造参数、执行并生成回答。"""
+    if "天气" in question:
+        tool_name, arguments = "weather", {"city": "成都"}
+    else:
+        tool_name, arguments = "policy", {"topic": "报销"}
+    print(f"Bot 选择插件={tool_name} 参数={arguments}")
+    # 平台只执行已注册的插件函数。
+    result = plugins[tool_name](arguments)
+    return f"插件结果：{result}"
+
+
+def main() -> None:
+    """运行天气和制度两类插件调用。"""
+    # Coze 平台中的插件注册表。
+    plugins: dict[str, Plugin] = {"weather": weather_plugin, "policy": policy_plugin}
+    for question in ("成都天气怎么样？", "报销制度是什么？"):
+        print(question, "->", run_bot(question, plugins))
+
+
+if __name__ == "__main__":
+    main()
+```

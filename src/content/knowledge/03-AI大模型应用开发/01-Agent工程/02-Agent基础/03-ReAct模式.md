@@ -77,11 +77,9 @@ ReAct 是 Reasoning（推理）+ Acting（行动）的缩写。它的核心是�
 
 打印一个完整的 **Thought / Action / Observation** 循环 trace，演示 Agent 怎么「想一步、做一步、看结果、再想下一步」，直到给出 Final Answer。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -121,3 +119,49 @@ Final Answer: 客户 C1001 的订单总金额是 2000 元
 ## 说明
 
 这里 Thought 和 Action 是写死的规则，只为把循环结构显示清楚。真实 ReAct 中，每一轮的 Thought 和 Action 由模型生成，程序负责执行 Action、把工具结果作为 Observation 拼回 prompt 再喂给模型，循环结构和这里完全一样。`max_steps` 不是可选项——模型有可能反复调同一个工具或绕不出来，必须有步数上限兜底。
+
+## 可运行源码：ReAct 模式
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""打印可控的 Thought/Action/Observation ReAct 循环。"""
+
+from __future__ import annotations
+
+MAX_STEPS = 3
+
+
+def search_policy(query: str) -> str:
+    """返回离线制度资料；query 是 Agent 生成的检索词。"""
+    return "员工报销需在费用发生后 30 天内提交。" if "报销" in query else "未命中"
+
+
+def run_agent(question: str) -> str:
+    """在最大步数内执行 ReAct；question 是用户目标。"""
+    # 最近一次工具观察结果。
+    observation = ""
+    for step in range(1, MAX_STEPS + 1):
+        print(f"Step {step} Thought: {'需要查制度' if not observation else '已有足够证据，可以回答'}")
+        if observation and observation != "未命中":
+            # 有证据后应立即结束，避免无意义循环。
+            final_answer = f"根据制度，{observation}"
+            print(f"Final Answer: {final_answer}")
+            return final_answer
+        print("Action: search_policy")
+        print(f"Action Input: {question}")
+        observation = search_policy(question)
+        print(f"Observation: {observation}")
+    return "达到最大步数，转人工处理。"
+
+
+def main() -> None:
+    """运行一次完整 ReAct 轨迹。"""
+    run_agent("报销最晚多久提交？")
+
+
+if __name__ == "__main__":
+    main()
+```

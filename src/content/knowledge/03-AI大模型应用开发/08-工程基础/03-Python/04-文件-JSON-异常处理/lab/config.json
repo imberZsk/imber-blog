@@ -1,5 +1,0 @@
-{
-  "model": "mock-chat",
-  "timeout_seconds": 15,
-  "max_retries": 2
-}

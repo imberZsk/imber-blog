@@ -87,11 +87,9 @@ sources.add("财务制度.md")  # 重复添加无效，集合里还是一份
 
 用 list / dict / tuple / set 四种结构组织一个 AI 助手的内部数据：消息历史、知识库、工具表、引用来源。一种结构对应一个真实场景，让你看清「什么时候该用哪个」。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -127,3 +125,36 @@ unknown   -> 未注册的工具：unknown
 - 往 `build_history` 末尾再追加一条 user 消息，看 `last_user_question` 取到的变没变。
 - 给 `build_knowledge` 加一个「考勤」主题，再用一个含「考勤」的问题检索。
 - `dedupe_sources` 里 `hits + hits` 是故意制造重复来源，去掉这个 `+ hits` 看输出还是不是一条。
+
+## 可运行源码：Python 数据结构
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""演示 AI 应用中常见 Python 数据结构的职责。"""
+
+from __future__ import annotations
+
+
+def main() -> None:
+    """构造消息、知识、工具和引用，并打印各结构的使用结果。"""
+    # list 保留有顺序且可重复的会话消息。
+    messages = [{"role": "user", "content": "报销期限？"}, {"role": "assistant", "content": "30 天。"}]
+    # dict 通过稳定键快速定位知识内容。
+    knowledge = {"expense_deadline": "费用发生后 30 天内提交"}
+    # tuple 表示不应被运行时修改的工具描述。
+    tools = (("search_policy", "查询制度"), ("create_ticket", "创建工单"))
+    # set 对重复引用来源自动去重。
+    citations = {"employee-policy.md#报销", "employee-policy.md#报销", "travel-policy.md#住宿"}
+
+    print(f"消息顺序: {[message['role'] for message in messages]}")
+    print(f"按键取知识: {knowledge['expense_deadline']}")
+    print(f"工具不可变配置: {tools}")
+    print(f"引用去重后: {sorted(citations)}")
+
+
+if __name__ == "__main__":
+    main()
+```

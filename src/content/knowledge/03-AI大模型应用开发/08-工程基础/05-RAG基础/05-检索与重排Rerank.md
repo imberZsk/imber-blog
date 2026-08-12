@@ -91,11 +91,9 @@
 
 演示两段式检索：**初排（召回，快但粗）+ 重排（rerank，慢但准）**。同一批候选，重排后顺序会变，最该排第一的被提上来。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -132,3 +130,54 @@ python3 main.py
 ## 说明
 
 真实项目里初排是向量检索（从全库捞 topK），重排用专门的 rerank 模型（如 bge-reranker、Cohere Rerank）对这一小批候选做精细的「query-文档相关性」打分。这里用「短语命中 + 长度惩罚」模拟重排模型的判断，目的是讲清「为什么要两段、重排改变了什么」。
+
+## 可运行源码：检索与重排 Rerank
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""演示初排召回与精细重排的职责差异。"""
+
+from __future__ import annotations
+
+import re
+
+
+def terms(text: str) -> set[str]:
+    """提取教学用字符词项；text 是查询或候选正文。"""
+    return set(re.findall(r"[A-Za-z]+|[\u4e00-\u9fff]", text.lower()))
+
+
+def recall_score(query: str, document: str) -> float:
+    """用词项交集模拟快速初排。"""
+    return float(len(terms(query) & terms(document)))
+
+
+def rerank_score(query: str, document: str) -> float:
+    """用完整意图特征模拟较慢但更准的交叉编码器重排。"""
+    # 初排分数作为重排基础特征。
+    base_score = recall_score(query, document)
+    # 同时出现期限意图和报销主题时给予更高权重。
+    intent_bonus = 5.0 if "多久" in query and ("30天" in document or "期限" in document) else 0.0
+    return base_score + intent_bonus
+
+
+def main() -> None:
+    """对候选集分别打印初排和重排顺序。"""
+    # 用户真实检索意图。
+    query = "报销多久内提交"
+    # 已由低成本检索召回的候选文档。
+    candidates = ["报销系统提交入口", "报销需在费用发生后30天内提交", "提交年假申请", "报销发票要求"]
+    # 初排只负责高召回率。
+    recalled = sorted(candidates, key=lambda document: recall_score(query, document), reverse=True)
+    # 重排只处理有限候选，提升 top1 精度。
+    reranked = sorted(recalled, key=lambda document: rerank_score(query, document), reverse=True)
+    print("初排:", recalled)
+    print("重排:", reranked)
+
+
+if __name__ == "__main__":
+    main()
+```

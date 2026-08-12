@@ -96,11 +96,9 @@ JS 的依赖天然按项目隔离，Python 必须自己先 `python3 -m venv .ven
 
 同一段 AI 脚本逻辑（清洗消息 → 检索 → 拼提示词 → 异步调模型 → 解析 JSON）的 Python 写法，每个关键处都用注释标出 JS 里对应怎么写。拿前端经验一行行对照着读。
 
-## 运行
+## 在线运行
 
-```bash
-python3 main.py
-```
+直接使用本文“可运行源码”中的沙盒执行；源码、复制内容和实际运行入口保持一致。
 
 零依赖，纯标准库。
 
@@ -132,3 +130,51 @@ python3 main.py
 - 把 `clean_messages` 的列表推导式改成普通 `for` 循环 + `append`，对照哪种更接近 JS 的 `.filter`。
 - 把两次 `asyncio.run` 合并成一次，体会 Python 必须显式管理事件循环，而 JS 不用。
 - 给 `parse_json` 喂一段非法 JSON，看 `except` 分支怎么兜底。
+
+## 可运行源码：Python 与 JavaScript 对比
+
+下方代码就是在线沙盒实际执行的完整源码。可直接运行、查看输出或复制到本地，页面不再依赖文章外的重复脚本。
+
+### `main.py`
+
+```python
+"""用 Python 实现前端开发者熟悉的异步 AI 调用链。"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+
+
+def retrieve(question: str) -> list[str]:
+    """返回命中资料；question 对应 JavaScript 函数参数。"""
+    # 离线实验使用的固定知识列表。
+    documents = ["报销应在费用发生后 30 天内提交。", "年假需提前 3 天申请。"]
+    return [document for document in documents if any(word in document for word in question if word.strip())][:1]
+
+
+async def call_model(prompt: str) -> str:
+    """模拟异步模型调用；prompt 是拼装后的完整提示词。"""
+    await asyncio.sleep(0.01)
+    # 模拟模型返回的结构化 JSON 字符串。
+    return json.dumps({"answer": prompt.split("资料：", 1)[-1]}, ensure_ascii=False)
+
+
+async def main() -> None:
+    """执行清洗、检索、提示词拼装、异步调用和 JSON 解析。"""
+    # Python strip 对应 JavaScript trim。
+    question = "  报销什么时候提交？  ".strip()
+    # Python 列表对应 JavaScript Array。
+    evidence = retrieve(question)
+    # Python f-string 对应 JavaScript 模板字符串。
+    prompt = f"问题：{question}\n资料：{' '.join(evidence) or '无'}"
+    # Python await 与 JavaScript await 语义一致。
+    raw_response = await call_model(prompt)
+    # Python dict 对应 JavaScript object。
+    parsed_response = json.loads(raw_response)
+    print(parsed_response)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
