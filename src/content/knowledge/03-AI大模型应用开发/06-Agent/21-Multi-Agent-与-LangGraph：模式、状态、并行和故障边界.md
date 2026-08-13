@@ -3,6 +3,16 @@
 > 读完你能：判断何时应该拆多 Agent，在 Subagents、Router、Handoffs 与自定义工作流间选型，并用显式状态、并行上限和停止条件约束系统。
 > 更新日期：2026/08/11
 
+## 核心知识清单
+
+- Subagents、Router、Handoff 与 Supervisor
+- Custom Workflow 与显式状态机
+- fan-out、fan-in 与并发上限
+- Conditional Edge、循环与停止条件
+- Checkpointer、恢复与部分失败
+- 工具权限隔离与副作用审批
+- Multi-Agent Trace 与分层评测
+
 # 一、先证明单 Agent 不够
 
 多 Agent 会增加模型调用、状态同步、权限传递、调试和失败组合。复杂任务不自动等于多 Agent；单 Agent 配合动态工具和明确工作流往往更便宜。

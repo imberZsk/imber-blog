@@ -1,5 +1,14 @@
 # Agent（12） - 高德 MCP + 浏览器 MCP：LangChain 复用别人的 MCP Server 有多爽！
 
+## 核心知识清单
+
+- MCP Server 能力发现与 Tool Schema
+- stdio 子进程与远程 Transport
+- LangChain MCP Adapter 与工具注册
+- 地图 MCP 的位置参数与结果约束
+- 浏览器 MCP 的页面状态与操作审批
+- 超时、权限、Prompt Injection 与审计
+
 > 读完你能：理解如何在 LangChain 等框架里复用现成 MCP Server，以及复用时要控制哪些风险。
 
 # 一、本篇定位

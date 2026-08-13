@@ -1,5 +1,14 @@
 # 可观测性（02） - Trace、Span 与 Langfuse 实战
 
+## 核心知识清单
+
+- Trace、Observation、Span 与父子关系
+- Generation 的模型、Token、成本与输出
+- Session、User、Metadata 与 Tag
+- Score、人工反馈与评测关联
+- OpenTelemetry 上下文传播
+- 采样、脱敏、高基数与保留周期
+
 > 把一次 AI 请求拆成模型、检索、工具和解析 Span，定位质量、延迟和成本发生在哪一段。
 
 ## 学习目标

@@ -1,5 +1,14 @@
 # 模型工程（06） - 图解 Transformer 架构：大模型底层原理
 
+## 核心知识清单
+
+- Token Embedding 与位置编码
+- Query、Key、Value 与缩放点积注意力
+- 多头注意力与因果 Mask
+- 前馈网络、残差连接与归一化
+- Decoder-only 与自回归生成
+- Prefill、Decode 与 KV Cache
+
 > 读完你能：用应用工程师需要的粒度理解 Transformer：token、embedding、attention、层叠和生成。
 
 # 一、本篇定位

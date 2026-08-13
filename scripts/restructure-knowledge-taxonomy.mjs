@@ -33,26 +33,20 @@ const EXTERNAL_LINK_PATTERN = /https?:\/\//
 
 /** 不适合作为思维导图核心知识点的写作结构和实验操作章节。 */
 const EXCLUDED_HEADING_PATTERN =
-  /(?:参考资料|事实来源|总结|小结|验收|自测|下一篇|延伸阅读|可运行源码|requirements|学习目标|学习边界|在线运行|页面运行|本地查看|预期输出|重点观察|动手实践|动手改|代码\s*[↔<=>-]+\s*概念|作者自审)/i
+  /(?:参考资料|事实来源|总结|小结|验收|自测|下一篇|延伸阅读|可运行源码|可执行示例|requirements|学习目标|学习边界|在线运行|页面运行|本地查看|预期输出|重点观察|动手实践|动手改|代码\s*[↔<=>-]+\s*概念|作者自审|本篇定位|与进阶篇的分工|一个真实场景|先从一个真实场景|为什么需要它|核心决策|核心拆解|工程链路|落地步骤|落地建议|决策记录|生产避坑|故障演练|工程上真正会踩的坑|常见坑|一句话面试答法|复述答法|和已有主线的关系|本篇先抓住什么|先确定方向|这一章怎么读|前言|背景|复习导航|问题清单|怎么跑|看点|main\.py|一张 Mermaid 图|真实.+怎么用)/i
+
+/** 每篇正式文章在路线思维导图中展示的最少知识节点数。 */
+const MIN_MINDMAP_POINTS = 3
+
+/** 每篇正式文章在路线思维导图中展示的最多知识节点数。 */
+const MAX_MINDMAP_POINTS = 8
 
 /** 三条路线的规范名称、目录和知识域顺序。 */
 const TRACKS = [
   {
     directory: '01-全栈开发',
     title: '全栈开发',
-    categories: [
-      '富文本编辑器',
-      '工程化脚手架',
-      'React 源码',
-      'Java',
-      'Python',
-      'Playwright',
-      '测试工程',
-      'Web 基础',
-      '前端框架',
-      '数据与安全',
-      '运维与可观测性'
-    ]
+    categories: ['富文本编辑器', '工程化脚手架', 'React 源码', 'Java', 'Python', 'Playwright', '测试工程', '运维与交付', 'Web 与浏览器', '前端框架与跨端', '数据与中间件', '后端架构与安全', '业务链路']
   },
   {
     directory: '02-AI编程',
@@ -66,7 +60,8 @@ const TRACKS = [
       'Agent Harness',
       '工程化工作流',
       'Context Engineering',
-      '评测与治理'
+      '评测与治理',
+      '产品化与 AI 公司'
     ]
   },
   {
@@ -97,10 +92,12 @@ const CATEGORY_SYLLABUS = {
   Python: ['Python 语言与工程环境', 'FastAPI、异步、数据与测试', '自动化、AI 调用、打包与部署'],
   Playwright: ['定位、等待与断言', 'UI 模式、夹具与 Page Object', 'AI 辅助测试和可维护性'],
   测试工程: ['测试金字塔与边界', '快照测试的适用范围', '稳定性、可读性与质量门禁'],
-  'Web 基础': ['HTML、CSS、JavaScript 与 HTTP', 'TypeScript 与运行时校验', '浏览器事件、存储、性能与安全'],
-  前端框架: ['Vue 与 React 应用架构', 'Next.js 渲染、缓存与数据安全', 'Electron、小程序与跨端边界'],
-  数据与安全: ['关系型数据库、索引与事务', 'Redis、Elasticsearch、MongoDB 与对象存储', '认证授权、Web 安全、消息与一致性'],
-  运维与可观测性: ['Docker 与 Kubernetes', 'CI/CD、灰度与回滚', '日志、指标、Trace、SLO 与告警'],
+  运维与交付: ['Linux、Nginx 与网络入口', 'Docker、Kubernetes 与发布', 'CI/CD、可观测性、灰度与回滚'],
+  'Web 与浏览器': ['HTML 语义、CSS 布局与可访问性', 'JavaScript 事件循环与浏览器渲染', 'TypeScript 类型系统、网络与性能'],
+  前端框架与跨端: ['Vue、React、Next.js 与 Nuxt 的边界', 'SSR、SSG、CSR 与服务端组件', '微信小程序、Electron 与跨端选型'],
+  数据与中间件: ['关系型、文档型与对象存储', 'Redis 缓存与 Elasticsearch 搜索', 'Kafka 消息、数据一致性与选型'],
+  后端架构与安全: ['分层架构、API 契约与统一错误模型', '微服务、配置中心、服务发现与消息任务', '认证、授权、密钥、TLS 与最小权限'],
+  业务链路: ['登录、查询、订单与事务一致性', '缓存、搜索、配置与定时任务', 'Trace 驱动的跨层故障定位'],
   'AI 编程基础': ['AI 编程模式与能力边界', '任务拆分、上下文和验证闭环', '工具选型与安全授权'],
   'Prompt 工程': ['结构化 Prompt 与 Few-shot', '输出约束、任务拆解与模板', '调试、评测与注入防护'],
   'Claude Code': ['项目规则、权限与 Plan Mode', 'Git、Worktree、测试与自动化', '子代理、MCP、Skills、Hooks 与远程任务'],
@@ -110,17 +107,18 @@ const CATEGORY_SYLLABUS = {
   工程化工作流: ['需求澄清与实施计划', '隔离工作区、TDD 与系统调试', '并行协作、审查验证与分支收尾'],
   'Context Engineering': ['上下文分层、预算与压缩', '仓库检索、Repo Map 与 Code RAG', 'Memory、规则文件与知识保鲜'],
   评测与治理: ['规格驱动开发与验收契约', '任务评测、Trace 与回归数据集', '团队权限、成本、流水线与发布治理'],
-  大模型基础: ['Token、Transformer、Attention 与上下文窗口', '自回归生成机制与采样参数', '模型能力边界、训练阶段与选型'],
+  '产品化与 AI 公司': ['OPC 业务闭环、角色和治理', 'AI 公司控制平面、任务、预算与审批', '产品发现、MVP、研发流水线与运营闭环'],
+  大模型基础: ['Token、Transformer、Attention 与上下文窗口', '消息协议、模型能力与稳定 API 调用', '自回归生成、训练阶段与能力边界'],
   'Prompt 工程@ai-apps': ['Prompt 结构与 Few-shot', '上下文构建与结构化输出', 'Prompt 调优、评测与注入防护'],
-  应用框架: ['LangChain、LCEL 与 Runnable', 'Output Parser、Callback 与 Middleware', 'Dify、Coze 与框架选型'],
-  RAG: ['文档解析、Chunking 与离线建库', 'Embedding、VectorDB、BM25 与多路召回', '混合检索、Rerank、引用校验、评测与 GraphRAG'],
+  应用框架: ['LangChain v1、LCEL、Runnable 与 Agent Runtime', '分层架构、接口契约、Callback 与 Middleware', 'Dify、Coze、迁移边界与框架选型'],
+  RAG: ['文档解析、Chunking、数据生命周期与离线建库', 'Embedding、VectorDB、BM25、Parent-Child 与多路召回', '动态检索、混合检索、Rerank、引用校验、评测与 GraphRAG'],
   记忆系统: ['对话上下文与 Redis 短期记忆', 'Mem0 长期记忆与多路召回', '记忆提取、更新、冲突、过期与遗忘'],
-  Agent: ['Agent Loop、Function Calling、Tool Use 与 Router', 'ReAct、Plan-and-Execute 与 Reflection', 'MCP、Skill、LangGraph、HIL、Multi-Agent 与 Deep Agents'],
-  模型工程: ['模型选型、微调与量化', '推理加速、模型部署与 GPU', '吞吐、并发、延迟与成本优化'],
-  可观测性: ['Trace、Span、LangSmith 与 Langfuse', 'Dataset、Evaluation 与质量指标', '线上监控、告警与回归闭环'],
-  生产工程: ['权限、安全、限流与缓存', '超时、重试、幂等与降级', '灰度、成本、SLO 与故障排查'],
+  Agent: ['Agent Loop、Function Calling、Tool Use 与 Router', 'LangGraph State、Reducer、持久化、HIL 与可靠执行', 'MCP、Skill、Multi-Agent、Deep Agents 与上下文压缩'],
+  模型工程: ['数学、学习范式、模型选型与微调', '量化、推理加速、模型部署与 GPU', '吞吐、并发、延迟、评测与成本优化'],
+  可观测性: ['Trace、Span、LangSmith 与 Langfuse 平台能力', 'Dataset、离线/在线 Evaluation 与 Agent 轨迹', '线上监控、告警、人工标注与回归闭环'],
+  生产工程: ['权限、安全、限流、缓存与测试金字塔', '超时、重试、幂等、降级与 Kubernetes 弹性', '灰度、回滚、成本、SLO 与故障排查'],
   项目实战: ['企业知识库与 RAG 问答系统', 'Agent 助手与 AI Copilot', '端到端设计、部署、评测与复盘'],
-  面试题: ['按知识域组织 100 道题', '回答包含原理、取舍和生产案例', '用于复习、追问与最终验收']
+  面试题: ['按大模型、RAG、Memory、Agent 与工程化知识域组织题目', '答案覆盖原理、数据流、方案取舍与生产案例', '追问用于暴露背诵，故障题要求给出证据和定位顺序', '题目、答案与正文知识点互相链接并用于最终验收']
 }
 
 /** 各知识域使用的可信默认资料。 */
@@ -132,10 +130,12 @@ const CATEGORY_SOURCES = {
   Python: [['Python 3 文档', 'https://docs.python.org/3/'], ['FastAPI 文档', 'https://fastapi.tiangolo.com/']],
   Playwright: [['Playwright 文档', 'https://playwright.dev/docs/intro'], ['Playwright 最佳实践', 'https://playwright.dev/docs/best-practices']],
   测试工程: [['Vitest 指南', 'https://vitest.dev/guide/'], ['Testing Library 原则', 'https://testing-library.com/docs/guiding-principles']],
-  'Web 基础': [['MDN Web 开发核心课程', 'https://developer.mozilla.org/en-US/docs/Learn_web_development/Core'], ['TypeScript Handbook', 'https://www.typescriptlang.org/docs/handbook/intro.html']],
-  前端框架: [['Vue 指南', 'https://vuejs.org/guide/introduction.html'], ['Next.js App Router', 'https://nextjs.org/docs/app']],
-  数据与安全: [['PostgreSQL Tutorial', 'https://www.postgresql.org/docs/current/tutorial.html'], ['OWASP Authentication Cheat Sheet', 'https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html']],
-  运维与可观测性: [['Kubernetes Deployment', 'https://kubernetes.io/docs/concepts/workloads/controllers/deployment/'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
+  运维与交付: [['Kubernetes 文档', 'https://kubernetes.io/docs/concepts/'], ['OpenTelemetry 文档', 'https://opentelemetry.io/docs/concepts/observability-primer/']],
+  'Web 与浏览器': [['MDN Web Docs', 'https://developer.mozilla.org/'], ['TypeScript Handbook', 'https://www.typescriptlang.org/docs/handbook/intro.html']],
+  前端框架与跨端: [['React 文档', 'https://react.dev/learn'], ['Vue 文档', 'https://vuejs.org/guide/introduction.html']],
+  数据与中间件: [['PostgreSQL 文档', 'https://www.postgresql.org/docs/'], ['Redis 文档', 'https://redis.io/docs/latest/']],
+  后端架构与安全: [['OWASP Cheat Sheet Series', 'https://cheatsheetseries.owasp.org/'], ['Microsoft REST API Guidelines', 'https://github.com/microsoft/api-guidelines']],
+  业务链路: [['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/'], ['Transactional Outbox', 'https://microservices.io/patterns/data/transactional-outbox.html']],
   'AI 编程基础': [['OpenAI Codex 文档', 'https://developers.openai.com/codex/'], ['GitHub Copilot 文档', 'https://docs.github.com/en/copilot']],
   'Prompt 工程': [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']],
   'Claude Code': [['Claude Code 文档', 'https://docs.anthropic.com/en/docs/claude-code/overview'], ['Claude Code 安全', 'https://docs.anthropic.com/en/docs/claude-code/security']],
@@ -145,6 +145,7 @@ const CATEGORY_SOURCES = {
   工程化工作流: [['Git Worktree', 'https://git-scm.com/docs/git-worktree'], ['pytest 文档', 'https://docs.pytest.org/en/stable/']],
   'Context Engineering': [['Model Context Protocol Architecture', 'https://modelcontextprotocol.io/docs/learn/architecture'], ['GitHub Code Search', 'https://docs.github.com/en/search-github/github-code-search/understanding-github-code-search-syntax']],
   评测与治理: [['GitHub Spec Kit', 'https://github.com/github/spec-kit'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
+  '产品化与 AI 公司': [['GitHub Actions', 'https://docs.github.com/en/actions'], ['LangSmith Evaluation', 'https://docs.langchain.com/langsmith/evaluation-concepts']],
   大模型基础: [['Hugging Face LLM Course', 'https://huggingface.co/learn/llm-course/chapter1/1'], ['Attention Is All You Need', 'https://arxiv.org/abs/1706.03762']],
   'Prompt 工程@ai-apps': [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']],
   应用框架: [['LangChain 文档', 'https://docs.langchain.com/oss/python/langchain/overview'], ['Dify 文档', 'https://docs.dify.ai/']],
@@ -550,16 +551,58 @@ function refreshAiAppSupplements() {
   })
 }
 
-/** 从文章正文提取最多两个能代表主题的知识章节。 */
+/** 去掉标题编号和 Markdown 标记，得到适合导图展示的知识节点。 */
+function normalizeMindmapPoint(point) {
+  return point
+    .replace(/[`*~]/g, '')
+    .replace(/^[一二三四五六七八九十百]+[、.．]\s*/, '')
+    .replace(/^\d+(?:\.\d+)*[、.．]\s*/, '')
+    .replace(/^[（(]?\d+[）)]\s*[-—–:：]?\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** 判断候选文本能否作为可学习的导图知识节点。 */
+function isUsefulMindmapPoint(point) {
+  if (!point || point.length < 2 || point.length > 90) return false
+  if (EXCLUDED_HEADING_PATTERN.test(point)) return false
+  if (/Python\s*3\.\d+[^。；]{0,24}(?:标准库|运行|依赖)|Python 虚拟环境|本文核心契约与融合算法仅使用 Python/i.test(point)) return false
+  return !/^(?:说明|运行|文件|项目结构|怎么用|核心特点|关键要点)[：:]?$/.test(point)
+}
+
+/** 从文章正文提取三到八个能代表主题的具体知识节点。 */
 function getMindmapPoints(markdown) {
+  /** 作者明确维护的核心知识清单，是导图节点的最高优先级来源。 */
+  const explicitPointSection = markdown.match(/^##\s+核心知识清单\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  /** 清单中的每个条目都必须在正文中得到解释，避免导图与文章漂移。 */
+  const explicitPoints = [...explicitPointSection.matchAll(/^[-*]\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
+    .filter((point) => point.length >= 2 && point.length <= 90)
+  if (explicitPoints.length >= MIN_MINDMAP_POINTS) {
+    return [...new Set(explicitPoints)].slice(0, MAX_MINDMAP_POINTS)
+  }
+
   /** 文章全部正文标题；首个 H1 是文章标题，不属于知识节点。 */
-  const headings = [...markdown.matchAll(/^#{1,3}\s+(.+)$/gm)]
-    .map((match) => match[1].replace(/[`*_~]/g, '').trim())
+  const headings = [...markdown.matchAll(/^#{1,4}\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
     .slice(1)
-    .filter((heading) => !EXCLUDED_HEADING_PATTERN.test(heading))
-  /** 去重后优先使用真实章节名称。 */
-  const knowledgeHeadings = [...new Set(headings)].slice(0, 2)
-  if (knowledgeHeadings.length > 0) return knowledgeHeadings
+    .filter(isUsefulMindmapPoint)
+
+  /** 加粗术语通常是正文中已经解释过的概念或决策名称。 */
+  const emphasizedTerms = [...markdown.matchAll(/^(?:[-*]\s+)?\*\*([^*\n]{2,80})\*\*(?:[：:]|\s|$)/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
+    .filter(isUsefulMindmapPoint)
+
+  /** 核心决策列表用于补足结构较短、但内容密度足够的文章。 */
+  const decisionSection = markdown.match(/^##\s+核心决策\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  /** 核心决策中的完整句子直接作为可执行知识节点。 */
+  const decisions = [...decisionSection.matchAll(/^[-*]\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
+    .filter(isUsefulMindmapPoint)
+
+  /** 按章节、术语、决策顺序去重，确保导图优先呈现文章自身的知识结构。 */
+  const knowledgePoints = [...new Set([...headings, ...emphasizedTerms, ...decisions])].slice(0, MAX_MINDMAP_POINTS)
+  if (knowledgePoints.length >= MIN_MINDMAP_POINTS) return knowledgePoints
 
   /** 无可用章节时使用文章目标，避免导图退化成“在线运行/来源”目录。 */
   const learningOutcome = markdown
@@ -567,14 +610,28 @@ function getMindmapPoints(markdown) {
     ?.replace(/[`*_~]/g, '')
     .trim()
 
-  return learningOutcome ? [learningOutcome.slice(0, 80)] : []
+  /** 内容很短时保留学习结果作为最后候选，但不伪造正文没有的概念。 */
+  const fallbackPoints = learningOutcome ? [...knowledgePoints, normalizeMindmapPoint(learningOutcome.slice(0, 90))] : knowledgePoints
+  return [...new Set(fallbackPoints)].slice(0, MAX_MINDMAP_POINTS)
 }
 
 /** 从学习指南的目标清单提取思维导图必须保留的具体知识项。 */
 function getGuideMindmapPoints(markdown) {
+  /** 新版指南优先维护核心知识清单，确保指南与普通文章使用同一套导图契约。 */
+  const corePointSection = markdown.match(/^##\s+核心知识清单\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  /** 核心知识清单中的指南知识节点。 */
+  const corePoints = [...corePointSection.matchAll(/^[-*]\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
+    .filter(isUsefulMindmapPoint)
+    .slice(0, MAX_MINDMAP_POINTS)
+  if (corePoints.length >= MIN_MINDMAP_POINTS) return corePoints
+
   /** 学习目标章节的正文范围。 */
-  const goalSection = markdown.match(/^##\s+学习目标\s*\n([\s\S]*?)(?=^##\s+|\z)/m)?.[1] || ''
-  return [...goalSection.matchAll(/^[-*]\s+(.+)$/gm)].map((match) => match[1].trim()).slice(0, 4)
+  const goalSection = markdown.match(/^##\s+学习目标\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  return [...goalSection.matchAll(/^[-*]\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapPoint(match[1]))
+    .filter(isUsefulMindmapPoint)
+    .slice(0, MAX_MINDMAP_POINTS)
 }
 
 /** 将知识文章路径编码为站内链接。 */

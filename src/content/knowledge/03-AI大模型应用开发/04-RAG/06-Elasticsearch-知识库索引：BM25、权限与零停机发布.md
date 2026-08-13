@@ -1,5 +1,14 @@
 # RAG（06） - Elasticsearch 知识库索引：BM25、权限与零停机发布
 
+## 核心知识清单
+
+- BM25 正文检索与 exact_terms 精确过滤
+- tenant_id、ACL 与检索前权限过滤
+- document_id、chunk_id、source 与 version
+- Alias、索引版本与零停机切换
+- 更新、删除与缓存失效
+- Recall@K、P95 延迟与分词回归
+
 > 读完你能：围绕“Elasticsearch 知识库索引：BM25、权限与零停机发布”理解“先定义索引契约”与“带权限的 BM25 查询”，并结合正文示例完成实践与排障。
 
 

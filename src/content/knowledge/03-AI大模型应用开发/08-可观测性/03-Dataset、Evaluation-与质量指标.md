@@ -6,6 +6,15 @@
 
 读完本章后，你应能复述本主题的关键数据流，选择至少一种替代方案，运行或审查最小实现，并根据日志、指标或测试结果解释失败原因。
 
+## 核心知识清单
+
+- Dataset、Example、Split 与版本
+- Baseline、Candidate 与 Experiment
+- Retrieval、Generation、Agent 与端到端分层评测
+- Deterministic、Human 与 LLM-as-Judge
+- Offline Regression 与 Online Evaluation
+- 质量、延迟、成本与安全发布门禁
+
 ## 为什么需要它
 
 真实系统的问题通常不在 API 能否调用，而在输入边界、错误恢复和验收证据是否明确。本章给出可以进入设计评审和生产检查的最小框架。
