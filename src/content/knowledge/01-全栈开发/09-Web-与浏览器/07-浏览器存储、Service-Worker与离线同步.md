@@ -41,4 +41,3 @@ Service Worker 经 install、activate 后才能控制页面。新版本可能等
 - [MDN Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
 - [MDN Cache](https://developer.mozilla.org/en-US/docs/Web/API/Cache)
 - [OWASP HTML5 Security](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html)
-

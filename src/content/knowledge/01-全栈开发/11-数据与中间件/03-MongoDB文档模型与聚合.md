@@ -17,8 +17,17 @@
 
 聚合管道尽早 `$match` 和 `$project`，并用执行计划确认索引。数组字段产生多键索引，要关注组合限制和文档大小。
 
+## 建模例子
+
+订单地址与下单快照生命周期一致、读取时总随订单出现，适合嵌入；订单事件会持续增长且需要独立分页，使用单独集合并以 `order_id + sequence` 建唯一索引。不要把所有事件无限追加到订单数组，否则文档增长会触发移动、写放大并逼近 BSON 大小上限。
+
+聚合先 `$match` 租户和时间，再 `$project` 必要字段，最后 `$group`。在分片集合中，Shard Key 要同时考虑路由、写入分布和不可变性；只用递增时间可能形成热点，只用随机键又会让租户查询广播。
+
+## 故障与迁移
+
+灵活 Schema 容易让新旧字段同时存在。写入携带 `schema_version`，读取兼容有限版本，后台批量迁移并统计剩余数量；完成后再收紧 Validator。若聚合突然占满内存，查看早期过滤是否生效和是否丢失索引；若副本切换后读到旧数据，检查 Read Concern 与业务允许的陈旧度；若 TTL 文档没有准时删除，记住 TTL 清理是后台近似任务，不能拿它实现精确业务调度。
+
 ## 参考资料
 
 - [MongoDB Data Modeling](https://www.mongodb.com/docs/manual/data-modeling/)
 - [MongoDB Aggregation](https://www.mongodb.com/docs/manual/aggregation/)
-

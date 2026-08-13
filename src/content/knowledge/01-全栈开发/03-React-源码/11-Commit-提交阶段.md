@@ -1,6 +1,6 @@
 # React 源码（11） - Commit 提交阶段
 
-> 读完你能：围绕“Commit 提交阶段”理解“CommitRoot”与“Before Mutation Effects”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、CommitRoot”，复现“二、Before Mutation Effects”的最小实现，并用“三、Mutation Effects”检查结果与失败边界。
 
 `packages/react-reconciler/src/ReactFiberWorkLoop.old.js` -> `performConcurrentWorkOnRoot` -> `finishConcurrentRender`-> `commitRoot`
 

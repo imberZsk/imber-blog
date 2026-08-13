@@ -23,6 +23,8 @@
 
 上下文接近阈值时，对已完成阶段做结构化 Summarization：保留目标、已确认事实、变更、验证证据、未决风险和文件引用。摘要不是事实来源，关键判断仍要回链原始文件。
 
+Summarization 解决的是上下文容量问题，不是知识存储问题。压缩前应把大产物卸载到文件或对象存储，摘要只保存可恢复索引；压缩后用原始证据抽查关键事实，并记录摘要版本，避免多次递归摘要逐步扭曲结论。
+
 ## Skill 与子 Agent
 
 高频且短的规则放系统约束；低频、详细、可复用流程放 Skill，通过名称和描述先披露索引，需要时再读取正文。子 Agent 只接收完成子任务所需的最小上下文，输出事实、证据、假设和未完成项。主 Agent 对最终整合、权限和验收负责，不能把责任一起“委派”出去。
@@ -36,4 +38,3 @@ Shell、浏览器、文件写入和外部消息 Tool 采用最小权限；危险
 - [Deep Agents Overview](https://docs.langchain.com/oss/python/deepagents/overview)
 - [Deep Agents Subagents](https://docs.langchain.com/oss/python/deepagents/subagents)
 - [Deep Agents Filesystem](https://docs.langchain.com/oss/python/deepagents/harness)
-

@@ -319,3 +319,693 @@ RAG 回答为什么要引用来源？
 
 - [FastAPI 大型应用](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
 - [Docker Compose](https://docs.docker.com/compose/)
+
+<!-- knowledge-lab-sources-inlined -->
+
+## 实现源码与运行边界
+
+这些源码需要本地服务、容器或第三方依赖，因此保留真实命令和文件结构，不伪装成浏览器可执行代码。
+
+### `data/sample-docs/finance-handbook.md`
+
+```markdown
+# 财务报销手册
+
+报销需在费用产生后 30 天内提交，逾期需补充直属主管说明。
+
+差旅报销包含交通、住宿、餐补三类，餐补每天上限 80 元。
+
+单笔金额超过 5000 元的采购报销，需要部门负责人和财务负责人双重审批。
+
+发票抬头必须使用公司全称，电子发票需上传原始 PDF 文件。
+```
+
+### `data/sample-docs/hr-policy.md`
+
+```markdown
+# 人事制度
+
+请假需提前 1 天在 OA 系统提交申请，由直属主管审批。
+
+病假需在 3 个工作日内补交医院证明，无法补交时按事假处理。
+
+试用期员工转正评估在入职满 80 天后发起，由直属主管填写评价。
+
+员工离职需至少提前 30 天提交申请，并完成工作交接清单。
+```
+
+### `data/sample-docs/it-support.md`
+
+```markdown
+# IT 支持手册
+
+VPN 无法连接时，请先确认员工账号未过期，并重启客户端。
+
+企业邮箱首次登录需要绑定手机验证码，验证码 5 分钟内有效。
+
+电脑遗失或怀疑账号泄露时，必须在 1 小时内联系 IT 值班同学冻结账号。
+
+共享文档权限默认按部门开放，跨部门共享需由文档负责人确认。
+```
+
+### `docker-compose.yml`
+
+```yaml
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+```
+
+### `docs/IMPLEMENTATION_PLAN.md`
+
+```markdown
+# 43 企业知识库 RAG 实施计划
+
+**目标：** 把原来的单文件命令行 demo 升级为可演示的本地 Web 项目，支持文档入库、RAG 问答、引用来源、检索日志和友好的前端界面。
+
+**方案：** 使用 Python 标准库提供 HTTP 服务与静态文件服务，核心 RAG 逻辑拆到 `rag_core.py`。检索用本地 TF-IDF + 余弦相似度实现，避免外部 API Key 和向量库依赖。
+
+**文件结构：**
+
+- `rag_core.py`：文档模型、chunk 切分、TF-IDF 检索、grounded 回答、请求日志。
+- `main.py`：HTTP API、静态页面服务、示例数据加载、启动入口。
+- `static/index.html`、`static/styles.css`、`static/app.js`：企业知识库工作台前端。
+- `data/sample-docs/*.md`：开箱即用的企业制度样例。
+- `tests/test_rag_core.py`、`tests/test_api.py`：核心逻辑和 API 测试。
+- `README.md`：运行、测试、演示脚本和升级方向。
+
+**验收：**
+
+1. `python3 -m unittest discover -s tests -v` 通过。
+2. `python3 main.py` 能启动服务。
+3. `GET /health` 返回 ok。
+4. `POST /api/rag/chat` 对“报销多久内提交”返回答案、引用和 trace。
+5. 前端页面能加载文档列表、提问、展示引用和检索过程。
+```
+
+### `main.py`
+
+```python
+"""企业知识库 RAG 的 HTTP API 与静态工作台。"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+from rag_core import LocalEmbeddingModel, QdrantClient, RagService
+
+HOST = "127.0.0.1"
+PORT = 8043
+COLLECTION_NAME = "agent_manual_chunks"
+LAB_DIRECTORY = Path(__file__).resolve().parent
+STATIC_DIRECTORY = LAB_DIRECTORY / "static"
+# lab 位于“AI 大模型应用开发/企业级知识库/项目/课程/lab”，向上四级才是当前 AI 知识根目录。
+AI_KNOWLEDGE_ROOT = LAB_DIRECTORY.parents[3]
+
+
+def create_service() -> RagService:
+    """创建使用本地 Embedding 和 Qdrant 的 RAG 服务。"""
+    # Docker Compose 暴露的 Qdrant 客户端。
+    qdrant = QdrantClient("http://127.0.0.1:6333", COLLECTION_NAME)
+    return RagService(qdrant, LocalEmbeddingModel())
+
+
+SERVICE = create_service()
+
+
+def import_ai_manual() -> dict[str, int]:
+    """重建 collection 并导入 AI 大模型应用开发目录中的 Markdown。"""
+    if not SERVICE.qdrant.healthy():
+        raise RuntimeError("Qdrant 不可用，请先运行 docker compose up -d qdrant")
+    SERVICE.qdrant.recreate_collection()
+    SERVICE.documents.clear()
+    # 扫描完整 AI 应用知识集，排除会重复展示代码的实验目录。
+    markdown_files = [path for path in AI_KNOWLEDGE_ROOT.rglob("*.md") if "lab" not in path.parts]
+    # 本次导入的 chunk 总数。
+    chunk_count = 0
+    for file_path in markdown_files:
+        # 文档首个 H1 或文件名作为展示标题。
+        markdown = file_path.read_text(encoding="utf-8")
+        # 当前文档的首行标题。
+        title = next((line[2:].strip() for line in markdown.splitlines() if line.startswith("# ")), file_path.stem)
+        # 相对知识根目录的可追溯来源。
+        source = str(file_path.relative_to(AI_KNOWLEDGE_ROOT))
+        chunk_count += SERVICE.add_document(title, source, markdown, tenant_id="demo", acl="employee")
+    return {"documents": len(markdown_files), "chunks": chunk_count}
+
+
+class RagHandler(SimpleHTTPRequestHandler):
+    """提供静态工作台和知识库 REST API。"""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        """固定静态文件根目录。"""
+        super().__init__(*args, directory=str(STATIC_DIRECTORY), **kwargs)
+
+    def send_json(self, status_code: int, payload: dict[str, Any]) -> None:
+        """返回 UTF-8 JSON。"""
+        # 编码后的响应体。
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def read_json(self) -> dict[str, Any]:
+        """读取并校验对象类型 JSON 请求体。"""
+        # 客户端声明的请求体长度。
+        content_length = int(self.headers.get("Content-Length", "0"))
+        # JSON 解码后的对象。
+        payload = json.loads(self.rfile.read(content_length))
+        if not isinstance(payload, dict):
+            raise ValueError("请求体必须是 JSON 对象")
+        return payload
+
+    def do_GET(self) -> None:
+        """处理健康、文档和 Trace 查询，其余交给静态文件服务。"""
+        if self.path == "/health":
+            # Qdrant 可用性决定是否能读取真实持久化点数。
+            qdrant_healthy = SERVICE.qdrant.healthy()
+            # 即使导入由另一个进程完成，也从 collection 读取真实点数。
+            indexed_chunks = SERVICE.qdrant.indexed_point_count() if qdrant_healthy else 0
+            self.send_json(200, {"status": "ok", "qdrant": qdrant_healthy, "sessionDocuments": len(SERVICE.documents), "indexedChunks": indexed_chunks})
+            return
+        if self.path == "/api/knowledge/documents":
+            self.send_json(200, {"documents": SERVICE.documents})
+            return
+        if self.path == "/api/rag/logs":
+            self.send_json(200, {"logs": SERVICE.logs[-50:]})
+            return
+        if self.path.startswith("/api/rag/logs/"):
+            # 路径最后一段是待查询 requestId。
+            request_id = self.path.rsplit("/", 1)[-1]
+            # 对应 requestId 的 Trace。
+            trace = next((item for item in SERVICE.logs if item["requestId"] == request_id), None)
+            self.send_json(200 if trace else 404, trace or {"error": "trace_not_found"})
+            return
+        super().do_GET()
+
+    def do_POST(self) -> None:
+        """处理文档新增、批量导入和在线问答。"""
+        try:
+            # 当前接口的 JSON 请求对象。
+            payload = self.read_json()
+            if self.path == "/api/knowledge/documents":
+                # 文档展示标题。
+                title = str(payload.get("title", "")).strip()
+                # 文档可追溯来源。
+                source = str(payload.get("source", "manual")).strip()
+                # 待切分入库的 Markdown 正文。
+                text = str(payload.get("text", "")).strip()
+                if not title or not text:
+                    raise ValueError("title 和 text 不能为空")
+                # 新文档生成的 chunk 数。
+                chunk_count = SERVICE.add_document(title, source, text, "demo", "employee")
+                self.send_json(201, {"title": title, "chunks": chunk_count})
+                return
+            if self.path == "/api/knowledge/import-agent-manual":
+                self.send_json(200, import_ai_manual())
+                return
+            if self.path == "/api/rag/chat":
+                # 清洗后的用户问题。
+                question = str(payload.get("question", "")).strip()
+                if not question:
+                    raise ValueError("question 不能为空")
+                # 受上限保护的候选数量。
+                top_k = int(payload.get("topK", 4))
+                self.send_json(200, SERVICE.ask(question, "demo", "employee", top_k))
+                return
+            self.send_json(404, {"error": "not_found"})
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json(400, {"error": str(error)})
+        except RuntimeError as error:
+            self.send_json(503, {"error": str(error)})
+
+
+def main() -> None:
+    """检查 Qdrant 并启动 RAG 工作台。"""
+    # 命令行参数解析器。
+    parser = argparse.ArgumentParser(description="企业知识库 RAG 工作台")
+    parser.add_argument("--import-only", action="store_true", help="只重建并导入 Agent 手册")
+    # 用户传入的启动参数。
+    arguments = parser.parse_args()
+    if arguments.import_only:
+        print(import_ai_manual())
+        return
+    # 工作台 HTTP 服务。
+    server = ThreadingHTTPServer((HOST, PORT), RagHandler)
+    print(f"RAG 工作台：http://{HOST}:{PORT}")
+    print(f"Qdrant：{'可用' if SERVICE.qdrant.healthy() else '不可用，请先执行 docker compose up -d qdrant'}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n服务已停止")
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### `rag_core.py`
+
+```python
+"""企业 RAG 的切分、Embedding、Qdrant 与问答核心。"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+import time
+import urllib.error
+import urllib.request
+import uuid
+from dataclasses import asdict, dataclass
+from typing import Any
+
+EMBEDDING_DIMENSIONS = 128
+DEFAULT_CHUNK_SIZE = 360
+DEFAULT_CHUNK_OVERLAP = 60
+MIN_RETRIEVAL_SCORE = 0.22
+
+
+@dataclass(frozen=True, slots=True)
+class Chunk:
+    """保存可检索正文及企业过滤元数据。"""
+
+    # Qdrant 使用的稳定点标识。
+    chunk_id: str
+    # 实际进入 Embedding 和生成阶段的正文。
+    text: str
+    # 文档展示标题。
+    title: str
+    # 可追溯的文件或业务来源。
+    source: str
+    # Markdown 标题形成的章节路径。
+    section: str
+    # 必须在检索前过滤的租户标识。
+    tenant_id: str
+    # 必须在检索前过滤的权限标签。
+    acl: str
+
+
+@dataclass(frozen=True, slots=True)
+class SearchHit:
+    """表示向量检索命中的证据。"""
+
+    # Qdrant 相似度得分。
+    score: float
+    # 命中的完整文本块。
+    chunk: Chunk
+
+
+class LocalEmbeddingModel:
+    """用稳定 hashing 向量提供离线 Embedding。"""
+
+    def __init__(self, dimensions: int = EMBEDDING_DIMENSIONS) -> None:
+        """初始化向量维度；dimensions 必须大于零。"""
+        if dimensions <= 0:
+            raise ValueError("dimensions 必须大于 0")
+        # 输出向量固定维度。
+        self.dimensions = dimensions
+
+    def embed(self, text: str) -> list[float]:
+        """把文本映射为归一化 hashing 向量。"""
+        # 中英文字符、英文单词和数字词项。
+        tokens = re.findall(r"[A-Za-z]+|\d+|[\u4e00-\u9fff]", text.lower())
+        # 把相邻词项加入特征，保留少量顺序信息。
+        features = tokens + [f"{left}:{right}" for left, right in zip(tokens, tokens[1:])]
+        # 尚未归一化的稠密向量。
+        vector = [0.0] * self.dimensions
+        for feature in features:
+            # Python hash 每进程随机，必须改用稳定摘要才能支持离线建库后在线检索。
+            digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=8).digest()
+            # 摘要前四字节决定向量桶。
+            bucket = int.from_bytes(digest[:4], "big") % self.dimensions
+            # 摘要最后一位决定正负号，降低哈希碰撞偏差。
+            sign = 1.0 if digest[-1] % 2 == 0 else -1.0
+            vector[bucket] += sign
+        # L2 范数用于生成余弦可比的单位向量。
+        norm = math.sqrt(sum(value * value for value in vector))
+        return [value / norm for value in vector] if norm else vector
+
+
+def split_markdown(
+    markdown: str,
+    title: str,
+    source: str,
+    tenant_id: str,
+    acl: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap: int = DEFAULT_CHUNK_OVERLAP,
+) -> list[Chunk]:
+    """按 Markdown 标题和重叠窗口切分，并写入权限元数据。"""
+    if chunk_size <= overlap or overlap < 0:
+        raise ValueError("需要满足 chunk_size > overlap >= 0")
+    # 当前一级标题。
+    level_one = title
+    # 当前二级标题。
+    level_two = ""
+    # 当前标题下的正文行。
+    buffer: list[str] = []
+    # 最终生成的文本块。
+    chunks: list[Chunk] = []
+
+    def flush() -> None:
+        """把当前标题缓冲区按重叠窗口写入 chunks。"""
+        # 合并多行后的章节正文。
+        section_text = " ".join(buffer).strip()
+        if not section_text:
+            buffer.clear()
+            return
+        # 相邻窗口向前移动的字符数。
+        step = chunk_size - overlap
+        # 可用于引用的章节路径。
+        section = "/".join(part for part in (level_one, level_two) if part)
+        for start in range(0, len(section_text), step):
+            # 当前窗口正文。
+            chunk_text = section_text[start : start + chunk_size].strip()
+            if chunk_text:
+                # 内容和元数据共同决定稳定 ID，重复导入不会制造重复点。
+                chunk_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{tenant_id}:{source}:{section}:{start}:{chunk_text}"))
+                chunks.append(Chunk(chunk_id, chunk_text, title, source, section, tenant_id, acl))
+        buffer.clear()
+
+    for raw_line in markdown.splitlines():
+        # 去除 Markdown 行首尾空白后的文本。
+        line = raw_line.strip()
+        if line.startswith("# "):
+            flush()
+            level_one, level_two = line[2:].strip(), ""
+        elif line.startswith("## "):
+            flush()
+            level_two = line[3:].strip()
+        elif not line:
+            flush()
+        else:
+            buffer.append(line)
+    flush()
+    return chunks
+
+
+class QdrantClient:
+    """用标准库调用 Qdrant REST API。"""
+
+    def __init__(self, base_url: str, collection_name: str, timeout_seconds: float = 5.0) -> None:
+        """保存连接参数。"""
+        # 去除末尾斜杠的 Qdrant 地址。
+        self.base_url = base_url.rstrip("/")
+        # 当前知识库对应的 collection。
+        self.collection_name = collection_name
+        # 单次 HTTP 请求超时秒数。
+        self.timeout_seconds = timeout_seconds
+
+    def request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        """发送 JSON 请求并返回对象；非 2xx 会抛出异常。"""
+        # 可选 JSON 请求体。
+        body = json.dumps(payload).encode("utf-8") if payload is not None else None
+        # 带超时边界的 Qdrant HTTP 请求。
+        request = urllib.request.Request(f"{self.base_url}{path}", body, {"Content-Type": "application/json"}, method=method)
+        with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            return json.loads(response.read())
+
+    def healthy(self) -> bool:
+        """检查 Qdrant 是否可访问。"""
+        try:
+            self.request("GET", "/collections")
+            return True
+        except (OSError, urllib.error.URLError, json.JSONDecodeError):
+            return False
+
+    def recreate_collection(self) -> None:
+        """删除并重建 collection，适合教学导入流程。"""
+        try:
+            self.request("DELETE", f"/collections/{self.collection_name}")
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                raise
+        self.request("PUT", f"/collections/{self.collection_name}", {"vectors": {"size": EMBEDDING_DIMENSIONS, "distance": "Cosine"}})
+
+    def indexed_point_count(self) -> int:
+        """读取 collection 中真实持久化的向量点数量。"""
+        # Qdrant collection 详情中的统计对象。
+        result = self.request("GET", f"/collections/{self.collection_name}").get("result", {})
+        return int(result.get("points_count", 0))
+
+    def upsert(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+        """批量写入文本块和向量。"""
+        # Qdrant points 写入结构。
+        points = [{"id": chunk.chunk_id, "vector": embedding, "payload": asdict(chunk)} for chunk, embedding in zip(chunks, embeddings, strict=True)]
+        self.request("PUT", f"/collections/{self.collection_name}/points?wait=true", {"points": points})
+
+    def search(self, vector: list[float], top_k: int, tenant_id: str, acl: str) -> list[SearchHit]:
+        """在向量检索前执行租户和 ACL 过滤。"""
+        # Qdrant 的前置权限过滤条件。
+        query_filter = {"must": [{"key": "tenant_id", "match": {"value": tenant_id}}, {"key": "acl", "match": {"value": acl}}]}
+        # 搜索请求与得分阈值。
+        payload = {"vector": vector, "limit": top_k, "with_payload": True, "score_threshold": MIN_RETRIEVAL_SCORE, "filter": query_filter}
+        # Qdrant 返回的原始点列表。
+        points = self.request("POST", f"/collections/{self.collection_name}/points/search", payload).get("result", [])
+        # 已恢复为领域对象的命中结果。
+        hits: list[SearchHit] = []
+        for point in points:
+            # 点中存储的 Chunk 字段。
+            chunk_payload = point.get("payload", {})
+            hits.append(SearchHit(float(point["score"]), Chunk(**chunk_payload)))
+        return hits
+
+
+class RagService:
+    """编排离线建库、在线检索、回答、引用与 Trace。"""
+
+    def __init__(self, qdrant: QdrantClient, embedding_model: LocalEmbeddingModel) -> None:
+        """注入向量数据库和 Embedding 模型。"""
+        # 向量存储客户端。
+        self.qdrant = qdrant
+        # 离线与在线必须使用相同版本的 Embedding。
+        self.embedding_model = embedding_model
+        # 当前进程已导入的文档摘要。
+        self.documents: list[dict[str, str | int]] = []
+        # 最近请求 Trace。
+        self.logs: list[dict[str, Any]] = []
+
+    def add_document(self, title: str, source: str, markdown: str, tenant_id: str, acl: str) -> int:
+        """切分、向量化并入库一篇文档，返回 chunk 数。"""
+        # 结构化切分后的文本块。
+        chunks = split_markdown(markdown, title, source, tenant_id, acl)
+        # 与文本块严格对齐的本地向量。
+        embeddings = [self.embedding_model.embed(chunk.text) for chunk in chunks]
+        self.qdrant.upsert(chunks, embeddings)
+        self.documents.append({"title": title, "source": source, "chunks": len(chunks)})
+        return len(chunks)
+
+    def ask(self, question: str, tenant_id: str, acl: str, top_k: int = 4) -> dict[str, Any]:
+        """在线向量检索并生成带引用回答。"""
+        # 当前请求的稳定追踪标识。
+        request_id = uuid.uuid4().hex
+        # 请求开始时间用于端到端耗时。
+        started_at = time.perf_counter()
+        # 查询文本使用与建库一致的向量模型。
+        query_vector = self.embedding_model.embed(question)
+        # 已执行租户和权限过滤的命中证据。
+        hits = self.qdrant.search(query_vector, max(1, min(top_k, 10)), tenant_id, acl)
+        # 没有达标证据时必须拒答。
+        answer = "资料不足，无法基于知识库回答。" if not hits else "\n".join(f"{hit.chunk.text} [{index}]" for index, hit in enumerate(hits, start=1))
+        # 引用只来自实际用于回答的命中块。
+        citations = [{"index": index, "title": hit.chunk.title, "source": hit.chunk.source, "section": hit.chunk.section, "score": round(hit.score, 4)} for index, hit in enumerate(hits, start=1)]
+        # 便于定位检索、权限、阈值和生成问题的请求日志。
+        trace = {"requestId": request_id, "question": question, "tenantId": tenant_id, "acl": acl, "retrieved": len(hits), "latencyMs": round((time.perf_counter() - started_at) * 1000, 2), "citations": citations}
+        self.logs.append(trace)
+        return {"requestId": request_id, "answer": answer, "citations": citations, "trace": trace}
+```
+
+### `static/app.js`
+
+```javascript
+const statusOutput = document.querySelector('#status'); // 健康与导入状态区域。
+const answerOutput = document.querySelector('#answer'); // 回答、引用和 Trace 区域。
+
+async function request(path, options = {}) {
+  const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options }); // API 原始响应。
+  const payload = await response.json(); // JSON 响应对象。
+  if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+  return payload;
+}
+
+document.querySelector('#health').addEventListener('click', async () => {
+  try { statusOutput.textContent = JSON.stringify(await request('/health'), null, 2); }
+  catch (error) { statusOutput.textContent = error.message; }
+});
+
+document.querySelector('#import').addEventListener('click', async () => {
+  statusOutput.textContent = '正在重建 collection 并导入...';
+  try { statusOutput.textContent = JSON.stringify(await request('/api/knowledge/import-agent-manual', { method: 'POST', body: '{}' }), null, 2); }
+  catch (error) { statusOutput.textContent = error.message; }
+});
+
+document.querySelector('#add').addEventListener('click', async () => {
+  const payload = { title: document.querySelector('#title').value, source: document.querySelector('#source').value, text: document.querySelector('#text').value }; // 手工文档对象。
+  try { statusOutput.textContent = JSON.stringify(await request('/api/knowledge/documents', { method: 'POST', body: JSON.stringify(payload) }), null, 2); }
+  catch (error) { statusOutput.textContent = error.message; }
+});
+
+document.querySelector('#ask').addEventListener('click', async () => {
+  const question = document.querySelector('#question').value.trim(); // 清洗后的问答查询。
+  answerOutput.textContent = '正在向量检索...';
+  try { answerOutput.textContent = JSON.stringify(await request('/api/rag/chat', { method: 'POST', body: JSON.stringify({ question, topK: 4 }) }), null, 2); }
+  catch (error) { answerOutput.textContent = error.message; }
+});
+```
+
+### `static/index.html`
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>企业知识库 RAG 工作台</title>
+  <style>
+    body { margin: 0; font: 15px/1.6 system-ui; color: #171717; background: #f4f5f7; }
+    main { max-width: 980px; margin: 32px auto; padding: 0 20px; }
+    section { padding: 20px; background: white; border: 1px solid #ddd; margin-bottom: 16px; }
+    textarea, input { box-sizing: border-box; width: 100%; padding: 10px; margin: 6px 0; }
+    button { padding: 9px 14px; margin-right: 8px; }
+    pre { white-space: pre-wrap; background: #111; color: #d9fbe9; padding: 14px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>企业知识库 RAG 工作台</h1>
+    <section><button id="health">检查健康</button><button id="import">导入 AI 应用手册</button><pre id="status">尚未检查</pre></section>
+    <section><h2>新增文档</h2><input id="title" placeholder="标题"><input id="source" placeholder="来源"><textarea id="text" rows="5" placeholder="# 制度标题&#10;## 章节&#10;正文"></textarea><button id="add">切分并入库</button></section>
+    <section><h2>在线问答</h2><input id="question" value="RAG 回答为什么要引用来源？"><button id="ask">检索并回答</button><pre id="answer">等待提问</pre></section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
+```
+
+### `tests/test_rag_core.py`
+
+```python
+"""企业 RAG 核心的离线单元测试。"""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+
+LAB_DIRECTORY = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_DIRECTORY))
+
+from rag_core import EMBEDDING_DIMENSIONS, LocalEmbeddingModel, split_markdown  # noqa: E402
+
+
+class RagCoreTest(unittest.TestCase):
+    """验证稳定向量、结构切分与权限元数据。"""
+
+    def test_embedding_is_stable_and_normalized(self) -> None:
+        """相同文本应生成相同且固定维度的单位向量。"""
+        # 当前测试的本地 Embedding 模型。
+        model = LocalEmbeddingModel()
+        # 第一次生成的向量。
+        first = model.embed("报销需要发票")
+        # 同一文本第二次生成的向量。
+        second = model.embed("报销需要发票")
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), EMBEDDING_DIMENSIONS)
+        self.assertAlmostEqual(sum(value * value for value in first), 1.0)
+
+    def test_chunk_keeps_section_and_acl(self) -> None:
+        """切分结果必须保留章节、租户和 ACL。"""
+        # 两级标题构成的测试文档。
+        markdown = "# 报销制度\n## 时限\n员工需要在30天内提交。"
+        # 当前文档生成的文本块。
+        chunks = split_markdown(markdown, "报销制度", "policy.md", "tenant-a", "finance")
+        self.assertEqual(len(chunks), 1)
+        self.assertEqual(chunks[0].section, "报销制度/时限")
+        self.assertEqual(chunks[0].tenant_id, "tenant-a")
+        self.assertEqual(chunks[0].acl, "finance")
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+<!-- knowledge-scenario-inlined:AA-06 -->
+
+## 可运行实验：RAG ACL 与跨租户泄漏
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="RAG ACL 与跨租户泄漏" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-06 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-06 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'RAG ACL 与跨租户泄漏', summary: '切换鉴权时机、缓存键和租户，验证候选与引用是否会越权。', controls: [
+    { key: 'filterStage', label: 'ACL 执行时机', type: 'select', value: 'before', options: [['none', '无 ACL'], ['after', '召回后'], ['before', '召回前']] },
+    { key: 'cacheKey', label: '缓存键组成', type: 'select', value: 'full', options: [['query', '仅 Query'], ['tenant', 'Query + Tenant'], ['full', 'Query + Tenant + ACL 摘要']] },
+    { key: 'role', label: '当前角色', type: 'select', value: 'employee', options: [['guest', '访客'], ['employee', '员工'], ['finance', '财务管理员']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 当前角色可访问的样例文档数量。 */
+      const visible = values.role === 'finance' ? 12 : values.role === 'employee' ? 8 : 3;
+      /** ACL 和缓存键不完整造成的泄漏数。 */
+      const leaks = values.filterStage !== 'before' || values.cacheKey !== 'full' || fail ? (values.role === 'guest' ? 5 : 2) : 0;
+      return { metrics: [[visible, '合法文档'], [leaks, '泄漏候选'], [values.filterStage.toUpperCase(), 'ACL 时机'], [leaks ? 'DENY' : 'ALLOW', '回答决策']], stages: [aiStage('解析身份', 'ok', values.role), aiStage('生成 ACL 摘要', fail ? 'fail' : 'ok', 'tenant + groups'), aiStage('召回过滤', values.filterStage === 'before' ? 'ok' : 'fail', values.filterStage), aiStage('缓存键', values.cacheKey === 'full' ? 'ok' : 'fail', values.cacheKey), aiStage('引用鉴权', leaks ? 'fail' : 'ok', leaks ? 'blocked' : 'pass')], rows: [['跨租户', values.filterStage === 'before' ? '向量与关键词查询均带 tenant_id' : '候选先进入内存，存在日志与缓存泄漏'], ['缓存隔离', values.cacheKey === 'full' ? '包含 tenant、权限摘要和知识库版本' : '不同权限用户可能复用同一答案'], ['引用接口', leaks ? '二次鉴权阻断返回，记录安全事件' : '下载或预览前再次校验文档权限']], diagnosis: leaks ? '检测到跨权限候选。系统必须拒答并修复召回、缓存和引用三层边界。' : '权限在检索前、缓存键和引用接口三处闭环。', danger: leaks > 0 };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

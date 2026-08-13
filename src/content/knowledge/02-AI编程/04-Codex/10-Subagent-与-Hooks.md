@@ -1,6 +1,6 @@
 # Codex（10） - Subagent 与 Hooks
 
-> 读完你能：围绕“Subagent 与 Hooks”理解“概念解释”与“1 Subagent 是什么”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“1.1 Subagent 是什么”，复现“1.2 Hooks 是什么”的最小实现，并用“2.1 Subagent 示例”检查结果与失败边界。
 
 当任务变复杂后，你会遇到两个问题：
 

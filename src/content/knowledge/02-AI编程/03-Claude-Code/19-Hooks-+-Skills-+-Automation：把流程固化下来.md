@@ -172,3 +172,64 @@ Hooks（每步即时）→ Skills（整套流程）→ Automation（何时自动
 
 - [Claude Code 文档](https://docs.anthropic.com/en/docs/claude-code/overview)
 - [Claude Code 安全](https://docs.anthropic.com/en/docs/claude-code/security)
+
+<!-- knowledge-scenario-inlined:AC-11 -->
+
+## 可运行实验：Hooks 与 CI 质量门禁
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Hooks 与 CI 质量门禁" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-11 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-11 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Hooks 与 CI 质量门禁', summary: '运行工具前后钩子与 Lint、Test、Build，观察失败在哪一层阻断。', controls: [
+        { key: 'gate', label: '强制门禁', type: 'select', value: 'all', options: [['lint', '仅 Lint'], ['test', 'Lint + Test'], ['all', 'Lint + Test + Build']] },
+        { key: 'changedFiles', label: '修改文件', type: 'range', min: 1, max: 20, value: 6, suffix: ' 个' },
+        { key: 'stopHook', label: 'Stop Hook', type: 'select', value: 'verify', options: [['none', '不检查'], ['verify', '检查验证证据']] }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 当前门禁要求运行的检查集合。 */
+          const checks = values.gate === 'lint' ? ['Lint'] : values.gate === 'test' ? ['Lint', 'Test'] : ['Lint', 'Test', 'Build'];
+          /** 故障注入命中的门禁名称。 */
+          const failedGate = fail ? checks[Math.min(1, checks.length - 1)] : null;
+          /** Stop Hook 是否要求最终验证证据。 */
+          const stopAllowed = values.stopHook === 'verify' && !failedGate;
+          return { metrics: [[checks.length, '强制门禁'], [values.changedFiles, '修改文件'], [failedGate || 'NONE', '失败节点'], [stopAllowed ? 'ALLOW' : 'BLOCK', 'Stop 决策']], stages: [stage('PreTool', 'ok', 'scope'), stage('Tool', 'ok', values.changedFiles + ' files'), stage('PostTool', 'ok', 'diff'), ...checks.map(function (check) { return stage(check, check === failedGate ? 'fail' : 'ok', check === failedGate ? 'failed' : 'passed'); }), stage('Stop', stopAllowed ? 'ok' : 'fail', stopAllowed ? 'evidence' : 'blocked')], rows: [['触发顺序', 'PreTool → Tool → PostTool → ' + checks.join(' → ') + ' → Stop'], ['失败传播', failedGate ? failedGate + ' 失败，后续发布步骤不执行' : '全部强制门禁通过'], ['Stop Hook', values.stopHook === 'verify' ? '检查命令、退出码与测试摘要' : '没有验证证据也可能结束']], diagnosis: stopAllowed ? '质量门禁和完成证据均通过。' : '流水线已阻断，修复失败项后必须从受影响门禁重新运行。', danger: !stopAllowed };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

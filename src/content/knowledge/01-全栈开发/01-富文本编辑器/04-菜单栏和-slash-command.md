@@ -1,6 +1,6 @@
 # 富文本编辑器（04） - 菜单栏和 slash command
 
-> 读完你能：围绕“菜单栏和 slash command”理解“前言”与“基础 Demo”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“2.1 抽离组件”，复现“2.2 基础按钮组件”的最小实现，并用“2.3 菜单栏组件”检查结果与失败边界。
 
 # 一、前言
 
@@ -11,6 +11,8 @@ TipTap 编辑器 Notion 风格的时候，需要选中文本提供菜单栏，�
 # 二、基础 Demo
 
 ## 2.1 抽离组件
+
+编辑器组件只负责创建 `Editor` 实例、注册扩展和承载正文，菜单状态交给 `MenuBar`。这种边界能让固定工具栏、气泡菜单和移动端菜单复用同一个编辑器命令链，避免每种界面重复初始化编辑器。
 
 ```tsx
 'use client'
@@ -45,6 +47,8 @@ export default TiptapEditor
 
 ## 2.2 基础按钮组件
 
+`MenuButton` 把命令触发、激活态和禁用态收敛成统一接口。按钮是否高亮来自 `editor.isActive()`，能否执行应由命令的 `can()` 结果决定；不能只根据图标外观推断当前文档状态。
+
 ```tsx
 interface MenuButtonProps {
   onClick: () => void
@@ -69,6 +73,8 @@ const MenuButton = ({ onClick, isActive = false, disabled = false, children, tit
 ```
 
 ## 2.3 菜单栏组件
+
+菜单栏通过 `editor.chain().focus().toggleXxx().run()` 串起“恢复选区焦点、切换 Mark、提交事务”。漏掉 `focus()` 时，用户点击工具栏会先丢失正文选区，命令可能作用到错误位置或没有效果。
 
 ```tsx
 const MenuBar = ({ editor }: { editor: Editor }) => {

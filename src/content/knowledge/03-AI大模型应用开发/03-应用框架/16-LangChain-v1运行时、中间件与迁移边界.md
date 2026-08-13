@@ -25,9 +25,15 @@
 - `recursion_limit`：防止工具循环失控。
 - Tool：严格参数 Schema、错误语义和副作用边界。
 
+`response_format` 约束 Agent 的最终业务结果，适合把自然语言收敛为可校验的结构化对象；它不负责约束每次 Tool 的参数。`context_schema` 定义运行期依赖的类型，例如 `tenant_id`、用户权限和请求配置，这些数据由应用注入，不能让模型从用户文本中自行生成。
+
+两者必须分开：前者是模型输出契约，后者是可信运行上下文契约。若把租户或权限混进 `response_format`，模型就可能“回答”出一个身份；若把业务结果塞进 `context_schema`，中间件又无法对最终输出做独立校验。
+
 ## 中间件生命周期
 
 `before_agent` 适合初始化运行上下文；`before_model` 可裁剪消息或注入动态规则；`wrap_model_call` 适合模型路由、重试与追踪；`wrap_tool_call` 适合参数校验、授权、审批和结果截断；`after_model` 与 `after_agent` 用于校验和收尾。观察性逻辑不能悄悄改变业务结果，策略性中间件必须有独立测试。
+
+`wrap_model_call` 包裹一次真实模型调用，因此可以依据上下文选择模型、记录 Token 与延迟，并对可重试错误执行有上限的退避。它不能无条件重试解析失败或安全拒绝，否则会增加成本并把确定性错误伪装成偶发故障。
 
 ## Context Engineering
 

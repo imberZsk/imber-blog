@@ -1,6 +1,6 @@
 # Agent Harness（05） - 工具调用进阶：让 Agent 优雅地使用多个工具
 
-> 读完你能：围绕“工具调用进阶：让 Agent 优雅地使用多个工具”理解“工具调用的本质：模型只是"点菜"，上菜的是 harness”与“写好工具 schema：description 是重灾区”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“怎么跑”，复现“看点”的最小实现，并用“看点”检查结果与失败边界。
 
 > 第 03 章你的 Agent 已经会用 2 个工具了。但真实的 Agent 动辄几十个工具——这时新问题来了：**模型怎么知道该用哪个？选错了怎么办？同时要用好几个怎么办？工具报错了会不会把整个 Agent 带崩？**
 > 这一章就解决"工具一多就乱"的问题。
@@ -199,3 +199,66 @@ python agent.py
 
 - [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 - [OWASP Agentic Security](https://genai.owasp.org/)
+
+<!-- knowledge-scenario-inlined:AC-05 -->
+
+## 可运行实验：编程工具调用与路径安全
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="编程工具调用与路径安全" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-05 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-05 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: '编程工具调用与路径安全', summary: '在虚拟工作区中校验工具名、参数 Schema、路径与补丁验证。', controls: [
+        { key: 'tool', label: '调用工具', type: 'select', value: 'apply_patch', options: [['read_file', 'read_file'], ['search_code', 'search_code'], ['apply_patch', 'apply_patch'], ['shell', 'shell']] },
+        { key: 'path', label: '目标路径', type: 'select', value: 'safe', options: [['safe', 'src/formatter.ts'], ['outside', '../../secrets.env'], ['empty', '空路径']] },
+        { key: 'postCheck', label: '写后检查', type: 'select', value: 'tests', options: [['none', '不检查'], ['diff', '检查 Diff'], ['tests', 'Diff + Tests']] }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 工具名是否在可信白名单内。 */
+          const knownTool = ['read_file', 'search_code', 'apply_patch'].includes(values.tool);
+          /** 目标路径是否已解析且位于工作区。 */
+          const safePath = values.path === 'safe';
+          /** 写操作后是否有足够验证。 */
+          const verified = values.tool !== 'apply_patch' || values.postCheck === 'tests';
+          /** 工具调用是否满足全部执行前条件。 */
+          const accepted = knownTool && safePath && verified && !fail;
+          return { metrics: [[accepted ? 'EXECUTED' : 'BLOCKED', '调用状态'], [knownTool ? 'VALID' : 'UNKNOWN', 'Tool Schema'], [safePath ? 'INSIDE' : 'REJECTED', '路径边界'], [verified ? 'YES' : 'NO', '写后验证']], stages: [stage('工具发现', knownTool ? 'ok' : 'fail', values.tool), stage('参数校验', values.path === 'empty' ? 'fail' : 'ok', values.path), stage('路径解析', safePath ? 'ok' : 'fail', safePath ? 'workspace' : 'outside'), stage('执行', accepted ? 'ok' : 'fail', accepted ? 'virtual repo' : 'blocked'), stage('验证', verified ? 'ok' : 'warn', values.postCheck)], rows: [['虚拟目标', values.path === 'safe' ? '/workspace/src/formatter.ts' : values.path === 'outside' ? '/secrets.env' : '(empty)'], ['危险命令', values.tool === 'shell' ? '不在工具白名单，模型文本不会直接进入 Shell' : '未请求 Shell'], ['故障注入', fail ? 'Schema 字段缺失，执行前拒绝' : '参数结构完整']], diagnosis: accepted ? '工具调用通过白名单、Schema、路径和验证四层检查。' : '调用被安全层阻断，未发生真实文件写入。', danger: !accepted };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

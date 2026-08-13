@@ -200,11 +200,14 @@ function ensureLearningGoal(markdown) {
     return markdown
   }
 
-  /** 用真实标题和章节组成的文章开篇目标。 */
-  const learningGoal =
-    sectionHeadings.length === 1
-      ? `> 读完你能：围绕“${articleTitle}”理解“${sectionHeadings[0]}”，并结合正文示例验证结果。`
-      : `> 读完你能：围绕“${articleTitle}”理解“${sectionHeadings[0]}”与“${sectionHeadings[1]}”，并结合正文示例完成实践与排障。`
+  /** 用真实标题和章节组成的可验收学习结果。 */
+  const implementationHeading = sectionHeadings[1] || sectionHeadings[0]
+  /** 文章是否包含需要读者复现的代码。 */
+  const hasCodeExample = /```/.test(markdown)
+  /** 避免再次生成“围绕主题理解章节”的空泛模板。 */
+  const learningGoal = `> 读完后，你应能解释“${sectionHeadings[0]}”在“${articleTitle}”中的作用，${
+    hasCodeExample ? `复现“${implementationHeading}”的最小实现` : `为“${implementationHeading}”做出方案取舍`
+  }，并根据正文中的异常信号检查结果与失败边界。`
 
   return `${markdown.slice(0, titleEndOffset)}\n\n${learningGoal}${markdown.slice(titleEndOffset)}`
 }

@@ -1,6 +1,6 @@
 # React 源码（12） - Diff 算法
 
-> 读完你能：围绕“Diff 算法”理解“diff 的入口”与“单节点 diff”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、diff 的入口”，复现“二、单节点 diff”的最小实现，并用“三、多节点 diff”检查结果与失败边界。
 
 `packages/react-reconciler/src/ReactChildFiber.old.js`
 

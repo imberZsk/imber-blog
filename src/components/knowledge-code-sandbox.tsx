@@ -38,6 +38,8 @@ interface PythonWorkerMessage {
 interface KnowledgeCodeSandboxProps {
   /** 服务端根据显式白名单生成的实验文件和元数据。 */
   sandbox: KnowledgeSandbox
+  /** Tiptap NodeView 已直接展示可编辑源码时隐藏重复源码面板。 */
+  showSource?: boolean
 }
 
 /** Lowlight 返回的安全语法树节点。 */
@@ -127,7 +129,7 @@ function renderSandboxSyntaxNodes(syntaxNodes: SandboxSyntaxNode[]): ReactNode[]
  * 在文章中运行仓库内可信 Python 或 HTML Demo。
  * @param props 当前文章关联的白名单实验配置。
  */
-export function KnowledgeCodeSandbox({ sandbox }: KnowledgeCodeSandboxProps) {
+export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCodeSandboxProps) {
   /** 当前执行状态，用于控制操作按钮和状态文案。 */
   const [status, setStatus] = useState<KnowledgeSandboxStatus>('idle')
   /** Python 标准输出、标准错误及运行提示。 */
@@ -376,8 +378,8 @@ export function KnowledgeCodeSandbox({ sandbox }: KnowledgeCodeSandboxProps) {
         </div>
       </header>
 
-      <div className="knowledge-code-sandbox-workspace">
-        <div className="knowledge-code-sandbox-source">
+      <div className={`knowledge-code-sandbox-workspace${showSource ? '' : ' knowledge-code-sandbox-workspace-output-only'}`}>
+        {showSource ? <div className="knowledge-code-sandbox-source">
           <div className="knowledge-code-sandbox-source-toolbar">
             <div className="knowledge-code-sandbox-file-tabs" role="tablist" aria-label="实验源码文件">
               {sandbox.files.map((file) => (
@@ -411,7 +413,7 @@ export function KnowledgeCodeSandbox({ sandbox }: KnowledgeCodeSandboxProps) {
           <pre>
             <code className={`language-${activeFileLanguage} hljs`}>{renderSandboxSyntaxNodes(highlightedSource)}</code>
           </pre>
-        </div>
+        </div> : null}
 
         {status === 'idle' ? (
           <div className="knowledge-code-sandbox-placeholder">

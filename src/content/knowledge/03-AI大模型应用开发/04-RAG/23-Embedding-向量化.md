@@ -169,3 +169,66 @@ if __name__ == "__main__":
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-03 -->
+
+## 可运行实验：Embedding 选型与向量成本
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Embedding 选型与向量成本" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-03 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-03 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Embedding 选型与向量成本', summary: '计算维度、精度、文档规模和模型升级带来的存储与重建成本。', controls: [
+    { key: 'vectors', label: '向量数量', type: 'range', min: 100000, max: 5000000, step: 100000, value: 1000000, suffix: ' 条' },
+    { key: 'dimensions', label: '向量维度', type: 'select', value: '1024', options: [['384', '384'], ['768', '768'], ['1024', '1024'], ['1536', '1536'], ['3072', '3072']] },
+    { key: 'precision', label: '存储精度', type: 'select', value: 'float32', options: [['float32', 'Float32'], ['float16', 'Float16'], ['int8', 'Int8 量化']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 每个向量元素占用的字节数。 */
+      const bytesPerValue = values.precision === 'float32' ? 4 : values.precision === 'float16' ? 2 : 1;
+      /** 向量裸数据的 GiB 大小。 */
+      const storageGiB = values.vectors * Number(values.dimensions) * bytesPerValue / 1024 / 1024 / 1024;
+      /** 按每批 128 条计算的 Embedding 请求批次。 */
+      const batches = Math.ceil(values.vectors / 128);
+      /** 升级模型时需要重算的向量数量。 */
+      const rebuild = fail ? values.vectors : Math.round(values.vectors * 0.08);
+      return { metrics: [[storageGiB.toFixed(2) + ' GiB', '裸向量存储'], [batches.toLocaleString(), 'Embedding 批次'], [rebuild.toLocaleString(), '需重算向量'], [values.dimensions, '索引维度']], stages: [aiStage('模型契约', fail ? 'fail' : 'ok', fail ? 'query/doc 不同模型' : 'same model'), aiStage('归一化', fail ? 'warn' : 'ok', 'cosine'), aiStage('批处理', 'ok', 128), aiStage('写入索引', 'ok', values.precision), aiStage('版本切换', fail ? 'fail' : 'ok', fail ? 'mixed' : 'atomic')], rows: [['估算边界', '未计 HNSW 图、metadata、副本和 WAL，生产容量需再乘 1.5～3'], ['模型升级', fail ? '新旧向量混入同一索引，距离不可比较' : '建立新版本索引并离线回归'], ['精度权衡', values.precision === 'int8' ? '容量最低，但必须评测量化召回损失' : '保留较高精度，成本相应增加']], diagnosis: fail ? 'Embedding 模型或版本不一致，查询必须阻断。' : '维度、距离与版本契约一致，可据此估算容量和重建窗口。', danger: fail };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```
