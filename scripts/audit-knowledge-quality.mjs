@@ -97,6 +97,7 @@ const REQUIRED_KNOWLEDGE_TERMS = {
     'LangChain v1', 'response_format', 'context_schema', 'wrap_model_call', 'Context Offloading',
     '数据生命周期', 'Parser、Chunker 与 Embedding 版本', 'Alias 切换', '删除传播',
     'Parent-Child Retrieval', 'Contextual Compression', '动态 Top-K', '2-Step RAG',
+    'LLM Wiki', 'Raw Sources、Wiki 与 Schema', 'Ingest、Query 与 Lint', '持续知识编译',
     'Reducer', 'Static Edge', 'Orchestrator-Worker', 'Command resume', 'Durable Execution', 'Time Travel',
     'Deep Agents', '虚拟文件系统', 'Summarization', 'Prompt Caching',
     'A2A Agent Card', 'ACP Agent', 'AG-UI Run',
@@ -118,6 +119,7 @@ const WRITING_TASK_ARTIFACT_PATTERN = /(?:只需要\s*step\s*1\s*让我确认|�
 const TOPIC_SOURCE_RULES = [
   { title: /Coze/i, source: /https?:\/\/(?:www\.)?coze\.(?:cn|com)\//i },
   { title: /Neo4j|Graph\s*RAG/i, source: /https?:\/\/neo4j\.com\//i },
+  { title: /LLM\s*Wiki/i, source: /https?:\/\/gist\.github\.com\/karpathy\//i },
   { title: /流式响应|SSE/i, source: /https?:\/\/developer\.mozilla\.org\/.*server-sent_events/i }
 ]
 
