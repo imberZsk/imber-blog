@@ -1,5 +1,15 @@
 # Agent（08） - AI Agent 开发要学什么？
 
+## 核心知识清单
+
+- Agent Loop、停止条件与预算
+- Function Calling、Tool Schema 与执行结果
+- ReAct、Plan-and-Execute 与 Reflection
+- Memory、State 与 Context Engineering
+- LangGraph、HIL 与 Durable Execution
+- Multi-Agent、MCP、Skill 与 Deep Agents
+- 权限、安全、评测与可观测性
+
 > 读完你能：建立一张 Agent 开发能力地图，知道先学什么、后学什么，以及哪些概念只是包装名词。
 
 # 一、本篇定位

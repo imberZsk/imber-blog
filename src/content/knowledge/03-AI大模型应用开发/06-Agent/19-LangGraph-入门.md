@@ -1,5 +1,14 @@
 # Agent（19） - LangGraph 入门
 
+## 核心知识清单
+
+- State、Node、Edge 与 START/END
+- Conditional Edge 与 Command 路由
+- Checkpointer、thread_id 与状态恢复
+- Interrupt 与 Human-in-the-loop
+- Durable Execution、幂等节点与重放
+- Streaming、错误分支与循环上限
+
 > 读完你能：讲清 LangGraph 的四个核心概念（State、Node、Edge、Graph），说明它和 LangChain 直线链的本质区别（**条件分支 + 循环**），并用纯标准库写出一个能「检索不到就改写重试」的最小状态机。
 
 # 一、与进阶篇的分工

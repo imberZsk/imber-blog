@@ -1,5 +1,14 @@
 # 应用框架（09） - LangChain 整体总结：AI Agent 第一阶段学习完成
 
+## 核心知识清单
+
+- Model、Prompt、Retriever、Tool 与 Message
+- Runnable、LCEL 与输入输出契约
+- Output Parser 与结构化结果
+- Callback、Middleware 与 Trace
+- Chain、Agent 与 LangGraph 的选择边界
+- Memory、Context 与状态持久化
+
 > 读完你能：把 Prompt、Tool、Retriever、Parser、Runnable 串成一张 LangChain 能力地图。
 
 # 一、本篇定位

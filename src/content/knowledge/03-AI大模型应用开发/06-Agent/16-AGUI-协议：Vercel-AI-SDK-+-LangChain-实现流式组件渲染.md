@@ -1,5 +1,14 @@
 # Agent（16） - AGUI 协议：Vercel AI SDK + LangChain 实现流式组件渲染
 
+## 核心知识清单
+
+- AG-UI Run、Message、Tool 与 State 事件
+- SSE 事件顺序、event_id 与断线恢复
+- 文本增量与结构化组件增量
+- 前端状态归并、幂等与取消
+- Vercel AI SDK 与 LangChain 适配边界
+- 组件白名单、参数校验与注入防护
+
 > 读完你能：理解 Agent 不只能流式输出文字，也可以流式驱动前端组件状态。
 
 # 一、本篇定位

@@ -49,10 +49,12 @@ export const KNOWLEDGE_TRACK_MODULES = {
     'Python',
     'Playwright',
     '测试工程',
-    'Web 基础',
-    '前端框架',
-    '数据与安全',
-    '运维与可观测性'
+    '运维与交付',
+    'Web 与浏览器',
+    '前端框架与跨端',
+    '数据与中间件',
+    '后端架构与安全',
+    '业务链路'
   ],
   aiCoding: [
     'AI 编程基础',
@@ -63,7 +65,8 @@ export const KNOWLEDGE_TRACK_MODULES = {
     'Agent Harness',
     '工程化工作流',
     'Context Engineering',
-    '评测与治理'
+    '评测与治理',
+    '产品化与 AI 公司'
   ],
   aiApps: ['大模型基础', 'Prompt 工程', '应用框架', 'RAG', '记忆系统', 'Agent', '模型工程', '可观测性', '生产工程', '项目实战', '面试题']
 } as const
