@@ -40,12 +40,34 @@ const TRACKS = [
   {
     directory: '01-全栈开发',
     title: '全栈开发',
-    categories: ['富文本编辑器', '工程化脚手架', 'React 源码', 'Java', 'Python', 'Playwright', '测试工程']
+    categories: [
+      '富文本编辑器',
+      '工程化脚手架',
+      'React 源码',
+      'Java',
+      'Python',
+      'Playwright',
+      '测试工程',
+      'Web 基础',
+      '前端框架',
+      '数据与安全',
+      '运维与可观测性'
+    ]
   },
   {
     directory: '02-AI编程',
     title: 'AI 编程',
-    categories: ['AI 编程基础', 'Prompt 工程', 'Claude Code', 'Codex', 'Skill 与 MCP', 'Agent Harness', '工程化工作流']
+    categories: [
+      'AI 编程基础',
+      'Prompt 工程',
+      'Claude Code',
+      'Codex',
+      'Skill 与 MCP',
+      'Agent Harness',
+      '工程化工作流',
+      'Context Engineering',
+      '评测与治理'
+    ]
   },
   {
     directory: '03-AI大模型应用开发',
@@ -75,6 +97,10 @@ const CATEGORY_SYLLABUS = {
   Python: ['Python 语言与工程环境', 'FastAPI、异步、数据与测试', '自动化、AI 调用、打包与部署'],
   Playwright: ['定位、等待与断言', 'UI 模式、夹具与 Page Object', 'AI 辅助测试和可维护性'],
   测试工程: ['测试金字塔与边界', '快照测试的适用范围', '稳定性、可读性与质量门禁'],
+  'Web 基础': ['HTML、CSS、JavaScript 与 HTTP', 'TypeScript 与运行时校验', '浏览器事件、存储、性能与安全'],
+  前端框架: ['Vue 与 React 应用架构', 'Next.js 渲染、缓存与数据安全', 'Electron、小程序与跨端边界'],
+  数据与安全: ['关系型数据库、索引与事务', 'Redis、Elasticsearch、MongoDB 与对象存储', '认证授权、Web 安全、消息与一致性'],
+  运维与可观测性: ['Docker 与 Kubernetes', 'CI/CD、灰度与回滚', '日志、指标、Trace、SLO 与告警'],
   'AI 编程基础': ['AI 编程模式与能力边界', '任务拆分、上下文和验证闭环', '工具选型与安全授权'],
   'Prompt 工程': ['结构化 Prompt 与 Few-shot', '输出约束、任务拆解与模板', '调试、评测与注入防护'],
   'Claude Code': ['项目规则、权限与 Plan Mode', 'Git、Worktree、测试与自动化', '子代理、MCP、Skills、Hooks 与远程任务'],
@@ -82,6 +108,8 @@ const CATEGORY_SYLLABUS = {
   'Skill 与 MCP': ['Skill 触发与渐进式披露', '资源、脚本、测试和发布', 'MCP 工具协议与能力边界'],
   'Agent Harness': ['Agent Loop 与工具调用', '上下文、记忆、权限和扩展', '子代理、生产稳定性与综合实战'],
   工程化工作流: ['需求澄清与实施计划', '隔离工作区、TDD 与系统调试', '并行协作、审查验证与分支收尾'],
+  'Context Engineering': ['上下文分层、预算与压缩', '仓库检索、Repo Map 与 Code RAG', 'Memory、规则文件与知识保鲜'],
+  评测与治理: ['规格驱动开发与验收契约', '任务评测、Trace 与回归数据集', '团队权限、成本、流水线与发布治理'],
   大模型基础: ['Token、Transformer、Attention 与上下文窗口', '自回归生成机制与采样参数', '模型能力边界、训练阶段与选型'],
   'Prompt 工程@ai-apps': ['Prompt 结构与 Few-shot', '上下文构建与结构化输出', 'Prompt 调优、评测与注入防护'],
   应用框架: ['LangChain、LCEL 与 Runnable', 'Output Parser、Callback 与 Middleware', 'Dify、Coze 与框架选型'],
@@ -104,6 +132,10 @@ const CATEGORY_SOURCES = {
   Python: [['Python 3 文档', 'https://docs.python.org/3/'], ['FastAPI 文档', 'https://fastapi.tiangolo.com/']],
   Playwright: [['Playwright 文档', 'https://playwright.dev/docs/intro'], ['Playwright 最佳实践', 'https://playwright.dev/docs/best-practices']],
   测试工程: [['Vitest 指南', 'https://vitest.dev/guide/'], ['Testing Library 原则', 'https://testing-library.com/docs/guiding-principles']],
+  'Web 基础': [['MDN Web 开发核心课程', 'https://developer.mozilla.org/en-US/docs/Learn_web_development/Core'], ['TypeScript Handbook', 'https://www.typescriptlang.org/docs/handbook/intro.html']],
+  前端框架: [['Vue 指南', 'https://vuejs.org/guide/introduction.html'], ['Next.js App Router', 'https://nextjs.org/docs/app']],
+  数据与安全: [['PostgreSQL Tutorial', 'https://www.postgresql.org/docs/current/tutorial.html'], ['OWASP Authentication Cheat Sheet', 'https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html']],
+  运维与可观测性: [['Kubernetes Deployment', 'https://kubernetes.io/docs/concepts/workloads/controllers/deployment/'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
   'AI 编程基础': [['OpenAI Codex 文档', 'https://developers.openai.com/codex/'], ['GitHub Copilot 文档', 'https://docs.github.com/en/copilot']],
   'Prompt 工程': [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']],
   'Claude Code': [['Claude Code 文档', 'https://docs.anthropic.com/en/docs/claude-code/overview'], ['Claude Code 安全', 'https://docs.anthropic.com/en/docs/claude-code/security']],
@@ -111,6 +143,8 @@ const CATEGORY_SOURCES = {
   'Skill 与 MCP': [['Agent Skills 规范', 'https://agentskills.io/specification'], ['MCP 规范', 'https://modelcontextprotocol.io/specification/latest']],
   'Agent Harness': [['OpenAI Agents SDK', 'https://openai.github.io/openai-agents-python/'], ['OWASP Agentic Security', 'https://genai.owasp.org/']],
   工程化工作流: [['Git Worktree', 'https://git-scm.com/docs/git-worktree'], ['pytest 文档', 'https://docs.pytest.org/en/stable/']],
+  'Context Engineering': [['Model Context Protocol Architecture', 'https://modelcontextprotocol.io/docs/learn/architecture'], ['GitHub Code Search', 'https://docs.github.com/en/search-github/github-code-search/understanding-github-code-search-syntax']],
+  评测与治理: [['GitHub Spec Kit', 'https://github.com/github/spec-kit'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
   大模型基础: [['Hugging Face LLM Course', 'https://huggingface.co/learn/llm-course/chapter1/1'], ['Attention Is All You Need', 'https://arxiv.org/abs/1706.03762']],
   'Prompt 工程@ai-apps': [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']],
   应用框架: [['LangChain 文档', 'https://docs.langchain.com/oss/python/langchain/overview'], ['Dify 文档', 'https://docs.dify.ai/']],

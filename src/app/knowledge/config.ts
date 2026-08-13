@@ -41,8 +41,30 @@ export const KNOWLEDGE_MODULE_LABELS = {
 
 /** 三条学习路线重构后与实体目录一一对应的知识域。 */
 export const KNOWLEDGE_TRACK_MODULES = {
-  fullStack: ['富文本编辑器', '工程化脚手架', 'React 源码', 'Java', 'Python', 'Playwright', '测试工程'],
-  aiCoding: ['AI 编程基础', 'Prompt 工程', 'Claude Code', 'Codex', 'Skill 与 MCP', 'Agent Harness', '工程化工作流'],
+  fullStack: [
+    '富文本编辑器',
+    '工程化脚手架',
+    'React 源码',
+    'Java',
+    'Python',
+    'Playwright',
+    '测试工程',
+    'Web 基础',
+    '前端框架',
+    '数据与安全',
+    '运维与可观测性'
+  ],
+  aiCoding: [
+    'AI 编程基础',
+    'Prompt 工程',
+    'Claude Code',
+    'Codex',
+    'Skill 与 MCP',
+    'Agent Harness',
+    '工程化工作流',
+    'Context Engineering',
+    '评测与治理'
+  ],
   aiApps: ['大模型基础', 'Prompt 工程', '应用框架', 'RAG', '记忆系统', 'Agent', '模型工程', '可观测性', '生产工程', '项目实战', '面试题']
 } as const
 
