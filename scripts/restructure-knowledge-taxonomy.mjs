@@ -104,7 +104,11 @@ const CATEGORY_SYLLABUS = {
   Codex: ['CLI、IDE、App 与 Cloud', 'AGENTS.md、沙箱和配置', 'MCP、Skill、Subagent、Hooks 与插件'],
   'Skill 与 MCP': ['Skill 触发与渐进式披露', '资源、脚本、测试和发布', 'MCP 工具协议与能力边界'],
   'Agent Harness': ['Agent Loop 与工具调用', '上下文、记忆、权限和扩展', '子代理、生产稳定性与综合实战'],
-  工程化工作流: ['需求澄清与实施计划', '隔离工作区、TDD 与系统调试', '并行协作、审查验证与分支收尾'],
+  工程化工作流: [
+    'grill-me、OpenSpec 与 Spec Kit 的需求澄清和规范驱动', // 指南必须覆盖从访谈到规格落库。
+    'Superpowers、gstack、GSD 与 BMAD 的流程选型和交接', // 指南必须说明完整工作流的职责差异。
+    'loop-me、Loop Engineering 与 Graph Engineering 的状态、停止和恢复' // 指南必须覆盖循环和显式图编排。
+  ],
   'Context Engineering': ['上下文分层、预算与压缩', '仓库检索、Repo Map 与 Code RAG', 'Memory、规则文件与知识保鲜'],
   评测与治理: ['规格驱动开发与验收契约', '任务评测、Trace 与回归数据集', '团队权限、成本、流水线与发布治理'],
   '产品化与 AI 公司': ['OPC 业务闭环、角色和治理', 'AI 公司控制平面、任务、预算与审批', '产品发现、MVP、研发流水线与运营闭环'],
@@ -142,7 +146,11 @@ const CATEGORY_SOURCES = {
   Codex: [['OpenAI Codex 文档', 'https://developers.openai.com/codex/'], ['AGENTS.md 规范', 'https://agents.md/']],
   'Skill 与 MCP': [['Agent Skills 规范', 'https://agentskills.io/specification'], ['MCP 规范', 'https://modelcontextprotocol.io/specification/latest']],
   'Agent Harness': [['OpenAI Agents SDK', 'https://openai.github.io/openai-agents-python/'], ['OWASP Agentic Security', 'https://genai.owasp.org/']],
-  工程化工作流: [['Git Worktree', 'https://git-scm.com/docs/git-worktree'], ['pytest 文档', 'https://docs.pytest.org/en/stable/']],
+  工程化工作流: [
+    ['OpenSpec', 'https://github.com/Fission-AI/OpenSpec'], // 存量项目增量规格的直接来源。
+    ['GitHub Spec Kit', 'https://github.com/github/spec-kit'], // 阶段化规格驱动开发的直接来源。
+    ['Superpowers', 'https://github.com/obra/superpowers'] // 工程执行纪律的直接来源。
+  ],
   'Context Engineering': [['Model Context Protocol Architecture', 'https://modelcontextprotocol.io/docs/learn/architecture'], ['GitHub Code Search', 'https://docs.github.com/en/search-github/github-code-search/understanding-github-code-search-syntax']],
   评测与治理: [['GitHub Spec Kit', 'https://github.com/github/spec-kit'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
   '产品化与 AI 公司': [['GitHub Actions', 'https://docs.github.com/en/actions'], ['LangSmith Evaluation', 'https://docs.langchain.com/langsmith/evaluation-concepts']],

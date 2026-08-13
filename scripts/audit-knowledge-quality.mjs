@@ -51,8 +51,19 @@ const REQUIRED_KNOWLEDGE_TERMS = {
   ],
   '02-AI编程.md': [
     '行内补全', 'Agent 执行', '任务粒度', '读、改、跑、验证',
-    '上下文工程', 'AGENTS.md', '上下文预算', 'OpenSpec', 'Spec Kit', '验收标准',
+    '上下文工程', 'AGENTS.md', '上下文预算',
+    'grill-me', // 防止需求访谈能力再次被压缩进笼统的“需求澄清”。
+    'OpenSpec', // 保留存量项目增量规格工作流。
+    'Spec Kit', // 保留从项目原则到实现的阶段化规格链。
+    '验收标准',
     'Prompt Engineering', 'Context Engineering', 'Harness Engineering', 'Loop Engineering', 'Graph Engineering',
+    'loop-me', // 保留重复活动到 workflow spec 的实验性访谈工具。
+    'Ralph', // 保留以外部规格和新会话驱动的循环执行方法。
+    'Superpowers', // 保留设计、TDD、审查与收尾纪律。
+    'gstack', // 保留产品到发布的角色化研发流水线。
+    'PUA', // 保留持续排障与主动验证方法，同时要求文章说明边界。
+    'GSD', // 保留分阶段上下文和原子任务执行方案。
+    'BMAD', // 保留角色化、规模自适应的项目工作流。
     'Agent Loop', 'MCP', 'Skill', 'Subagent', 'Multi-Agent', 'Handoff',
     '任务成功率', '基准任务集', 'Trace', '人工审查', '发布门禁',
     '对话助手', 'IDE Agent', 'CLI 编程 Agent', '后台 Agent', '低代码平台',
