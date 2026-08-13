@@ -115,7 +115,7 @@ const CATEGORY_SYLLABUS = {
   大模型基础: ['Token、Transformer、Attention 与上下文窗口', '消息协议、模型能力与稳定 API 调用', '自回归生成、训练阶段与能力边界'],
   'Prompt 工程@ai-apps': ['Prompt 结构与 Few-shot', '上下文构建与结构化输出', 'Prompt 调优、评测与注入防护'],
   应用框架: ['LangChain v1、LCEL、Runnable 与 Agent Runtime', '分层架构、接口契约、Callback 与 Middleware', 'Dify、Coze、迁移边界与框架选型'],
-  RAG: ['文档解析、Chunking、数据生命周期与离线建库', 'Embedding、VectorDB、BM25、Parent-Child 与多路召回', '动态检索、混合检索、Rerank、引用校验、评测与 GraphRAG'],
+  RAG: ['文档解析、Chunking、数据生命周期与离线建库', 'Embedding、VectorDB、BM25、Parent-Child 与多路召回', '动态检索、混合检索、Rerank、引用校验、评测与 GraphRAG', 'LLM Wiki 持续知识编译及其与查询时 RAG 的组合'],
   记忆系统: ['对话上下文与 Redis 短期记忆', 'Mem0 长期记忆与多路召回', '记忆提取、更新、冲突、过期与遗忘'],
   Agent: ['Agent Loop、Function Calling、Tool Use 与 Router', 'LangGraph State、Reducer、持久化、HIL 与可靠执行', 'MCP、Skill、Multi-Agent、Deep Agents 与上下文压缩'],
   模型工程: ['数学、学习范式、模型选型与微调', '量化、推理加速、模型部署与 GPU', '吞吐、并发、延迟、评测与成本优化'],
