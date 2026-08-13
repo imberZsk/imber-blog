@@ -1,6 +1,6 @@
 # React 源码（13） - Hooks
 
-> 读完你能：围绕“Hooks”理解“Hooks 分类”与“状态管理 (State Management)”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、Hooks 分类”，复现“二、useState”的最小实现，并用“三、useEffect”检查结果与失败边界。
 
 packages/react-reconciler/src/ReactFiberWorkLoop.old.js
 

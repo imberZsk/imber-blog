@@ -1,6 +1,6 @@
 # React 源码（06） - React 事件机制
 
-> 读完你能：围绕“React 事件机制”理解“事件委托”与“源码实现”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释根容器事件委托、SyntheticEvent 派发队列和事件优先级到 Lane 的映射，并能用一次点击更新判断监听、收集、批处理或调度卡在哪一层。
 
 # 一、事件委托
 
@@ -54,6 +54,8 @@ if (flags & IS_CAPTURE_PHASE) {
   console.log('捕获阶段已启用')
 }
 ```
+
+# 三、事件优先级如何进入 Lane 调度
 
 遍历给 root 绑定事件这部分比较简单，也就是点击一个元素然后 root 就能收到事件，重点是 listener，也就是 `createEventListenerWrapperWithPriority` 方法，方法名可以看出它带有优先级，那它为什么需要优先级呢？事件优先级是怎么样的？它是怎么处理收到事件呢？e.currentTarget 是指向触发元素，那 React 中会不会全都成了 root ?
 
@@ -164,10 +166,11 @@ flowchart LR
 
 图示说明：React 在根 DOM 统一接收捕获和冒泡事件，将事件映射为更新优先级，再进入 Fiber 调度流程。
 
-# 三、总结
+# 四、总结
 
 - **源码实现**：createRoot 调用到createContainer 里有一个 listenToAllSupportedEvents 函数，说明初始化阶段，初始化了事件机制，接下来探究这部分代码。
 - **事件委托**：随着 React 18 的发布，事件系统带来了一些新的理念和更新。
+- **优先级桥接**：原生事件先映射为 EventPriority，再以 Lane 表示更新紧急度；排障时应区分事件是否收到、监听器是否收集、批处理是否结束和更新是否被更高优先级工作抢占。
 
 ## 参考资料
 

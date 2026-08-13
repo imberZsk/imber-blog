@@ -272,3 +272,66 @@ Rerank 输入是问题和几十条候选，输出更精确的相关性顺序。C
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-01 -->
+
+## 可运行实验：企业 RAG 全链路控制台
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="企业 RAG 全链路控制台" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-01 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-01 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: '企业 RAG 全链路控制台', summary: '从离线建库到在线问答逐阶段观察数据、版本、权限和证据。', controls: [
+    { key: 'documents', label: '导入文档', type: 'range', min: 10, max: 1000, step: 10, value: 240, suffix: ' 篇' },
+    { key: 'quality', label: '解析质量', type: 'range', min: 60, max: 100, value: 94, suffix: '%' },
+    { key: 'acl', label: '权限过滤', type: 'select', value: 'before', options: [['none', '未启用'], ['after', '召回后过滤'], ['before', '召回前过滤']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 解析成功的文档数量。 */
+      const parsed = Math.floor(values.documents * values.quality / 100);
+      /** 按平均每篇 8 个块估算的有效 Chunk 数量。 */
+      const chunks = parsed * 8;
+      /** ACL 执行位置带来的越权候选数量。 */
+      const leaks = values.acl === 'before' && !fail ? 0 : values.acl === 'after' ? 2 : 7;
+      /** 证据和权限均通过时的回答状态。 */
+      const answer = parsed > 0 && leaks === 0 && !fail ? 'GROUNDED' : leaks ? 'BLOCKED' : 'REFUSE';
+      return { metrics: [[parsed, '解析成功'], [chunks.toLocaleString(), '有效 Chunks'], [leaks, '越权候选'], [answer, '问答结果']], stages: [aiStage('Parse', values.quality >= 80 ? 'ok' : 'warn', parsed), aiStage('Clean', fail ? 'warn' : 'ok', 'metadata'), aiStage('Chunk', 'ok', chunks), aiStage('Embed', fail ? 'fail' : 'ok', 'v4'), aiStage('Index', fail ? 'fail' : 'ok', 'green'), aiStage('ACL', leaks ? 'fail' : 'ok', values.acl), aiStage('Retrieve', leaks ? 'warn' : 'ok', 'top 20'), aiStage('Rerank', 'ok', 'top 5'), aiStage('Generate', answer === 'GROUNDED' ? 'ok' : 'fail', answer)], rows: [['索引版本', fail ? '查询仍指向 index_v3，Embedding v4 不可混用' : '离线校验后原子切换到 index_v4'], ['证据门槛', answer === 'GROUNDED' ? 'Top 证据覆盖问题且引用可回溯' : '证据或权限不足，拒绝生成'], ['失败边界', '解析失败、空 Chunk、版本不一致与 ACL 失败均不进入生成']], diagnosis: answer === 'GROUNDED' ? '全链路数据契约、版本和权限一致，可以生成带引用回答。' : '链路已在错误阶段阻断，不能让模型用缺失或越权证据补答案。', danger: answer !== 'GROUNDED' };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

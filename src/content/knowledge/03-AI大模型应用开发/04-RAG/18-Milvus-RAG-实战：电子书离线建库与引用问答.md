@@ -3,13 +3,13 @@
 > 读完你能：设计电子书的父子分块、Milvus 入库、在线 Top K 与引用映射，并知道如何验收长文档 RAG。
 > 更新日期：2026/08/11
 
-# 一、项目目标和数据契约
+## 一、项目目标和数据契约
 
 用户问“作者怎样解释上下文压缩”时，系统要返回答案、书名、章节、页码和原文片段。电子书正文长、跨页、同一概念分散，推荐父子分块：章节/小节为父块，段落级子块生成向量；命中子块后回取父块或相邻段落。
 
 每个子块保存：`chunk_id/document_id/parent_id/book_title/heading_path/page_start/page_end/source_uri/text/tenant_id/acl/embedding_version`。引用只从这些字段映射，不能让模型自由编页码。
 
-# 二、离线建库骨架
+## 二、离线建库骨架
 
 ```python
 from collections.abc import Callable
@@ -50,7 +50,7 @@ def build_book_index(
 
 离线任务要记录文档版本、每批状态与失败原因；重跑时按稳定主键 upsert，并删除新版本中不再存在的旧 Chunk。
 
-# 三、在线问答链路
+## 三、在线问答链路
 
 1. 校验用户、租户、书籍与章节访问权限。
 2. 保留问题原文，必要时生成语义改写。
@@ -63,7 +63,7 @@ def build_book_index(
 
 若书中没有证据，返回“无法从当前书籍确认”，不要用模型常识伪装成书中观点。
 
-# 四、父块扩展与去重
+## 四、父块扩展与去重
 
 ```python
 from collections.abc import Callable
@@ -99,7 +99,7 @@ def expand_parent_context(
     return parent_contexts
 ```
 
-# 五、电子书特有坏案例
+## 五、电子书特有坏案例
 
 - 双栏 PDF 解析顺序错误，章节文字互相穿插。
 - 扫描页 OCR 把页码、脚注或公式识别错。
@@ -109,7 +109,7 @@ def expand_parent_context(
 - 页码来自 PDF 物理页而读者使用印刷页，引用需同时说明。
 - 书籍更新后旧版索引和语义缓存没有失效。
 
-# 六、验收指标
+## 六、验收指标
 
 - 目录/页码解析准确率、OCR 抽样准确率和空页率。
 - 章节级与段落级 Recall@K、MRR 和引用页准确率。
@@ -117,19 +117,14 @@ def expand_parent_context(
 - 证据不足拒答准确率、答案忠实度与引用覆盖率。
 - 建库吞吐、索引对账、在线 P95、Token 和单问成本。
 
-# 七、参考资料
+## 七、参考资料
 
 - [Milvus Overview](https://milvus.io/docs/overview.md)
 - [Milvus Filtered search](https://milvus.io/docs/filtered-search.md)
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 
-# 八、总结
+## 八、总结
 
 - 电子书 RAG 的核心是结构与引用，不是把整本书切成等长字符串。
 - 子块负责精确召回，父块负责完整回答，引用由 Metadata 和程序映射。
 - 离线对账、在线拒答和页码准确率是可交付系统的基本验收项。
-
-## 参考资料
-
-- [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
-- [Milvus 文档](https://milvus.io/docs)

@@ -1,6 +1,6 @@
 # Codex（04） - 上下文与 AGENTS
 
-> 读完你能：围绕“上下文与 AGENTS”理解“概念解释”与“使用示例”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“项目说明”，复现“常用命令”的最小实现，并用“代码约定”检查结果与失败边界。
 
 Codex 的表现很大程度取决于上下文。上下文不是越多越好，而是越相关越好。
 
@@ -188,3 +188,68 @@ codex "请按 task.md 修改代码，并遵守 AGENTS.md"
 
 - [OpenAI Codex 文档](https://developers.openai.com/codex/)
 - [AGENTS.md 规范](https://agents.md/)
+
+<!-- knowledge-scenario-inlined:AC-02 -->
+
+## 可运行实验：上下文预算与指令优先级
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="上下文预算与指令优先级" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-02 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-02 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: '上下文预算与指令优先级', summary: '计算固定指令、源文件、日志和历史对话进入窗口后的保留与裁剪。', controls: [
+        { key: 'budget', label: '上下文预算', type: 'range', min: 8000, max: 32000, step: 2000, value: 16000, suffix: ' tokens' },
+        { key: 'logs', label: '测试日志', type: 'range', min: 1000, max: 18000, step: 1000, value: 12000, suffix: ' tokens' },
+        { key: 'files', label: '源文件', type: 'range', min: 2000, max: 14000, step: 1000, value: 8000, suffix: ' tokens' }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 不可裁剪的系统、规则和用户请求 Token。 */
+          const fixed = 2130;
+          /** 历史消息占用的 Token。 */
+          const history = 6000;
+          /** 未压缩前的总上下文 Token。 */
+          const total = fixed + values.files + values.logs + history;
+          /** 先提炼日志后仍需裁剪的 Token。 */
+          const optimizedLogs = fail ? values.logs : Math.min(values.logs, 2200);
+          /** 实际送入模型的 Token。 */
+          const kept = Math.min(values.budget, fixed + values.files + optimizedLogs + history);
+          return { metrics: [[total.toLocaleString(), '原始 Tokens'], [kept.toLocaleString(), '最终保留'], [Math.max(0, total - kept).toLocaleString(), '摘要/裁剪'], [Math.round(kept / values.budget * 100) + '%', '窗口占用']], stages: [stage('System', 'ok', '900'), stage('AGENTS', 'ok', '1050'), stage('User', 'ok', '180'), stage('Files', kept < fixed + values.files ? 'warn' : 'ok', values.files), stage('Logs', fail ? 'fail' : 'ok', optimizedLogs), stage('History', total > values.budget ? 'warn' : 'ok', history)], rows: [['优先级', 'System > 子目录 AGENTS > 根规则 > 用户请求 > 证据'], ['日志策略', fail ? '整段日志挤占窗口，关键文件可能丢失' : '只保留错误栈、失败断言和相关上下文'], ['最低证据集', kept >= fixed + Math.min(values.files, 6000) ? '规则、需求和关键源码仍在' : '证据不足，应缩小任务或继续检索']], diagnosis: total > values.budget ? '上下文已超预算。正确处理是先结构化提炼日志，再按任务相关性选择源码。' : '当前内容可完整进入窗口，但仍应避免无关日志污染注意力。', danger: fail && total > values.budget };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

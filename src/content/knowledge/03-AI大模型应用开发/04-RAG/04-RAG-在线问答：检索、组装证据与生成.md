@@ -1,6 +1,6 @@
 # RAG（04） - RAG 在线问答：检索、组装证据与生成
 
-> 读完你能：围绕“RAG 在线问答：检索、组装证据与生成”理解“检索和生成要分开验收”与“可执行示例”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、检索和生成要分开验收”，复现“二、可执行示例”的最小实现，并用“requirements.txt”检查结果与失败边界。
 
 
 在线链路只处理当前请求：**理解问题 → 查询改写 → 权限过滤 → 召回 → 重排 → 组装 Context
@@ -122,3 +122,66 @@ print(prompt)
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-10 -->
+
+## 可运行实验：Multi-Query、Rewrite 与 HyDE
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Multi-Query、Rewrite 与 HyDE" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-10 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-10 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Multi-Query、Rewrite 与 HyDE', summary: '比较原始 Query、多查询、改写和假设文档检索的召回与去重。', controls: [
+    { key: 'strategy', label: '查询策略', type: 'select', value: 'multi', options: [['raw', '原始 Query'], ['rewrite', 'Query Rewrite'], ['multi', 'Multi-Query'], ['hyde', 'HyDE']] },
+    { key: 'variants', label: '生成查询数', type: 'range', min: 1, max: 8, value: 4, suffix: ' 条' },
+    { key: 'dedupe', label: '候选去重', type: 'select', value: 'id', options: [['none', '不去重'], ['id', '按 Chunk ID'], ['semantic', '按语义相似度']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 不同查询策略的基础召回分。 */
+      const baseRecall = { raw: 62, rewrite: 74, multi: 86, hyde: 82 }[values.strategy];
+      /** 查询变体带来的候选总数。 */
+      const rawCandidates = values.variants * 8;
+      /** 去重策略减少后的候选数。 */
+      const candidates = values.dedupe === 'none' ? rawCandidates : values.dedupe === 'id' ? Math.round(rawCandidates * 0.72) : Math.round(rawCandidates * 0.58);
+      /** 变体数量和故障对召回率的修正。 */
+      const recall = clamp(baseRecall + Math.min(values.variants, 4) * 2 - (fail ? 18 : 0), 0, 98);
+      return { metrics: [[values.variants, '查询变体'], [rawCandidates, '原始候选'], [candidates, '去重候选'], [recall + '%', '估算 Recall']], stages: [aiStage('理解意图', fail ? 'fail' : 'ok', values.strategy), aiStage('生成查询', 'ok', values.variants), aiStage('并行召回', 'ok', rawCandidates), aiStage('候选去重', values.dedupe === 'none' ? 'warn' : 'ok', candidates), aiStage('覆盖检查', recall >= 80 ? 'ok' : 'warn', recall + '%')], rows: [['策略差异', values.strategy === 'hyde' ? '先生成假设答案再检索，可能放大模型偏见' : values.strategy === 'multi' ? '从同义词、业务实体和时间条件扩展查询' : '只改写或直接使用原问题'], ['去重键', values.dedupe === 'id' ? '同一 Chunk ID 只保留一次' : values.dedupe === 'semantic' ? '相近候选聚类，保留最高分证据' : '重复证据会浪费 Rerank 预算'], ['故障注入', fail ? '改写丢失“3 天未到账”时间约束' : '关键实体和约束均保留']], diagnosis: recall >= 80 && values.dedupe !== 'none' && !fail ? '查询扩展提高覆盖率，候选去重控制了后续成本。' : '需要修复意图保持或候选去重。', danger: fail };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

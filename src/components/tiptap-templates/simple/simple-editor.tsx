@@ -12,8 +12,8 @@ import { Highlight } from '@tiptap/extension-highlight' // 文本高亮功能
 import { Subscript } from '@tiptap/extension-subscript' // 下标功能
 import { Superscript } from '@tiptap/extension-superscript' // 上标功能
 import { Selection } from '@tiptap/extensions' // 选择功能增强
+import { Markdown } from '@tiptap/markdown' // 让编辑器直接读取并导出仓库 Markdown。
 import { CodeBlock } from '@/components/tiptap-node/code-block'
-import { CodeSandboxNode } from '@/components/tiptap-node/code-sandbox-node'
 
 // --- Tiptap 节点组件 ---
 import { ImageUploadNode } from '@/components/tiptap-node/image-upload-node/image-upload-node-extension' // 图片上传节点
@@ -59,6 +59,7 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
     immediatelyRender: false, // 延迟渲染，提升性能
     shouldRerenderOnTransaction: false, // 避免不必要的重渲染
     editable: editable, // 禁用编辑
+    contentType: content ? 'markdown' : 'json', // 文章字符串按 Markdown 解析，默认示例仍使用 JSON。
     // 编辑器属性配置
     editorProps: {
       attributes: {
@@ -93,6 +94,7 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
       Superscript, // 上标
       Subscript, // 下标
       Selection, // 选择增强
+      Markdown, // 提供 getMarkdown 和 fenced code 的可靠往返。
 
       // 图片上传节点配置
       ImageUploadNode.configure({
@@ -104,7 +106,6 @@ export function SimpleEditor({ content, editable = true }: { content?: string; e
       }),
       SlashCommand,
       CodeBlock,
-      CodeSandboxNode,
       Callout,
       Columns,
       Column

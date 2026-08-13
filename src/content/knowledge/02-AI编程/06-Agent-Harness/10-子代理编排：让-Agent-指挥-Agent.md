@@ -9,7 +9,7 @@
 - fan-out、fan-in 与部分失败
 - 上下文隔离、权限裁剪与预算
 
-> 读完你能：围绕“子代理编排：让 Agent 指挥 Agent”理解“为什么需要子代理：单体 Agent 的三个瓶颈”与“核心机制：上下文隔离 + 结果回传”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“Subagent 与 Multi-Agent 的适用边界”，复现“Supervisor 集中编排与结果汇总”的最小实现，并用“Router 分类分发与并行专家”检查结果与失败边界。
 
 > 到这里，你已经能造一个完整的单体 Agent 了。但当任务又大又杂时，单个 Agent 会遇到瓶颈：上下文塞不下、干活太慢、容易跑偏。
 > 解法是"分身术"——让**主 Agent 把活拆开，派给多个子 Agent（sub-agent）去干**。这一章讲清楚为什么要这么做，以及怎么做。
@@ -195,3 +195,66 @@ python demo.py
 
 - [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 - [OWASP Agentic Security](https://genai.owasp.org/)
+
+<!-- knowledge-scenario-inlined:AC-06 -->
+
+## 可运行实验：Subagent 任务图与并发预算
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Subagent 任务图与并发预算" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-06 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-06 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Subagent 任务图与并发预算', summary: '根据 DAG 依赖和共享文件写集合计算并发批次与冲突。', controls: [
+        { key: 'slots', label: '并发槽位', type: 'range', min: 1, max: 5, value: 3, suffix: ' 个' },
+        { key: 'tasks', label: '子任务数量', type: 'range', min: 3, max: 9, value: 6, suffix: ' 个' },
+        { key: 'strategy', label: '冲突策略', type: 'select', value: 'ownership', options: [['none', '不分配文件所有权'], ['ownership', '按文件所有权'], ['serial', '全部串行']] }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 串行策略或并发槽位决定的实际并发数。 */
+          const concurrency = values.strategy === 'serial' ? 1 : Math.min(values.slots, values.tasks);
+          /** 任务需要的并发批次数。 */
+          const waves = Math.ceil(values.tasks / concurrency);
+          /** 未划分文件所有权时可能出现的冲突数。 */
+          const conflicts = values.strategy === 'none' ? Math.max(1, Math.floor(values.tasks / 3)) : fail ? 1 : 0;
+          /** 完成全部批次的估算时间。 */
+          const duration = waves * 4 + conflicts * 3;
+          return { metrics: [[concurrency, '实际并发'], [waves, '执行批次'], [conflicts, '文件冲突'], [duration + 'm', '估算耗时']], stages: [stage('拆分 DAG', 'ok', values.tasks + ' tasks'), stage('检查依赖', fail ? 'warn' : 'ok', fail ? '缺失边' : 'valid'), stage('分配所有权', values.strategy === 'ownership' ? 'ok' : values.strategy === 'serial' ? 'warn' : 'fail', values.strategy), stage('并发执行', conflicts ? 'warn' : 'ok', concurrency), stage('汇总', conflicts ? 'fail' : 'ok', conflicts ? '待解决' : '完成')], rows: [['可并行任务', Math.max(0, values.tasks - 2) + ' 个，根任务与汇总保持依赖'], ['冲突传播', conflicts ? conflicts + ' 个任务修改同一文件，汇总前必须解决' : '写集合互斥，可直接汇总'], ['失败策略', fail ? '一个依赖任务超时，下游任务取消' : '失败只取消依赖分支']], diagnosis: conflicts ? '增加槽位不会消除共享文件冲突，应先按文件或模块划分所有权。' : 'DAG 依赖和写集合清晰，并发能缩短关键路径。', danger: conflicts > 0 };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

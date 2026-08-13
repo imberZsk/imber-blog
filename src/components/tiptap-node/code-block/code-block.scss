@@ -198,6 +198,35 @@
   }
 }
 
+.tiptap-code-block > .tiptap-code-block-content,
+.tiptap-runnable-code-block > .tiptap-code-block-content {
+  margin: 16px 0;
+  overflow-x: auto;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 20px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.tiptap-runnable-code-block {
+  margin: 16px 0;
+
+  > .tiptap-code-block-content {
+    margin: 0;
+    border-radius: 8px 8px 0 0;
+  }
+
+  > .knowledge-code-sandbox {
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+  }
+}
+
 // 焦点状态
 .ProseMirror pre:focus-within,
 .tiptap pre:focus-within {

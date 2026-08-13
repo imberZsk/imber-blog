@@ -150,3 +150,415 @@ curl -X POST http://localhost:8046/api/copilot -H "Content-Type: application/jso
 
 - [FastAPI 大型应用](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
 - [Docker Compose](https://docs.docker.com/compose/)
+
+<!-- knowledge-lab-sources-inlined -->
+
+## 实现源码与运行边界
+
+下方 `sandbox.html` 可直接在文章中运行；其余文件保留真实本地项目结构，用于理解接口、部署和测试。
+
+### `index.html`
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>订单详情 Copilot</title>
+  <style>
+    body { margin: 0; font: 15px/1.6 system-ui; background: #f5f5f5; color: #171717; }
+    main { max-width: 920px; margin: 40px auto; padding: 24px; background: white; border: 1px solid #ddd; }
+    .tag { color: #b42318; }
+    #toggle { position: fixed; right: 24px; bottom: 24px; width: 52px; height: 52px; border: 0; border-radius: 50%; color: white; background: #1769e0; }
+    #panel { display: none; position: fixed; inset: 0 0 0 auto; width: min(420px, 92vw); padding: 20px; background: white; box-shadow: -8px 0 24px #0002; }
+    #panel.open { display: block; }
+    #messages { height: 62vh; overflow: auto; white-space: pre-wrap; }
+    form { display: flex; gap: 8px; }
+    input { flex: 1; padding: 10px; }
+    .confirm { padding: 10px; background: #fff6d9; border: 1px solid #d9a400; }
+  </style>
+</head>
+<body>
+  <main><h1>订单 O-2026-0520</h1><p>状态：退款中 <span class="tag">异常</span></p><p>金额：89 元</p></main>
+  <button id="toggle" title="打开 AI Copilot">AI</button>
+  <aside id="panel"><h2>订单 Copilot</h2><div id="messages"></div><form id="form"><input id="input" placeholder="询问异常原因或创建工单"><button>发送</button></form></aside>
+  <script>
+    const panel = document.querySelector('#panel'); // Copilot 抽屉。
+    const messages = document.querySelector('#messages'); // 对话与 trace 容器。
+    const input = document.querySelector('#input'); // 用户指令输入框。
+    document.querySelector('#toggle').addEventListener('click', () => panel.classList.toggle('open'));
+
+    function getPageContext() {
+      return { selectedOrderId: 'O-2026-0520', routeName: 'order-detail', idCard: '310101199001011234' }; // 后端会丢弃敏感字段。
+    }
+
+    function appendMessage(payload) {
+      const block = document.createElement('div'); // 当前回答块。
+      block.textContent = `${payload.reply}\nTrace: ${payload.trace.join(' -> ')}`;
+      if (payload.needs_confirmation) {
+        const confirmButton = document.createElement('button'); // 写操作人工确认按钮。
+        confirmButton.className = 'confirm';
+        confirmButton.textContent = '确认创建';
+        confirmButton.addEventListener('click', () => { confirmButton.textContent = '已确认，模拟工单已创建'; confirmButton.disabled = true; });
+        block.append(document.createElement('br'), confirmButton);
+      }
+      messages.append(block, document.createElement('hr'));
+    }
+
+    document.querySelector('#form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = input.value.trim(); // 清洗后的用户指令。
+      if (!message) return;
+      try {
+        const response = await fetch('/api/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, pageContext: getPageContext() }) }); // Copilot 响应。
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        appendMessage(await response.json());
+      } catch (error) {
+        appendMessage({ reply: `Copilot 暂时不可用：${error.message}`, trace: [], needs_confirmation: false });
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+### `sandbox.html`
+
+```html runnable file=index.html title="27-项目：前端-AI-Copilot-组件 在线实验"
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'"
+    />
+    <title>前端 AI Copilot</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0f1211;
+        color: #f3f5f4;
+      }
+      main {
+        display: grid;
+        min-height: 390px;
+        grid-template-columns: 180px 1fr;
+      }
+      aside {
+        border-right: 1px solid #303633;
+        padding: 16px;
+      }
+      aside h2,
+      section h1 {
+        margin: 0 0 14px;
+        font-size: 14px;
+        letter-spacing: 0;
+      }
+      label {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0;
+        color: #b9c0bd;
+        font-size: 12px;
+      }
+      .workspace {
+        min-width: 0;
+        padding: 18px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 74px;
+        resize: vertical;
+        border: 1px solid #39413d;
+        border-radius: 6px;
+        background: #171b19;
+        color: inherit;
+        padding: 10px;
+        font: 13px/1.5 inherit;
+      }
+      button {
+        border: 1px solid #3d4742;
+        border-radius: 6px;
+        background: #202622;
+        color: inherit;
+        padding: 8px 11px;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: #6ee7b7;
+        background: #6ee7b7;
+        color: #07110d;
+        font-weight: 700;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
+      }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .scope {
+        color: #8f9994;
+        font:
+          11px ui-monospace,
+          monospace;
+      }
+      .diff {
+        display: grid;
+        min-height: 150px;
+        margin-top: 16px;
+        border: 1px solid #303733;
+        border-radius: 6px;
+        overflow: hidden;
+        grid-template-columns: 1fr 1fr;
+      }
+      .pane {
+        min-width: 0;
+        padding: 12px;
+      }
+      .pane + .pane {
+        border-left: 1px solid #303733;
+      }
+      .pane strong {
+        display: block;
+        margin-bottom: 9px;
+        color: #929c97;
+        font:
+          11px ui-monospace,
+          monospace;
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #cbd2ce;
+        font:
+          12px/1.6 ui-monospace,
+          monospace;
+      }
+      .added {
+        color: #7ee2b8;
+      }
+      .notice {
+        min-height: 20px;
+        margin-top: 10px;
+        color: #9ca6a1;
+        font-size: 12px;
+      }
+      @media (max-width: 560px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+        aside {
+          border-right: 0;
+          border-bottom: 1px solid #303633;
+        }
+        .diff {
+          grid-template-columns: 1fr;
+        }
+        .pane + .pane {
+          border-top: 1px solid #303733;
+          border-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <aside>
+        <h2>上下文白名单</h2>
+        <label><input type="checkbox" value="selection" checked /> 当前选区</label>
+        <label><input type="checkbox" value="language" checked /> 文件语言</label>
+        <label><input type="checkbox" value="diagnostics" /> 诊断信息</label>
+        <label><input type="checkbox" value="secrets" disabled /> 环境密钥</label>
+      </aside>
+      <section class="workspace">
+        <h1>Copilot 修改建议</h1>
+        <textarea id="instruction">把这个请求函数补上超时处理，并返回明确错误。</textarea>
+        <div class="toolbar">
+          <span id="scope" class="scope">context: selection, language</span>
+          <button id="generate" class="primary" type="button">生成建议</button>
+        </div>
+        <div class="diff">
+          <div class="pane">
+            <strong>当前代码</strong>
+            <pre>
+const response = await fetch(url)
+return response.json()</pre
+            >
+          </div>
+          <div class="pane">
+            <strong>建议 Diff</strong>
+            <pre id="suggestion">等待生成，不会自动写入代码。</pre>
+          </div>
+        </div>
+        <div class="toolbar">
+          <span id="notice" class="notice">高风险写操作必须由用户确认。</span>
+          <button id="apply" type="button" disabled>确认应用</button>
+        </div>
+      </section>
+    </main>
+    <script>
+      /** 允许发送给模型的上下文字段集合。 */
+      const ALLOWED_CONTEXT = new Set(['selection', 'language', 'diagnostics'])
+      /** 上下文选择框列表。 */
+      const contextInputs = Array.from(document.querySelectorAll('input[type="checkbox"]'))
+      /** 当前上下文范围展示区域。 */
+      const scopeElement = document.querySelector('#scope')
+      /** 生成建议按钮。 */
+      const generateButton = document.querySelector('#generate')
+      /** 确认应用按钮。 */
+      const applyButton = document.querySelector('#apply')
+      /** Diff 建议展示区域。 */
+      const suggestionElement = document.querySelector('#suggestion')
+      /** 操作结果提示区域。 */
+      const noticeElement = document.querySelector('#notice')
+
+      /** 读取并展示经过白名单过滤的上下文字段。 */
+      function updateContextScope() {
+        /** 用户勾选且允许出站的上下文字段。 */
+        const selectedContext = contextInputs
+          .filter((input) => input.checked && ALLOWED_CONTEXT.has(input.value))
+          .map((input) => input.value)
+        scopeElement.textContent = `context: ${selectedContext.join(', ') || 'none'}`
+      }
+
+      /** 生成确定性的代码修改建议，但不直接修改用户文件。 */
+      function generateSuggestion() {
+        generateButton.disabled = true
+        generateButton.textContent = '生成中…'
+        suggestionElement.textContent = ''
+        noticeElement.textContent = '正在构造最小上下文请求…'
+
+        window.setTimeout(() => {
+          suggestionElement.innerHTML =
+            '<span class="added">+ const controller = new AbortController()\n+ const timeoutId = setTimeout(() =&gt; controller.abort(), 5000)\n+ try {\n+   const response = await fetch(url, { signal: controller.signal })\n+   if (!response.ok) throw new Error(`HTTP ${response.status}`)\n+   return await response.json()\n+ } finally {\n+   clearTimeout(timeoutId)\n+ }</span>'
+          generateButton.disabled = false
+          generateButton.textContent = '重新生成'
+          applyButton.disabled = false
+          noticeElement.textContent = '建议已生成，等待人工确认；当前文件尚未改变。'
+        }, 650)
+      }
+
+      contextInputs.forEach((input) => input.addEventListener('change', updateContextScope))
+      generateButton.addEventListener('click', generateSuggestion)
+      applyButton.addEventListener('click', () => {
+        applyButton.disabled = true
+        noticeElement.textContent = '已确认应用：真实项目中此处才调用受权限保护的写入接口。'
+      })
+      updateContextScope()
+    </script>
+  </body>
+</html>
+```
+
+### `server.py`
+
+```python
+"""提供订单页和带上下文白名单、人工确认的 Copilot API。"""
+
+from __future__ import annotations
+
+import json
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+HOST = "127.0.0.1"
+PORT = 8046
+LAB_DIRECTORY = Path(__file__).resolve().parent
+ALLOWED_CONTEXT_FIELDS = {"selectedOrderId", "routeName"}
+ORDERS = {"O-2026-0520": {"status": "退款中", "amount": 89, "abnormal": True}}
+
+
+def sanitize_context(raw_context: object) -> dict[str, str]:
+    """只保留后端允许的页面上下文字段。"""
+    if not isinstance(raw_context, dict):
+        return {}
+    return {key: str(value) for key, value in raw_context.items() if key in ALLOWED_CONTEXT_FIELDS}
+
+
+def handle_copilot(message: str, page_context: dict[str, str]) -> dict[str, Any]:
+    """结合已脱敏上下文回答，写操作只返回待确认计划。"""
+    # 当前页面选中的订单主键。
+    order_id = page_context.get("selectedOrderId", "")
+    # 服务端权限域内查询到的订单。
+    order = ORDERS.get(order_id)
+    # 可展示给用户的执行轨迹。
+    trace = [f"读取页面上下文 selectedOrderId={order_id or '无'}"]
+    if "工单" in message:
+        trace.append("识别为写操作，暂停等待人工确认")
+        return {"reply": "即将为当前订单创建人工工单，请确认。", "trace": trace, "needs_confirmation": True, "action": {"type": "create_ticket", "orderId": order_id}}
+    if order:
+        trace.append("命中订单数据，判定为异常订单" if order["abnormal"] else "命中正常订单")
+        return {"reply": f"订单 {order_id} 状态为「{order['status']}」，金额 {order['amount']} 元，处于退款流程，属于需要关注的异常订单。", "trace": trace, "needs_confirmation": False}
+    return {"reply": "没有可用订单上下文。", "trace": trace, "needs_confirmation": False}
+
+
+class CopilotHandler(SimpleHTTPRequestHandler):
+    """托管业务页面与 POST /api/copilot。"""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        """固定静态页面目录。"""
+        super().__init__(*args, directory=str(LAB_DIRECTORY), **kwargs)
+
+    def do_POST(self) -> None:
+        """校验并处理 Copilot 请求。"""
+        if self.path != "/api/copilot":
+            self.send_error(404)
+            return
+        # HTTP 请求体长度。
+        content_length = int(self.headers.get("Content-Length", "0"))
+        try:
+            # 前端提交的请求对象。
+            payload = json.loads(self.rfile.read(content_length))
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid_json")
+            return
+        # 清洗后的用户指令。
+        message = payload.get("message", "").strip() if isinstance(payload, dict) else ""
+        if not message:
+            self.send_error(400, "message_required")
+            return
+        # 白名单过滤后的页面上下文。
+        context = sanitize_context(payload.get("pageContext"))
+        # Copilot 业务结果。
+        response_payload = handle_copilot(message, context)
+        # UTF-8 JSON 响应体。
+        body = json.dumps(response_payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main() -> None:
+    """启动订单页和 Copilot API。"""
+    # 支持静态页面与 API 并发的服务。
+    server = ThreadingHTTPServer((HOST, PORT), CopilotHandler)
+    print(f"打开 http://{HOST}:{PORT}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n服务已停止")
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
+```

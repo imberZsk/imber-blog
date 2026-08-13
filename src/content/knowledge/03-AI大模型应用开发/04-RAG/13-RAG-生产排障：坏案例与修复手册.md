@@ -214,3 +214,64 @@ def validate_rag_trace(trace: dict) -> list[TraceCheck]:
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-07 -->
+
+## 可运行实验：增量建库、删除传播与索引版本
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="增量建库、删除传播与索引版本" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-07 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-07 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: '增量建库、删除传播与索引版本', summary: '执行新增、更新或删除，观察 Chunk Diff、蓝绿索引和回滚窗口。', controls: [
+    { key: 'operation', label: '文档操作', type: 'select', value: 'update', options: [['create', '新增'], ['update', '更新 v3 → v4'], ['delete', '删除']] },
+    { key: 'changed', label: '变化 Chunk', type: 'range', min: 1, max: 30, value: 6, suffix: ' 个' },
+    { key: 'strategy', label: '索引发布', type: 'select', value: 'bluegreen', options: [['inplace', '原地更新'], ['bluegreen', '蓝绿切换'], ['dual', '双写一段时间']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 本次需要重新计算 Embedding 的 Chunk 数。 */
+      const reembedded = values.operation === 'delete' ? 0 : values.changed;
+      /** 未正确传播删除时残留的旧向量数量。 */
+      const stale = values.operation === 'delete' || values.operation === 'update' ? (fail ? Math.max(1, Math.floor(values.changed / 2)) : 0) : 0;
+      /** 蓝绿发布需要同时保留的索引版本数。 */
+      const versions = values.strategy === 'inplace' ? 1 : 2;
+      return { metrics: [[reembedded, '重算 Embedding'], [stale, '残留旧向量'], [versions, '并存索引版本'], [stale ? 'ROLLBACK' : 'PROMOTE', '发布决策']], stages: [aiStage('Checksum', 'ok', 'changed'), aiStage('Chunk Diff', 'ok', '+' + values.changed), aiStage('Embed', 'ok', reembedded), aiStage('Tombstone', stale ? 'fail' : 'ok', stale), aiStage('离线校验', stale ? 'fail' : 'ok', 'retrieval + ACL'), aiStage('切换 Alias', stale ? 'warn' : 'ok', values.strategy), aiStage('清缓存', fail ? 'fail' : 'ok', 'v3')], rows: [['更新策略', values.operation + ' 只处理变化 Chunk，未变化向量复用'], ['索引切换', values.strategy === 'inplace' ? '无法原子回滚，线上可能读到中间态' : '校验新索引后原子切换 active alias'], ['删除传播', stale ? '旧规定仍可召回，必须清向量、关键词索引和缓存' : 'Tombstone 已传播到全部存储层']], diagnosis: stale ? '增量任务未清除旧证据，不能发布新索引。' : '变化集、版本、删除传播和回滚窗口均可追踪。', danger: stale > 0 };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { remark } from 'remark'
 
 /** 正式知识文章根目录。 */
 const KNOWLEDGE_ROOT = path.join(process.cwd(), 'src', 'content', 'knowledge')
@@ -18,18 +19,28 @@ const MINDMAP_FILE_NAMES = ['01-全栈开发.md', '02-AI编程.md', '03-AI大模
 
 /** 不允许作为导图知识点的写作结构或实验操作标签。 */
 const GENERIC_MINDMAP_POINT_PATTERN =
-  /^(?:学习目标|学习边界|在线运行|页面运行|本地查看|预期输出(?:（节选）)?|重点观察|动手实践|动手改|参考资料|本篇定位|与进阶篇的分工|一个真实场景|先从一个真实场景|为什么需要它|核心决策|核心拆解|工程链路|落地步骤|落地建议|决策记录(?:怎么写)?|生产避坑|故障演练|工程上真正会踩的坑(?:（本篇独有）)?|常见坑|一句话面试答法|复述答法|和已有主线的关系|本篇先抓住什么|先确定方向|这一章怎么读|前言|背景|复习导航|问题清单|怎么跑|看点|main\.py|一张 Mermaid 图|真实.+怎么用)$/i
+  /^(?:学习目标|学习边界|在线运行|页面运行|本地查看|预期输出(?:（节选）)?|重点观察|动手实践|动手改|参考资料|本篇定位|与进阶篇的分工|一个真实场景|先从一个真实场景|工程上真正会踩的坑(?:（本篇独有）)?|一句话面试答法|复述答法|这一章怎么读|前言|复习导航|问题清单|怎么跑|看点|main\.py|一张 Mermaid 图|真实.+怎么用)$/i
 
 /** 每篇文章在路线导图中至少需要展示的具体知识节点数。 */
 const MIN_MINDMAP_POINTS = 3
 
 /** 每篇文章在路线导图中最多允许展示的具体知识节点数。 */
-const MAX_MINDMAP_POINTS = 8
+const MAX_MINDMAP_POINTS = 10
+
+/** 每个路线导图知识主题至少需要的正文解释数量。 */
+const MIN_MINDMAP_DETAILS = 2
+
+/** 每个路线导图知识主题最多允许的正文解释数量。 */
+const MAX_MINDMAP_DETAILS = 3
+
+/** 导图解释节点不能是代码、命令、表格残片或未完成的引导语。 */
+const INVALID_MINDMAP_DETAIL_PATTERN =
+  /^(?:https?:\/\/|pnpm |npm |npx |pip |docker |kubectl |curl |import |export |const |let |function |class |@returns|@param|\/|\{|\}|\||javascript$|typescript$|tsx$|jsx$|python$|bash$|json$|yaml$|markdown$)/i
 
 /** 重构前高价值知识树中必须持续保留的核心术语，防止目录重生成再次压扁语义。 */
 const REQUIRED_KNOWLEDGE_TERMS = {
   '01-全栈开发.md': [
-    'HTML语义化', 'CSS盒模型', '事件循环', 'TypeScript泛型', '浏览器渲染',
+    'HTML 语义化', 'CSS盒模型', '事件循环', 'TypeScript泛型', '浏览器渲染',
     'Vue', 'React', 'Next.js', 'Nuxt', '微信小程序', 'Electron',
     'MongoDB', '对象存储', 'Redis', 'Elasticsearch', 'Kafka',
     'Nginx', 'Docker', 'Kubernetes', 'CI/CD', 'OpenTelemetry', 'Prometheus', 'Grafana', 'trace_id',
@@ -56,7 +67,9 @@ const REQUIRED_KNOWLEDGE_TERMS = {
     'OpenSpec', // 保留存量项目增量规格工作流。
     'Spec Kit', // 保留从项目原则到实现的阶段化规格链。
     '验收标准',
-    'Prompt Engineering', 'Context Engineering', 'Harness Engineering', 'Loop Engineering', 'Graph Engineering',
+    'Prompt Engineering', 'Context Engineering', 'Harness Engineering', 'Loop Engineering', // 保留从触发到停止、恢复的工程循环。
+    '/loop', 'Goal Contract', // 保留周期触发与可验证目标的职责边界，避免重新生成时只剩抽象 Loop。
+    'Graph Engineering',
     'loop-me', // 保留重复活动到 workflow spec 的实验性访谈工具。
     'Ralph', // 保留以外部规格和新会话驱动的循环执行方法。
     'Superpowers', // 保留设计、TDD、审查与收尾纪律。
@@ -83,7 +96,9 @@ const REQUIRED_KNOWLEDGE_TERMS = {
     'Prefill', 'KV Cache', 'RLAIF', 'DPO', 'Lost in the Middle', 'top_p',
     '滑动窗口', '父子分块', 'HNSW', 'IVF', 'MultiQuery', 'HyDE', '查询分解',
     'Recall@K', 'Precision@K', 'MRR', 'NDCG', 'tenant_id', 'ACL',
-    '语义记忆', '情景记忆', '程序性记忆', 'TTL', '衰减', '冲突', '遗忘', 'Mem0', 'Redis',
+    '语义记忆', '情景记忆', '程序性记忆', 'TTL', '衰减', '冲突', '遗忘', 'Mem0',
+    'Redis Agent Memory', '工作状态、最近消息、滑动 TTL 与事件流',
+    'Redis 检索缓存', '语义缓存', '热点保护', 'Neo4j GraphRAG', '证据回链', '增量一致性',
     'ReAct', 'Plan-and-Execute', 'Reflection', 'Conditional Edge', 'Checkpointer', 'Human-in-the-loop',
     'Supervisor', 'Handoff', 'fan-out', 'fan-in', 'Streamable HTTP',
     'Observation', 'Generation', 'OpenTelemetry', 'LLM-as-Judge', 'Pairwise', 'Annotation Queue', 'Rubric', '校准', 'Baseline',
@@ -114,6 +129,43 @@ const STALE_NAVIGATION_PATTERN = /(?:appendices|第\s*\d+\s*篇)/i
 
 /** 正文中不应保留的临时写作任务指令。 */
 const WRITING_TASK_ARTIFACT_PATTERN = /(?:只需要\s*step\s*1\s*让我确认|后续任务你持续进行直到完成|Workflow（必须按顺序执行）)/i
+
+/** 批量生成器曾写入的空泛学习目标，无法说明读者最终能解决什么问题。 */
+const GENERIC_LEARNING_OUTCOME_PATTERN =
+  /(?:>\s*读完你能：围绕“[^”]+”完成一次可解释、可验证、可回滚的工程判断，并说清适用边界。|>\s*读完后[^\n]*(?:“核心机制”|“关键实现”)[^\n]*)/
+
+/** 能说明底层因果、数据流或协议语义的正文信号。 */
+const PRINCIPLE_SIGNAL_PATTERN =
+  /(?:原理|机制|数据流|调用链|生命周期|状态机|协议|一致性|复杂度|因果|内部实现|为什么|如何工作)/i
+
+/** 能让读者真正落地、复现或做技术取舍的正文信号。 */
+const IMPLEMENTATION_SIGNAL_PATTERN =
+  /(?:实现|步骤|配置|代码|命令|部署|接入|迁移|验证|测试|选型|决策|检查清单|验收)/i
+
+/** 对生产故障、错误路径和能力边界给出明确处理方法的正文信号。 */
+const FAILURE_BOUNDARY_SIGNAL_PATTERN =
+  /(?:失败|异常|边界|风险|排查|故障|回滚|降级|超时|重试|陷阱|常见坑|不适用|限制)/i
+
+/** 正式课程需要达到的解释性正文下限，代码不计入篇幅。 */
+const MIN_LESSON_PROSE_CHARACTER_COUNT = 650
+
+/** 学习指南需要覆盖路径、实践顺序和验收，因此使用独立下限。 */
+const MIN_GUIDE_PROSE_CHARACTER_COUNT = 500
+
+/** 参考资料强调准确映射而非长篇叙述，使用较低下限。 */
+const MIN_REFERENCE_PROSE_CHARACTER_COUNT = 350
+
+/** 七项深度指标至少命中六项，防止文章刚好靠表面关键词过线。 */
+const MIN_ARTICLE_DEPTH_SCORE = 6
+
+/** 沙盒围栏允许使用的直接入口文件名。 */
+const RUNNABLE_FILE_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/
+
+/** 已通过全库深度门禁的文章数量。 */
+let depthQualifiedArticleCount = 0
+
+/** 源码直接位于 Markdown 的可执行围栏数量。 */
+let inlineRunnableCodeBlockCount = 0
 
 /** 已知主题必须引用的直接来源规则。 */
 const TOPIC_SOURCE_RULES = [
@@ -157,14 +209,114 @@ function getArticleFilePath(articlePath) {
   return path.join(KNOWLEDGE_ROOT, `${articlePath}.mdx`)
 }
 
-/** 清理格式符并统一空白，用于核对导图节点是否确实来自文章正文。 */
-function normalizeKnowledgeText(value) {
-  return value.replace(/[`*~]/g, '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('zh-CN')
-}
-
 /** 从实体知识域目录获得显示名称。 */
 function getDomainLabel(articlePath) {
   return (articlePath.split('/')[1] || '').replace(/^\d+-/, '').replaceAll('-', ' ')
+}
+
+/**
+ * 计算删除围栏代码和空白后的解释性正文长度。
+ * @param markdown 当前文章完整 Markdown。
+ * @returns 不把大段源码当作文章深度的正文字符数。
+ */
+function countProseCharacters(markdown) {
+  /** 删除 fenced code block 后的正文。 */
+  const proseMarkdown = markdown.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, '')
+  return proseMarkdown.replace(/\s/g, '').length
+}
+
+/**
+ * 判断当前文章是否是以映射、命令或附录为主的参考资料。
+ * @param articlePath 当前文章公开路径。
+ * @returns 是否使用参考资料的篇幅下限。
+ */
+function isReferenceArticle(articlePath) {
+  /** 当前文章不含目录的文件名。 */
+  const fileName = articlePath.split('/').at(-1) || ''
+  return /^(?:98|99)-/.test(fileName) || /(?:附录|速查|命令|疑问记录|陷阱对照|配置模板)/.test(fileName)
+}
+
+/**
+ * 按文章用途返回最低解释性正文长度。
+ * @param articlePath 当前文章公开路径。
+ * @returns 当前类型的正文字符下限。
+ */
+function getMinimumProseCharacterCount(articlePath) {
+  if (isReferenceArticle(articlePath)) return MIN_REFERENCE_PROSE_CHARACTER_COUNT
+  if (/\/01-学习指南$/.test(articlePath)) return MIN_GUIDE_PROSE_CHARACTER_COUNT
+  return MIN_LESSON_PROSE_CHARACTER_COUNT
+}
+
+/**
+ * 审计源码内联沙盒围栏，保证运行器不会再次依赖隐藏脚本。
+ * @param articlePath 当前文章公开路径。
+ * @param markdown 当前文章完整 Markdown。
+ */
+function auditRunnableCodeBlocks(articlePath, markdown) {
+  /** 与文章构建链一致的 Markdown 语法树。 */
+  const markdownTree = remark().parse(markdown)
+  for (const markdownNode of markdownTree.children || []) {
+    if (markdownNode.type !== 'code' || !/(?:^|\s)runnable(?:\s|$)/i.test(markdownNode.meta || '')) continue
+
+    inlineRunnableCodeBlockCount += 1
+    /** 当前可执行围栏声明的语言。 */
+    const language = (markdownNode.lang || '').toLowerCase()
+    /** 当前可执行围栏声明的直接入口文件。 */
+    const fileName = (markdownNode.meta || '').match(/(?:^|\s)file=(?:"([^"]+)"|'([^']+)'|([^\s]+))/i)?.slice(1).find(Boolean) || ''
+    /** 当前可执行围栏的源码。 */
+    const sourceCode = markdownNode.value?.trim() || ''
+
+    if (!['python', 'py', 'html', 'htm'].includes(language)) {
+      failures.push(`${articlePath} 的 runnable 围栏使用了不支持的语言：${language || '未声明'}`)
+    }
+    if (!RUNNABLE_FILE_NAME_PATTERN.test(fileName)) {
+      failures.push(`${articlePath} 的 runnable 围栏缺少安全的 file 入口属性。`)
+    }
+    if (!sourceCode) failures.push(`${articlePath} 存在空的 runnable 围栏。`)
+    if (['html', 'htm'].includes(language) && (!/^<!doctype\s+html>/i.test(sourceCode) || !/<script(?:\s|>)/i.test(sourceCode))) {
+      failures.push(`${articlePath} 的 HTML runnable 围栏必须包含完整文档和 script。`)
+    }
+  }
+}
+
+/**
+ * 用七项可核验指标审计文章深度，避免只按字数判断质量。
+ * @param articlePath 当前文章公开路径。
+ * @param markdown 当前文章完整 Markdown。
+ */
+function auditArticleDepth(articlePath, markdown) {
+  /** 当前文章解释性正文长度。 */
+  const proseCharacterCount = countProseCharacters(markdown)
+  /** 当前文章要求的解释性正文下限。 */
+  const minimumProseCharacterCount = getMinimumProseCharacterCount(articlePath)
+  /** 当前文章除首个 H1 外的有效章节数量；保留原文章既有 H1/H2 风格。 */
+  const sectionHeadingCount = Math.max(0, (markdown.match(/^#{1,2}\s+/gm)?.length || 0) - 1)
+  /** 去重后的事实来源链接。 */
+  const sourceLinks = new Set(markdown.match(/https?:\/\/[^\s)>]+/g) || [])
+  /** 七项深度指标的逐项结果，便于失败时指出真正缺口。 */
+  const depthSignals = [
+    { name: '明确学习产出', passed: isReferenceArticle(articlePath) || /(?:读完你能|读完后[，,]?你应能|学完你能|学习目标|本章目标)/i.test(markdown) },
+    { name: '至少四个有效章节', passed: sectionHeadingCount >= 4 },
+    { name: '原理或机制', passed: PRINCIPLE_SIGNAL_PATTERN.test(markdown) },
+    { name: '实施、代码或决策方法', passed: IMPLEMENTATION_SIGNAL_PATTERN.test(markdown) },
+    { name: '失败路径或能力边界', passed: FAILURE_BOUNDARY_SIGNAL_PATTERN.test(markdown) },
+    { name: '至少两个事实来源', passed: sourceLinks.size >= 2 },
+    { name: `有效正文不少于 ${minimumProseCharacterCount} 字`, passed: proseCharacterCount >= minimumProseCharacterCount }
+  ]
+  /** 当前文章实际命中的深度指标数量。 */
+  const depthScore = depthSignals.filter((depthSignal) => depthSignal.passed).length
+
+  if (GENERIC_LEARNING_OUTCOME_PATTERN.test(markdown)) {
+    failures.push(`${articlePath} 仍使用空泛的批量学习目标。`)
+  }
+  if (depthScore < MIN_ARTICLE_DEPTH_SCORE) {
+    /** 当前文章未命中的指标名称。 */
+    const missingSignals = depthSignals.filter((depthSignal) => !depthSignal.passed).map((depthSignal) => depthSignal.name)
+    failures.push(`${articlePath} 深度评分 ${depthScore}/7，缺少：${missingSignals.join('、')}。`)
+    return
+  }
+
+  depthQualifiedArticleCount += 1
 }
 
 /** 审计每篇正式文章的标题、导航、资源和来源。 */
@@ -190,6 +342,17 @@ function auditArticles(articleFiles) {
       failures.push(`${articlePath} 仍包含旧篇号或旧 appendices 导航。`)
     }
     if (WRITING_TASK_ARTIFACT_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含临时写作任务指令。`)
+    auditArticleDepth(articlePath, markdown)
+    auditRunnableCodeBlocks(articlePath, markdown)
+
+    // Neo4j 是 RAG 的关系召回基础设施，不能迁入记忆系统或通用 Agent 目录。
+    if (isAiApplicationArticle && /Neo4j/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/04-RAG/')) {
+      failures.push(`${articlePath} 的 Neo4j 主题应归入 AI 应用开发的 RAG 知识域。`)
+    }
+    // Redis 短期记忆必须归入记忆系统；RAG 目录中的 Redis 只承载缓存、限流和热点保护。
+    if (isAiApplicationArticle && /Redis.*(?:短期记忆|Agent Memory)/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/05-记忆系统/')) {
+      failures.push(`${articlePath} 的 Redis 短期记忆主题应归入 AI 应用开发的记忆系统。`)
+    }
 
     for (const imageMatch of markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
       /** 当前图片地址。 */
@@ -220,14 +383,28 @@ function auditMindmaps(articlePaths) {
     const markdown = fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
     /** 当前正在收集知识点的文章标题。 */
     let currentArticleTitle = ''
-    /** 当前文章公开路径，用于逐节点核对正文来源。 */
-    let currentArticlePath = ''
-    /** 当前文章正文的规范化文本。 */
-    let currentArticleMarkdown = ''
     /** 当前文章已有的有效知识点数量。 */
     let currentKnowledgePointCount = 0
+    /** 当前知识主题名称。 */
+    let currentTopic = ''
+    /** 当前知识主题已有的解释节点数量。 */
+    let currentTopicDetailCount = 0
 
+    /** 检查当前知识主题是否拥有足够且不过量的解释节点。 */
+    const flushTopic = () => {
+      if (currentTopic && currentTopicDetailCount < MIN_MINDMAP_DETAILS) {
+        failures.push(`${fileName} 的“${currentArticleTitle} / ${currentTopic}”只有 ${currentTopicDetailCount} 条解释，至少需要 ${MIN_MINDMAP_DETAILS} 条。`)
+      }
+      if (currentTopic && currentTopicDetailCount > MAX_MINDMAP_DETAILS) {
+        failures.push(`${fileName} 的“${currentArticleTitle} / ${currentTopic}”有 ${currentTopicDetailCount} 条解释，最多允许 ${MAX_MINDMAP_DETAILS} 条。`)
+      }
+      currentTopic = ''
+      currentTopicDetailCount = 0
+    }
+
+    /** 检查并清空当前文章的主题数量和正文上下文。 */
     const flushArticle = () => {
+      flushTopic()
       if (currentArticleTitle && currentKnowledgePointCount < MIN_MINDMAP_POINTS) {
         failures.push(`${fileName} 的“${currentArticleTitle}”只有 ${currentKnowledgePointCount} 个有效知识点，至少需要 ${MIN_MINDMAP_POINTS} 个。`)
       }
@@ -235,8 +412,6 @@ function auditMindmaps(articlePaths) {
         failures.push(`${fileName} 的“${currentArticleTitle}”有 ${currentKnowledgePointCount} 个知识点，最多允许 ${MAX_MINDMAP_POINTS} 个。`)
       }
       currentArticleTitle = ''
-      currentArticlePath = ''
-      currentArticleMarkdown = ''
       currentKnowledgePointCount = 0
     }
 
@@ -248,26 +423,36 @@ function auditMindmaps(articlePaths) {
         currentArticleTitle = articleMatch[1]
         /** 解码后的公开文章路径。 */
         const articlePath = articleMatch[2].split('/').map(decodeURIComponent).join('/')
-        currentArticlePath = articlePath
-        /** 导图引用不存在的文章会在循环结束后统一报告。 */
-        const articleFilePath = getArticleFilePath(articlePath)
-        currentArticleMarkdown = fs.existsSync(articleFilePath)
-          ? normalizeKnowledgeText(fs.readFileSync(articleFilePath, 'utf8'))
-          : ''
         mindmapLinkCounts.set(articlePath, (mindmapLinkCounts.get(articlePath) || 0) + 1)
         continue
       }
 
-      /** 文章下的知识点或来源行。 */
+      /** 文章下的知识主题或来源行。 */
       const pointMatch = line.match(/^    - (.+)$/)
-      if (!pointMatch || /^\[来源：/.test(pointMatch[1])) continue
+      if (pointMatch && /^\[来源：/.test(pointMatch[1])) {
+        flushTopic()
+        continue
+      }
+      if (pointMatch) {
+        flushTopic()
+        currentTopic = pointMatch[1]
+      }
+      if (!pointMatch) {
+        /** 知识主题下的定义、机制、取舍或边界解释。 */
+        const detailMatch = line.match(/^      - (.+)$/)
+        if (!detailMatch) continue
+        /** 当前解释节点的原始文本。 */
+        const detail = detailMatch[1]
+        currentTopicDetailCount += 1
+        if (INVALID_MINDMAP_DETAIL_PATTERN.test(detail) || /[：:]$/.test(detail)) {
+          failures.push(`${fileName} 的“${currentArticleTitle} / ${currentTopic}”包含无效解释节点：${detail}`)
+        }
+        continue
+      }
       if (GENERIC_MINDMAP_POINT_PATTERN.test(pointMatch[1])) {
         failures.push(`${fileName} 的“${currentArticleTitle}”使用了通用操作标签：${pointMatch[1]}`)
       } else {
         currentKnowledgePointCount += 1
-        if (currentArticlePath && !currentArticleMarkdown.includes(normalizeKnowledgeText(pointMatch[1]))) {
-          failures.push(`${fileName} 的“${currentArticleTitle}”包含正文未承载的知识节点：${pointMatch[1]}`)
-        }
       }
     }
     flushArticle()
@@ -390,4 +575,5 @@ if (failures.length > 0) {
   process.exitCode = 1
 } else {
   console.log(`知识质量审计通过：${articleFiles.length} 篇文章与三张思维导图严格一一对应。`)
+  console.log(`深度门禁通过 ${depthQualifiedArticleCount} 篇，Markdown 内联可执行代码块 ${inlineRunnableCodeBlockCount} 个。`)
 }

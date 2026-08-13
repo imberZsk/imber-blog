@@ -1,6 +1,6 @@
 # 项目实战（06） - 多模态 RAG：版面、图片、表格与文本的证据闭环
 
-> 读完你能：围绕“多模态 RAG：版面、图片、表格与文本的证据闭环”理解“全链路架构”与“统一元素而不是直接拼纯文本”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、全链路架构”，复现“二、统一元素而不是直接拼纯文本”的最小实现，并用“三、切分与 Embedding 策略”检查结果与失败边界。
 
 
 多模态 RAG 不是“把图片丢给视觉模型”。企业文档的答案常同时依赖段落、表格单元格、截图标注和页码关系；如果解析时丢掉版面结构，后续再强的模型也无法还原证据。
@@ -120,3 +120,64 @@ Embedding 先以“能否在真实问题集上召回正确证据”选型，再�
 
 - [FastAPI 大型应用](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
 - [Docker Compose](https://docs.docker.com/compose/)
+
+<!-- knowledge-scenario-inlined:AA-16 -->
+
+## 可运行实验：多模态 RAG：OCR、表格与图片引用
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="多模态 RAG：OCR、表格与图片引用" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-16 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-16 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: '多模态 RAG：OCR、表格与图片引用', summary: '观察版面解析、OCR、表格结构和坐标信息如何影响跨模态引用。', controls: [
+    { key: 'ocr', label: 'OCR 准确率', type: 'range', min: 50, max: 100, value: 92, suffix: '%' },
+    { key: 'layout', label: '版面解析', type: 'select', value: 'layout', options: [['plain', '纯文本'], ['layout', '版面感知'], ['vision', '视觉模型 + 版面']] },
+    { key: 'coordinates', label: '保留坐标', type: 'select', value: 'yes', options: [['no', '否'], ['yes', '是']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 版面策略对结构保真的基础增益。 */
+      const layoutBonus = values.layout === 'plain' ? 0 : values.layout === 'layout' ? 8 : 13;
+      /** OCR、版面和坐标共同决定的引用准确率。 */
+      const citation = clamp(values.ocr * 0.72 + layoutBonus + (values.coordinates === 'yes' ? 8 : 0) - (fail ? 20 : 0), 0, 99);
+      /** 表格结构是否可以在问答中安全使用。 */
+      const tableSafe = values.layout !== 'plain' && values.ocr >= 80 && !fail;
+      return { metrics: [[values.ocr + '%', 'OCR 准确率'], [citation.toFixed(1) + '%', '引用准确率'], [tableSafe ? 'KEPT' : 'BROKEN', '表格结构'], [values.coordinates === 'yes' ? 'VISIBLE' : 'TEXT ONLY', '可视化引用']], stages: [aiStage('页面渲染', 'ok', 'page image'), aiStage('OCR', values.ocr >= 80 ? 'ok' : 'warn', values.ocr + '%'), aiStage('版面识别', values.layout === 'plain' ? 'warn' : 'ok', values.layout), aiStage('表格解析', tableSafe ? 'ok' : 'fail', tableSafe ? 'cells' : 'flattened'), aiStage('跨模态索引', fail ? 'fail' : 'ok', 'text + image'), aiStage('坐标引用', values.coordinates === 'yes' ? 'ok' : 'warn', values.coordinates)], rows: [['Chunk 元数据', values.coordinates === 'yes' ? '保留 page、bbox、element_id 和 source_uri' : '只有文本，无法高亮原页位置'], ['表格处理', tableSafe ? '表头、行列和合并单元格关系保留' : '纯文本展开后数值可能失去所属字段'], ['故障注入', fail ? 'OCR 把金额小数点识别错误，数值校验阻断入库' : '关键数字通过格式与范围校验']], diagnosis: tableSafe && citation >= 80 && values.coordinates === 'yes' ? '文本、版面和坐标契约完整，可返回可验证的多模态引用。' : '需要提高 OCR、结构解析或坐标保留质量。', danger: fail || !tableSafe };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

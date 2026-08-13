@@ -167,3 +167,64 @@ MCP 让它能碰外部系统，**风险也随之放大**：
 
 - [Claude Code 文档](https://docs.anthropic.com/en/docs/claude-code/overview)
 - [Claude Code 安全](https://docs.anthropic.com/en/docs/claude-code/security)
+
+<!-- knowledge-scenario-inlined:AC-12 -->
+
+## 可运行实验：MCP 工具发现与权限检查
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="MCP 工具发现与权限检查" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-12 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-12 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'MCP 工具发现与权限检查', summary: '从 Server 连接、Schema 发现到调用授权和返回值校验逐层排障。', controls: [
+        { key: 'servers', label: 'MCP Servers', type: 'range', min: 1, max: 8, value: 3, suffix: ' 个' },
+        { key: 'scope', label: '授权范围', type: 'select', value: 'least', options: [['broad', '全盘读写'], ['least', '最小目录 + 只读'], ['none', '未授权']] },
+        { key: 'timeout', label: '调用超时', type: 'range', min: 1, max: 15, value: 5, suffix: ' 秒' }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 当前授权能否支持只读工具调用。 */
+          const authorized = values.scope === 'least' && !fail;
+          /** 连接和发现的估算耗时。 */
+          const discoveryMs = values.servers * 180;
+          /** 是否会因为过短超时而失败。 */
+          const timedOut = values.timeout * 1000 < discoveryMs;
+          return { metrics: [[values.servers, 'Servers'], [values.servers * 4, '发现 Tools'], [discoveryMs + 'ms', '发现耗时'], [authorized && !timedOut ? 'READY' : 'BLOCKED', '调用状态']], stages: [stage('连接 Server', timedOut ? 'fail' : 'ok', values.timeout + 's'), stage('发现 Schema', timedOut ? 'fail' : 'ok', values.servers * 4), stage('校验授权', authorized ? 'ok' : 'fail', values.scope), stage('清洗内容', fail ? 'fail' : 'ok', fail ? 'injection' : 'safe'), stage('调用 Tool', authorized && !timedOut ? 'ok' : 'fail', authorized ? 'read-only' : 'blocked')], rows: [['最小权限', values.scope === 'least' ? '仅允许目标目录只读' : values.scope === 'broad' ? '授权过宽，应拆分读写能力' : '没有可用授权'], ['Prompt Injection', fail ? '工具返回内容包含越权指令，按不可信数据处理' : '返回内容未请求改变系统规则'], ['超时', timedOut ? '发现阶段超过调用预算，应减少 Server 或提高合理超时' : '连接预算充足']], diagnosis: authorized && !timedOut ? 'Server、Schema、权限和内容边界均通过，可发起只读调用。' : '调用在连接或授权阶段被阻断。', danger: !authorized || timedOut };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

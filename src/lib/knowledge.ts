@@ -11,12 +11,11 @@ import { createKnowledgeMindmap, type KnowledgeMindmapData } from '@/lib/knowled
 import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge-quiz'
 import {
   BROWSER_PYTHON_SUPPORT_FILE_PATTERN,
-  isBrowserRunnablePythonSource,
   isInlinePythonSandboxCandidate,
   type KnowledgeSandbox,
-  type KnowledgeSandboxFile,
-  type KnowledgeSandboxRuntime
+  type KnowledgeSandboxFile
 } from '@/lib/knowledge-sandbox'
+import { parseRunnableCodeBlockMetadata } from '@/lib/runnable-code-block'
 
 /** 知识文章在列表页和阅读页共用的元数据。 */
 export interface KnowledgeArticle {
@@ -70,6 +69,7 @@ interface MarkdownNode {
   depth?: number
   value?: string
   lang?: string
+  meta?: string
   url?: string
   children?: MarkdownNode[]
 }
@@ -114,44 +114,6 @@ interface AiAppSubtopicRule {
   courseOrders: ReadonlySet<number>
 }
 
-/** 实验页自动展示的源码文件定义。 */
-interface LabSourceFileDefinition {
-  /** 实验目录中的固定文件名。 */
-  fileName: string
-  /** Markdown 代码围栏使用的语言标识。 */
-  language: string
-}
-
-/** 已从磁盘读取、等待附加到实验 README 的源码章节。 */
-interface LabSourceSection {
-  /** 页面中展示的源码文件名。 */
-  fileName: string
-  /** Markdown 代码围栏语言。 */
-  language: string
-  /** 构建期读取的完整源码。 */
-  sourceCode: string
-}
-
-/** 单篇实验 README 对应的在线运行白名单定义。 */
-interface LabSandboxDefinition {
-  /** 浏览器使用的隔离执行环境。 */
-  runtime: KnowledgeSandboxRuntime
-  /** 运行面板展示的实验名称。 */
-  title: string
-  /** 读者运行后应该观察的核心结果。 */
-  description: string
-  /** 当前实验的可信入口文件。 */
-  entryFile: string
-  /** 入口执行时必须一同写入沙盒的支持文件。 */
-  fileNames: readonly string[]
-  /** 提供运行文件的实验 README 路径；正文直接运行 lab 源码时使用。 */
-  fileSourcePath?: string
-  /** 已由在线实验源码面板展示、不再重复附加到正文的文件。 */
-  hiddenAppendedSourceFileNames?: readonly string[]
-  /** 共享 HTML 实验套件需要激活的场景编号。 */
-  scenarioId?: string
-}
-
 /** 知识文章的仓库内根目录。 */
 const KNOWLEDGE_CONTENT_ROOT = join(process.cwd(), 'src', 'content', 'knowledge')
 
@@ -179,565 +141,8 @@ const KNOWLEDGE_ASSET_ROOT = join(process.cwd(), 'public', 'knowledge-assets')
 /** 支持作为知识文章读取的扩展名。 */
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx'])
 
-/** lab/README 页面允许自动附加的真实源码文件。 */
-const LAB_SOURCE_FILE_DEFINITIONS: readonly LabSourceFileDefinition[] = [
-  {
-    fileName: 'main.py', // Python 命令行实验的默认入口。
-    language: 'python' // 为 Python 源码启用语法高亮。
-  },
-  {
-    fileName: 'rag_core.py', // 企业知识库实验的 RAG 核心实现。
-    language: 'python' // 为 RAG Python 源码启用语法高亮。
-  },
-  {
-    fileName: 'server.py', // 前后端或 HTTP 实验的服务入口。
-    language: 'python' // 服务端示例均使用 Python。
-  },
-  {
-    fileName: 'quiz.py', // 面试题命令行自测入口。
-    language: 'python' // 自测工具均使用 Python。
-  },
-  {
-    fileName: 'index.html', // 浏览器实验的可运行页面。
-    language: 'html' // 为 HTML、CSS 和内嵌 JavaScript 启用高亮。
-  },
-  {
-    fileName: 'sandbox.html', // 无需后端和密钥即可在文章中预览的隔离页面。
-    language: 'html' // 为沙盒 HTML、CSS 和内嵌 JavaScript 启用高亮。
-  },
-  {
-    fileName: 'Dockerfile', // 容器实验的镜像构建文件。
-    language: 'dockerfile' // 为 Dockerfile 启用语法高亮。
-  },
-  {
-    fileName: 'docker-compose.yml', // 多容器实验的编排文件。
-    language: 'yaml' // Compose 文件使用 YAML 语法。
-  }
-]
-
-/** 单个实验文件允许在静态页面数据中携带的最大字节数。 */
-const LAB_SANDBOX_FILE_SIZE_LIMIT_BYTES = 256 * 1024
-
-/** 共享 HTML 实验入口中等待构建期替换的场景占位符。 */
-const LAB_SANDBOX_SCENARIO_PLACEHOLDER = '__KNOWLEDGE_LAB_SCENARIO__'
-
 /** 正文 Python 沙盒统一使用的入口文件名。 */
 const INLINE_PYTHON_SANDBOX_ENTRY_FILE = 'main.py'
-
-/**
- * 创建一条 Python 在线实验白名单定义。
- * @param title 运行面板展示的实验名称。
- * @param description 读者运行后应该观察的核心结果。
- * @param supportingFiles 除 main.py 外必须写入虚拟文件系统的支持文件。
- * @param fileSourcePath 提供运行文件的实验 README 无扩展名路径。
- */
-function createPythonSandboxDefinition(
-  title: string,
-  description: string,
-  supportingFiles: readonly string[] = [],
-  fileSourcePath?: string
-): LabSandboxDefinition {
-  return {
-    runtime: 'python', // 交给 Web Worker 内的 Pyodide 执行。
-    title, // 使用调用方提供的文章内实验名称。
-    description, // 使用调用方提供的预期观察结果。
-    entryFile: 'main.py', // 这批离线 Python Demo 统一从 main.py 启动。
-    fileNames: ['main.py', ...supportingFiles], // 只携带入口和显式声明的支持文件。
-    fileSourcePath // 正文实验从关联的 lab 目录读取可信文件。
-  }
-}
-
-/**
- * 创建一条 HTML 在线实验白名单定义。
- * @param title 运行面板展示的实验名称。
- * @param description 读者运行后应该观察的核心结果。
- * @param fileSourcePath 提供运行文件的实验 README 无扩展名路径。
- */
-function createHtmlSandboxDefinition(
-  title: string,
-  description: string,
-  fileSourcePath?: string
-): LabSandboxDefinition {
-  return {
-    runtime: 'html', // 使用不具备同源权限的 iframe 执行内嵌脚本。
-    title, // 使用调用方提供的文章内实验名称。
-    description, // 使用调用方提供的预期观察结果。
-    entryFile: 'sandbox.html', // 只运行专门为无后端预览编写的入口。
-    fileNames: ['sandbox.html'], // 不向 iframe 暴露服务端示例或其他支持文件。
-    fileSourcePath // 正文实验从关联的 lab 目录读取可信文件。
-  }
-}
-
-/**
- * 创建一条复用共享 HTML 套件的在线实验白名单定义。
- * @param title 运行面板展示的实验名称。
- * @param description 读者运行后应该观察的核心结果。
- * @param fileSourcePath 提供共享 sandbox.html 的实验 README 无扩展名路径。
- * @param scenarioId 当前文章需要激活的实验场景编号。
- */
-function createScenarioSandboxDefinition(
-  title: string,
-  description: string,
-  fileSourcePath: string,
-  scenarioId: string
-): LabSandboxDefinition {
-  return {
-    ...createHtmlSandboxDefinition(title, description, fileSourcePath),
-    scenarioId // 构建页面数据时写入可信入口，不接受 URL 或用户输入覆盖。
-  }
-}
-
-/** AI 编程 13 个实验共用的可信源码目录。 */
-const AI_CODING_LAB_SUITE_PATH = '_shared-labs/ai-coding/lab/README'
-
-/** AI 应用开发 17 个实验共用的可信源码目录。 */
-const AI_APP_LAB_SUITE_PATH = '_shared-labs/ai-app/lab/README'
-
-/**
- * 在线实验采用显式白名单，避免把需要密钥、网络、Docker 或长期进程的 Demo 错当成浏览器实验。
- */
-const LAB_SANDBOX_DEFINITIONS: ReadonlyMap<string, LabSandboxDefinition> = new Map([
-  [
-    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/08-文件上传与文档解析/lab/README',
-    createPythonSandboxDefinition(
-      '文档解析与切分',
-      '读取同目录 Markdown、纯文本样例，输出带 source 与 section 元数据的 chunk。',
-      ['sample.md', 'sample.txt']
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/03-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索',
-    {
-      ...createHtmlSandboxDefinition(
-        '真实 Embedding Top-K',
-        '在浏览器内加载 bge-small-zh-v1.5，计算 512 维中文语义向量、余弦相似度与 Top-2。',
-        '03-AI大模型应用开发/05-LangChain实战/03-文档检索与向量库/01-RAG-把文档向量化-基于向量实现语义搜索/lab/README'
-      ),
-      hiddenAppendedSourceFileNames: ['sandbox.html'] // 沙盒自身已提供可复制源码，正文不再重复追加同一文件。
-    }
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/01-RAG是什么/lab/README',
-    createPythonSandboxDefinition('最小 RAG 链路', '运行离线检索、上下文拼装和带来源回答的完整闭环。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/02-文档切分Chunk/lab/README',
-    createPythonSandboxDefinition('Chunk 参数对比', '对同一文档比较过大、过小和带 overlap 三种切分结果。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/03-Embedding向量化/lab/README',
-    createPythonSandboxDefinition('Embedding 相似度', '把问题和候选资料向量化，并按余弦相似度输出排序。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/04-向量数据库/lab/README',
-    createPythonSandboxDefinition('内存向量检索', '完成向量写入、metadata 过滤和 Top-K 相似度检索。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/05-检索与重排Rerank/lab/README',
-    createPythonSandboxDefinition('召回与 Rerank', '对比低成本初排和意图感知重排后的候选顺序。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/06-RAG回答生成与引用来源/lab/README',
-    createPythonSandboxDefinition('回答与引用校验', '生成带来源编号的回答，并验证每条引用都能回溯到证据。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/07-RAG评测与调优/lab/README',
-    createPythonSandboxDefinition('RAG 离线评测', '计算命中率、答案覆盖和引用正确性等最小评测指标。')
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/02-Function-Calling工具调用/lab/README',
-    createPythonSandboxDefinition('Function Calling 安全闭环', '依次验证合法调用、参数错误、越权和未知工具。')
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/03-ReAct模式/lab/README',
-    createPythonSandboxDefinition('ReAct 决策循环', '观察 Thought、Action、Observation 到 Final Answer 的状态变化。')
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/04-多工具Agent/lab/README',
-    createPythonSandboxDefinition('多工具 Agent 路由', '让同一 Agent 按任务选择检索、计算和订单查询工具。')
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/05-Agent记忆与状态',
-    createPythonSandboxDefinition(
-      '短期与长期记忆',
-      '观察滑动窗口淘汰旧消息，以及用户偏好如何跨会话持久化和读取。',
-      [],
-      '03-AI大模型应用开发/01-Agent工程/02-Agent基础/05-Agent记忆与状态/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/02-Agent基础/06-Agent安全边界/lab/README',
-    createPythonSandboxDefinition('Agent 安全边界', '验证工具白名单、参数校验、权限判断和高风险确认。')
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/02-LangChain入门/01-LangChain入门/lab/README',
-    createPythonSandboxDefinition('LCEL 最小链', '运行 Retriever、Prompt、LLM、Parser 的管道组合。')
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索',
-    createPythonSandboxDefinition(
-      'Memory 三策略与 Token 预算',
-      '对同一段历史执行截断、滚动摘要和长期记忆检索，再按预算组装最终上下文。',
-      [],
-      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/01-Memory-管理的三大策略-截断-总结-检索/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool',
-    createPythonSandboxDefinition(
-      '结构化输出校验与重试',
-      '依次观察脏 JSON 解析失败、修复重试、Schema 校验和业务规则拦截。',
-      [],
-      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/02-结构化大模型输出-output-parser-还是-tool/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain',
-    createPythonSandboxDefinition(
-      'Runnable 数据契约与分支',
-      '查看组件如何通过统一输入输出串联，并在校验失败时走显式 fallback。',
-      [],
-      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/05-Runnable-把写逻辑变成组装-chain/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/06-实战练习-LCEL-组装-chain',
-    createPythonSandboxDefinition(
-      'LCEL RAG 与 Callback Trace',
-      '运行检索、Prompt、模型、Parser 固定流水线，并查看每一步的数据形状和耗时。',
-      [],
-      '03-AI大模型应用开发/05-LangChain实战/04-Chain输出与上下文/06-实战练习-LCEL-组装-chain/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案',
-    createPythonSandboxDefinition(
-      'Redis Session Memory 机制',
-      '在离线存储中复现租户隔离、滑动窗口、TTL 刷新和过期降级。',
-      [],
-      '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/01-Redis-实现-Agent-短期记忆存储的最佳方案/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案',
-    createHtmlSandboxDefinition(
-      'Mem0 记忆生命周期',
-      '逐轮写入偏好，直观看到 ADD、UPDATE、NOOP、DELETE 以及多路召回结果。',
-      '03-AI大模型应用开发/05-LangChain实战/05-短期与长期记忆/02-Mem0-分层记忆-三路召回的长期记忆方案/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/06-LangGraph/02-LangGraph入门/01-LangGraph入门/lab/README',
-    createPythonSandboxDefinition('LangGraph 状态机', '运行带条件分支、循环次数上限和终止节点的最小状态图。')
-  ],
-  [
-    '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构',
-    createPythonSandboxDefinition(
-      'Multi-Agent、Checkpoint 与 HIL',
-      '观察 Supervisor 路由、最小权限、状态归并、人工中断和断点恢复。',
-      [],
-      '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/01-图编排引擎-LangGraph-和多-Agent-架构/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环',
-    createPythonSandboxDefinition(
-      'Agentic RAG 自纠错闭环',
-      '观察路由、检索、证据评分、Query 改写、有限重试、回答和拒答路径。',
-      [],
-      '03-AI大模型应用开发/06-LangGraph/03-图编排与Agentic-RAG/02-Agentic-RAG-基于-LangGraph-自主决策-RAG-闭环/lab/README'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/07-LangSmith-LangFuse/02-可观测性入门/01-AI应用日志与可观测性/lab/README',
-    createPythonSandboxDefinition('AI Trace 观测', '记录一次 RAG 调用的阶段耗时、Token 和错误字段。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/03-结构化输出与JSON/lab/README',
-    createPythonSandboxDefinition(
-      '结构化输出校验与兜底',
-      '运行五类模型输出，观察 JSON 解析、Schema 校验、错误标识和稳定兜底结果。'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/07-前端调用AI接口/lab/README',
-    createHtmlSandboxDefinition('流式回答状态机', '直接操作提问、取消和重试，观察流式输出与 UI 状态切换。')
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/08-项目与求职/01-项目-前端AI-Copilot组件/lab/README',
-    createHtmlSandboxDefinition('前端 AI Copilot', '体验上下文白名单、建议生成、Diff 预览和写入前确认。')
-  ],
-  [
-    '02-AI编程/01-提示词工程/05-提示词的结构化设计',
-    createScenarioSandboxDefinition(
-      'Prompt 结构与回归对比器',
-      '切换角色、上下文、约束、示例和输出契约，实时观察 Prompt 完整度与冲突诊断。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-01'
-    )
-  ],
-  [
-    '02-AI编程/03-Codex/04-上下文与AGENTS',
-    createScenarioSandboxDefinition(
-      '上下文预算与指令优先级',
-      '调整上下文窗口和日志体积，观察保留、摘要、裁剪以及规则覆盖结果。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-02'
-    )
-  ],
-  [
-    '02-AI编程/02-Claude-Code/07-权限模式与PlanMode',
-    createScenarioSandboxDefinition(
-      '权限、Plan Mode 与 Diff 审批',
-      '选择工具动作与授权模式，观察允许、询问、拒绝和审批后的状态迁移。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-03'
-    )
-  ],
-  [
-    '02-AI编程/05-Agent-Harness/03-agent核心循环',
-    createScenarioSandboxDefinition(
-      'Agent Harness 核心循环',
-      '逐步执行观察、计划、工具、验证、重试和终止，比较跳过验证造成的错误完成。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-04'
-    )
-  ],
-  [
-    '02-AI编程/05-Agent-Harness/05-工具调用进阶',
-    createScenarioSandboxDefinition(
-      '编程工具调用与路径安全',
-      '验证工具 Schema、工作区边界、补丁检查和危险命令拦截。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-05'
-    )
-  ],
-  [
-    '02-AI编程/05-Agent-Harness/10-子代理编排',
-    createScenarioSandboxDefinition(
-      'Subagent 任务图与并发预算',
-      '调整并发槽位和失败注入，观察 DAG 依赖、冲突、等待与取消传播。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-06'
-    )
-  ],
-  [
-    '02-AI编程/04-Skills/06-description触发开关',
-    createScenarioSandboxDefinition(
-      'Skill 触发与渐进式披露',
-      '比较 Skill 描述的匹配质量、冲突与资源加载成本。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-07'
-    )
-  ],
-  [
-    '02-AI编程/06-Superpowers/04-TDD与系统化调试',
-    createScenarioSandboxDefinition(
-      'TDD 与系统化调试闭环',
-      '观察失败测试、根因定位、最小修复与回归检查，识别只修表象的路径。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-08'
-    )
-  ],
-  [
-    '02-AI编程/02-Claude-Code/14-GitWorktrees并行不打架',
-    createScenarioSandboxDefinition(
-      'Git Worktree 并行冲突',
-      '模拟并行分支、脏工作区、共享文件冲突与安全收尾。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-09'
-    )
-  ],
-  [
-    '02-AI编程/02-Claude-Code/05-工作循环与检查点回溯',
-    createScenarioSandboxDefinition(
-      'Checkpoint、回溯与上下文压缩',
-      '比较撤销代码、恢复执行状态和压缩对话三种操作的影响边界。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-10'
-    )
-  ],
-  [
-    '02-AI编程/02-Claude-Code/19-Hooks与Skills与Automation',
-    createScenarioSandboxDefinition(
-      'Hooks 与 CI 质量门禁',
-      '查看 PreTool、PostTool、Stop、Lint、Test 和 Build 的触发顺序与阻断结果。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-11'
-    )
-  ],
-  [
-    '02-AI编程/02-Claude-Code/22-MCP外部工具集成',
-    createScenarioSandboxDefinition(
-      'MCP 工具发现与权限检查',
-      '检查 Server、Tool Schema、授权范围、超时与 Prompt Injection 防护。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-12'
-    )
-  ],
-  [
-    '02-AI编程/05-Agent-Harness/13-走向生产',
-    createScenarioSandboxDefinition(
-      'Prompt 与 Agent 回归评测矩阵',
-      '对比多个版本的成功率、工具选择准确率、Token、延迟和回归项。',
-      AI_CODING_LAB_SUITE_PATH,
-      'AC-13'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/02-企业级-RAG-全链路-离线建库到在线问答',
-    createScenarioSandboxDefinition(
-      '企业 RAG 全链路控制台',
-      '从解析、切分、Embedding、ACL 到检索、重排、生成和引用校验逐阶段观察数据流。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-01'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/02-文档切分Chunk',
-    createScenarioSandboxDefinition(
-      'Chunking 策略实验室',
-      '比较固定、递归、标题、父子和语义切分的边界、重复率与命中表现。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-02'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/03-Embedding向量化',
-    createScenarioSandboxDefinition(
-      'Embedding 选型与向量成本',
-      '根据维度、文档规模、精度和模型版本计算存储、批次与重建成本。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-03'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/09-生产进阶专题/02-ElasticSearch-全文检索-倒排索引-IK-分词器-BM25',
-    createScenarioSandboxDefinition(
-      'ES 倒排索引与 BM25 拆解',
-      '逐项查看分词、TF、DF、IDF、长度归一化和字段权重如何形成最终排名。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-04'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/04-混合检索与RRF实战',
-    createScenarioSandboxDefinition(
-      'BM25、Vector 与 RRF 混合检索',
-      '调整两路 Top K、RRF k、元数据过滤与重排数量，观察候选排名变化。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-05'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/04-企业知识库项目/01-项目-企业知识库RAG',
-    createScenarioSandboxDefinition(
-      'RAG ACL 与跨租户泄漏',
-      '比较召回前鉴权和召回后过滤，并检查缓存键与引用接口的二次鉴权。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-06'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/03-RAG-生产排障-坏案例与修复手册',
-    createScenarioSandboxDefinition(
-      '增量建库、删除传播与索引版本',
-      '对文档执行新增、更新和删除，观察 Chunk Diff、蓝绿切换、Tombstone 与回滚。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-07'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/07-LangSmith-LangFuse/03-LangSmith实战/01-LangSmith-全链路观测-Agent-调试到-RAG-量化评估',
-    createScenarioSandboxDefinition(
-      'LangSmith 与 LangFuse Trace 排障',
-      '展开 Span、检索文档、Prompt、Token、耗时、费用与错误，完成根因定位。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-08'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/07-部署成本与排障/04-生产问题排查清单',
-    createScenarioSandboxDefinition(
-      '模型路由、限流、重试与熔断',
-      '注入 429、超时和 5xx，观察退避、熔断、备用模型与非幂等保护。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-09'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/02-RAG核心链路/03-RAG在线问答链路',
-    createScenarioSandboxDefinition(
-      'Multi-Query、Rewrite 与 HyDE',
-      '比较原始问题、多查询、查询改写和假设文档的召回与去重效果。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-10'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/05-检索与重排Rerank',
-    createScenarioSandboxDefinition(
-      'Rerank 阈值、预算与延迟',
-      '调整召回量、Rerank Top N 和阈值，观察命中率、费用及延迟的权衡。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-11'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/05-RAG基础/07-RAG评测与调优',
-    createScenarioSandboxDefinition(
-      'RAG 评测与坏案例归因',
-      '计算 Hit@K、MRR、正确性、忠实度与引用准确率，并定位问题阶段。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-12'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/04-大模型API与应用工程/09-异步任务与队列基础',
-    createScenarioSandboxDefinition(
-      '异步建库队列与死信处理',
-      '观察任务从 Pending 到 Done、Retry 或 Dead Letter 的状态和幂等处理。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-13'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/01-Agent工程/06-DeepAgents与Multi-Agent/01-DeepAgents-开箱即用的-skill-上下文压缩-middleware',
-    createScenarioSandboxDefinition(
-      'DeepAgents 上下文压缩与专家分工',
-      '比较单 Agent、Subagents 和 Middleware 压缩后的上下文、调用次数和失败边界。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-14'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/09-生产进阶专题/04-Neo4j-知识图谱和-Graph-RAG',
-    createScenarioSandboxDefinition(
-      'GraphRAG 实体关系与路径召回',
-      '从文本抽取实体关系，比较向量候选、图路径和社区摘要融合结果。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-15'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/02-企业级知识库/05-企业级RAG进阶/01-企业级知识库项目-多模态-RAG-流程梳理',
-    createScenarioSandboxDefinition(
-      '多模态 RAG：OCR、表格与图片引用',
-      '观察页面、图片、表格块解析、坐标保留、跨模态召回和可视化引用。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-16'
-    )
-  ],
-  [
-    '03-AI大模型应用开发/08-工程基础/07-部署成本与排障/03-成本控制与缓存',
-    createScenarioSandboxDefinition(
-      '语义缓存与成本计算器',
-      '比较精确缓存和语义缓存，并验证权限、模型、Prompt 与知识库版本对缓存键的影响。',
-      AI_APP_LAB_SUITE_PATH,
-      'AA-17'
-    )
-  ]
-])
 
 /** 判断 URL 是否已经是无需改写的绝对地址或页内锚点。 */
 const EXTERNAL_URL_PATTERN = /^(?:[a-z][a-z\d+.-]*:|\/|#)/i
@@ -1145,105 +550,7 @@ const KNOWLEDGE_ASSET_PATHS = fs.existsSync(KNOWLEDGE_ASSET_ROOT)
       .filter((assetPath) => fs.statSync(join(KNOWLEDGE_ASSET_ROOT, assetPath)).isFile())
   : []
 
-/**
- * 构建实验 README 到同目录源码的索引。
- * 扫描范围固定在知识内容根目录，避免每个页面渲染时触发动态文件追踪。
- */
-function createLabSourceIndex(): ReadonlyMap<string, readonly LabSourceSection[]> {
-  /** README 相对路径到源码章节的索引。 */
-  const sourceIndex = new Map<string, LabSourceSection[]>()
-  /** 知识内容根目录下的全部相对路径。 */
-  const contentPaths = fs.existsSync(KNOWLEDGE_CONTENT_ROOT)
-    ? (fs.readdirSync(KNOWLEDGE_CONTENT_ROOT, { recursive: true }) as string[])
-    : []
-
-  for (const contentPath of contentPaths) {
-    /** 使用 URL 风格分隔符的知识内容路径。 */
-    const normalizedContentPath = contentPath.split(sep).join('/')
-    /** 与当前文件名匹配的可展示源码定义。 */
-    const sourceDefinition = LAB_SOURCE_FILE_DEFINITIONS.find(
-      (definition) => posix.basename(normalizedContentPath) === definition.fileName
-    )
-
-    if (!sourceDefinition || posix.basename(posix.dirname(normalizedContentPath)) !== 'lab') {
-      continue
-    }
-
-    /** 当前源码所在实验的 README 相对路径。 */
-    const readmePath = posix.join(posix.dirname(normalizedContentPath), 'README.md')
-    /** 当前源码绝对路径。 */
-    const sourceFilePath = join(KNOWLEDGE_CONTENT_ROOT, contentPath)
-
-    if (!fs.statSync(sourceFilePath).isFile()) {
-      continue
-    }
-
-    /** 当前 README 已收集的源码章节。 */
-    const sourceSections = sourceIndex.get(readmePath) || []
-    sourceSections.push({
-      fileName: sourceDefinition.fileName,
-      language: sourceDefinition.language,
-      sourceCode: fs.readFileSync(sourceFilePath, 'utf8')
-    })
-    sourceIndex.set(readmePath, sourceSections)
-  }
-
-  return sourceIndex
-}
-
-/** 所有实验 README 在页面中展示的真实源码索引。 */
-const LAB_SOURCE_INDEX = createLabSourceIndex()
-
-/**
- * 构建实验 README 到同目录直接子文件的索引。
- * 该索引只为显式白名单实验提供文件，不扫描 data 等嵌套目录。
- */
-function createLabSandboxFileIndex(): ReadonlyMap<string, readonly KnowledgeSandboxFile[]> {
-  /** 无扩展名 README 相对路径到同目录文件的索引。 */
-  const sandboxFileIndex = new Map<string, KnowledgeSandboxFile[]>()
-  /** 知识内容根目录下等待筛选的全部相对路径。 */
-  const contentPaths = fs.existsSync(KNOWLEDGE_CONTENT_ROOT)
-    ? (fs.readdirSync(KNOWLEDGE_CONTENT_ROOT, { recursive: true }) as string[])
-    : []
-
-  for (const contentPath of contentPaths) {
-    /** 使用 URL 风格分隔符的知识内容路径。 */
-    const normalizedContentPath = contentPath.split(sep).join('/')
-    /** 当前候选文件的直接父目录名称。 */
-    const parentDirectoryName = posix.basename(posix.dirname(normalizedContentPath))
-    /** 当前候选文件的纯文件名。 */
-    const fileName = posix.basename(normalizedContentPath)
-
-    if (parentDirectoryName !== 'lab' || fileName === 'README.md') {
-      continue
-    }
-
-    /** 当前候选文件的绝对路径。 */
-    const absoluteFilePath = join(KNOWLEDGE_CONTENT_ROOT, contentPath)
-    /** 当前候选文件的磁盘信息。 */
-    const fileStats = fs.statSync(absoluteFilePath)
-    if (!fileStats.isFile() || fileStats.size > LAB_SANDBOX_FILE_SIZE_LIMIT_BYTES) {
-      continue
-    }
-
-    /** 当前实验 README 的无扩展名相对路径。 */
-    const readmeSourcePath = posix.join(posix.dirname(normalizedContentPath), 'README')
-    /** 当前实验已经收集的直接子文件。 */
-    const sandboxFiles = sandboxFileIndex.get(readmeSourcePath) || []
-    sandboxFiles.push({
-      name: fileName,
-      content: fs.readFileSync(absoluteFilePath, 'utf8')
-    })
-    sandboxFileIndex.set(readmeSourcePath, sandboxFiles)
-  }
-
-  return sandboxFileIndex
-}
-
-/** 所有实验 README 可供白名单选择的直接子文件索引。 */
-const LAB_SANDBOX_FILE_INDEX = createLabSandboxFileIndex()
-
-/** 生产构建中复用的文章目录，避免每个静态页面重复扫描全部 Markdown。 */
+/** 生产构建中复用的文章目录/** 生产构建中复用的文章目录，避免每个静态页面重复扫描全部 Markdown。 */
 let productionKnowledgeArticles: KnowledgeArticle[] | null = null
 
 /**
@@ -1335,24 +642,6 @@ function getMergedDemoArticlePath(articlePath: string): string {
   }
 
   return coursePath
-}
-
-/**
- * 返回正文对应的 Lab README 索引路径。
- * @param sourceArticlePath 当前正文相对知识根目录的无扩展名路径。
- */
-function getArticleLabSourcePath(sourceArticlePath: string): string {
-  /** 扁平正文的配套源码保留在同名目录的 lab 中。 */
-  const articleLabSourcePath = posix.join(sourceArticlePath, LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
-  /** 当前文章专属 Lab 是否存在可展示源码或沙盒文件。 */
-  const hasArticleLab =
-    LAB_SANDBOX_FILE_INDEX.has(articleLabSourcePath) || LAB_SOURCE_INDEX.has(`${articleLabSourcePath}.md`)
-  if (hasArticleLab) {
-    return articleLabSourcePath
-  }
-
-  /** 学习指南等系列根文章使用父目录下的 Lab。 */
-  return posix.join(posix.dirname(sourceArticlePath), LAB_DIRECTORY_NAME, LAB_README_FILE_NAME)
 }
 
 /**
@@ -2597,85 +1886,6 @@ function rewriteKnowledgeLinks(articlePath: string) {
 }
 
 /**
- * 把实验目录中的真实源码附加到 README，避免运行说明与代码文件脱节。
- * @param filePath 当前 Markdown 文件的绝对路径。
- * @param markdown 当前 Markdown 原文。
- */
-function appendLabSourceFiles(filePath: string, markdown: string): string {
-  /** 当前 Markdown 相对知识根目录的路径。 */
-  const readmePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath).split(sep).join('/')
-  /** 构建期索引中与当前 README 对应的源码章节。 */
-  /** 当前正文不含 Markdown 扩展名的源路径。 */
-  const sourceArticlePath = readmePath.slice(0, -posix.extname(readmePath).length)
-  /** 扁平正文对应的实验 README 源码索引键。 */
-  const articleLabReadmePath = `${getArticleLabSourcePath(sourceArticlePath)}.md`
-  /** 优先兼容旧实验页，再为扁平正文读取配套 Lab 源码。 */
-  const indexedSourceSections = LAB_SOURCE_INDEX.get(readmePath) || LAB_SOURCE_INDEX.get(articleLabReadmePath) || []
-  /** 当前正文直接绑定的实验定义。 */
-  const articleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
-  /** 已由实验源码标签展示、不需要再次追加到正文的文件名。 */
-  const hiddenSourceFileNames = new Set(articleSandboxDefinition?.hiddenAppendedSourceFileNames || [])
-  /** 仍需作为静态源码章节附加的文件。 */
-  const visibleSourceSections = indexedSourceSections.filter(
-    (sourceSection) => !hiddenSourceFileNames.has(sourceSection.fileName)
-  )
-
-  if (visibleSourceSections.length === 0) {
-    return markdown
-  }
-
-  /** 转换为 Markdown 代码围栏后的源码章节。 */
-  const sourceSections = visibleSourceSections.map(
-    (sourceSection) =>
-      `### \`${sourceSection.fileName}\`\n\n` +
-      `\`\`\`${sourceSection.language}\n${sourceSection.sourceCode.trimEnd()}\n\`\`\``
-  )
-
-  /** 当前文章附加的 Python 入口，用于解释在线或本地运行方式。 */
-  const pythonEntrySection = visibleSourceSections.find((sourceSection) => sourceSection.fileName === 'main.py')
-  /** 根据 Pyodide 兼容性生成的运行方式说明。 */
-  const executionDescription = !pythonEntrySection
-    ? '以下内容直接读取同目录源码文件，页面说明与实际执行代码保持一致。'
-    : isBrowserRunnablePythonSource(pythonEntrySection.sourceCode)
-      ? '下方代码单元直接读取同目录源码；点击“运行”即可执行，页面展示与实际运行代码保持一致。'
-      : '以下示例会启动本地 HTTP 服务或依赖外部运行环境，浏览器沙盒不能安全提供对应能力；请按正文中的终端命令在本地运行。'
-
-  return `${markdown.trimEnd()}\n\n## 可运行源码\n\n${executionDescription}\n\n${sourceSections.join('\n\n')}`
-}
-
-/**
- * 为未手工配置但可在 Pyodide 中结束运行的 main.py 创建在线实验定义。
- * @param siblingLabSourcePath 当前文章同目录 Lab README 的无扩展名路径。
- * @returns 可自动运行时返回 Python 实验定义，否则返回 null。
- */
-function createAutomaticPythonSandboxDefinition(siblingLabSourcePath: string): LabSandboxDefinition | null {
-  /** 当前 Lab 目录下可供沙盒读取的直接子文件。 */
-  const indexedFiles = LAB_SANDBOX_FILE_INDEX.get(siblingLabSourcePath) || []
-  /** 自动实验必须存在的 Python 入口源码。 */
-  const entryFile = indexedFiles.find((file) => file.name === 'main.py')
-  if (!entryFile || !isBrowserRunnablePythonSource(entryFile.content)) {
-    return null
-  }
-
-  /** 除入口外允许写入虚拟文件系统的 Python 和文本夹具。 */
-  const supportingFileNames = indexedFiles
-    .filter((file) => file.name !== 'main.py' && BROWSER_PYTHON_SUPPORT_FILE_PATTERN.test(file.name))
-    .map((file) => file.name)
-    .sort((leftFileName, rightFileName) => leftFileName.localeCompare(rightFileName, 'zh-CN'))
-  /** 去掉排序编号后的文章目录名，用作实验标题。 */
-  const articleDirectoryName = posix
-    .basename(posix.dirname(posix.dirname(siblingLabSourcePath)))
-    .replace(/^\d{2}[-_\s]*/, '')
-
-  return createPythonSandboxDefinition(
-    `${articleDirectoryName}在线实验`,
-    '直接运行正文同目录的 main.py，验证示例输出、关键分支和异常处理。',
-    supportingFileNames,
-    siblingLabSourcePath
-  )
-}
-
-/**
  * 把 Markdown 标题节点转为纯文本实验名。
  * @param headingNode 当前 Python 代码块之前最近的标题节点。
  * @returns 去掉序号后的简洁标题。
@@ -2772,6 +1982,9 @@ function findInlinePythonSandboxCandidates(
       continue
     }
 
+    /** 当前围栏中与执行能力有关的显式元数据。 */
+    const runnableMetadata =
+      node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
     /** 只对明确声明为 Python 的围栏代码做自动执行。 */
     const isPythonCodeBlock = node.type === 'code' && /^(?:python|py)$/i.test(node.lang || '')
 
@@ -2793,20 +2006,86 @@ function findInlinePythonSandboxCandidates(
 
     /** 当前候选程序的完整源码。 */
     const sourceCode = node.value.trim()
-    if (!isInlinePythonSandboxCandidate(sourceArticlePath, currentHeading, sourceCode)) {
+    /** 显式 runnable 围栏仍必须通过浏览器依赖与完整性检查。 */
+    const sandboxHeading = runnableMetadata?.title || currentHeading
+    if (
+      !isInlinePythonSandboxCandidate(
+        sourceArticlePath,
+        runnableMetadata?.runnable ? `可运行 ${sandboxHeading}` : sandboxHeading,
+        sourceCode
+      )
+    ) {
       continue
     }
 
     candidates.push({
-      title: currentHeading, // 沿用文章原有知识点名称，不生成空泛标题。
-      entryFile: INLINE_PYTHON_SANDBOX_ENTRY_FILE, // 单代码块统一作为 Python 入口。
-      files: [{ name: INLINE_PYTHON_SANDBOX_ENTRY_FILE, content: sourceCode }] // 运行与正文展示共用同一份内容。
+      title: sandboxHeading, // 优先使用围栏标题，否则沿用正文知识点名称。
+      entryFile: runnableMetadata?.fileName || INLINE_PYTHON_SANDBOX_ENTRY_FILE, // 显式围栏可以声明直接文件名。
+      files: [
+        {
+          name: runnableMetadata?.fileName || INLINE_PYTHON_SANDBOX_ENTRY_FILE,
+          content: sourceCode
+        }
+      ] // 运行与正文展示共用同一份内容。
     })
   }
 
   flushSourceSection()
 
   return candidates
+}
+
+/**
+ * 从 Markdown 中提取显式标记为 runnable 的完整 HTML 页面。
+ * @param sourceArticlePath 当前文章无扩展名路径。
+ * @param markdown 当前文章 Markdown 原文。
+ * @param sandboxOffset 当前文章已有实验数量。
+ * @returns 直接以文章围栏源码运行的 HTML 实验。
+ */
+function createInlineHtmlSandboxes(
+  sourceArticlePath: string,
+  markdown: string,
+  sandboxOffset: number
+): KnowledgeSandbox[] {
+  /** 当前文章解析后的 Markdown 根节点。 */
+  const markdownTree = remark().parse(markdown) as MarkdownNode
+  /** 遍历时最近的正文标题。 */
+  let currentHeading = '正文 HTML 示例'
+  /** 已通过完整性检查的 HTML 沙盒。 */
+  const sandboxes: KnowledgeSandbox[] = []
+
+  for (const node of markdownTree.children || []) {
+    if (node.type === 'heading') {
+      currentHeading = getInlineSandboxHeadingText(node) || currentHeading
+      continue
+    }
+
+    /** 当前 HTML 围栏声明的执行属性。 */
+    const metadata = node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
+    /** HTML 沙盒必须显式启用，且源码是完整文档而不是局部标签。 */
+    const sourceCode = node.value?.trim() || ''
+    if (
+      !metadata?.runnable ||
+      metadata.language !== 'html' ||
+      !/^<!doctype\s+html>/i.test(sourceCode) ||
+      !/<script(?:\s|>)/i.test(sourceCode)
+    ) {
+      continue
+    }
+
+    /** 当前 HTML 实验的直接入口文件。 */
+    const entryFile = metadata.fileName || 'index.html'
+    sandboxes.push({
+      id: `${sourceArticlePath}:inline-html-${sandboxOffset + sandboxes.length + 1}`,
+      runtime: 'html',
+      title: metadata.title || currentHeading,
+      description: metadata.description || '运行文章中的完整 HTML 页面，直接观察交互和状态变化。',
+      entryFile,
+      files: [{ name: entryFile, content: sourceCode }]
+    })
+  }
+
+  return sandboxes
 }
 
 /**
@@ -2845,121 +2124,6 @@ function createInlinePythonSandboxes(
 }
 
 /**
- * 把一条实验定义转换为页面可序列化的在线实验。
- * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
- * @param sandboxDefinition 当前需要转换的可信实验定义。
- * @param defaultFileSourcePath 未显式指定源码位置时使用的索引路径。
- * @param sandboxIndex 当前实验在文章内从零开始的顺序。
- */
-function createKnowledgeSandbox(
-  sourceArticlePath: string,
-  sandboxDefinition: LabSandboxDefinition,
-  defaultFileSourcePath: string,
-  sandboxIndex: number
-): KnowledgeSandbox {
-  /** 实际提供运行文件的 README 无扩展名路径。 */
-  const fileSourcePath = sandboxDefinition.fileSourcePath || defaultFileSourcePath
-  /** 构建期从关联 Lab 目录读取的全部直接子文件。 */
-  const indexedFiles = LAB_SANDBOX_FILE_INDEX.get(fileSourcePath) || []
-  /** 严格按定义顺序挑选入口和支持文件。 */
-  const sandboxFiles = sandboxDefinition.fileNames.map((fileName) => {
-    /** 与定义文件名精确匹配的仓库文件。 */
-    const indexedFile = indexedFiles.find((file) => file.name === fileName)
-    if (!indexedFile) {
-      throw new Error(`在线实验缺少白名单文件：${fileSourcePath}/${fileName}`)
-    }
-    if (fileName !== sandboxDefinition.entryFile || !sandboxDefinition.scenarioId) {
-      return indexedFile
-    }
-
-    if (!indexedFile.content.includes(LAB_SANDBOX_SCENARIO_PLACEHOLDER)) {
-      throw new Error(`共享在线实验缺少场景占位符：${fileSourcePath}/${fileName}`)
-    }
-
-    return {
-      ...indexedFile,
-      content: indexedFile.content.replace(
-        LAB_SANDBOX_SCENARIO_PLACEHOLDER,
-        JSON.stringify(sandboxDefinition.scenarioId)
-      )
-    }
-  })
-
-  return {
-    id: `${sourceArticlePath}:${sandboxIndex + 1}`, // 多实验文章使用顺序后缀保持标识稳定且唯一。
-    runtime: sandboxDefinition.runtime, // 仅允许策略声明的 Python 或 HTML 环境。
-    title: sandboxDefinition.title, // 显示与文章知识点匹配的实验名称。
-    description: sandboxDefinition.description, // 告知读者运行后应该验证什么。
-    entryFile: sandboxDefinition.entryFile, // 执行仓库内可信入口，不接受页面输入。
-    files: sandboxFiles // 只携带入口运行必需的仓库可信文件。
-  }
-}
-
-/**
- * 根据显式配置和浏览器兼容性策略为当前文章构建在线实验。
- * @param sourceArticlePath 当前文章相对知识根目录的无扩展名路径。
- * @param markdown 当前文章完整 Markdown，用于识别已内嵌的 Python 实验。
- */
-function createKnowledgeSandboxes(sourceArticlePath: string, markdown: string): KnowledgeSandbox[] {
-  /** 扁平正文对应的实验 README 稳定索引键。 */
-  const siblingLabSourcePath = getArticleLabSourcePath(sourceArticlePath)
-  /** 正文已经公开且可运行的 Python 实验。 */
-  const inlinePythonSandboxCandidates = findInlinePythonSandboxCandidates(sourceArticlePath, markdown)
-  /** 文章内源码存在时不再读取已删除的外部 Python 副本。 */
-  const hasInlinePythonSandbox = inlinePythonSandboxCandidates.length > 0
-  /** 直接绑定当前正文的原始在线实验白名单。 */
-  const configuredArticleSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(sourceArticlePath)
-  /** 从已合并 Demo 继承的原始在线实验白名单。 */
-  const configuredMergedLabSandboxDefinition = LAB_SANDBOX_DEFINITIONS.get(siblingLabSourcePath)
-  /** 正文内嵌 Python 后只保留 HTML 等非 Python 显式实验。 */
-  const articleSandboxDefinition =
-    hasInlinePythonSandbox && configuredArticleSandboxDefinition?.runtime === 'python'
-      ? undefined
-      : configuredArticleSandboxDefinition
-  /** 正文内嵌 Python 后不再从 Lab 目录重复生成同一个实验。 */
-  const mergedLabSandboxDefinition =
-    hasInlinePythonSandbox && configuredMergedLabSandboxDefinition?.runtime === 'python'
-      ? undefined
-      : configuredMergedLabSandboxDefinition
-  /** 正文定义是否已经直接运行当前 Lab 的 Python 入口。 */
-  const articleDefinitionUsesSiblingLab =
-    articleSandboxDefinition?.runtime === 'python' && articleSandboxDefinition.fileSourcePath === siblingLabSourcePath
-  /** 没有手工 Python 配置时按共享策略生成的浏览器实验。 */
-  const automaticPythonSandboxDefinition =
-    mergedLabSandboxDefinition || articleDefinitionUsesSiblingLab
-      ? null
-      : createAutomaticPythonSandboxDefinition(siblingLabSourcePath)
-  /** 当前文章需要按顺序展示的实验及其默认源码位置。 */
-  const sandboxDefinitions: Array<{
-    definition: LabSandboxDefinition
-    defaultFileSourcePath: string
-  }> = []
-
-  if (articleSandboxDefinition) {
-    sandboxDefinitions.push({
-      definition: articleSandboxDefinition, // 正文专用交互场景或手工 Python 实验。
-      defaultFileSourcePath: sourceArticlePath // 未声明来源时从正文同目录取文件。
-    })
-  }
-  if (mergedLabSandboxDefinition) {
-    sandboxDefinitions.push({
-      definition: mergedLabSandboxDefinition, // 已合并 Demo 的手工高质量实验定义。
-      defaultFileSourcePath: siblingLabSourcePath // 实际源码仍保存在同目录 Lab 中。
-    })
-  }
-  if (automaticPythonSandboxDefinition) {
-    sandboxDefinitions.push({
-      definition: automaticPythonSandboxDefinition, // 通过浏览器兼容性检查的 main.py 自动实验。
-      defaultFileSourcePath: siblingLabSourcePath // 自动实验始终运行同目录 Lab 源码。
-    })
-  }
-
-  return sandboxDefinitions.map(({ definition, defaultFileSourcePath }, sandboxIndex) =>
-    createKnowledgeSandbox(sourceArticlePath, definition, defaultFileSourcePath, sandboxIndex)
-  )
-}
-
-/**
  * 读取并渲染一篇知识文章。
  * @param slug URL 中的文章路径片段。
  */
@@ -2973,8 +2137,6 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
 
   /** 文章原始 Markdown 内容。 */
   const markdown = await readFile(filePath, 'utf8')
-  /** 实验页附加真实源码后的 Markdown 内容。 */
-  const markdownWithLabSources = appendLabSourceFiles(filePath, markdown)
   /** 当前文件在知识库中的无扩展名源路径。 */
   const sourceArticlePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath)
     .split(sep)
@@ -3001,7 +2163,7 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
   /** 去掉页面课号、用于生成题目兜底文案的文章名称。 */
   const quizTitle = metadata.title.replace(SEQUENCED_TITLE_PREFIX_PATTERN, '')
   /** 将 Obsidian 图片语法转换为标准 Markdown 后的文章内容。 */
-  const normalizedMarkdown = markdownWithLabSources.replace(OBSIDIAN_IMAGE_PATTERN, (source, target: string) => {
+  const normalizedMarkdown = markdown.replace(OBSIDIAN_IMAGE_PATTERN, (source, target: string) => {
     /** 去掉可选显示别名后的图片文件名。 */
     const assetName = target.split('|')[0]?.trim()
     /** 按文件名匹配到的同步媒体路径。 */
@@ -3018,23 +2180,25 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
     .use(() => rewriteKnowledgeLinks(metadata.sourcePath))
     .use(html)
     .process(normalizedMarkdown)
-  /** 完全来自 Lab 或显式白名单的现有实验。 */
-  const configuredSandboxes = createKnowledgeSandboxes(metadata.sourcePath, normalizedMarkdown)
   /** 正文中经完整性与浏览器安全筛选的 Python 实验。 */
   const inlinePythonSandboxes = createInlinePythonSandboxes(
     metadata.sourcePath,
     normalizedMarkdown,
-    configuredSandboxes.length,
-    configuredSandboxes.flatMap((sandbox) =>
-      sandbox.files.filter((file) => file.name === sandbox.entryFile).map((file) => file.content)
-    )
+    0,
+    []
+  )
+  /** 正文中显式声明 runnable 的完整 HTML 实验。 */
+  const inlineHtmlSandboxes = createInlineHtmlSandboxes(
+    metadata.sourcePath,
+    normalizedMarkdown,
+    inlinePythonSandboxes.length
   )
 
   return {
     ...metadata,
     content: processedContent.toString(),
     mindmap: createKnowledgeMindmap(markdown, quizTitle, metadata.track === 'ai-apps', metadata.kind),
-    sandboxes: [...configuredSandboxes, ...inlinePythonSandboxes],
+    sandboxes: [...inlinePythonSandboxes, ...inlineHtmlSandboxes],
     quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle, metadata.kind),
     previousArticle,
     nextArticle

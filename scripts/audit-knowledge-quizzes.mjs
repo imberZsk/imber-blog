@@ -30,7 +30,8 @@ const FORBIDDEN_ARTICLE_CONTENT_PATTERN =
   /^(?:#{1,6}\s+(?:可视化规格|作者自审|下一篇|继续阅读|相关阅读)|>\s*)?(?:主分类|关联标签|VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)[：:]/m
 
 /** 非参考资料必须明确告诉读者学完可以做到什么。 */
-const LEARNING_GOAL_PATTERN = /(?:读完你能|学完你能|学习目标|一句话目标|本章目标|你将学会|目标[：:])/i
+const LEARNING_GOAL_PATTERN =
+  /(?:读完你能|读完后[，,]?你应能|学完你能|学习目标|一句话目标|本章目标|你将学会|目标[：:])/i
 
 /** 短于该长度的正文不足以独立解释一个知识点。 */
 const MIN_PROSE_CHARACTER_COUNT = 300

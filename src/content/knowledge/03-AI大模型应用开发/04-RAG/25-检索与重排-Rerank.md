@@ -186,3 +186,66 @@ if __name__ == "__main__":
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-11 -->
+
+## 可运行实验：Rerank 阈值、预算与延迟
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Rerank 阈值、预算与延迟" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-11 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-11 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Rerank 阈值、预算与延迟', summary: '调整初召回量、Rerank Top N 和阈值，观察效果、延迟及费用。', controls: [
+    { key: 'recallK', label: '初召回 Top K', type: 'range', min: 10, max: 100, step: 10, value: 50, suffix: '' },
+    { key: 'rerankN', label: 'Rerank Top N', type: 'range', min: 5, max: 50, step: 5, value: 20, suffix: '' },
+    { key: 'threshold', label: '相关性阈值', type: 'range', min: 30, max: 90, step: 5, value: 60, suffix: '%' }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 实际送入 Rerank 的候选数不能超过召回数。 */
+      const reranked = Math.min(values.recallK, values.rerankN);
+      /** 初召回和重排数量决定的估算命中率。 */
+      const hitRate = clamp(65 + Math.log2(values.recallK) * 4 + Math.log2(reranked) * 2 - values.threshold * 0.08 - (fail ? 12 : 0), 0, 98);
+      /** Cross-encoder 重排的估算延迟。 */
+      const latency = 80 + reranked * 13;
+      /** 每千次查询的估算重排费用。 */
+      const cost = reranked * 0.018;
+      return { metrics: [[hitRate.toFixed(1) + '%', 'Hit Rate'], [latency + 'ms', 'Rerank 延迟'], ['$' + cost.toFixed(2), '每千次费用'], [reranked, '实际重排']], stages: [aiStage('初召回', values.recallK >= 30 ? 'ok' : 'warn', values.recallK), aiStage('截取候选', 'ok', reranked), aiStage('Cross-Encoder', fail ? 'fail' : 'ok', latency + 'ms'), aiStage('阈值过滤', values.threshold > 80 ? 'warn' : 'ok', values.threshold + '%'), aiStage('证据输出', hitRate >= 75 ? 'ok' : 'warn', hitRate.toFixed(1) + '%')], rows: [['预算约束', reranked < values.recallK ? '只对最高潜力候选运行昂贵模型' : '全部召回候选进入重排'], ['阈值风险', values.threshold > 80 ? '阈值过高可能把唯一正确证据过滤掉' : '阈值保留足够候选'], ['故障注入', fail ? 'Rerank 服务超时，回退到融合排名并标记降级' : '重排服务正常']], diagnosis: fail ? 'Rerank 已降级，回答应记录 fallback 并提高拒答门槛。' : hitRate >= 75 ? '效果、延迟和费用处于可用平衡。' : '当前预算或阈值使正确证据不足。', danger: fail };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

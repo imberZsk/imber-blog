@@ -159,3 +159,71 @@ POST knowledge_chunks/_analyze
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-04 -->
+
+## 可运行实验：ES 倒排索引与 BM25 拆解
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="ES 倒排索引与 BM25 拆解" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-04 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-04 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'ES 倒排索引与 BM25 拆解', summary: '观察分词、TF、DF、IDF、文档长度和字段权重如何影响排名。', controls: [
+    { key: 'k1', label: '词频饱和 k1', type: 'range', min: 0.6, max: 2.2, step: 0.1, value: 1.2, suffix: '' },
+    { key: 'b', label: '长度归一化 b', type: 'range', min: 0, max: 1, step: 0.05, value: 0.75, suffix: '' },
+    { key: 'analyzer', label: '分词策略', type: 'select', value: 'ik', options: [['standard', 'Standard'], ['ik', 'IK Smart'], ['keyword', 'Keyword']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 三篇样例文档的词频。 */
+      const frequencies = [3, 1, 2];
+      /** 三篇样例文档的长度。 */
+      const lengths = [140, 60, 280];
+      /** 样例集合的平均文档长度。 */
+      const averageLength = lengths.reduce(function (sum, length) { return sum + length; }, 0) / lengths.length;
+      /** 查询词在样例集合中的 IDF。 */
+      const idf = Math.log(1 + (3 - 2 + 0.5) / (2 + 0.5));
+      /** 根据 BM25 公式计算的三个分数。 */
+      const scores = frequencies.map(function (frequency, index) { return idf * frequency * (values.k1 + 1) / (frequency + values.k1 * (1 - values.b + values.b * lengths[index] / averageLength)); });
+      if (values.analyzer === 'keyword' || fail) { scores[0] = 0; }
+      /** 分数最高的文档编号。 */
+      const winner = scores.indexOf(Math.max.apply(null, scores)) + 1;
+      return { metrics: [[idf.toFixed(3), 'IDF'], [scores[0].toFixed(3), 'Doc 1 分数'], [scores[1].toFixed(3), 'Doc 2 分数'], ['Doc ' + winner, '最终第一']], stages: [aiStage('Analyzer', values.analyzer === 'keyword' || fail ? 'fail' : 'ok', values.analyzer), aiStage('倒排表', 'ok', '退款→D1,D3'), aiStage('TF 饱和', 'ok', 'k1=' + values.k1), aiStage('长度归一', values.b === 0 ? 'warn' : 'ok', 'b=' + values.b), aiStage('字段加权', 'ok', 'title×2')], rows: [['BM25 公式', 'IDF × TF×(k1+1) / (TF+k1×(1-b+b×dl/avgdl))'], ['分词结果', values.analyzer === 'ik' && !fail ? '“退款接口”拆为领域可检索词' : '查询词未进入正确倒排项'], ['长文档影响', values.b > 0.8 ? '长度惩罚较强，需用业务评测确认' : '当前长度归一化适中']], diagnosis: values.analyzer === 'keyword' || fail ? '分词契约错误使精确词无法召回，调 k1/b 不能修复 Analyzer 问题。' : '分词、倒排和 BM25 参数共同形成可解释排名。', danger: values.analyzer === 'keyword' || fail };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

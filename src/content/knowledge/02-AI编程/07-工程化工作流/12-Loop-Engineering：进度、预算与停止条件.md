@@ -12,7 +12,33 @@
 - 进度信号、错误签名与无进展检测
 - 成功、失败、阻塞和取消终态
 - Checkpoint、恢复点和人工接管
+- `/loop` 周期触发、Goal Contract 与工程循环的分工
 - Ralph 类新会话循环的使用边界
+
+## `/loop`、goal 与 Loop Engineering 不是一回事
+
+这三个词分别回答“何时再执行”“做到什么算结束”“每一轮如何可靠推进”。具体产品是否提供 `/loop` 或 `/goal` 斜杠命令，要以当前宿主的官方文档和命令面板为准；工程设计不能依赖一个未经确认的命令名。
+
+| 概念 | 解决的问题 | 最小契约 | 典型场景 | 主要风险 |
+| --- | --- | --- | --- | --- |
+| `/loop` 或定时触发 | 下一次何时唤醒 | 周期、时区、重叠策略、取消开关 | 每 10 分钟查看一次 CI 或部署状态 | 空转、重复执行、费用失控 |
+| goal | 什么结果才算完成 | 目标、可执行判定器、非目标、截止时间 | 测试和 lint 同时通过 | 目标模糊导致永不结束或错误完成 |
+| Loop Engineering | 每轮怎样基于证据推进并安全停止 | 状态、动作、验证、预算、终态、Checkpoint | 调查、修改、测试需要多轮反馈的任务 | 原地打转、越权动作、状态丢失 |
+
+`/loop` 只是触发器，不等于完成控制器。每隔五分钟运行一次“检查 CI”能够发现状态变化，但如果没有去重游标、停止条件和取消开关，它会在 CI 通过后继续消耗资源。能订阅 webhook 或任务事件时优先使用事件触发；只有外部系统没有可靠事件时，才用轮询兜底。
+
+goal 不是一句愿望，而是一份可验证的 **Goal Contract**：
+
+- **Objective**：要改变的可观察结果，例如“认证回归测试全部通过”。
+- **Success predicate**：机器可执行的判定器，例如 `pytest tests/auth && ruff check src` 的退出码均为 0。
+- **Non-goals**：本轮不允许扩大的范围，例如不升级框架、不修改数据库 Schema。
+- **Budget**：最大轮次、墙钟时间、Token、费用和允许修改的文件范围。
+- **Terminal states**：至少区分 `succeeded`、`blocked`、`exhausted`、`cancelled`，不能把“停止运行”都记成成功。
+- **Evidence**：保存判定命令、退出码、关键输出、Diff 摘要和产物版本，让完成结论可复核。
+
+例如“把性能优化好”没有指标和基线，不能作为 goal；“在固定数据集和运行环境下，P95 从 480 ms 降至 300 ms 以下，错误率不升高”才可判定。目标达到后必须由判定器驱动终止，不应等待模型自行宣称完成。
+
+选择顺序很简单：只需周期查看状态时用 `/loop` 或调度器；需要达成明确结果时先写 Goal Contract；任务还需要多轮观察、行动、验证、预算控制和中断恢复时，再实现完整的 Loop Engineering。三者可以组合，但职责不能互相替代。
 
 ## 可运行完整示例：一个 Loop 的最小契约
 
@@ -135,5 +161,6 @@ Ralph 的典型做法是让新的 Agent 会话反复读取稳定规格和外部�
 ## 参考资料
 
 - [OpenAI Agents SDK Running Agents](https://openai.github.io/openai-agents-python/running_agents/)
+- [OpenAI Codex Automations](https://developers.openai.com/codex/app/automations/)
 - [Geoffrey Huntley 的 Ralph 方法说明](https://ghuntley.com/ralph/)
 - [LangGraph Persistence](https://docs.langchain.com/oss/python/langgraph/persistence)

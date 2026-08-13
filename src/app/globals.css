@@ -399,6 +399,10 @@
     @apply grid min-w-0;
   }
 
+  .knowledge-code-sandbox-workspace-output-only {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .knowledge-code-sandbox-source {
     @apply border-border bg-background min-w-0 border-b;
   }

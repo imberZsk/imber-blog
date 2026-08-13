@@ -1,6 +1,6 @@
 # RAG（05） - 混合检索与 RRF：融合关键词和语义召回
 
-> 读完你能：围绕“混合检索与 RRF：融合关键词和语义召回”理解“RRF 怎么计算”与“可执行示例”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“一、RRF 怎么计算”，复现“二、可执行示例”的最小实现，并用“requirements.txt”检查结果与失败边界。
 
 
 BM25 擅长产品型号、错误码和专有名词，向量检索擅长同义表达和自然语言意图。企业知识库通常同时召回两路结果，再用
@@ -164,3 +164,66 @@ print("RRF 融合：", fused_ranking)
 
 - [LangChain Retrieval](https://docs.langchain.com/oss/python/langchain/retrieval)
 - [Milvus 文档](https://milvus.io/docs)
+
+<!-- knowledge-scenario-inlined:AA-05 -->
+
+## 可运行实验：BM25、Vector 与 RRF 混合检索
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="BM25、Vector 与 RRF 混合检索" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AA-05 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AA-05 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'BM25、Vector 与 RRF 混合检索', summary: '分别查看两路召回，再调整 Top K、RRF k、过滤和 Rerank。', controls: [
+    { key: 'topK', label: '每路 Top K', type: 'range', min: 3, max: 30, value: 10, suffix: '' },
+    { key: 'rrfK', label: 'RRF k', type: 'range', min: 10, max: 100, step: 10, value: 60, suffix: '' },
+    { key: 'filter', label: 'Metadata Filter', type: 'select', value: 'before', options: [['none', '不筛选'], ['after', '融合后过滤'], ['before', '召回前过滤']] }
+  ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+      /** 两路候选在去重后的最大规模。 */
+      const candidates = Math.round(values.topK * (fail ? 1.8 : 1.5));
+      /** RRF 首位候选的理论分数。 */
+      const topScore = 1 / (values.rrfK + 1) + 1 / (values.rrfK + 2);
+      /** 过滤策略造成的越权候选数。 */
+      const leaks = values.filter === 'before' && !fail ? 0 : values.filter === 'after' ? 2 : 5;
+      /** 在可控候选规模内的估算召回率。 */
+      const recall = clamp(68 + values.topK * 1.1 - (values.rrfK < 20 ? 8 : 0) - leaks * 2, 0, 98);
+      return { metrics: [[candidates, '融合候选'], [topScore.toFixed(4), 'RRF Top 分'], [recall.toFixed(0) + '%', '估算 Recall'], [leaks, '越权候选']], stages: [aiStage('BM25', 'ok', 'top ' + values.topK), aiStage('Vector', 'ok', 'top ' + values.topK), aiStage('ACL Filter', leaks ? 'fail' : 'ok', values.filter), aiStage('RRF', 'ok', 'k=' + values.rrfK), aiStage('Rerank', candidates > 35 ? 'warn' : 'ok', Math.min(candidates, 20))], rows: [['融合原则', '按排名计算 1/(k+rank)，不直接相加不同量纲的原始分数'], ['Top K', values.topK < 5 ? '候选过少，融合前已丢失长尾证据' : '两路候选规模可用于融合'], ['过滤时机', leaks ? '越权候选已进入 Trace 或缓存，事后过滤不够安全' : '每路召回前都带租户与 ACL 条件']], diagnosis: leaks ? '混合检索结果包含越权候选，应把过滤前移到每个召回器。' : '两路召回、RRF 和权限过滤顺序正确，可继续离线调参。', danger: leaks > 0 };
+     }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

@@ -77,6 +77,8 @@
 
 所以 Paperclip 不关心你的 Agent 底层用的是 Claude、Codex 还是一段 shell 脚本——这叫 **BYOB（Bring Your Own Brain，自带大脑）**。它只负责「管理」这件事：分配任务、记录花费、串联协作、把关治理。
 
+它的运行机制是：调度器或事件触发 Heartbeat，服务端检查预算和任务归属，再通过 Adapter 启动外部 Agent；Agent 使用 API 领取任务、写回状态，服务端保存 Run、成本、会话和审计事件。任一环节失败都应停在可观察状态：控制台健康不代表 Adapter 已认证，Heartbeat 成功也不代表任务产物通过测试，预算或审批失败更不能绕过治理继续执行。
+
 ---
 
 # 五、几个你现在就该建立的心理模型
@@ -131,5 +133,6 @@ Paperclip 创始人反复强调：模型再强，传达价值观和**个人审�
 
 ## 参考资料
 
-- [FastAPI 大型应用](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
-- [Docker Compose](https://docs.docker.com/compose/)
+- [Paperclip 项目与核心定位](https://github.com/paperclipai/paperclip)
+- [Paperclip Architecture](https://docs.paperclip.ing/start/architecture)
+- [Paperclip Agents Runtime](https://docs.paperclip.ing/agents-runtime)

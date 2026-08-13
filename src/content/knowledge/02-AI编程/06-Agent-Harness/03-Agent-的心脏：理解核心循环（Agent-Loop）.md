@@ -1,6 +1,6 @@
 # Agent Harness（03） - Agent 的心脏：理解核心循环（Agent Loop）
 
-> 读完你能：围绕“Agent 的心脏：理解核心循环（Agent Loop）”理解“为什么必须是"循环"，而不是"一条直线"”与“循环的四个动作：想 → 做 → 看 → 再想”，并结合正文示例完成实践与排障。
+> 读完后，你应能解释“怎么跑”，复现“看点”的最小实现，并用“看点”检查结果与失败边界。
 
 > 上一章我们说："harness 的那个循环，是 Agent 的心跳。"
 > 这一章就来解剖这颗心脏。看懂了它，你就看懂了 90% 的 Agent——因为**几乎所有 Agent 的本质，都是同一个循环**。
@@ -225,3 +225,64 @@ python agent.py
 
 - [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 - [OWASP Agentic Security](https://genai.owasp.org/)
+
+<!-- knowledge-scenario-inlined:AC-04 -->
+
+## 可运行实验：Agent Harness 核心循环
+
+调整参数并注入失败，重点对比正常路径、保护条件和失败诊断；运行源码与文章保存在同一个 Markdown 文件。
+
+```html runnable file=index.html title="Agent Harness 核心循环" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-04 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-04 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Agent Harness 核心循环', summary: '逐步运行 Observe、Plan、Tool、Verify、Retry 或 Finish。', controls: [
+        { key: 'maxSteps', label: '最大步数', type: 'range', min: 3, max: 10, value: 7, suffix: ' 步' },
+        { key: 'verify', label: '验证策略', type: 'select', value: 'tests', options: [['none', '跳过验证'], ['syntax', '仅语法检查'], ['tests', '定向测试']] },
+        { key: 'retries', label: '重试上限', type: 'range', min: 0, max: 3, value: 2, suffix: ' 次' }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 是否具备足够验证能力发现负数边界问题。 */
+          const verified = values.verify === 'tests' && !fail;
+          /** 修复边界问题需要的最少步骤。 */
+          const neededSteps = verified ? 7 : 5;
+          /** 是否在步数预算内完成正确修复。 */
+          const success = values.maxSteps >= neededSteps && verified && values.retries >= 1;
+          return { metrics: [[Math.min(values.maxSteps, neededSteps), '实际步数'], [success ? 'PASS' : 'FAIL', '完成状态'], [verified ? 2 : 0, '验证用例'], [success ? 1 : Math.max(0, values.retries), '重试次数']], stages: [stage('Observe', 'ok', '失败测试'), stage('Plan', 'ok', '最小范围'), stage('Tool', fail ? 'warn' : 'ok', 'apply_patch'), stage('Verify', values.verify === 'none' ? 'fail' : verified ? 'ok' : 'warn', values.verify), stage('Retry', values.retries ? 'ok' : 'warn', values.retries), stage('Finish', success ? 'ok' : 'fail', success ? '证据齐全' : '未完成')], rows: [['停止原因', success ? '定向测试通过且达到完成条件' : values.verify === 'none' ? '错误地把工具成功当成任务成功' : '步数或重试预算不足'], ['边界用例', verified ? '负数金额格式化已覆盖' : '未执行能暴露根因的测试'], ['防无限循环', 'maxSteps=' + values.maxSteps + '，retries=' + values.retries]], diagnosis: success ? 'Harness 通过验证证据结束任务。' : 'Harness 不应宣布完成；需要补足验证、重试或步数预算。', danger: !success };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```
