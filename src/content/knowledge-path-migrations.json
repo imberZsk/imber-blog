@@ -378,5 +378,7 @@
   "01-全栈开发/11-运维与可观测性/04-日志、指标、Trace-与-SLO": "01-全栈开发/08-运维与交付/06-日志、指标、Trace与告警",
   "01-全栈开发/11-运维与可观测性/05-分层测试与质量门禁": "01-全栈开发/07-测试工程/03-测试金字塔、契约、性能与安全测试",
   "03-AI大模型应用开发/01-大模型基础/07-Transformer、Attention-与自回归生成": "03-AI大模型应用开发/01-大模型基础/07-Transformer注意力与推理过程",
-  "03-AI大模型应用开发/06-Agent/23-LangGraph-持久化、HIL-与-Durable-Execution": "03-AI大模型应用开发/06-Agent/25-LangGraph持久化、HIL与可靠执行"
+  "03-AI大模型应用开发/06-Agent/23-LangGraph-持久化、HIL-与-Durable-Execution": "03-AI大模型应用开发/06-Agent/25-LangGraph持久化、HIL与可靠执行",
+  "01-AI编程/06-AI知识库/99-参考资料/wechat/Superpowers + gstack 搭配实战：2 个插件，37 个技能，5 个关键交接点，闭环标准开发流程": "02-AI编程/07-工程化工作流/16-工作流选型与组合：Superpowers、OpenSpec、Spec-Kit、gstack、GSD与BMAD",
+  "01-AI编程/06-AI知识库/99-参考资料/wechat/一人一城：gstack+Superpowers": "02-AI编程/07-工程化工作流/14-gstack：角色化产品研发与发布流水线"
 }
