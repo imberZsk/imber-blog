@@ -163,6 +163,44 @@ function auditMindmaps(articlePaths) {
   }
 }
 
+/** 审计三条路线的实体知识域集合是否与对应思维导图完全一致。 */
+function auditMindmapModuleCoverage(articlePaths) {
+  /** 路线到实体目录展示名称集合的映射。 */
+  const directoryModulesByTrack = new Map()
+  for (const articlePath of articlePaths) {
+    /** 当前文章路径分段，前两段分别是路线和知识域目录。 */
+    const [trackDirectory, moduleDirectory] = articlePath.split('/')
+    if (!trackDirectory || !moduleDirectory) continue
+    /** 去掉文件系统排序前缀后的路线名称。 */
+    const trackName = trackDirectory.replace(/^\d+-/, '')
+    /** 去掉文件系统排序前缀并还原展示中的短横线。 */
+    const moduleName = moduleDirectory.replace(/^\d+-/, '').replaceAll('-', ' ')
+    const modules = directoryModulesByTrack.get(trackName) || new Set()
+    modules.add(moduleName)
+    directoryModulesByTrack.set(trackName, modules)
+  }
+
+  for (const fileName of MINDMAP_FILE_NAMES) {
+    /** 当前导图的路线展示名称。 */
+    const trackName = fileName.replace(/^\d+-/, '').replace(/\.md$/, '')
+    /** 导图中以单个短横线开头的一级知识域名称。 */
+    const mindmapModules = new Set(
+      fs
+        .readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
+        .split('\n')
+        .filter((line) => /^- [^[]/.test(line))
+        .map((line) => line.replace(/^- /, '').trim())
+    )
+    const directoryModules = directoryModulesByTrack.get(trackName) || new Set()
+    for (const moduleName of directoryModules) {
+      if (!mindmapModules.has(moduleName)) failures.push(`${fileName} 缺少实体目录知识域：${moduleName}`)
+    }
+    for (const moduleName of mindmapModules) {
+      if (!directoryModules.has(moduleName)) failures.push(`${fileName} 引用了不存在的实体知识域：${moduleName}`)
+    }
+  }
+}
+
 /** 审计旧 URL 迁移表是否全部指向当前存在的正式文章。 */
 function auditPathMigrations(articlePaths) {
   /** 旧路径到当前路径的迁移映射。 */
@@ -213,6 +251,7 @@ const articleFiles = findArticleFiles(KNOWLEDGE_ROOT)
 const articlePaths = new Set(articleFiles.map(getArticlePath))
 auditArticles(articleFiles)
 auditMindmaps(articlePaths)
+auditMindmapModuleCoverage(articlePaths)
 auditPathMigrations(articlePaths)
 auditModuleSequences(articlePaths)
 
