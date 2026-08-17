@@ -123,7 +123,7 @@ def test_search_analyzer_keeps_domain_terms(
 
 分词正确不等于检索正确。下一层应建立包含 `query`、`expected_chunk_ids`、`tenant_id` 的小型金标集，在与生产相同的权限过滤条件下检查 Recall@K。分词回归负责快速定位词典和 analyzer，召回回归负责验证 mapping、BM25、字段权重和过滤器的组合结果。
 
-# 五、生产避坑
+# 五、Elasticsearch 分词回归的生产避坑
 
 1. 修改 analyzer 不能原地改变已有倒排索引，必须新建版本化索引并重建数据。
 2. 远程词典更新后要确认所有节点加载成功，再跑回归集；节点版本不一致会产生随机召回。

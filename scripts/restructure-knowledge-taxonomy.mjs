@@ -589,6 +589,8 @@ function ensureSources(markdown, category) {
 
 /** 生成补充文章的高密度正文。 */
 function createSupplementMarkdown(definition) {
+  /** 当前补充文章标题去掉冒号后的说明，只保留可复用的主题名称。 */
+  const topic = definition.title.split(/[：:]/, 1)[0].trim()
   return `# ${definition.title}
 
 > ${definition.summary}
@@ -597,19 +599,19 @@ function createSupplementMarkdown(definition) {
 
 读完本章后，你应能复述本主题的关键数据流，选择至少一种替代方案，运行或审查最小实现，并根据日志、指标或测试结果解释失败原因。
 
-## 为什么需要它
+## 为什么需要 ${topic}
 
 真实系统的问题通常不在 API 能否调用，而在输入边界、错误恢复和验收证据是否明确。本章给出可以进入设计评审和生产检查的最小框架。
 
-## 核心决策
+## ${topic}的核心决策
 
 ${definition.decisions.map((item) => `- ${item}`).join('\n')}
 
-## 落地步骤
+## ${topic}的落地步骤
 
 ${definition.steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}
 
-## 决策记录怎么写
+## ${topic}的决策记录怎么写
 
 上线前不要只留下“采用 ${definition.title}”这一句结论。把每个决策和验收证据放在同一张表里，后续模型、数据或流量变化时才能重跑对比。
 
@@ -636,11 +638,11 @@ rollback:
   owner: named_on_call
 \`\`\`
 
-## 生产避坑
+## ${topic}的生产避坑
 
 ${definition.pitfalls.map((item) => `- ${item}`).join('\n')}
 
-## 故障演练
+## ${topic}的故障演练
 
 ${definition.pitfalls.map((item, index) => `${index + 1}. 注入与“${item}”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。`).join('\n')}
 

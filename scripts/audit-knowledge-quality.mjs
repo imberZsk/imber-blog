@@ -42,6 +42,10 @@ const NESTED_ARTICLE_SERIES_LABELS = {
 const GENERIC_MINDMAP_POINT_PATTERN =
   /^(?:学习目标|学习边界|在线运行|页面运行|本地查看|预期输出(?:（节选）)?|重点观察|动手实践.*|动手改.*|参考资料|本篇定位|与进阶篇的分工|一个真实场景|先从一个真实场景|工程上真正会踩的坑(?:（本篇独有）)?|一句话面试答法|复述答法|这一章怎么读|前言|复习导航|问题清单|怎么跑|看点|main\.py|一张 Mermaid 图|真实.+怎么用|如何验证.+关键结论)$/i
 
+/** 脱离文章上下文后无法识别知识主题的章节名。 */
+const GENERIC_ARTICLE_HEADING_PATTERN =
+  /^(?:本篇定位|一个真实场景|核心拆解|工程链路|落地建议|常见坑|和已有主线的关系|复述答法|为什么需要它|核心决策|落地步骤|决策记录怎么写|生产避坑|故障演练)$/
+
 /** 每篇文章至少需要两个带解释的知识分支，与桌面文章规范一致。 */
 const MIN_MINDMAP_POINTS = 2
 
@@ -325,7 +329,27 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
   let runnableCodeBlockCount = 0
   /** 当前文章中需要临时模型连接的源码块数量。 */
   let modelSandboxCount = 0
+  /** 当前正在审计的“可运行实验”章节层级；离开章节后重置。 */
+  let runnableExperimentHeadingDepth = null
+  /** 当前“可运行实验”章节是否已经提供可执行沙盒。 */
+  let runnableExperimentHasSandbox = false
   for (const markdownNode of markdownTree.children || []) {
+    if (markdownNode.type === 'heading') {
+      /** 当前 Markdown 标题的纯文本内容。 */
+      const headingText = (markdownNode.children || []).map((headingChild) => headingChild.value || '').join('').trim()
+      if (runnableExperimentHeadingDepth !== null && markdownNode.depth <= runnableExperimentHeadingDepth) {
+        if (!runnableExperimentHasSandbox) {
+          failures.push(`${articlePath} 的“可运行实验”章节没有提供 runnable 沙盒。`)
+        }
+        runnableExperimentHeadingDepth = null
+        runnableExperimentHasSandbox = false
+      }
+      if (/可运行实验/.test(headingText)) {
+        runnableExperimentHeadingDepth = markdownNode.depth
+        runnableExperimentHasSandbox = false
+      }
+      continue
+    }
     if (markdownNode.type !== 'code') continue
 
     /** Mermaid 和纯文本属于图表或输出，不是可执行源码。 */
@@ -336,6 +360,7 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
     if (!/(?:^|\s)runnable(?:\s|$)/i.test(markdownNode.meta || '')) continue
 
     runnableCodeBlockCount += 1
+    if (runnableExperimentHeadingDepth !== null) runnableExperimentHasSandbox = true
     if (/(?:^|\s)model-sandbox(?:\s|$)/i.test(markdownNode.meta || '')) {
       modelSandboxCount += 1
     }
@@ -358,6 +383,10 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
     if (['html', 'htm'].includes(language) && (!/^<!doctype\s+html>/i.test(sourceCode) || !/<script(?:\s|>)/i.test(sourceCode))) {
       failures.push(`${articlePath} 的 HTML runnable 围栏必须包含完整文档和 script。`)
     }
+  }
+
+  if (runnableExperimentHeadingDepth !== null && !runnableExperimentHasSandbox) {
+    failures.push(`${articlePath} 的“可运行实验”章节没有提供 runnable 沙盒。`)
   }
 
   if (
@@ -487,6 +516,11 @@ function auditArticles(articleFiles) {
     const domain = getDomainLabel(articlePath)
     /** 当前文章一级标题。 */
     const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || ''
+    /** 去掉章节序号后仍然空泛的正文标题。 */
+    const genericSectionHeading = [...markdown.matchAll(/^#{1,6}\s+(.+)$/gm)]
+      .slice(1)
+      .map((headingMatch) => headingMatch[1].replace(/^(?:[一二三四五六七八九十百]+、|\d+(?:\.\d+)*[、.．]?)\s*/, '').trim())
+      .find((sectionHeading) => GENERIC_ARTICLE_HEADING_PATTERN.test(sectionHeading))
     /** 旧篇号导航只在本轮完成全量重构的 AI 应用开发课程中禁用。 */
     const isAiApplicationArticle = articlePath.startsWith('03-AI大模型应用开发/')
 
@@ -501,6 +535,7 @@ function auditArticles(articleFiles) {
     }
     if (WRITING_TASK_ARTIFACT_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含临时写作任务指令。`)
     if (LEGACY_BULK_ARTICLE_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含跨文章复用的旧 AI 编程模板。`)
+    if (genericSectionHeading) failures.push(`${articlePath} 使用了未包含文章主题的空泛章节名：${genericSectionHeading}`)
     auditArticleDepth(articlePath, markdown)
     auditRunnableCodeBlocks(articlePath, markdown)
 

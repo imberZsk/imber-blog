@@ -39,21 +39,21 @@ flowchart LR
 在“LangSmith 全链路观测：从 Agent 调试到 RAG 量化评估”的对象和顺序已经明确后，再看可观察的失败：只报告均分、数据泄漏、评审器未校准、Trace 断链或回退阈值缺失。定位时不从最后一条错误猜原因，而是沿上图找第一个偏离正文结论的节点。
 <!-- article-progressive-block:end -->
 
-# 二、本篇定位
+# 二、LangSmith 全链路观测的学习定位与边界
 
 这是可观测性进阶篇，衔接 40 日志与可观测性。
 
-# 三、一个真实场景
+# 三、LangSmith 全链路观测的真实应用场景
 
 用户反馈“回答错了”。如果你只能看到最终回答，就不知道是 query 改写错、检索没命中、rerank 排错、prompt 引导差，还是模型自己编。LangSmith 这类工具的价值，是把每一步调用、输入、输出、耗时和 token 展开给你看。
 
-# 四、核心拆解
+# 四、LangSmith 全链路观测的核心对象与机制
 
 - Trace 是一次请求的调用树。Agent 的每个模型调用、工具调用、检索调用都应该是一个 span。
 - 调试阶段看单条 trace，定位坏 case。评估阶段跑数据集，看 Hit Rate、faithfulness、answer correctness、latency 等指标。
 - RAG 评估不能只看最终答案，还要评估 retrieval：正确证据是否被召回，是否排在前面。
 
-# 五、工程链路
+# 五、LangSmith 全链路观测的工程链路
 
 - 为每次请求生成 trace_id。
 - 记录检索、rerank、LLM、tool 的输入输出。
@@ -61,23 +61,23 @@ flowchart LR
 - 改参数后批量回放评估集。
 - 对比指标和成本。
 
-# 六、落地建议
+# 六、LangSmith 全链路观测的落地建议
 
 - 线上日志脱敏后再进入观测平台。
 - 每次 prompt 或检索参数改动都标版本。
 - 把高频坏 case 固化成回归集。
 
-# 七、常见坑
+# 七、LangSmith 全链路观测的常见故障与误区
 
 - 只记录最终回答。
 - 没有版本字段，评估结果无法复现。
 - 只看平均耗时，不看 P90/P99。
 
-# 八、和已有主线的关系
+# 八、LangSmith 全链路观测在学习路线中的位置
 
 40 讲通用日志，26 讲 RAG 评测；81 把 trace 和评估平台串起来。
 
-# 九、复述答法
+# 九、LangSmith 全链路观测的核心结论
 
 > LangSmith 类工具的核心价值是 trace 和 dataset evaluation。单条 trace 帮你定位坏 case，评估集帮你对比改动是否变好。RAG 要同时看检索指标、答案忠实度、延迟和成本。
 
