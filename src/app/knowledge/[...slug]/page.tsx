@@ -110,6 +110,7 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
               nodeCount={article.mindmap.nodeCount}
             />
           )}
+          {article.referenceContent && <KnowledgeArticleContent content={article.referenceContent} sandboxes={[]} />}
           <KnowledgeArticleContent content={article.content} sandboxes={article.sandboxes} />
           <KnowledgeQuiz questions={article.quiz} />
 

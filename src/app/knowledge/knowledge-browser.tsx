@@ -176,8 +176,8 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   }, [activeModule, activeTrack, activeTrackModules, articles, query])
   /** 当前筛选范围内一次性进入页面 DOM 的完整文章列表。 */
   const visibleArticles = filteredArticles
-  /** 左侧模块导航当前应高亮的模块；显式筛选优先于滚动识别结果。 */
-  const highlightedModule = activeModule ?? visibleModule
+  /** 右侧模块导航当前应高亮的模块；页面顶部尚未触发滚动识别时回退到首个真实模块。 */
+  const highlightedModule = activeModule ?? visibleModule ?? numberedModuleOptions[0]?.label ?? null
   /** 各一级模块内每个细分类对应的完整文章数量。 */
   const subtopicCountsByModule = useMemo(() => {
     /** 一级模块名称到细分类文章数量的映射。 */
@@ -192,7 +192,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
 
     return countsByModule
   }, [filteredArticles])
-  /** 当前大模块中已渲染且包含多篇文章的细分类目录。 */
+  /** 当前大模块中已经渲染的全部细分类目录。 */
   const outlinedSubtopics = useMemo(() => {
     if (!highlightedModule) {
       return []
@@ -207,7 +207,6 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
       if (
         article.topic !== highlightedModule ||
         article.subtopic === article.topic ||
-        subtopicArticleCount <= 1 ||
         visitedSubtopics.has(article.subtopic)
       ) {
         return []
@@ -443,7 +442,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   }, [activeModule, activeTrack, hasSyncedLocation, query])
 
   return (
-    <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_168px]">
+    <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_220px]">
       <aside className="min-w-0 lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-15rem)] lg:flex-col lg:self-start lg:overflow-hidden lg:pr-1">
         <nav
           ref={trackNavigationRef}
@@ -479,57 +478,6 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
           })}
         </nav>
 
-        <div className="border-border mt-4 min-h-0 border-t pt-4 lg:flex lg:flex-1 lg:flex-col">
-          <p className="text-muted-foreground mb-2 px-3 font-mono text-[11px] font-semibold uppercase">当前路线模块</p>
-          <nav
-            ref={moduleNavigationRef}
-            className="flex max-w-full gap-1 overflow-x-auto pb-2 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto"
-            aria-label={`${activeTrackConfig.label}模块`}
-          >
-            <Link
-              ref={highlightedModule === null ? activeModuleLinkRef : undefined}
-              href={getKnowledgeListHref({ track: activeTrack })}
-              onClick={(event) => handleModuleNavigation(event, null)}
-              aria-current={highlightedModule === null ? 'page' : undefined}
-              className={`grid min-w-[164px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 text-xs transition-colors lg:min-w-0 ${
-                highlightedModule === null
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-              }`}
-            >
-              <span className="text-mint font-mono text-[11px] font-semibold">ALL</span>
-              <span>全部模块</span>
-              <span className="text-mint font-mono text-[11px]">{articles.length}</span>
-            </Link>
-
-            {numberedModuleOptions.map((moduleOption, index) => {
-              /** 当前模块是否与显式筛选或右侧滚动位置一致。 */
-              const isActive = moduleOption.label === highlightedModule
-
-              return (
-                <Link
-                  key={moduleOption.label}
-                  ref={isActive ? activeModuleLinkRef : undefined}
-                  href={getKnowledgeListHref({ track: activeTrack, module: moduleOption.label })}
-                  onClick={(event) => handleModuleNavigation(event, moduleOption.label)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`grid min-w-[164px] shrink-0 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 text-xs transition-colors lg:min-w-0 ${
-                    isActive
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                  }`}
-                >
-                  <span className="text-mint font-mono text-[11px] font-semibold">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="truncate">{moduleOption.label}</span>
-                  <span className="text-mint font-mono text-[11px]">{moduleOption.count}</span>
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-
         <Link
           href={activeTrackConfig.mindmapHref}
           className="text-muted-foreground hover:text-mint mt-3 flex shrink-0 items-center gap-2 px-3 text-xs transition-colors"
@@ -563,11 +511,10 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
             const showsModuleHeading = index === 0 || visibleArticles[index - 1]?.topic !== article.topic
             /** 当前细分类在所属大模块中的完整文章数量。 */
             const subtopicArticleCount = subtopicCountsByModule.get(article.topic)?.get(article.subtopic) || 0
-            /** 模块切换或细分类切换处展示包含多篇文章的细分类标题。 */
+            /** 模块切换或细分类切换处展示实体三级目录标题，单篇专题也必须保留。 */
             const showsSubtopicHeading =
               article.topic !== OVERVIEW_MODULE_LABEL &&
               article.subtopic !== article.topic &&
-              subtopicArticleCount > 1 &&
               (index === 0 ||
                 visibleArticles[index - 1]?.topic !== article.topic ||
                 visibleArticles[index - 1]?.subtopic !== article.subtopic)
@@ -642,45 +589,81 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
       <aside className="hidden min-w-0 xl:block">
         <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
           <p className="text-muted-foreground font-mono text-[11px] font-semibold uppercase">细分目录</p>
-          {highlightedModule && highlightedModuleOrder >= 0 ? (
+          <nav ref={moduleNavigationRef} className="mt-3" aria-label={`${activeTrackConfig.label}细分目录`}>
+            <Link
+              ref={highlightedModule === null ? activeModuleLinkRef : undefined}
+              href={getKnowledgeListHref({ track: activeTrack })}
+              onClick={(event) => handleModuleNavigation(event, null)}
+              aria-current={highlightedModule === null ? 'page' : undefined}
+              className={`grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 text-xs transition-colors ${
+                highlightedModule === null
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+              }`}
+            >
+              <span className="text-mint font-mono text-[11px] font-semibold">ALL</span>
+              <span>全部模块</span>
+              <span className="text-mint font-mono text-[11px]">{articles.length}</span>
+            </Link>
+            {numberedModuleOptions.map((moduleOption, index) => {
+              /** 当前模块是否与显式筛选或正文滚动位置一致。 */
+              const isActive = moduleOption.label === highlightedModule
+
+              return (
+                <Link
+                  key={moduleOption.label}
+                  ref={isActive ? activeModuleLinkRef : undefined}
+                  href={getKnowledgeListHref({ track: activeTrack, module: moduleOption.label })}
+                  onClick={(event) => handleModuleNavigation(event, moduleOption.label)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 text-xs transition-colors ${
+                    isActive
+                      ? 'bg-accent text-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                  }`}
+                >
+                  <span className="text-mint font-mono text-[11px] font-semibold">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="truncate">{moduleOption.label}</span>
+                  <span className="text-mint font-mono text-[11px]">{moduleOption.count}</span>
+                </Link>
+              )
+            })}
+          </nav>
+          {highlightedModule && highlightedModuleOrder >= 0 && outlinedSubtopics.length > 0 && (
             <>
-              <p className="text-foreground mt-2 text-xs font-medium">
+              <p className="border-border text-foreground mt-4 border-t pt-4 text-xs font-medium">
                 <span className="text-mint mr-2 font-mono text-[11px]">
                   {String(highlightedModuleOrder + 1).padStart(2, '0')}
                 </span>
                 {highlightedModule}
               </p>
-              {outlinedSubtopics.length > 0 ? (
-                <nav className="border-border mt-4 border-l" aria-label={`${highlightedModule}细分目录`}>
-                  {outlinedSubtopics.map((subtopicOption) => {
-                    /** 当前细分类是否与右侧文章列表的滚动位置一致。 */
-                    const isActive = subtopicOption.label === visibleSubtopic
-                    /** 当前细分类标题在文章列表中的稳定锚点。 */
-                    const subtopicAnchor = getKnowledgeSubtopicAnchor(highlightedModule, subtopicOption.label)
+              <nav className="border-border mt-4 border-l" aria-label={`${highlightedModule}细分目录`}>
+                {outlinedSubtopics.map((subtopicOption) => {
+                  /** 当前细分类是否与右侧文章列表的滚动位置一致。 */
+                  const isActive = subtopicOption.label === visibleSubtopic
+                  /** 当前细分类标题在文章列表中的稳定锚点。 */
+                  const subtopicAnchor = getKnowledgeSubtopicAnchor(highlightedModule, subtopicOption.label)
 
-                    return (
-                      <a
-                        key={subtopicOption.label}
-                        href={`#${subtopicAnchor}`}
-                        aria-current={isActive ? 'location' : undefined}
-                        className={`grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-l-2 py-2 pr-1 pl-3 text-xs transition-colors ${
-                          isActive
-                            ? 'border-mint text-foreground bg-accent/70 -ml-px'
-                            : 'text-muted-foreground hover:text-foreground hover:border-border -ml-px border-transparent'
-                        }`}
-                      >
-                        <span className="truncate">{subtopicOption.label}</span>
-                        <span className="text-mint font-mono text-[10px]">{subtopicOption.count}</span>
-                      </a>
-                    )
-                  })}
-                </nav>
-              ) : (
-                <p className="text-muted-foreground mt-4 text-xs leading-5">继续向下阅读以查看细分类。</p>
-              )}
+                  return (
+                    <a
+                      key={subtopicOption.label}
+                      href={`#${subtopicAnchor}`}
+                      aria-current={isActive ? 'location' : undefined}
+                      className={`grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-l-2 py-2 pr-1 pl-3 text-xs transition-colors ${
+                        isActive
+                          ? 'border-mint text-foreground bg-accent/70 -ml-px'
+                          : 'text-muted-foreground hover:text-foreground hover:border-border -ml-px border-transparent'
+                      }`}
+                    >
+                      <span className="truncate">{subtopicOption.label}</span>
+                      <span className="text-mint font-mono text-[10px]">{subtopicOption.count}</span>
+                    </a>
+                  )
+                })}
+              </nav>
             </>
-          ) : (
-            <p className="text-muted-foreground mt-3 text-xs leading-5">滚动到模块后显示当前细分类。</p>
           )}
         </div>
       </aside>

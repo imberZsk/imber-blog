@@ -1,5 +1,8 @@
 {
   "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
     "Sentry": {
       "url": "https://mcp.sentry.dev/mcp/imberzsk/imber-blog"
     }

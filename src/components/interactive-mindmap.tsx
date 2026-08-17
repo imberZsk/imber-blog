@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronsDownUp, ChevronsUpDown, Maximize2, Minus, Network, Plus } from 'lucide-react'
 import { Transformer, type ITransformResult } from 'markmap-lib'
 import { Markmap } from 'markmap-view'
@@ -17,6 +17,8 @@ interface InteractiveMindmapProps {
   title: string
   /** 当前画布采用全屏页还是文章内嵌布局。 */
   variant: InteractiveMindmapVariant
+  /** 独立页面用于替换静态标题的可交互标题控件。 */
+  pageTitleControl?: ReactNode
   /** 文章内显示的知识节点数量。 */
   nodeCount?: number
 }
@@ -57,7 +59,7 @@ function setMindmapFoldState(node: MarkmapRootNode, fold: 0 | 1, isRoot = true):
  * 将 Markdown 知识树渲染为可拖动、缩放和折叠的 Markmap。
  * @param props 思维导图内容、标题、布局和可选节点数。
  */
-export function InteractiveMindmap({ markdown, title, variant, nodeCount }: InteractiveMindmapProps) {
+export function InteractiveMindmap({ markdown, title, variant, pageTitleControl, nodeCount }: InteractiveMindmapProps) {
   /** 承载 Markmap SVG 的元素引用。 */
   const svgRef = useRef<SVGSVGElement>(null)
   /** 当前 Markmap 实例引用。 */
@@ -88,9 +90,22 @@ export function InteractiveMindmap({ markdown, title, variant, nodeCount }: Inte
         paddingX: 12,
         spacingHorizontal: isArticleVariant ? 72 : 96,
         spacingVertical: 8
-      },
-      root
+      }
     )
+    /**
+     * 修复响应式 SVG 未声明原生尺寸时 d3-zoom 读取 SVGLength.value 报错的问题。
+     * @returns 基于当前布局尺寸的缩放视口范围。
+     */
+    markmap.zoom.extent((): [[number, number], [number, number]] => {
+      const { width, height } = svgRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 }
+
+      return [
+        [0, 0],
+        [width, height]
+      ]
+    })
+    /** 在缩放视口准备完成后提交转换后的知识树，确保首次自适应使用动态尺寸。 */
+    void markmap.setData(root)
     /** 当前浏览器是否运行在 macOS。 */
     const isMacOS = navigator.platform.toLowerCase().includes(MACOS_PLATFORM_KEYWORD)
 
@@ -198,8 +213,9 @@ export function InteractiveMindmap({ markdown, title, variant, nodeCount }: Inte
     return (
       <div className="bg-background relative mt-[72px] h-[calc(100vh-72px)] min-h-[560px] overflow-hidden">
         <div className="absolute top-5 left-5 z-10 max-w-[calc(100%-10rem)]">
-          <h1 className="text-foreground truncate text-sm font-medium">{title}</h1>
-          <p className="text-muted-foreground mt-1 text-xs">拖动画布，{zoomGestureLabel}，点击节点展开或收起</p>
+          <h1 className={pageTitleControl ? 'sr-only' : 'text-foreground truncate text-sm font-medium'}>{title}</h1>
+          {pageTitleControl}
+          <p className="text-muted-foreground mt-2 text-xs">拖动画布，{zoomGestureLabel}，点击节点展开或收起</p>
         </div>
         {controls}
         <svg ref={svgRef} className="mindmap-canvas h-full w-full" aria-label={`${title}思维导图`} />

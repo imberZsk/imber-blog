@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { remark } from 'remark'
+import { getKnowledgeArticleKind } from '../src/lib/knowledge-article-kind.ts'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
 import { auditKnowledgeQuizQuestions, createKnowledgeQuiz } from '../src/lib/knowledge-quiz.ts'
 import { isBrowserRunnablePythonSource, isInlinePythonSandboxCandidate } from '../src/lib/knowledge-sandbox.ts'
@@ -14,24 +15,52 @@ const NON_ARTICLE_DIRECTORY_NAMES = new Set(['assets', '_shared-labs'])
 /** 能被知识库读取的 Markdown 后缀。 */
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx'])
 
-/** 扁平化后仍属于工具书、不生成课程自测与思维导图的文件名。 */
-const REFERENCE_ARTICLE_FILE_PATTERN =
-  /(?:陷阱对照|常用命令|速查表|疑问记录|运行指南|项目结构速查|代码审查要点|配置模板)$/
-
 /** AI 大模型应用开发文章的稳定目录前缀。 */
 const AI_APP_ARTICLE_PATH_PREFIX = '03-AI大模型应用开发/'
 
 /** 思维导图中禁止出现的写作元数据。 */
 const FORBIDDEN_MINDMAP_CONTENT_PATTERN =
-  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|可视化规格|作者自审|下一篇)/
+  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|可视化规格|作者自审|下一篇)|(?:^|\n)- (?:如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|现象[：:]常见根因|环节[：:]要回答的问题)|(?:\.\.\.|…)$/m
 
-/** 文章中不应继续展示的写作过程元数据。 */
+/** 文章中不应展示的分类和写作流程元数据；图示说明属于桌面文章规范要求。 */
 const FORBIDDEN_ARTICLE_CONTENT_PATTERN =
-  /^(?:#{1,6}\s+(?:可视化规格|作者自审|下一篇|继续阅读|相关阅读)|>\s*)?(?:主分类|关联标签|VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)[：:]/m
+  /^(?:#{1,6}\s+(?:可视化规格|作者自审|下一篇|继续阅读|相关阅读)|>\s*)?(?:主分类|关联标签|VISUAL_STRATEGY)[：:]/m
 
 /** 非参考资料必须明确告诉读者学完可以做到什么。 */
 const LEARNING_GOAL_PATTERN =
   /(?:读完你能|读完后[，,]?你应能|学完你能|学习目标|一句话目标|本章目标|你将学会|目标[：:])/i
+
+/** 批量标题改写形成的学习目标没有动作、产物与验收证据。 */
+const GENERIC_LEARNING_GOAL_PATTERN =
+  /(?:核心对象、职责和失败边界|围绕“[^”]+”完成一次可解释、可验证、可回滚的工程判断|复述本主题的关键数据流|能按顺序说明“[^”]+”的关键阶段|能根据“[^”]+”给出的条件做出方案选择)/
+
+/** 学习产出中可以被检查的交付物或运行证据。 */
+const LEARNING_OUTCOME_EVIDENCE_PATTERN =
+  /(?:代码|配置|表格|记录|日志|测试|报告|指标|Trace|Diff|输出|结果|样本|引用|命令|截图|证据)/i
+
+/**
+ * 判断正文是否有 2～4 条同时包含动作与证据的学习产出。
+ * @param markdown 当前文章正文。
+ * @returns 学习产出是否可执行、可验收。
+ */
+function hasSpecificLearningOutcomes(markdown) {
+  /** 标题后的学习产出引用块。 */
+  const goalMatch = markdown.match(/^>\s*(?:读完|学完)[^\n]*\n((?:^>\s*-.*\n?){2,4})/m)
+  /** 引用块中的逐项目标。 */
+  const goalItems = goalMatch ? [...goalMatch[1].matchAll(/^>\s*-\s*(.+)$/gm)].map((match) => match[1].trim()) : []
+  return (
+    goalItems.length >= 2 &&
+    goalItems.length <= 4 &&
+    goalItems.every(
+      (goalItem) =>
+        /(?:能|完成|生成|输出|实现|配置|排查|验证|设计|绘制|解释|检验)/.test(goalItem) &&
+        LEARNING_OUTCOME_EVIDENCE_PATTERN.test(goalItem)
+    )
+  )
+}
+
+/** 非参考资料类 AI 应用文章必须达到的最少物理行数。 */
+const MIN_AI_APP_ARTICLE_LINE_COUNT = 200
 
 /** 短于该长度的正文不足以独立解释一个知识点。 */
 const MIN_PROSE_CHARACTER_COUNT = 300
@@ -45,8 +74,8 @@ const MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT = 12
 /** 98、99 是扩展阅读和模板保留号，不参与普通课程连续性审计。 */
 const FIRST_RESERVED_ARTICLE_ORDER = 98
 
-/** 普通课程的非代码字符上限，避免单页阅读负担过重。 */
-const MAX_ARTICLE_PROSE_CHARACTER_COUNT = 7500
+/** 长篇课程允许容纳完整机制、代码解释和失败验收；超出后应拆篇而不是截断。 */
+const MAX_ARTICLE_PROSE_CHARACTER_COUNT = 14000
 
 /** 附录和速查表需要保留完整映射，因此使用更高的长度上限。 */
 const MAX_REFERENCE_PROSE_CHARACTER_COUNT = 14000
@@ -66,8 +95,26 @@ let generatedQuizArticleCount = 0
 /** 因属于指南或资料而不出题的文章数量。 */
 let skippedQuizArticleCount = 0
 
+/** 全部课程与实验最终展示的题目总数。 */
+let totalQuizQuestionCount = 0
+
+/** 按文章去重后累计覆盖的正文知识点数量。 */
+let totalCoveredKnowledgePointCount = 0
+
+/** 纯题目质量审计发现的问题数量。 */
+let quizAuditIssueCount = 0
+
 /** 成功生成知识点思维导图的文章数量。 */
 let mindmapArticleCount = 0
+
+/** 全库题干到文章来源的映射，用于发现跨文章复制。 */
+const quizPromptArticlePaths = new Map()
+
+/** 全库选项到文章来源的映射，用于发现万能正确项或干扰项。 */
+const quizOptionArticlePaths = new Map()
+
+/** 同一题干或选项允许在相关课程中复用的最大文章数。 */
+const MAX_CROSS_ARTICLE_QUIZ_REUSE_COUNT = 5
 
 /** 成功生成知识点思维导图的 AI 应用开发文章数量。 */
 let aiAppMindmapArticleCount = 0
@@ -234,7 +281,9 @@ function findEmptySectionHeadings(markdown) {
   /** 当前文章中没有承载任何内容的章节标题。 */
   const emptySectionHeadings = []
   /** 文档第一个标题是文章标题，不作为可为空的正文章节。 */
-  const articleTitleNodeIndex = (markdownTree.children || []).findIndex((markdownNode) => markdownNode.type === 'heading')
+  const articleTitleNodeIndex = (markdownTree.children || []).findIndex(
+    (markdownNode) => markdownNode.type === 'heading'
+  )
 
   for (const [nodeIndex, markdownNode] of (markdownTree.children || []).entries()) {
     if (markdownNode.type !== 'heading' || nodeIndex === articleTitleNodeIndex) {
@@ -245,14 +294,16 @@ function findEmptySectionHeadings(markdown) {
     const nextMarkdownNode = markdownTree.children?.[nodeIndex + 1]
     /** 同级或更高层标题表示当前章节在开始正文前已经结束。 */
     const isEmptySection =
-      !nextMarkdownNode ||
-      (nextMarkdownNode.type === 'heading' && nextMarkdownNode.depth <= markdownNode.depth)
+      !nextMarkdownNode || (nextMarkdownNode.type === 'heading' && nextMarkdownNode.depth <= markdownNode.depth)
     if (!isEmptySection) {
       continue
     }
 
     /** 当前空章节用于审计提示的纯文本标题。 */
-    const headingText = (markdownNode.children || []).map((childNode) => childNode.value || '').join('').trim()
+    const headingText = (markdownNode.children || [])
+      .map((childNode) => childNode.value || '')
+      .join('')
+      .trim()
     emptySectionHeadings.push(headingText || '未命名标题')
   }
 
@@ -377,55 +428,6 @@ function countInlinePythonSandboxes(sourceArticlePath, markdown) {
 }
 
 /**
- * 去掉路径分段前的排序编号。
- * @param pathSegment 可能含两位排序号的目录名。
- * @returns 用于识别“附录”的展示名称。
- */
-function getDisplayName(pathSegment) {
-  return pathSegment.replace(/^\d{2}[-_\s]*/, '')
-}
-
-/**
- * 识别文章是学习指南、课程、实验还是参考资料。
- * @param sourceArticlePath 不含扩展名的知识库相对路径。
- * @returns 与页面构建一致的文章用途。
- */
-function getArticleKind(sourceArticlePath) {
-  /** 源文章路径的全部分段。 */
-  const pathSegments = sourceArticlePath.split('/')
-  /** 源文章的无扩展名文件名。 */
-  const fileName = pathSegments.at(-1) || ''
-
-  if (
-    fileName.startsWith('00-') ||
-    fileName === 'course' ||
-    fileName.endsWith('-学习指南') ||
-    sourceArticlePath === 'index'
-  ) {
-    return 'guide'
-  }
-
-  if (pathSegments.includes('lab')) {
-    return 'practice'
-  }
-
-  if (
-    fileName.startsWith('98-') ||
-    fileName.startsWith('99-') ||
-    pathSegments.some((pathSegment) => pathSegment.startsWith('98-') || pathSegment.startsWith('99-')) ||
-    pathSegments.includes('appendices') ||
-    pathSegments.some((pathSegment) => getDisplayName(pathSegment) === '附录') ||
-    pathSegments.includes('extras') ||
-    pathSegments.includes('raw') ||
-    REFERENCE_ARTICLE_FILE_PATTERN.test(fileName.replace(/^\d{2}[-_\s]*/, ''))
-  ) {
-    return 'reference'
-  }
-
-  return 'lesson'
-}
-
-/**
  * 从 Markdown 首个一级标题提取审计用标题。
  * @param markdown 当前文章完整 Markdown。
  * @param sourceArticlePath 当前文章无扩展名相对路径。
@@ -479,7 +481,7 @@ for (const articleFile of articleFiles) {
   /** 当前文章的完整 Markdown。 */
   const markdown = readFileSync(articleFile, 'utf8')
   /** 当前文章在学习路径中的用途。 */
-  const articleKind = getArticleKind(sourceArticlePath)
+  const articleKind = getKnowledgeArticleKind(sourceArticlePath)
   /** 排除代码块后的解释性正文字符数。 */
   const proseCharacterCount = countProseCharacters(markdown)
   /** 当前文章用途允许的正文字符上限。 */
@@ -491,6 +493,8 @@ for (const articleFile of articleFiles) {
   const isAiAppArticle = sourceArticlePath.startsWith(AI_APP_ARTICLE_PATH_PREFIX)
   /** 当前文章是否为 AI 应用模块或系列的第 01 篇学习指南。 */
   const isAiAppGuide = isAiAppArticle && articleKind === 'guide' && sourceArticlePath.endsWith('/01-学习指南')
+  /** 当前文章物理行数，用于执行 AI 应用课程最低篇幅门禁。 */
+  const articleLineCount = markdown.split('\n').length
 
   articleKindCounts[articleKind] += 1
   inlinePythonSandboxCount += countInlinePythonSandboxes(sourceArticlePath, markdown)
@@ -516,6 +520,15 @@ for (const articleFile of articleFiles) {
   if (articleKind !== 'reference' && !LEARNING_GOAL_PATTERN.test(markdown)) {
     auditFailures.push(`${articlePath} 缺少明确的学习目标。`)
   }
+  if (isAiAppArticle && articleKind !== 'reference' && GENERIC_LEARNING_GOAL_PATTERN.test(markdown)) {
+    auditFailures.push(`${articlePath} 的学习目标仍是标题复述或批量模板，没有可验收产出。`)
+  }
+  if (isAiAppArticle && articleKind !== 'reference' && !hasSpecificLearningOutcomes(markdown)) {
+    auditFailures.push(`${articlePath} 的学习产出不是 2～4 条同时包含动作与证据的任务。`)
+  }
+  if (isAiAppArticle && articleKind !== 'reference' && articleLineCount < MIN_AI_APP_ARTICLE_LINE_COUNT) {
+    auditFailures.push(`${articlePath} 只有 ${articleLineCount} 行，少于 ${MIN_AI_APP_ARTICLE_LINE_COUNT} 行。`)
+  }
   if (hasUnclosedCodeFence(markdown)) {
     auditFailures.push(`${articlePath} 存在未闭合的 fenced code block。`)
   }
@@ -534,10 +547,29 @@ for (const articleFile of articleFiles) {
     const articleAuditIssues = auditKnowledgeQuizQuestions(articlePath, articleKind, questions)
 
     auditFailures.push(...articleAuditIssues.map((auditIssue) => auditIssue.message))
+    quizAuditIssueCount += articleAuditIssues.length
+    totalQuizQuestionCount += questions.length
+    for (const question of questions) {
+      /** 当前题干已经出现过的文章集合。 */
+      const promptArticlePaths = quizPromptArticlePaths.get(question.prompt) || new Set()
+      promptArticlePaths.add(articlePath)
+      quizPromptArticlePaths.set(question.prompt, promptArticlePaths)
+      for (const option of question.options) {
+        /** 当前选项已经出现过的文章集合。 */
+        const optionArticlePaths = quizOptionArticlePaths.get(option.label) || new Set()
+        optionArticlePaths.add(articlePath)
+        quizOptionArticlePaths.set(option.label, optionArticlePaths)
+      }
+    }
+    /** 当前文章题组覆盖且去重后的正文知识点。 */
+    const coveredKnowledgePoints = new Set(
+      questions.flatMap((question) => question.knowledgePoints || []).map((knowledgePoint) => knowledgePoint.trim())
+    )
+    totalCoveredKnowledgePointCount += coveredKnowledgePoints.size
 
     if (questions.length === 0) {
       skippedQuizArticleCount += 1
-    } else if (questions.some((question) => question.id !== 'article-engineering-review')) {
+    } else if (questions.some((question) => !question.id.startsWith('article-core-'))) {
       curatedQuizArticleCount += 1
     } else {
       generatedQuizArticleCount += 1
@@ -545,11 +577,7 @@ for (const articleFile of articleFiles) {
 
     /** 按页面构建规则生成的文章知识点思维导图。 */
     const mindmap = createKnowledgeMindmap(markdown, articleTitle, isAiAppArticle, articleKind)
-    if (articleKind === 'reference') {
-      if (mindmap) {
-        auditFailures.push(`${articlePath} 是参考资料，不应生成知识点思维导图。`)
-      }
-    } else if (!mindmap) {
+    if (!mindmap) {
       auditFailures.push(`${articlePath} 缺少至少两个包含有效知识点的思维导图分支。`)
     } else {
       if (mindmap.nodeCount < 5) {
@@ -577,6 +605,35 @@ for (const articleFile of articleFiles) {
 }
 
 auditPythonLabSandboxCoverage(KNOWLEDGE_CONTENT_ROOT)
+
+for (const [prompt, articlePaths] of quizPromptArticlePaths) {
+  if (articlePaths.size <= MAX_CROSS_ARTICLE_QUIZ_REUSE_COUNT) continue
+  /** 重复题干的少量来源示例。 */
+  const sourceExamples = [...articlePaths].slice(0, 3).join('、')
+  auditFailures.push(`同一题干跨 ${articlePaths.size} 篇文章重复：“${prompt}”；示例：${sourceExamples}。`)
+}
+
+for (const [option, articlePaths] of quizOptionArticlePaths) {
+  if (articlePaths.size <= MAX_CROSS_ARTICLE_QUIZ_REUSE_COUNT) continue
+  /** 重复选项的少量来源示例。 */
+  const sourceExamples = [...articlePaths].slice(0, 3).join('、')
+  auditFailures.push(`同一选项跨 ${articlePaths.size} 篇文章重复：“${option}”；示例：${sourceExamples}。`)
+}
+
+/** 实际拥有题目的课程与实验文章数量。 */
+const assessableQuizArticleCount = curatedQuizArticleCount + generatedQuizArticleCount
+/** 按文章用途计算出的应当拥有自测题的文章数量。 */
+const expectedAssessableQuizArticleCount = articleKindCounts.lesson + articleKindCounts.practice
+/** 每篇可评测文章的平均题数。 */
+const averageQuizQuestionCount =
+  assessableQuizArticleCount === 0 ? 0 : totalQuizQuestionCount / assessableQuizArticleCount
+
+console.log(
+  `自测题覆盖：${assessableQuizArticleCount} 篇课程与实验，共 ${totalQuizQuestionCount} 题，平均每篇 ${averageQuizQuestionCount.toFixed(2)} 题，累计覆盖 ${totalCoveredKnowledgePointCount} 个正文知识点。`
+)
+if (quizAuditIssueCount === 0 && assessableQuizArticleCount === expectedAssessableQuizArticleCount) {
+  console.log('自测题质量门禁通过：全部课程与实验均满足题数、选项、解析和核心知识覆盖要求。')
+}
 
 if (auditFailures.length > 0) {
   console.error(`知识内容审计失败，共 ${auditFailures.length} 个问题：`)

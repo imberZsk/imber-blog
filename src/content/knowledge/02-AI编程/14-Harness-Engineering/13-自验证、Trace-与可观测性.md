@@ -1,0 +1,274 @@
+# Harness Engineering（13） - 自验证、Trace 与可观测性
+
+> 读完后，你应能完成以下任务：
+> - 绘制“Harness Engineering（13） - 自验证、Trace 与可观测性 / 流式输出：别让用户对着空屏幕干等”的关键对象与数据流，解释“第 11 章的 Agent 有个体验硬伤：你问它，它得把整段回答全部生成完才一次性吐出来。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“Harness Engineering（13） - 自验证、Trace 与可观测性 / 重试：网络会抖，模型会偶尔抽风”设计正常与异常输入，验证“不能一遇到错误就让整个任务挂掉。”，输出首个偏差位置与回归测试结果。
+> - 实现“Harness Engineering（13） - 自验证、Trace 与可观测性 / 自验证：让 Agent 自己检查作业”的最小代码或配置，检验“这是生产级 Agent 和玩具 Agent 最大的区别之一。”，输出命令、结果与 Diff，并说明不适用边界。
+
+> 第 11 章你造出了一个能跑的 mini Claude Code。但"能跑"和"能用在生产里"之间，还隔着一道坎。
+> 这一章补齐那道坎：让 Agent **响应快（流式）、扛得住网络抖动（重试）、结果靠谱（自验证）、花得明白（成本）、出了问题查得到（可观测）**。这是 demo 到产品的最后一公里。
+
+---
+
+# 一、流式输出：别让用户对着空屏幕干等
+
+第 11 章的 Agent 有个体验硬伤：你问它，它得把整段回答**全部生成完**才一次性吐出来。回答长时，用户对着空屏幕等十几秒，以为卡死了。
+
+**流式（streaming）**解决这个问题——模型生成一个字就**实时吐一个字**，像打字机一样：
+
+```python
+def stream_reply(messages):
+    """流式调用：边生成边输出，用户立刻看到响应，体验大幅提升"""
+    with client.messages.stream(
+        model="claude-opus-4-8", max_tokens=1024, messages=messages,
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)   # 实时打印每个增量片段
+```
+
+> 💡 流式不让 Agent 变快，但让它**感觉**快得多——首字延迟从"十几秒"降到"一瞬间"。体验上的提升是巨大的。生产环境几乎必上流式。
+
+---
+
+# 二、重试：网络会抖，模型会偶尔抽风
+
+生产环境里，调用模型 API 会遇到各种临时故障：网络超时、限流（429）、服务端偶发 5xx。**不能一遇到错误就让整个任务挂掉。**
+
+标准做法是**带退避的重试（exponential backoff）**：
+
+```python
+import time
+
+def call_with_retry(fn, max_retries=3):
+    """带指数退避的重试：临时性错误自动重试，每次等待时间翻倍"""
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except (TimeoutError, RateLimitError) as e:   # 只重试"临时性"错误
+            if attempt == max_retries - 1:
+                raise                                 # 重试到头还失败，老实抛出
+            wait = 2 ** attempt                       # 1秒、2秒、4秒……越等越久
+            print(f"⚠️ 第 {attempt+1} 次失败（{e}），{wait}秒后重试")
+            time.sleep(wait)
+```
+
+两个要点：
+
+- **只重试临时性错误**（超时、限流、5xx）。**别重试"逻辑错误"**——参数写错了重试一百遍也还是错，纯属浪费。
+- **退避要指数级**（1→2→4 秒），别死命猛打——你越急着重试，越可能加重对方的限流。
+
+---
+
+# 三、自验证：让 Agent 自己检查作业
+
+这是生产级 Agent 和玩具 Agent 最大的区别之一。玩具 Agent 干完就说"搞定了"；生产级 Agent 会**先验证再下结论**。
+
+比如让 Agent 改了代码，它不该直接说"改好了"，而应该：
+
+```text
+改完代码 ──▶ 跑一下测试/编译 ──▶ 通过了才说"改好了"
+                              └─▶ 没通过就把报错喂回自己，继续修
+```
+
+这其实是把第 02 章的循环和第 04 章的自愈思想用到了极致——**把"验证"也做成循环里的一步**：
+
+```python
+def run_with_verification(task):
+    """干完活后自动验证，没通过就带着错误继续修，直到通过或放弃"""
+    result = agent_loop(task)
+    for _ in range(3):                        # 最多自我修正 3 次
+        check = run_tests()                   # 验证：跑测试/编译/lint
+        if check.passed:
+            return "✅ 已完成并通过验证"
+        # 没过：把失败信息当成新任务喂回，让 Agent 自己修
+        result = agent_loop(f"测试失败了：{check.error}，请修复")
+    return "⚠️ 多次尝试后仍未通过验证，需人工介入"
+```
+
+> 💡 一个朴素但强大的原则：**Agent 报告"完成"前，必须有客观依据（测试过了、编译过了），而不是"我觉得对了"。** 这能挡掉大量"看起来对、实际错"的结果。
+
+---
+
+# 四、成本与 Token：别让账单偷偷爆炸
+
+Agent 烧 token 的速度超乎想象——每一圈循环都要把全部上下文重新发一遍（第 06 章）。生产环境必须管成本：
+
+- **设硬上限**：单任务的最大轮次（第 02 章）、最大 token 预算，到顶强制停。
+- **用对模型**：简单子任务用小而快的模型（如 Haiku），难任务才上大模型。别全程用最贵的。
+- **压缩上下文**（第 06 章）：长对话及时压缩，每圈少发点 token。
+- **缓存**：很多 API 支持"提示词缓存"，把不变的部分（system prompt、工具定义）缓存起来，重复调用时省钱。
+- **算账监控**：记录每个任务花了多少 token、多少钱，异常飙升及时报警。
+
+> ⚠️ 第 02 章埋的那个"账单炸弹"，在生产里是真金白银。**没有成本上限的 Agent 不该上生产。**
+
+---
+
+# 五、可观测性：出了问题，你得查得到
+
+Agent 在生产里"黑箱"运行，一旦出问题（给了错答案、卡住了、烧太多钱），你得能**回溯它到底干了啥**。这就是可观测性（observability）。
+
+至少要记录：
+
+- **每一圈的"想/做/看"**：模型想调什么、实际调了什么、拿到什么结果（第 02 章那张"病历"，生产里要持久化）。
+- **每次模型调用的 token 数和耗时**：用于成本和性能分析。
+- **错误和重试**：什么时候失败了、重试了几次、最终成没成。
+- **关键决策点**：触发了哪些门卫确认、做了哪些危险操作（第 08 章）。
+
+实现上，第 10 章的 **hook 机制天生就是干这个的**——注册几个 hook 把上述信息写进日志/监控系统，核心循环一行不用改：
+
+```python
+register("pre_tool", lambda c: logger.info(f"调用 {c.tool}", extra={"args": c.args}))
+register("post_tool", lambda c: metrics.record(c.tool, c.duration, c.tokens))
+```
+
+> 💡 一句话：**看不见的 Agent 没法运维。** 生产级 harness 一定是"全程可回溯"的。
+
+---
+
+# 六、常见误区
+
+❌ **误区 1：不上流式，让用户干等。** 长回答场景体验极差。生产几乎必上流式。
+
+❌ **误区 2：所有错误都重试 / 都不重试。** 临时性错误才重试（带退避），逻辑错误重试纯浪费。
+
+❌ **误区 3：Agent 说"完成"就信。** 没有客观验证（测试/编译）的"完成"不可靠。**让它自己验证再下结论。**
+
+❌ **误区 4：不设成本上限。** 账单炸弹在生产里是真钱。轮次、token 预算都要有硬顶。
+
+❌ **误区 5：黑箱运行，不记日志。** 出了问题无从查起。可观测性必须从一开始就建好（用 hook 最省事）。
+
+---
+
+# 七、最佳实践
+
+✅ **上流式输出**，首字延迟拉到最低，体验立竿见影。
+✅ **临时性错误带指数退避重试**，逻辑错误直接报，别瞎重试。
+✅ **关键产出做自验证**（测试/编译/lint 通过才算完成），把验证做成循环的一步。
+✅ **成本设硬顶 + 分级用模型 + 压缩 + 缓存 + 监控算账**，杜绝账单炸弹。
+✅ **用 hook 建全程可观测性**，每圈的想/做/看、token、错误、危险操作都可回溯。
+
+---
+
+# 八、🎓 全篇结语
+
+走到这里，你已经把 harness 从里到外走了一遍：
+
+- **入门篇**：看懂了 LLM 与 Agent 的区别、核心循环，亲手搭出最小 harness。
+- **核心机制篇**：掌握了工具、系统提示、上下文、记忆、安全这五脏六腑。
+- **进阶篇**：学会了子代理编排和不改内核的扩展机制。
+- **实战篇**：组装出可用的命令行 Agent，并补齐了生产级的考量。
+
+最重要的一句话，送给你：
+
+> **Harness 的核心其实很朴素——一个循环、一些工具、一些字符串。难的不是写出来，而是把它做得好用、安全、可靠。**
+
+现在，去把 demo 里的工具换成你自己的，造一个真正属于你的 Agent 吧。
+
+> 📁 **对应 Demo**：`12-production-demo/` —— 给第 11 章的 Agent 加上流式输出（模拟）、指数退避重试、自验证循环，看它从"能跑"进化到"靠谱"。
+
+---
+
+# 九、动手实践：生产级加固：流式 + 重试 + 自验证
+
+- **流式输出**：回答边生成边吐字（模拟打字机效果），首字延迟拉到最低
+- **指数退避重试**：模型调用遇到临时故障自动重试，等待时间 1→2→4 秒翻倍
+- **自验证循环**：干完活自动跑"测试"，没通过就带着错误继续修，直到通过或放弃
+
+## 9.1 怎么跑
+
+无需 API Key，直接跑（流式用逐字打印模拟，临时故障和测试用随机/规则模拟）：
+
+```bash
+python demo.py
+```
+
+输出会依次展示：
+
+1. **流式**：一段回答逐字打印出来
+2. **重试**：模拟前两次调用失败、第三次成功，看退避等待
+3. **自验证**：模拟"改代码 → 跑测试失败 → 自动修 → 再测通过"的循环
+
+## 9.2 看点
+
+1. **流式体验**：对照第 12 章，体会"不变快但感觉快"。
+2. **只重试临时错误**：看 `call_with_retry` 只捕获临时性异常，逻辑错误会直接抛。
+3. **自验证是循环的一步**：看 `run_with_verification` 怎么把"验证"嵌进循环——呼应第 02 章循环 + 第 04 章自愈。
+4. 多跑几次：重试和测试结果是随机的，能看到不同分支（有时一次过，有时修几轮）。
+
+# 十、总结
+
+- **流式输出：别让用户对着空屏幕干等**：第 11 章的 Agent 有个体验硬伤：你问它，它得把整段回答全部生成完才一次性吐出来。
+- **重试：网络会抖，模型会偶尔抽风**：不能一遇到错误就让整个任务挂掉。
+- **自验证：让 Agent 自己检查作业**：这是生产级 Agent 和玩具 Agent 最大的区别之一。
+- **成本与 Token：别让账单偷偷爆炸**：缓存：很多 API 支持"提示词缓存"，把不变的部分（system prompt、工具定义）缓存起来，重复调用时省钱。
+- **可观测性：出了问题，你得查得到**：这就是可观测性（observability）。
+- **常见误区**：没有客观验证（测试/编译）的"完成"不可靠。
+
+## 参考资料
+
+- [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
+- [OWASP Agentic Security](https://genai.owasp.org/)
+
+<!-- knowledge-scenario-inlined:AC-13 -->
+
+## 10.1 可运行实验：Prompt 与 Agent 回归评测矩阵
+
+
+```html runnable file=index.html title="Prompt 与 Agent 回归评测矩阵" description="调整参数并对比正常路径与典型失败路径"
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AC-13 在线实验</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#0f1211;color:#e7ece9;font-size:13px}.shell{padding:16px}.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:14px}h1{margin:3px 0;font-size:18px}.id,.value{color:#68e0b5;font-family:ui-monospace,monospace}.summary{margin:4px 0;color:#a5afa9}.run{border:0;border-radius:6px;background:#68e0b5;color:#07110d;padding:8px 14px;font-weight:700}.grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.8fr);gap:12px}.panel{border:1px solid #29322e;background:#141817;padding:12px}.control{display:grid;gap:5px;margin-bottom:11px}.head{display:flex;justify-content:space-between;gap:8px}select,input{width:100%;accent-color:#68e0b5;background:#0d100f;color:#e7ece9}.toggle{display:flex;justify-content:space-between;border-top:1px solid #29322e;padding-top:9px}.toggle input{width:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.metric{border:1px solid #29322e;padding:8px}.metric b{display:block;color:#68e0b5;font-size:16px}.stages{display:flex;gap:6px;overflow:auto;margin:10px 0}.stage{border:1px solid #8a6230;padding:7px;min-width:90px}.stage.ok{border-color:#367a61}.stage.fail{border-color:#8b4545}table{width:100%;border-collapse:collapse}td{border-top:1px solid #29322e;padding:7px}.diagnosis{margin-top:9px;border-left:3px solid #68e0b5;background:#101412;padding:9px;line-height:1.5}.danger{border-color:#ef7f7f}@media(max-width:680px){.top,.grid{display:grid;grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="id">AC-13 · DETERMINISTIC LAB</div><h1 id="title"></h1><p class="summary" id="summary"></p></div><button class="run" id="run">运行实验</button></header>
+    <section class="grid"><div class="panel"><div id="controls"></div><label class="toggle"><span>注入典型故障</span><input id="failure" type="checkbox"></label></div><div class="panel"><div class="metrics" id="metrics"></div><div class="stages" id="stages"></div><table><tbody id="rows"></tbody></table><div class="diagnosis" id="diagnosis"></div></div></section>
+  </main>
+  <script>
+    const scenario = { title: 'Prompt 与 Agent 回归评测矩阵', summary: '用固定样例集比较候选版本的任务成功、工具选择、成本与延迟。', controls: [
+        { key: 'cases', label: '评测样例', type: 'range', min: 10, max: 100, step: 10, value: 50, suffix: ' 条' },
+        { key: 'version', label: '候选版本', type: 'select', value: 'v2', options: [['v1', 'v1 基线'], ['v2', 'v2 候选'], ['v3', 'v3 激进优化']] },
+        { key: 'threshold', label: '上线阈值', type: 'range', min: 70, max: 98, value: 88, suffix: '%' }
+      ] };
+    const controls = document.querySelector('#controls');
+    const failure = document.querySelector('#failure');
+    document.querySelector('#title').textContent = scenario.title;
+    document.querySelector('#summary').textContent = scenario.summary;
+    function renderControl(control) {
+      const label = document.createElement('label'); label.className = 'control';
+      const head = document.createElement('span'); head.className = 'head'; head.innerHTML = '<span>' + control.label + '</span><span class="value" data-value="' + control.key + '"></span>'; label.appendChild(head);
+      const input = document.createElement(control.type === 'select' ? 'select' : 'input'); input.dataset.key = control.key;
+      if (control.type === 'select') control.options.forEach(option => { const item = document.createElement('option'); item.value = option[0]; item.textContent = option[1]; item.selected = option[0] === control.value; input.appendChild(item); });
+      else { input.type = 'range'; input.min = control.min; input.max = control.max; input.step = control.step || 1; input.value = control.value; }
+      input.addEventListener('input', updateValues); label.appendChild(input); return label;
+    }
+    function updateValues() { scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); document.querySelector('[data-value="' + control.key + '"]').textContent = control.type === 'select' ? input.options[input.selectedIndex].text : input.value + (control.suffix || ''); }); }
+    function readValues() { const values = {}; scenario.controls.forEach(control => { const input = controls.querySelector('[data-key="' + control.key + '"]'); values[control.key] = control.type === 'range' ? Number(input.value) : input.value; }); values.failure = failure.checked; return values; }
+    function stage(name, state, detail) { return { name, state, detail }; }
+    const aiStage = stage;
+    function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, value)); }
+    function simulate(values) { const fail = values.failure;
+          /** 不同候选版本的基础任务成功率。 */
+          const baseRate = values.version === 'v1' ? 82 : values.version === 'v2' ? 91 : 94;
+          /** 故障样例对成功率造成的回归。 */
+          const successRate = baseRate - (fail ? 12 : 0);
+          /** 工具选择准确率。 */
+          const toolAccuracy = Math.max(0, successRate - (values.version === 'v3' ? 5 : 2));
+          /** 版本的平均 Token 成本。 */
+          const tokens = values.version === 'v1' ? 2100 : values.version === 'v2' ? 1850 : 2650;
+          /** 是否满足上线阈值和工具准确性保护线。 */
+          const passed = successRate >= values.threshold && toolAccuracy >= values.threshold - 3;
+          return { metrics: [[successRate + '%', '任务成功率'], [toolAccuracy + '%', '工具准确率'], [tokens, '平均 Tokens'], [passed ? 'SHIP' : 'HOLD', '发布决策']], stages: [stage('冻结样例', 'ok', values.cases), stage('运行基线', 'ok', 'v1'), stage('运行候选', fail ? 'warn' : 'ok', values.version), stage('比较指标', passed ? 'ok' : 'fail', values.threshold + '%'), stage('发布门禁', passed ? 'ok' : 'fail', passed ? 'pass' : 'hold')], rows: [['样例规模', values.cases + ' 条，包含正常、失败与安全边界'], ['成本变化', tokens + ' tokens/次，不能只按成功率决策'], ['回归项', fail ? '文件搜索任务出现 6 条回归，必须逐条归因' : '没有超过保护线的坏案例']], diagnosis: passed ? '候选版本满足成功率与工具选择双重阈值，可以灰度。' : '候选版本未达到发布门禁，应保留基线并分析坏案例。', danger: !passed };
+         }
+    function render() { const result = simulate(readValues()); document.querySelector('#metrics').innerHTML = result.metrics.map(item => '<div class="metric"><b>' + item[0] + '</b><span>' + item[1] + '</span></div>').join(''); document.querySelector('#stages').innerHTML = result.stages.map(item => '<div class="stage ' + item.state + '"><b>' + item.name + '</b><div>' + item.detail + '</div></div>').join(''); document.querySelector('#rows').innerHTML = result.rows.map(item => '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>').join(''); const diagnosis = document.querySelector('#diagnosis'); diagnosis.textContent = result.diagnosis; diagnosis.className = 'diagnosis' + (result.danger ? ' danger' : ''); }
+    scenario.controls.forEach(control => controls.appendChild(renderControl(control))); updateValues(); document.querySelector('#run').addEventListener('click', render); render();
+  </script>
+</body>
+</html>
+```

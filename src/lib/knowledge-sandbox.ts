@@ -1,5 +1,16 @@
 /** 知识文章在线实验支持的执行环境。 */
-export type KnowledgeSandboxRuntime = 'python' | 'html'
+export type KnowledgeSandboxRuntime = 'python' | 'html' | 'model'
+
+/** 真实模型实验由哪个文章框架负责组装并发起请求。 */
+export type KnowledgeModelSandboxFramework = 'langchain' | 'llamaindex'
+
+/** 真实模型实验在页面中预填的非敏感请求配置。 */
+export interface KnowledgeModelSandboxRequest {
+  /** 服务端必须使用的框架实现，不能根据文章标题猜测。 */
+  framework: KnowledgeModelSandboxFramework
+  /** 用户可以在运行前修改的默认问题。 */
+  prompt: string
+}
 
 /** 浏览器 Python 沙盒无法安全完成的依赖、网络监听和系统进程特征。 */
 const BROWSER_UNSUPPORTED_PYTHON_SOURCE_PATTERN =
@@ -52,6 +63,7 @@ const INLINE_PYTHON_STANDARD_LIBRARY_MODULES = new Set([
   'sys',
   'time',
   'typing',
+  'unittest',
   'uuid'
 ])
 
@@ -72,12 +84,14 @@ export function isBrowserRunnablePythonSource(sourceCode: string): boolean {
  * @param sourceArticlePath 当前文章无扩展名的知识库相对路径。
  * @param headingText 代码块之前最近的标题文本。
  * @param sourceCode 代码块的完整 Python 源码。
+ * @param localModuleNames 同一多文件沙盒中允许由入口导入的本地模块名。
  * @returns 同时满足范围、完整性、依赖和浏览器兼容性时返回 true。
  */
 export function isInlinePythonSandboxCandidate(
   sourceArticlePath: string,
   headingText: string,
-  sourceCode: string
+  sourceCode: string,
+  localModuleNames: ReadonlySet<string> = new Set()
 ): boolean {
   /** 源码中 import 和 from 声明引用的根模块名。 */
   const importedModuleNames = Array.from(
@@ -85,8 +99,8 @@ export function isInlinePythonSandboxCandidate(
     (match) => match[1]
   )
   /** 当前程序是否只使用 Pyodide 默认可用的标准库。 */
-  const usesOnlyStandardLibrary = importedModuleNames.every((moduleName) =>
-    INLINE_PYTHON_STANDARD_LIBRARY_MODULES.has(moduleName)
+  const usesOnlyAvailableModules = importedModuleNames.every((moduleName) =>
+    INLINE_PYTHON_STANDARD_LIBRARY_MODULES.has(moduleName) || localModuleNames.has(moduleName)
   )
 
   return (
@@ -95,7 +109,7 @@ export function isInlinePythonSandboxCandidate(
     sourceCode.split('\n').length >= INLINE_PYTHON_SANDBOX_MINIMUM_LINE_COUNT &&
     INLINE_PYTHON_EXECUTION_SIGNAL_PATTERN.test(sourceCode) &&
     !INLINE_PYTHON_INCOMPLETE_SOURCE_PATTERN.test(sourceCode) &&
-    usesOnlyStandardLibrary &&
+    usesOnlyAvailableModules &&
     isBrowserRunnablePythonSource(sourceCode)
   )
 }
@@ -122,4 +136,6 @@ export interface KnowledgeSandbox {
   entryFile: string
   /** 入口及其依赖的仓库内可信文件。 */
   files: KnowledgeSandboxFile[]
+  /** 只有 model 运行时才存在的非敏感默认请求。 */
+  modelRequest?: KnowledgeModelSandboxRequest
 }
