@@ -6,7 +6,12 @@ import { extname, join, posix, relative, resolve, sep } from 'node:path'
 import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
 import html from 'remark-html'
-import { KNOWLEDGE_MODULE_LABELS, type KnowledgeTrackSlug } from '@/app/knowledge/config'
+import {
+  getKnowledgeDirectoryModuleLabel,
+  KNOWLEDGE_MODULE_LABELS,
+  type KnowledgeTrackSlug
+} from '@/app/knowledge/config'
+import { getKnowledgeArticleKind, type KnowledgeArticleKind } from '@/lib/knowledge-article-kind'
 import { createKnowledgeMindmap, type KnowledgeMindmapData } from '@/lib/knowledge-mindmap'
 import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge-quiz'
 import {
@@ -25,6 +30,8 @@ export interface KnowledgeArticle {
   sourcePath: string
   href: string
   title: string
+  /** 页面标题使用的系列名；可与用于侧栏分组的短专题名不同。 */
+  seriesTitle: string
   /** 文章在所属模块中从 01 开始的 UI 连续顺序。 */
   sequence: number
   topic: string
@@ -41,14 +48,15 @@ export type KnowledgeListArticle = Pick<
   'path' | 'href' | 'title' | 'sequence' | 'topic' | 'subtopic' | 'kind'
 >
 
-/** 知识文章在学习路径中的用途。 */
-export type KnowledgeArticleKind = 'guide' | 'lesson' | 'practice' | 'reference'
+export type { KnowledgeArticleKind } from '@/lib/knowledge-article-kind'
 
 /** 阅读页相邻文章导航所需的最小元数据。 */
 export type KnowledgeArticleLink = Pick<KnowledgeArticle, 'href' | 'sequence' | 'title' | 'topic'>
 
 /** 单篇知识文章阅读页需要的完整数据。 */
 export interface KnowledgeArticlePageData extends KnowledgeArticle {
+  /** Markdown 中的参考资料转换后的 HTML，页面固定显示在思维导图之后。 */
+  referenceContent: string
   /** Markdown 转换后的文章 HTML。 */
   content: string
   /** 从正文知识结构生成的可交互思维导图。 */
@@ -72,6 +80,71 @@ interface MarkdownNode {
   meta?: string
   url?: string
   children?: MarkdownNode[]
+  position?: {
+    start?: { offset?: number }
+    end?: { offset?: number }
+  }
+}
+
+/** 页面需要前置展示的资料章节名称。 */
+const KNOWLEDGE_REFERENCE_HEADING_PATTERN = /^(?:参考资料|事实来源|延伸阅读)$/i
+
+/**
+ * 从文章 Markdown 中拆出资料章节，确保页面可以把它们放在思维导图之后且不在正文末尾重复。
+ * @param markdown 已完成图片语法规范化的文章 Markdown。
+ * @returns 去除资料章节的正文，以及按原顺序拼接的资料 Markdown。
+ */
+function splitKnowledgeReferenceSections(markdown: string): { bodyMarkdown: string; referenceMarkdown: string } {
+  /** Remark 解析后的根节点用于避开代码围栏中的伪标题。 */
+  const markdownRoot = remark().parse(markdown) as MarkdownNode
+  /** 根节点中的块级 Markdown 节点。 */
+  const markdownNodes = markdownRoot.children || []
+  /** 等待从正文移除并前置展示的资料章节范围。 */
+  const referenceRanges: Array<{ start: number; end: number }> = []
+
+  for (const [nodeIndex, markdownNode] of markdownNodes.entries()) {
+    if (markdownNode.type !== 'heading' || !markdownNode.depth) {
+      continue
+    }
+
+    /** 当前标题的纯文本，用于识别资料章节。 */
+    const headingText =
+      markdownNode.children
+        ?.map((childNode) => childNode.value || '')
+        .join('')
+        .trim() || ''
+    if (!KNOWLEDGE_REFERENCE_HEADING_PATTERN.test(headingText)) {
+      continue
+    }
+
+    /** 已确认存在的资料标题层级，用于界定章节结束位置。 */
+    const referenceHeadingDepth = markdownNode.depth
+    /** 资料章节从标题开头开始。 */
+    const sectionStart = markdownNode.position?.start?.offset
+    /** 下一个同级或更高层标题结束当前资料章节。 */
+    const nextSectionNode = markdownNodes
+      .slice(nodeIndex + 1)
+      .find((candidateNode) => candidateNode.type === 'heading' && (candidateNode.depth || 0) <= referenceHeadingDepth)
+    /** 没有后续同级标题时，资料章节延续到文章末尾。 */
+    const sectionEnd = nextSectionNode?.position?.start?.offset ?? markdown.length
+
+    if (sectionStart !== undefined) {
+      referenceRanges.push({ start: sectionStart, end: sectionEnd })
+    }
+  }
+
+  /** 按原文顺序保留所有资料章节。 */
+  const referenceMarkdown = referenceRanges
+    .map((referenceRange) => markdown.slice(referenceRange.start, referenceRange.end).trim())
+    .filter(Boolean)
+    .join('\n\n')
+  /** 从后向前删除资料章节，避免前方偏移影响后续范围。 */
+  let bodyMarkdown = markdown
+  for (const referenceRange of [...referenceRanges].reverse()) {
+    bodyMarkdown = `${bodyMarkdown.slice(0, referenceRange.start)}${bodyMarkdown.slice(referenceRange.end)}`
+  }
+
+  return { bodyMarkdown: bodyMarkdown.replace(/\n{3,}/g, '\n\n').trim(), referenceMarkdown }
 }
 
 /** 从正文完整 Python 代码块生成的浏览器实验候选。 */
@@ -266,65 +339,37 @@ const AI_APP_TOPIC_BY_SECTION_NAME: Readonly<Record<string, string>> = {
   [AI_APP_INTERVIEW_SECTION_NAME]: KNOWLEDGE_MODULE_LABELS.aiApps.interviewQuestions
 }
 
-/** 全栈路线中后端内容所在的模块目录名称。 */
-const BACKEND_SECTION_NAME = '后端'
-
 /** AI 编程内容所在的顶层板块名称。 */
 const AI_CODING_SECTION_NAME = 'AI编程'
-
-/** 全栈路线中前端内容所在的顶层板块名称。 */
-const FRONTEND_SECTION_NAME = '前端'
-
-/** 全栈路线中测试内容所在的顶层板块名称。 */
-const TESTING_SECTION_NAME = '测试'
 
 /** 匹配课程目录开头用于排序和分组的数字。 */
 const COURSE_ORDER_PATTERN = /^(\d+)-/
 
-/** 带独立学习指南的系列需要把第一篇正文从 02 开始编号。 */
-const GUIDE_SEQUENCE_SERIES_PREFIXES = new Set([
-  '01-全栈开发/02-后端/java', // Java 的 course.md 作为第 01 篇学习指南。
-  '01-全栈开发/02-后端/python', // Python 的 course.md 作为第 01 篇学习指南。
-  '02-AI编程/01-提示词工程', // 提示词工程使用 01-学习指南.md 作为第 01 篇。
-  '02-AI编程/02-Claude-Code', // Claude Code 使用 01-学习指南.md 作为第 01 篇。
-  '02-AI编程/03-Codex', // Codex 使用 01-学习指南.md 作为第 01 篇。
-  '02-AI编程/04-Skills', // Skills 使用 01-学习指南.md 作为第 01 篇。
-  '02-AI编程/05-Agent-Harness', // Agent Harness 使用 01-学习指南.md 作为第 01 篇。
-  '03-AI大模型应用开发/01-Agent工程', // Agent 工程模块指南占第 01 篇。
-  '03-AI大模型应用开发/02-企业级知识库', // 企业知识库模块指南占第 01 篇。
-  '03-AI大模型应用开发/03-一人公司/01-Paperclip', // Paperclip 的 course.md 作为第 01 篇学习指南。
-  '03-AI大模型应用开发/04-AI大模型应用面试题', // 面试题模块指南占第 01 篇。
-  '03-AI大模型应用开发/05-LangChain实战', // LangChain 模块指南占第 01 篇。
-  '03-AI大模型应用开发/06-LangGraph', // LangGraph 模块指南占第 01 篇。
-  '03-AI大模型应用开发/07-LangSmith-LangFuse', // 可观测模块指南占第 01 篇。
-  '03-AI大模型应用开发/08-工程基础' // 工程基础模块指南占第 01 篇。
-])
-
-/** AI 编程学习指南改名前后的公开路径，用于兼容已发布链接。 */
+/** 已删除学习指南的历史公开路径，直接迁移到对应模块第一篇有效正文。 */
 const KNOWLEDGE_GUIDE_PATH_MIGRATIONS = new Map<string, string>([
-  ['01-全栈开发/02-后端/java/course', '01-全栈开发/02-后端/java/01-学习指南'], // Java 旧 course.md 迁移为显式指南文件。
-  ['01-全栈开发/02-后端/python/course', '01-全栈开发/02-后端/python/01-学习指南'], // Python 旧 course.md 迁移为显式指南文件。
-  ['02-AI编程/01-提示词工程/00-课程路线', '02-AI编程/01-提示词工程/01-学习指南'], // 保留原课程路线 URL。
-  ['02-AI编程/01-提示词工程/00-学习指南', '02-AI编程/01-提示词工程/01-学习指南'], // 合并重复的旧学习指南 URL。
-  ['02-AI编程/02-Claude-Code/00-课程路线', '02-AI编程/02-Claude-Code/01-学习指南'], // 保留 Claude Code 旧指南 URL。
-  ['02-AI编程/03-Codex/00-课程路线', '02-AI编程/03-Codex/01-学习指南'], // 保留 Codex 旧指南 URL。
-  ['02-AI编程/04-Skills/00-课程路线', '02-AI编程/04-Skills/01-学习指南'], // 保留 Skills 旧指南 URL。
-  ['02-AI编程/05-Agent-Harness/00-课程路线', '02-AI编程/05-Agent-Harness/01-学习指南'], // 保留 Agent Harness 旧指南 URL。
-  ['03-AI大模型应用开发/01-Agent工程/course', '03-AI大模型应用开发/01-Agent工程/01-学习指南'], // Agent 工程旧 course URL。
-  ['03-AI大模型应用开发/02-企业级知识库/course', '03-AI大模型应用开发/02-企业级知识库/01-学习指南'], // 企业知识库旧 course URL。
-  ['03-AI大模型应用开发/03-一人公司/01-Paperclip/course', '03-AI大模型应用开发/03-一人公司/01-Paperclip/01-学习指南'], // Paperclip 旧 course URL。
-  ['03-AI大模型应用开发/04-AI大模型应用面试题/course', '03-AI大模型应用开发/04-AI大模型应用面试题/01-学习指南'], // 面试题旧 course URL。
-  ['03-AI大模型应用开发/05-LangChain实战/course', '03-AI大模型应用开发/05-LangChain实战/01-学习指南'], // LangChain 旧 course URL。
-  ['03-AI大模型应用开发/06-LangGraph/course', '03-AI大模型应用开发/06-LangGraph/01-学习指南'], // LangGraph 旧 course URL。
-  ['03-AI大模型应用开发/07-LangSmith-LangFuse/course', '03-AI大模型应用开发/07-LangSmith-LangFuse/01-学习指南'], // 可观测模块旧 course URL。
-  ['03-AI大模型应用开发/08-工程基础/course', '03-AI大模型应用开发/08-工程基础/01-学习指南'] // 工程基础旧 course URL。
+  ['01-全栈开发/02-后端/java/course', '01-全栈开发/06-Java/01-Java-环境配置'],
+  ['01-全栈开发/02-后端/python/course', '01-全栈开发/07-Python/01-Python-环境配置'],
+  ['02-AI编程/01-提示词工程/00-课程路线', '02-AI编程/05-Prompt-Engineering/01-认识提示词工程'],
+  ['02-AI编程/01-提示词工程/00-学习指南', '02-AI编程/05-Prompt-Engineering/01-认识提示词工程'],
+  ['02-AI编程/02-Claude-Code/00-课程路线', '02-AI编程/02-Claude-Code/01-认识-Claude-Code：它到底是什么'],
+  ['02-AI编程/03-Codex/00-课程路线', '02-AI编程/03-Codex/01-Codex-是什么'],
+  ['02-AI编程/04-Skills/00-课程路线', '02-AI编程/10-Skill/01-Skill-是什么，解决什么问题'],
+  ['02-AI编程/05-Agent-Harness/00-课程路线', '02-AI编程/14-Harness-Engineering/01-Harness-是什么'],
+  ['03-AI大模型应用开发/01-Agent工程/course', '03-AI大模型应用开发/11-Agent/01-AI-Agent-开发要学什么？'],
+  [
+    '03-AI大模型应用开发/02-企业级知识库/course',
+    '03-AI大模型应用开发/07-RAG/01-安全文件读取-Tool：从-Demo-到可审计数据入口'
+  ],
+  ['03-AI大模型应用开发/03-一人公司/01-Paperclip/course', '03-AI大模型应用开发/17-项目实战/01-项目：AI-客服助手'],
+  ['03-AI大模型应用开发/04-AI大模型应用面试题/course', '03-AI大模型应用开发/22-面试题/01-高频面试题：Agent'],
+  ['03-AI大模型应用开发/05-LangChain实战/course', '03-AI大模型应用开发/01-LangChain/01-LangChain-入门'],
+  ['03-AI大模型应用开发/06-LangGraph/course', '03-AI大模型应用开发/09-LangGraph/01-LangGraph-入门'],
+  [
+    '03-AI大模型应用开发/07-LangSmith-LangFuse/course',
+    '03-AI大模型应用开发/14-LangSmith-Langfuse/01-Trace、Span-与-Langfuse-实战'
+  ],
+  ['03-AI大模型应用开发/08-工程基础/course', '03-AI大模型应用开发/18-大模型基础/01-Token与Tokenizer']
 ])
-
-/** 路径中普通课程允许参与“指南后移一位”兼容转换的最小旧课号。 */
-const FIRST_GUIDE_OFFSET_LESSON_ORDER = 1
-
-/** 98、99 保留给模板和扩展阅读，因此普通课程兼容转换最多处理到 96。 */
-const LAST_GUIDE_OFFSET_LESSON_ORDER = 96
 
 /** 全栈与 AI 应用的实体课程目录都位于公开路径第 4 段。 */
 const NESTED_COURSE_PATH_SEGMENT_INDEX = 3
@@ -387,10 +432,6 @@ const KNOWLEDGE_SUBTOPIC_LABELS: Record<string, string> = {
   python: 'Python',
   playwright: 'Playwright'
 }
-
-/** 扁平化后仍属于工具书、不生成课程自测与思维导图的文件名。 */
-const REFERENCE_ARTICLE_FILE_PATTERN =
-  /(?:陷阱对照|常用命令|速查表|疑问记录|运行指南|项目结构速查|代码审查要点|配置模板)$/
 
 /**
  * 创建一条 AI 应用课程系列归组规则。
@@ -617,12 +658,6 @@ function getMergedDemoArticlePath(articlePath: string): string {
     return coursePath
   }
 
-  /** 系列根目录 Lab 原来归属于 course.md，现在统一归入显式学习指南。 */
-  const guideArticlePath = posix.join(coursePath, '01-学习指南')
-  if (hasKnowledgeArticlePath(guideArticlePath)) {
-    return guideArticlePath
-  }
-
   /** 继续兼容迁移前尚未扁平化的目录入口。 */
   const mainArticleEntryNames = ['chapter', 'course']
 
@@ -806,44 +841,7 @@ function replaceKnowledgePathPrefix(articlePath: string, sourcePrefix: string, t
 }
 
 /**
- * 返回文章所属的“指南占第 01 篇”系列路径。
- * @param articlePath 需要检查的规范或旧版文章路径。
- */
-function getGuideSequenceSeriesPrefix(articlePath: string): string | null {
-  /** 与文章路径匹配的系列根路径。 */
-  const seriesPrefix = [...GUIDE_SEQUENCE_SERIES_PREFIXES].find(
-    (candidatePrefix) => articlePath === candidatePrefix || articlePath.startsWith(`${candidatePrefix}/`)
-  )
-
-  return seriesPrefix || null
-}
-
-/**
- * 替换系列根目录后第一个路径片段的课号。
- * @param articlePath 需要替换课号的文章路径。
- * @param seriesPrefix 文章所属的系列根路径。
- * @param targetOrder 替换后使用的课号。
- */
-function replaceGuideSequenceOrder(articlePath: string, seriesPrefix: string, targetOrder: number): string | null {
-  /** 系列根目录之后的文章路径片段。 */
-  const articlePathSegments = articlePath.slice(seriesPrefix.length + 1).split('/')
-  /** 携带课号的第一个课程路径片段。 */
-  const coursePathSegment = articlePathSegments[0] || ''
-  if (getCourseOrder(coursePathSegment) === null) {
-    return null
-  }
-
-  /** 去掉旧课号后需要原样保留的课程目录名称。 */
-  const courseName = coursePathSegment.replace(COURSE_ORDER_PATTERN, '')
-  /** 使用两位课号重建的课程目录名称。 */
-  const migratedCoursePathSegment = `${targetOrder.toString().padStart(2, '0')}-${courseName}`
-  articlePathSegments[0] = migratedCoursePathSegment
-
-  return `${seriesPrefix}/${articlePathSegments.join('/')}`
-}
-
-/**
- * 返回指南占位重编号之前使用的文章路径。
+ * 返回已删除指南对应的历史公开路径。
  * @param articlePath 当前规范文章路径。
  */
 function getLegacyGuideSequenceArticlePaths(articlePath: string): string[] {
@@ -854,32 +852,11 @@ function getLegacyGuideSequenceArticlePaths(articlePath: string): string[] {
   if (legacyGuidePaths.length > 0) {
     return legacyGuidePaths
   }
-
-  /** 当前文章所属的指南占位系列。 */
-  const seriesPrefix = getGuideSequenceSeriesPrefix(articlePath)
-  if (!seriesPrefix || articlePath === seriesPrefix) {
-    return []
-  }
-
-  /** 当前路径中的实体课程号。 */
-  const currentOrder = getCourseOrder(articlePath.slice(seriesPrefix.length + 1).split('/')[0] || '')
-  /** 当前课号减去指南占用的一位后得到的旧课号。 */
-  const legacyOrder = currentOrder === null ? null : currentOrder - 1
-  if (
-    legacyOrder === null ||
-    legacyOrder < FIRST_GUIDE_OFFSET_LESSON_ORDER ||
-    legacyOrder > LAST_GUIDE_OFFSET_LESSON_ORDER
-  ) {
-    return []
-  }
-
-  /** 将当前课程路径恢复为重编号前路径的结果。 */
-  const legacyArticlePath = replaceGuideSequenceOrder(articlePath, seriesPrefix, legacyOrder)
-  return legacyArticlePath ? [legacyArticlePath] : []
+  return []
 }
 
 /**
- * 将指南占位重编号之前的文章路径转换为当前规范路径。
+ * 将已删除指南的历史公开路径转换为当前正文路径。
  * @param articlePath URL 中请求的旧版文章路径。
  */
 function getCurrentGuideSequenceArticlePath(articlePath: string): string {
@@ -887,31 +864,9 @@ function getCurrentGuideSequenceArticlePath(articlePath: string): string {
     return articlePath
   }
 
-  /** 旧 AI 编程指南路径直接对应的当前指南路径。 */
+  /** 旧指南路径直接对应的当前正文路径。 */
   const currentGuidePath = KNOWLEDGE_GUIDE_PATH_MIGRATIONS.get(articlePath)
-  if (currentGuidePath) {
-    return currentGuidePath
-  }
-
-  /** 当前文章所属的指南占位系列。 */
-  const seriesPrefix = getGuideSequenceSeriesPrefix(articlePath)
-  if (!seriesPrefix || articlePath === seriesPrefix) {
-    return articlePath
-  }
-
-  /** 旧路径中的实体课程号。 */
-  const legacyOrder = getCourseOrder(articlePath.slice(seriesPrefix.length + 1).split('/')[0] || '')
-  if (
-    legacyOrder === null ||
-    legacyOrder < FIRST_GUIDE_OFFSET_LESSON_ORDER ||
-    legacyOrder > LAST_GUIDE_OFFSET_LESSON_ORDER
-  ) {
-    return articlePath
-  }
-
-  /** 旧课号加上学习指南占用的一位后得到的当前课号。 */
-  const currentOrder = legacyOrder + 1
-  return replaceGuideSequenceOrder(articlePath, seriesPrefix, currentOrder) || articlePath
+  return currentGuidePath || articlePath
 }
 
 /**
@@ -1117,7 +1072,7 @@ function getAiAppCategoryDirectory(courseDirectoryName: string): string {
 function getAiAppTopicByCategoryDirectory(categoryDirectory: string): string {
   /** 去除实体排序前缀后的模块目录名称。 */
   const sectionName = getDisplayName(categoryDirectory)
-  return AI_APP_TOPIC_BY_SECTION_NAME[sectionName] || sectionName
+  return AI_APP_TOPIC_BY_SECTION_NAME[sectionName] || getKnowledgeDirectoryModuleLabel(sectionName)
 }
 
 /**
@@ -1520,27 +1475,6 @@ function getAiAppSubtopic(topic: string, courseDirectoryName: string | undefined
 }
 
 /**
- * 根据全栈文章路径返回与思维导图一致的一级模块。
- * @param sectionName 当前文章去除排序前缀后的顶层板块名称。
- */
-function getFullStackTopic(sectionName: string): string {
-  if (sectionName === FRONTEND_SECTION_NAME) {
-    return KNOWLEDGE_MODULE_LABELS.fullStack.frontend
-  }
-
-  if (sectionName === TESTING_SECTION_NAME) {
-    return KNOWLEDGE_MODULE_LABELS.fullStack.testing
-  }
-
-  if (sectionName !== BACKEND_SECTION_NAME) {
-    return KNOWLEDGE_MODULE_LABELS.fullStack.business
-  }
-
-  // 修复系统课程被按课号拆散的问题：Java 与 Python 应保持完整后端学习路线，不归入运维、测试或业务。
-  return KNOWLEDGE_MODULE_LABELS.fullStack.backend
-}
-
-/**
  * 根据文章目录结构生成知识库侧栏使用的一级模块名称。
  * @param trackSectionName 当前文章去除排序前缀后的路线目录名称。
  * @param contentSectionName 当前文章在路线中的模块目录名称。
@@ -1548,49 +1482,12 @@ function getFullStackTopic(sectionName: string): string {
 function getArticleTopic(trackSectionName: string, contentSectionName: string): string {
   if (KNOWLEDGE_TRACK_BY_SECTION[trackSectionName]) {
     // 扁平化后第二层目录就是三条路线共用的规范知识域，页面和思维导图必须读取同一名称。
-    return contentSectionName.replaceAll('-', ' ')
+    /** 将目录连接符转换为页面标题空格后的模块名称。 */
+    const normalizedContentSectionName = contentSectionName.replaceAll('-', ' ')
+    return getKnowledgeDirectoryModuleLabel(normalizedContentSectionName)
   }
 
   return contentSectionName
-}
-
-/**
- * 识别文章在初学者学习路径中的用途。
- * @param sourceArticlePath 不含扩展名的源文章相对路径。
- */
-function getArticleKind(sourceArticlePath: string): KnowledgeArticleKind {
-  /** 源文章路径的分段结果。 */
-  const pathSegments = sourceArticlePath.split('/')
-  /** 源文章不含目录的文件名。 */
-  const fileName = pathSegments.at(-1) || ''
-
-  if (
-    fileName.startsWith('00-') ||
-    fileName === 'course' ||
-    fileName.endsWith('-学习指南') ||
-    sourceArticlePath === 'index'
-  ) {
-    return 'guide'
-  }
-
-  if (pathSegments.includes('lab')) {
-    return 'practice'
-  }
-
-  if (
-    fileName.startsWith('98-') ||
-    fileName.startsWith('99-') ||
-    pathSegments.some((segment) => segment.startsWith('98-') || segment.startsWith('99-')) ||
-    pathSegments.includes('appendices') ||
-    pathSegments.some((segment) => getDisplayName(segment) === '附录') ||
-    pathSegments.includes('extras') ||
-    pathSegments.includes('raw') ||
-    REFERENCE_ARTICLE_FILE_PATTERN.test(fileName.replace(COURSE_ORDER_PATTERN, ''))
-  ) {
-    return 'reference'
-  }
-
-  return 'lesson'
 }
 
 /**
@@ -1613,7 +1510,7 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
   /** 没有一级标题时使用的文件名。 */
   const fallbackTitle = slug.at(-1) || '未命名文章'
   /** 当前文章在学习路径中的用途。 */
-  const kind = getArticleKind(sourceArticlePath)
+  const kind = getKnowledgeArticleKind(sourceArticlePath)
   /** Markdown 中声明或由文件名回退得到的原始标题。 */
   const rawTitle = extractTitle(markdown, fallbackTitle)
   /** 清理源文件旧课号后等待模块内重新编号的标题。 */
@@ -1624,8 +1521,14 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
   const contentSectionName = getDisplayName(slug[1] || trackSectionName)
   /** 与实体目录一一对应的模块名称。 */
   const topic = getArticleTopic(trackSectionName, contentSectionName)
-  /** 扁平化后的知识域已经是列表和导图的最小分组，不再用文章文件名制造重复小标题。 */
-  const subtopic = topic
+  /** 全栈路线使用“路线/模块/专题/文章”四级结构，存量模块仍允许扁平文章。 */
+  const isNestedFullStackArticle = trackSectionName === FULL_STACK_SECTION_NAME && slug.length >= 4
+  /** 嵌套全栈文章按真实专题分组，避免不同技术系列混成一个目录。 */
+  const subtopic = isNestedFullStackArticle ? getDisplayName(slug[2] || topic) : topic
+  /** 手写 H1 中显式声明的系列名，例如目录“脚手架”对应文章系列“工程化脚手架”。 */
+  const declaredSeriesTitle = rawTitle.match(/^([^（）()\n]{1,80})[（(]\s*\d+\s*[）)]\s*[-—–:：]\s*/)?.[1]?.trim()
+  /** 全栈手写文章即使目录扁平化，也优先保留 H1 显式声明的系列名。 */
+  const seriesTitle = trackSectionName === FULL_STACK_SECTION_NAME ? declaredSeriesTitle || subtopic : topic
   /** 当前文章所属的公开学习主线；总览等公共文章不限定主线。 */
   const track = KNOWLEDGE_TRACK_BY_SECTION[trackSectionName] || null
 
@@ -1636,6 +1539,7 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
     sourcePath: sourceArticlePath,
     href: `/knowledge/${encodePath(articlePath)}`,
     title,
+    seriesTitle,
     sequence: 0,
     topic,
     subtopic,
@@ -1678,8 +1582,11 @@ function getPhysicalCourseSequence(article: KnowledgeArticle): number | null {
 
   /** 文章规范路径按目录拆分后的片段。 */
   const pathSegments = article.path.split('/')
-  /** 扁平化后第三个路径片段就是带顺序的文章文件名。 */
-  const coursePathSegment = pathSegments[2] || ''
+  /** 嵌套全栈知识域比扁平模块多一层专题目录，文章课号位于第四段。 */
+  const isNestedFullStackArticle =
+    getDisplayName(pathSegments[0] || '') === FULL_STACK_SECTION_NAME && pathSegments.length >= 4
+  /** 当前文章真正携带顺序前缀的文件路径片段。 */
+  const coursePathSegment = pathSegments[isNestedFullStackArticle ? 3 : 2] || ''
   return getCourseOrder(coursePathSegment)
 }
 
@@ -1744,7 +1651,7 @@ export function getKnowledgeArticles(): KnowledgeArticle[] {
     return {
       ...article,
       sequence: resolvedSequence,
-      title: getSequencedArticleTitle(article.title, article.kind, resolvedSequence, article.topic)
+      title: getSequencedArticleTitle(article.title, article.kind, resolvedSequence, article.seriesTitle)
     }
   })
 
@@ -1928,9 +1835,13 @@ function findInlinePythonSandboxCandidates(
 
     /** 当前源码章节中真正执行的 Python 入口。 */
     const entryFile = sourceSection.files.find((file) => file.name === INLINE_PYTHON_SANDBOX_ENTRY_FILE)
+    /** 同一沙盒内可被入口直接导入的 Python 模块名。 */
+    const localModuleNames = new Set(
+      sourceSection.files.filter((file) => file.name.endsWith('.py')).map((file) => file.name.slice(0, -'.py'.length))
+    )
     if (
       entryFile &&
-      isInlinePythonSandboxCandidate(sourceArticlePath, sourceSection.title, entryFile.content.trim())
+      isInlinePythonSandboxCandidate(sourceArticlePath, sourceSection.title, entryFile.content.trim(), localModuleNames)
     ) {
       /** 去掉功能前缀后的实验标题，避免面板重复显示“可运行源码”。 */
       const sandboxTitle = sourceSection.title.replace(/^可运行源码\s*[：:]?\s*/, '').trim()
@@ -1983,14 +1894,14 @@ function findInlinePythonSandboxCandidates(
     }
 
     /** 当前围栏中与执行能力有关的显式元数据。 */
-    const runnableMetadata =
-      node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
+    const runnableMetadata = node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
     /** 只对明确声明为 Python 的围栏代码做自动执行。 */
     const isPythonCodeBlock = node.type === 'code' && /^(?:python|py)$/i.test(node.lang || '')
 
     if (sourceSection && node.type === 'code' && node.value) {
       /** 未声明文件子标题的单文件章节默认把 Python 代码作为 main.py。 */
-      const sourceFileName = sourceSection.currentFileName || (isPythonCodeBlock ? INLINE_PYTHON_SANDBOX_ENTRY_FILE : '')
+      const sourceFileName =
+        sourceSection.currentFileName || (isPythonCodeBlock ? INLINE_PYTHON_SANDBOX_ENTRY_FILE : '')
       if (sourceFileName && !sourceSection.files.some((file) => file.name === sourceFileName)) {
         sourceSection.files.push({
           name: sourceFileName,
@@ -2089,6 +2000,70 @@ function createInlineHtmlSandboxes(
 }
 
 /**
+ * 从 Markdown 中提取需要用户临时凭据的真实模型实验。
+ * @param sourceArticlePath 当前文章无扩展名路径。
+ * @param markdown 当前文章 Markdown 原文。
+ * @param sandboxOffset 当前文章已有实验数量。
+ * @returns 只包含显式 model-sandbox 围栏的实验。
+ */
+function createInlineModelSandboxes(
+  sourceArticlePath: string,
+  markdown: string,
+  sandboxOffset: number
+): KnowledgeSandbox[] {
+  /** Remark 解析后的文章根节点。 */
+  const markdownTree = remark().parse(markdown) as MarkdownNode
+  /** 遍历时最近的正文标题。 */
+  let currentHeading = '真实模型调用'
+  /** 已通过显式声明检查的模型实验。 */
+  const sandboxes: KnowledgeSandbox[] = []
+
+  for (const node of markdownTree.children || []) {
+    if (node.type === 'heading') {
+      currentHeading = getInlineSandboxHeadingText(node) || currentHeading
+      continue
+    }
+
+    /** 当前代码围栏声明的运行方式与表单默认值。 */
+    const metadata = node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
+    /** 模型实验必须位于 AI 应用路线、显式 runnable，并提供完整 Python 源码。 */
+    const sourceCode = node.value?.trim() || ''
+    if (
+      !sourceArticlePath.startsWith('03-AI大模型应用开发/') ||
+      !metadata?.runnable ||
+      metadata.runtime !== 'model' ||
+      !['python', 'typescript'].includes(metadata.language) ||
+      !sourceCode ||
+      !/(?:ChatOpenAI|init_chat_model|Settings\.withLLM|BaseLLM)/.test(sourceCode) ||
+      !/(?:\.invoke|\.chat)\s*\(/.test(sourceCode)
+    ) {
+      continue
+    }
+
+    /** 真实模型实验展示和本地复制共用的 Python 文件名。 */
+    const entryFile = metadata.fileName || (metadata.language === 'typescript' ? 'main.ts' : 'main.py')
+    sandboxes.push({
+      id: `${sourceArticlePath}:inline-model-${sandboxOffset + sandboxes.length + 1}`,
+      runtime: 'model',
+      title: metadata.title || currentHeading,
+      description: metadata.description || '使用临时连接信息调用 OpenAI 兼容模型，返回真实响应与用量。',
+      entryFile,
+      files: [{ name: entryFile, content: sourceCode }],
+      modelRequest: {
+        framework: metadata.modelFramework, // 围栏明确决定服务端执行 LangChain 还是 LlamaIndex。
+        prompt:
+          metadata.prompt ||
+          (metadata.modelFramework === 'llamaindex'
+            ? '请用一句话解释 LlamaIndex 的核心价值。'
+            : '请用一句话解释 LangChain 的核心价值。')
+      }
+    })
+  }
+
+  return sandboxes
+}
+
+/**
  * 将正文完整 Python 程序转换为集成式在线代码单元。
  * @param sourceArticlePath 当前文章无扩展名路径。
  * @param markdown 当前文章 Markdown。
@@ -2105,13 +2080,11 @@ function createInlinePythonSandboxes(
   /** 标准化后的已接入源码，防止自动附加的 main.py 再生成第二个沙盒。 */
   const excludedSourceCodeSet = new Set(excludedSourceCodes.map((sourceCode) => sourceCode.trim()))
   /** 去掉与现有实验重复的正文候选。 */
-  const uniqueCandidates = findInlinePythonSandboxCandidates(sourceArticlePath, markdown).filter(
-    (candidate) => {
-      /** 当前正文沙盒的入口源码。 */
-      const entrySource = candidate.files.find((file) => file.name === candidate.entryFile)?.content || ''
-      return !excludedSourceCodeSet.has(entrySource.trim())
-    }
-  )
+  const uniqueCandidates = findInlinePythonSandboxCandidates(sourceArticlePath, markdown).filter((candidate) => {
+    /** 当前正文沙盒的入口源码。 */
+    const entrySource = candidate.files.find((file) => file.name === candidate.entryFile)?.content || ''
+    return !excludedSourceCodeSet.has(entrySource.trim())
+  })
 
   return uniqueCandidates.map((candidate, candidateIndex) => ({
     id: `${sourceArticlePath}:inline-${sandboxOffset + candidateIndex + 1}`, // 与 Lab 实验共用顺序空间避免重复。
@@ -2173,32 +2146,44 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
 
     return assetPath ? `![${assetName}](/knowledge-assets/${encodePath(assetPath)})` : source
   })
+  /** 页面正文与需要紧随思维导图展示的资料章节。 */
+  const { bodyMarkdown, referenceMarkdown } = splitKnowledgeReferenceSections(normalizedMarkdown)
+  /** 资料章节经过 GFM 和相对链接处理后的 HTML。 */
+  const processedReferenceContent = referenceMarkdown
+    ? await remark()
+        .use(remarkGfm)
+        .use(() => rewriteKnowledgeLinks(metadata.sourcePath))
+        .use(html)
+        .process(referenceMarkdown)
+    : null
   /** 经过 GFM 和相对链接处理后的 HTML 内容。 */
   const processedContent = await remark()
     .use(remarkGfm)
     .use(() => rewriteArticleHeading(metadata.title))
     .use(() => rewriteKnowledgeLinks(metadata.sourcePath))
     .use(html)
-    .process(normalizedMarkdown)
+    .process(bodyMarkdown)
   /** 正文中经完整性与浏览器安全筛选的 Python 实验。 */
-  const inlinePythonSandboxes = createInlinePythonSandboxes(
+  const inlinePythonSandboxes = createInlinePythonSandboxes(metadata.sourcePath, normalizedMarkdown, 0, [])
+  /** 正文中显式声明、需要临时用户凭据的模型实验。 */
+  const inlineModelSandboxes = createInlineModelSandboxes(
     metadata.sourcePath,
     normalizedMarkdown,
-    0,
-    []
+    inlinePythonSandboxes.length
   )
   /** 正文中显式声明 runnable 的完整 HTML 实验。 */
   const inlineHtmlSandboxes = createInlineHtmlSandboxes(
     metadata.sourcePath,
     normalizedMarkdown,
-    inlinePythonSandboxes.length
+    inlinePythonSandboxes.length + inlineModelSandboxes.length
   )
 
   return {
     ...metadata,
+    referenceContent: processedReferenceContent?.toString() || '',
     content: processedContent.toString(),
     mindmap: createKnowledgeMindmap(markdown, quizTitle, metadata.track === 'ai-apps', metadata.kind),
-    sandboxes: [...inlinePythonSandboxes, ...inlineHtmlSandboxes],
+    sandboxes: [...inlinePythonSandboxes, ...inlineModelSandboxes, ...inlineHtmlSandboxes],
     quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle, metadata.kind),
     previousArticle,
     nextArticle

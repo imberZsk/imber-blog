@@ -2,23 +2,29 @@
 
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import { KnowledgeCodeSandbox } from '@/components/knowledge-code-sandbox'
-import type { KnowledgeSandboxRuntime } from '@/lib/knowledge-sandbox'
+import type { KnowledgeSandbox, KnowledgeSandboxRuntime } from '@/lib/knowledge-sandbox'
 
 /**
  * 将当前 Tiptap 代码块转换为运行面板使用的即时配置。
  * @param props Tiptap 注入的代码块节点属性和文本。
  * @returns 源码直接来自节点正文的在线实验配置。
  */
-function createSandboxFromCodeBlock(props: NodeViewProps) {
+function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
   /** 代码块声明的规范运行时。 */
-  const runtime: KnowledgeSandboxRuntime = props.node.attrs.language === 'html' ? 'html' : 'python'
+  const runtime: KnowledgeSandboxRuntime = props.node.attrs.sandboxRuntime === 'model'
+    ? 'model'
+      : props.node.attrs.language === 'html'
+        ? 'html'
+        : 'python'
   /** 未声明文件名时按运行时选择直接入口。 */
   const entryFile =
     typeof props.node.attrs.fileName === 'string' && props.node.attrs.fileName
       ? props.node.attrs.fileName
       : runtime === 'html'
         ? 'index.html'
-        : 'main.py'
+        : runtime === 'model'
+          ? 'main.ts'
+          : 'main.py'
 
   return {
     id: `tiptap-runnable-${props.getPos()}`,
@@ -31,7 +37,13 @@ function createSandboxFromCodeBlock(props: NodeViewProps) {
         ? props.node.attrs.sandboxDescription
         : '运行当前代码块，源码修改会直接进入下一次执行。',
     entryFile,
-    files: [{ name: entryFile, content: props.node.textContent }]
+    files: [{ name: entryFile, content: props.node.textContent }],
+    modelRequest: runtime === 'model'
+      ? {
+          framework: props.node.attrs.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain', // 模型框架来自围栏白名单属性。
+          prompt: typeof props.node.attrs.sandboxPrompt === 'string' ? props.node.attrs.sandboxPrompt : '' // 默认问题允许读者在运行前修改。
+        }
+      : undefined
   }
 }
 

@@ -1,14 +1,20 @@
 import { remark } from 'remark'
+import remarkGfm from 'remark-gfm'
+import type { KnowledgeArticleKind } from './knowledge-article-kind.ts'
 
 /** 可以生成文章知识点思维导图的文章用途。 */
-export type KnowledgeMindmapArticleKind = 'guide' | 'lesson' | 'practice' | 'reference'
+export type KnowledgeMindmapArticleKind = KnowledgeArticleKind
 
 /** 单篇文章构建期生成的思维导图数据。 */
 export interface KnowledgeMindmapData {
+  /** 与文章 H1 一致的导图根标题。 */
+  title: string
   /** 交给 Markmap 渲染的精简 Markdown 知识树。 */
   markdown: string
   /** 根节点、章节和知识点的总数量。 */
   nodeCount: number
+  /** 文章页和路线总图共同消费的规范知识分支。 */
+  sections: KnowledgeMindmapSection[]
 }
 
 /** Markdown AST 中知识树提取会访问的字段。 */
@@ -26,7 +32,7 @@ interface MindmapMarkdownNode {
 }
 
 /** 思维导图中的一个一级知识分支。 */
-interface KnowledgeMindmapSection {
+export interface KnowledgeMindmapSection {
   /** 章节标题。 */
   title: string
   /** 从章节正文提取的关键结论。 */
@@ -37,7 +43,7 @@ interface KnowledgeMindmapSection {
 const DEFAULT_SECTION_LIMIT = 7
 
 /** AI 应用开发文章允许展示的最大章节分支数。 */
-const AI_APP_SECTION_LIMIT = 10
+const AI_APP_SECTION_LIMIT = 12
 
 /** 普通文章每个章节允许展示的最大知识点数。 */
 const DEFAULT_POINT_LIMIT = 3
@@ -45,15 +51,28 @@ const DEFAULT_POINT_LIMIT = 3
 /** AI 应用开发文章每个章节允许展示的最大知识点数。 */
 const AI_APP_POINT_LIMIT = 4
 
-/** 单个知识点允许展示的最大字符数。 */
-const MAX_POINT_LENGTH = 100
+/** 每个分支至少需要两条正文结论，避免路线总图只剩章节目录。 */
+const MIN_SECTION_POINT_COUNT = 2
+
+/** 单个知识点允许展示的最大字符数；超过限制时换用其他完整结论，不做硬截断。 */
+const MAX_POINT_LENGTH = 140
 
 /** 不属于文章知识体系的写作、导航和资源章节。 */
-const EXCLUDED_SECTION_PATTERN = /(?:下一篇|继续阅读|参考资料|可视化规格|作者自审|可运行源码|附录|延伸阅读|相关阅读)/
+const EXCLUDED_SECTION_PATTERN = /(?:下一篇|继续阅读|参考资料|事实来源|可视化规格|作者自审|可运行源码|附录|延伸阅读|相关阅读|学习目标|学习边界|核心知识清单|验收清单|学完验收|自测|总结|小结|如何验证.+关键结论)/
 
 /** 不应进入导图的写作说明和图片规格。 */
 const EXCLUDED_POINT_PATTERN =
-  /^(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|本文围绕|本章将|本 demo 配套|更新日期)/i
+  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:本文围绕|本章将|本 demo 配套|更新日期|如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里|\d+[.、]\s*(?:运行|选择|执行|配置|安装))/i
+
+/** 表头、导航和不完整句不能作为脱离正文展示的末级节点。 */
+const NON_STANDALONE_POINT_PATTERN = /(?:\.\.\.|…)$|[：:]$|[？?][”’」』】）)]?$|^(?:现象|环节|状态|项目|维度|步骤|编号)[：:]?(?:常见根因|要回答的问题)?$/i
+
+/** 不能脱离正文成为知识结论的地址、命令和纯文件路径。 */
+const NON_KNOWLEDGE_POINT_PATTERN = /^(?:https?:\/\/|\/[\w.-]+\/|[\w.-]+\.(?:py|ts|tsx|js|jsx|json|ya?ml|md|txt)$|(?:pnpm|npm|npx|pip|docker|kubectl|curl)\s)/i
+
+/** 跨主题复用的执行模板、环境说明和答题套路不能代替文章自身知识。 */
+const GENERIC_PROCESS_POINT_PATTERN =
+  /(?:证明结果可复现且没有引入新的副作用|遇到生产排障或系统设计题|先固定现象、时间、版本、输入和影响范围|再沿调用链寻找第一个异常事实|不能用一个模式包打天下|最小验证案例|把它和任务一起提交|并记录退出码|模型只负责需要推理的部分|新增工具、目录或网络域名时要单独评审权限|没有验证器的契约只能算计划|临时任务事实留在任务上下文|保存为\s*\w+\.py|预期输出从根规则到最近子目录规则排列|脚本只演示作用域发现|否则旧索引会让 Agent 修改|只覆盖已生成实现的快乐路径|不能把整段对话当数据库|任何片段都能回到文件与行号|保存为当前文章专用的验收记录|expected 必须替换成服务实际声明|通过条件：合法调用符合协商后的 Schema|两者都需要超时和失败策略|父 Agent 维护依赖图并负责最终聚合|不能把重试次数当进展|恢复时核对图版本和已提交副作用|恢复前要验证代码、工具和权限是否仍兼容|恢复后是否能用同一数据集证明质量没有退化|只有错误日志、没有用户影响和恢复证据|成功标准不是“命令退出了”|而是无空白错误、Diff 只包含目标文件|随后运行项目真实的类型检查和测试|非法参数、越权资源或不兼容版本返回机器可判断的错误|选择机制：根据上面的关键机制|以及必须由宿主代码执行的校验、权限和状态更新|演练必须能回答三个问题|是否会越权或产生重复副作用|原理题\s*：|选型题\s*：|零依赖[，,]|对应的失败条件.*Trace|源码、复制内容和实际运行入口保持一致)/i
 
 /** 学习指南只保留能回答“学什么”和“学到什么程度”的知识分支。 */
 const GUIDE_SECTION_LABELS = new Map([
@@ -85,6 +104,9 @@ function normalizeMindmapText(text: string): string {
   return text
     .replace(/\s+/g, ' ')
     .replace(/^[-–—:：·\s]+|[-–—:：·\s]+$/g, '')
+    // Markmap 会把尖括号内容解析成 HTML；使用可见数学括号保留术语，同时避免未闭合标签吞掉后续节点。
+    .replaceAll('<', '‹')
+    .replaceAll('>', '›')
     .trim()
 }
 
@@ -97,11 +119,51 @@ function getMindmapPoint(text: string): string {
   const normalizedText = normalizeMindmapText(text)
   /** 第一处完整句末标点的位置。 */
   const sentenceEndIndex = normalizedText.search(/[。；;！!?？]/)
-  /** 优先保留完整首句，过长或无标点时按节点上限截断。 */
-  const pointText =
-    sentenceEndIndex >= 8 ? normalizedText.slice(0, sentenceEndIndex + 1) : normalizedText.slice(0, MAX_POINT_LENGTH)
+  /** 优先保留完整首句；无完整句且过长时放弃该候选，防止出现半句话。 */
+  const pointText = sentenceEndIndex >= 8
+    ? normalizedText.slice(0, sentenceEndIndex + 1)
+    : normalizedText.length <= MAX_POINT_LENGTH
+      ? normalizedText
+      : ''
 
   return pointText.trim()
+}
+
+/**
+ * 将一个正文节点拆成可以独立阅读的完整结论候选。
+ * @param text 段落、引用或列表项的原始可见文本。
+ */
+function getMindmapPointCandidates(text: string): string[] {
+  /** 保留 Markdown 软换行的初步句子；作者常用逐行陈述表达并列职责。 */
+  const lineCandidates = text.split(/\n+/).map((lineCandidate) => lineCandidate.trim()).filter(Boolean)
+  /** 按完整句末标点继续拆分后的候选结论。 */
+  const sentenceCandidates = lineCandidates.flatMap((lineCandidate) => {
+    /** 当前行中包含句末标点的完整句子。 */
+    const completeSentences = lineCandidate.match(/[^。；;！!?？]+[。；;！!?？]?/g) || []
+    return completeSentences.map((sentenceCandidate) => sentenceCandidate.trim()).filter(Boolean)
+  })
+  /** 只有一个长句时，尝试识别由中文逗号分隔的并列完整陈述。 */
+  const expandedCandidates = sentenceCandidates.flatMap((sentenceCandidate) => {
+    /** 当前句按中文逗号拆出的并列分句。 */
+    const clauseCandidates = sentenceCandidate.split(/[，,]/).map((clauseCandidate) => clauseCandidate.trim()).filter(Boolean)
+    /** 每个分句都需要具备足够长度和陈述谓词，避免把普通修饰语拆成残句。 */
+    const hasStandaloneClauses = clauseCandidates.length >= 2 && clauseCandidates.every(
+      (clauseCandidate) => clauseCandidate.length >= 8 && /(?:是|负责|用于|属于|对应|必须|可以|不能|会|应当|需要|表示|决定|控制|提供|保存|创建|隔离|复用|执行|返回|包含|依赖|支持)/.test(clauseCandidate)
+    )
+    return hasStandaloneClauses ? clauseCandidates : [sentenceCandidate]
+  })
+  /** 去除重复、过长和不完整节点后的最终候选。 */
+  const usefulCandidates: string[] = []
+
+  for (const expandedCandidate of expandedCandidates) {
+    /** 当前候选压缩后的思维导图结论。 */
+    const pointText = getMindmapPoint(expandedCandidate)
+    if (isUsefulMindmapPoint(pointText) && !usefulCandidates.includes(pointText)) {
+      usefulCandidates.push(pointText)
+    }
+  }
+
+  return usefulCandidates
 }
 
 /**
@@ -109,7 +171,13 @@ function getMindmapPoint(text: string): string {
  * @param text 已压缩的候选知识点。
  */
 function isUsefulMindmapPoint(text: string): boolean {
-  return text.length >= 6 && !EXCLUDED_POINT_PATTERN.test(text) && !EXCLUDED_SECTION_PATTERN.test(text)
+  return text.length >= 6
+    && text.length <= MAX_POINT_LENGTH
+    && !EXCLUDED_POINT_PATTERN.test(text)
+    && !EXCLUDED_SECTION_PATTERN.test(text)
+    && !NON_STANDALONE_POINT_PATTERN.test(text)
+    && !NON_KNOWLEDGE_POINT_PATTERN.test(text)
+    && !GENERIC_PROCESS_POINT_PATTERN.test(text)
 }
 
 /**
@@ -130,6 +198,56 @@ function appendSectionPoint(section: KnowledgeMindmapSection, candidateText: str
   }
 
   section.points.push(pointText)
+}
+
+/**
+ * 向章节追加一个正文节点中包含的多条独立结论。
+ * @param section 当前接收知识点的章节。
+ * @param candidateText 段落、引用或列表项的原始可见文本。
+ * @param pointLimit 当前文章每个章节允许展示的节点上限。
+ */
+function appendSectionPoints(section: KnowledgeMindmapSection, candidateText: string, pointLimit: number): void {
+  /** 当前正文节点拆分出的完整结论。 */
+  const pointCandidates = getMindmapPointCandidates(candidateText)
+  for (const pointCandidate of pointCandidates) {
+    appendSectionPoint(section, pointCandidate, pointLimit)
+  }
+}
+
+/**
+ * 从表格正文逐行提取最能表达结论的单元格，表头不作为知识点。
+ * @param section 当前接收知识点的章节。
+ * @param tableNode 当前 Markdown 表格节点。
+ * @param pointLimit 当前文章每个章节允许展示的节点上限。
+ */
+function appendTablePoints(section: KnowledgeMindmapSection, tableNode: MindmapMarkdownNode, pointLimit: number): void {
+  /** 表格首行是列名，仅遍历后续数据行。 */
+  const tableBodyRows = (tableNode.children || []).slice(1)
+  for (const tableRow of tableBodyRows) {
+    /** 当前数据行中可以脱离表格独立阅读的单元格结论。 */
+    const cellCandidates = (tableRow.children || [])
+      .map((tableCell) => getNodeText(tableCell))
+      .flatMap(getMindmapPointCandidates)
+      .filter((cellCandidate) => isUsefulMindmapPoint(cellCandidate))
+      .sort((leftCandidate, rightCandidate) => rightCandidate.length - leftCandidate.length)
+    /** 每行只取信息最完整的单元格，避免同一行拆出标签和值两个孤立节点。 */
+    const rowPoint = cellCandidates[0]
+    if (rowPoint) {
+      appendSectionPoint(section, rowPoint, pointLimit)
+    }
+  }
+}
+
+/**
+ * 读取列表项自身的说明段落，排除其下代码围栏和嵌套实现细节。
+ * @param listItemNode 当前 Markdown 列表项节点。
+ */
+function getListItemText(listItemNode: MindmapMarkdownNode): string {
+  /** 列表项中直接承担说明作用的段落和引用节点。 */
+  const descriptionNodes = (listItemNode.children || []).filter(
+    (childNode) => childNode.type === 'paragraph' || childNode.type === 'blockquote'
+  )
+  return descriptionNodes.map(getNodeText).join('\n')
 }
 
 /**
@@ -162,12 +280,13 @@ export function createKnowledgeMindmap(
   isAiAppArticle: boolean,
   articleKind: KnowledgeMindmapArticleKind
 ): KnowledgeMindmapData | null {
-  if (articleKind === 'reference') {
-    return null
-  }
-
+  /** 自动补强用于文章验收，不得取代作者正文成为思维导图主节点。 */
+  const knowledgeMarkdown = markdown.replace(
+    /<!-- article-progressive-block:start -->[\s\S]*?<!-- article-progressive-block:end -->\s*/g,
+    ''
+  )
   /** 当前文章解析后的 Markdown AST。 */
-  const markdownTree = remark().parse(markdown) as MindmapMarkdownNode
+  const markdownTree = remark().use(remarkGfm).parse(knowledgeMarkdown) as MindmapMarkdownNode
   /** AI 应用文章保留更多全链路章节。 */
   const sectionLimit = isAiAppArticle ? AI_APP_SECTION_LIMIT : DEFAULT_SECTION_LIMIT
   /** AI 应用文章每章保留更多工程知识点。 */
@@ -180,6 +299,8 @@ export function createKnowledgeMindmap(
   let currentSection: KnowledgeMindmapSection | null = null
   /** 首个一级标题是文章标题，不重复生成章节节点。 */
   let hasSkippedArticleTitle = false
+  /** 当前被排除章节的标题层级；该章节的所有子标题同样不能进入导图。 */
+  let excludedHeadingDepth = 0
 
   for (const markdownNode of markdownTree.children || []) {
     if (markdownNode.type === 'heading') {
@@ -195,9 +316,16 @@ export function createKnowledgeMindmap(
       }
 
       if (!headingText || EXCLUDED_SECTION_PATTERN.test(headingText)) {
+        excludedHeadingDepth = headingDepth
         currentSection = null
         continue
       }
+
+      if (excludedHeadingDepth > 0 && headingDepth > excludedHeadingDepth) {
+        currentSection = null
+        continue
+      }
+      excludedHeadingDepth = 0
 
       if (articleKind === 'guide' && headingDepth <= 2) {
         /** 当前指南章节映射后的知识分支名称。 */
@@ -234,23 +362,31 @@ export function createKnowledgeMindmap(
     if (!currentSection) {
       if (sections.length === 0 && hasSkippedArticleTitle && markdownNode.type === 'paragraph') {
         /** 短实验在首个小标题前给出的核心目标。 */
-        const introductionPoint = getMindmapPoint(getNodeText(markdownNode))
-        if (isUsefulMindmapPoint(introductionPoint) && !introductionPoints.includes(introductionPoint)) {
-          introductionPoints.push(introductionPoint)
+        /** 当前导语段落中可以独立阅读的结论。 */
+        const introductionCandidates = getMindmapPointCandidates(getNodeText(markdownNode))
+        for (const introductionPoint of introductionCandidates) {
+          if (!introductionPoints.includes(introductionPoint)) {
+            introductionPoints.push(introductionPoint)
+          }
         }
       }
       continue
     }
 
     if (markdownNode.type === 'paragraph' || markdownNode.type === 'blockquote') {
-      appendSectionPoint(currentSection, getNodeText(markdownNode), pointLimit)
+      appendSectionPoints(currentSection, getNodeText(markdownNode), pointLimit)
       continue
     }
 
     if (markdownNode.type === 'list') {
       for (const listItemNode of markdownNode.children || []) {
-        appendSectionPoint(currentSection, getNodeText(listItemNode), pointLimit)
+        appendSectionPoints(currentSection, getListItemText(listItemNode), pointLimit)
       }
+      continue
+    }
+
+    if (markdownNode.type === 'table') {
+      appendTablePoints(currentSection, markdownNode, pointLimit)
       continue
     }
 
@@ -262,16 +398,22 @@ export function createKnowledgeMindmap(
   }
 
   /** 至少两个分支才能形成比正文目录更有价值的知识关系。 */
-  const usefulSections = sections.filter((section) => section.points.length > 0)
-  if (usefulSections.length < 2 && introductionPoints.length > 0) {
+  const usefulSections = sections.filter((section) => section.points.length >= MIN_SECTION_POINT_COUNT)
+  if (usefulSections.length < 2 && introductionPoints.length >= MIN_SECTION_POINT_COUNT) {
     usefulSections.unshift({ title: '核心目标', points: introductionPoints.slice(0, pointLimit) })
   }
   if (usefulSections.length < 2) {
     return null
   }
 
-  /** 作为 Markmap 根节点的安全文章标题。 */
-  const rootTitle = normalizeMindmapText(title).replace(/^#+\s*/, '')
+  /** 正文首个 H1 与阅读页标题同源，调用方标题只在缺失 H1 时兜底。 */
+  const sourceArticleTitle = (markdownTree.children || []).find(
+    (markdownNode) => markdownNode.type === 'heading' && markdownNode.depth === 1
+  )
+  /** 作为文章导图和路线总图共同根节点的安全标题。 */
+  const rootTitle = normalizeMindmapText(
+    sourceArticleTitle ? getNodeText(sourceArticleTitle) : title
+  ).replace(/^#+\s*/, '')
   /** 最终输出的层级化 Markdown 行。 */
   const mindmapLines = [`# ${rootTitle}`]
 
@@ -286,5 +428,13 @@ export function createKnowledgeMindmap(
   const nodeCount =
     1 + usefulSections.reduce((sectionNodeCount, section) => sectionNodeCount + 1 + section.points.length, 0)
 
-  return { markdown: mindmapLines.join('\n'), nodeCount }
+  return {
+    title: rootTitle,
+    markdown: mindmapLines.join('\n'),
+    nodeCount,
+    sections: usefulSections.map((section) => ({
+      title: section.title, // 路线总图必须保留文章导图中的原始分支名称。
+      points: [...section.points] // 返回副本，避免任一消费者修改共享知识树。
+    }))
+  }
 }

@@ -1,6 +1,9 @@
 /** 单道知识题的选择方式。 */
 export type KnowledgeQuizQuestionType = 'single' | 'multiple'
 
+/** 自测题实际要求读者完成的认知任务。 */
+export type KnowledgeQuizAssessmentKind = 'mechanism' | 'diagnosis' | 'decision'
+
 /** 文章在学习路径中的用途，用于决定是否值得生成自测题。 */
 export type KnowledgeQuizArticleKind = 'guide' | 'lesson' | 'practice' | 'reference'
 
@@ -28,6 +31,10 @@ export interface KnowledgeQuizQuestion {
   options: KnowledgeQuizOption[]
   /** 提交答案后展示的总结性解析。 */
   explanation: string
+  /** 当前题实际检验的正文知识点，用于题组覆盖率审计。 */
+  knowledgePoints?: string[]
+  /** 当前题属于机制推演、故障诊断还是方案决策。 */
+  assessmentKind?: KnowledgeQuizAssessmentKind
 }
 
 /** 单条人工题选项在分配 A、B、C、D 前的内容。 */
@@ -42,6 +49,14 @@ interface CuratedQuizOptionContent {
 interface GeneratedQuizOptionContent extends CuratedQuizOptionContent {
   /** 当前判断是否应该被用户选中。 */
   isCorrect: boolean
+}
+
+/** 正文中的一个可出题知识点及其可独立判断的结论。 */
+interface QuizKnowledgeUnit {
+  /** 用于题干和覆盖率审计的章节主题。 */
+  topic: string
+  /** 正文对该主题给出的具体结论。 */
+  statement: string
 }
 
 /** 自动审计发现的一条题目质量问题。 */
@@ -61,29 +76,32 @@ const REQUIRED_QUIZ_OPTION_COUNT = 4
 /** 每道多选题固定正确项数量，让用户必须辨析两条独立知识。 */
 const REQUIRED_CORRECT_OPTION_COUNT = 2
 
+/** 每篇可评测文章至少需要三道题，避免一题笼统覆盖全文。 */
+const MIN_QUIZ_QUESTION_COUNT = 3
+
+/** 单篇文章最多保留五道题，控制阅读页底部的作答负担。 */
+const MAX_QUIZ_QUESTION_COUNT = 5
+
+/** 每组题至少覆盖五个不同知识点；正文不足时由生成器覆盖全部可用知识点。 */
+const MIN_QUIZ_KNOWLEDGE_POINT_COUNT = 5
+
 /** 一条选项允许使用的最大字符数。 */
 const MAX_QUIZ_STATEMENT_LENGTH = 140
 
 /** 误区名称嵌入选项时允许保留的最大字符数。 */
 const MAX_MISTAKE_LABEL_LENGTH = 70
 
-/** 能提供结论、动作或验收依据的章节标题。 */
-const POSITIVE_SECTION_HEADING_PATTERN =
-  /(?:总结|小结|核心要点|关键要点|最佳实践|正确做法|设计原则|验收|排查|动手改|看点|关键差异|实现步骤)/
-
-/** 明确列出反模式、失败方式或使用边界的章节标题。 */
-const MISTAKE_SECTION_HEADING_PATTERN = /(?:常见错误|常见坑|踩坑|踩的坑|误区|错误做法|反模式|失败|不要这样做)/
-
 /** 排除导航、配图规范和写作说明等不可评测内容。 */
 const NON_ASSESSABLE_STATEMENT_PATTERN =
   /^(?:下一(?:篇|章)|继续阅读|延伸阅读|参考资料|可视化规格|VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|架构图|流程图|思维导图|截图|作者自审|本文围绕|本章将|本 demo 配套|本小册)/i
 
 /** 禁止再次出现的低信息题干模板。 */
-const LOW_VALUE_PROMPT_PATTERN = /(?:以下关于|哪一项正确|哪些判断符合本课内容|demo[^，。？！]*判断)/i
+const LOW_VALUE_PROMPT_PATTERN =
+  /(?:以下关于|哪一项正确|哪些判断符合(?:本课|本文)内容|哪些结论有正文依据|demo[^，。？！]*判断)/i
 
 /** 禁止进入选项的兜底水文。 */
 const LOW_VALUE_OPTION_PATTERN =
-  /(?:本文围绕|本章围绕|需要结合具体目标、约束和验证结果来理解|只记住术语或 API 名称|工程上真正会踩的坑|本篇独有|挨个看|^(?:讲清|看懂|掌握|学会|理解|写出|能够))/
+  /(?:本文围绕|本章围绕|读完后，你应能|输出包含关键对象与数据流的链路图|需要结合具体目标、约束和验证结果来理解|只记住术语或 API 名称|工程上真正会踩的坑|本篇独有|挨个看|示例只要成功运行一次|只核对最终输出|不必验证异常路径|不必记录输入|^(?:讲清|看懂|掌握|学会|理解|写出|能够))/
 
 /**
  * 为人工题组装一题稳定的四选多选题。
@@ -118,7 +136,9 @@ function createCuratedQuizQuestion(
       id: QUIZ_OPTION_IDS[optionIndex] || String(optionIndex + 1),
       ...option
     })),
-    explanation
+    explanation,
+    knowledgePoints: [prompt],
+    assessmentKind: 'decision'
   }
 }
 
@@ -560,7 +580,21 @@ function getQuizOptionSentence(statement: string): string {
   const optionSentence =
     sentenceEndIndex >= 8 ? statement.slice(0, sentenceEndIndex + 1) : statement.slice(0, MAX_QUIZ_STATEMENT_LENGTH)
 
-  return optionSentence.replace(/[:：]\s*$/, '。').trim()
+  return optionSentence
+    .slice(0, MAX_QUIZ_STATEMENT_LENGTH)
+    .replace(/[:：]\s*$/, '。')
+    .trim()
+}
+
+/**
+ * 将一个包含多个分号结论的自然段拆成可分别评测的短句。
+ * @param paragraph 已去除 Markdown 标记的正文段落。
+ */
+function getQuizOptionSentences(paragraph: string): string[] {
+  /** 按句号、分号和感叹号切开的候选结论。 */
+  const sentenceFragments = paragraph.match(/[^。；;！!]+[。；;！!]?/g) || []
+
+  return sentenceFragments.map((sentenceFragment) => getQuizOptionSentence(sentenceFragment.trim())).filter(Boolean)
 }
 
 /**
@@ -574,6 +608,9 @@ function isAssessableStatement(statement: string): boolean {
     !statement.startsWith('#') &&
     !statement.startsWith('|') &&
     !statement.startsWith('![') &&
+    !/[？?]$/.test(statement) &&
+    !/^(?:假设|例如|比如|这条公式|下面|接下来|图中|表中)/.test(statement) &&
+    !/(?:如下图|这部分比较简单|方法名可以看出)/.test(statement) &&
     !NON_ASSESSABLE_STATEMENT_PATTERN.test(statement) &&
     !LOW_VALUE_OPTION_PATTERN.test(statement)
   )
@@ -585,66 +622,6 @@ function isAssessableStatement(statement: string): boolean {
  */
 function removeFencedCodeBlocks(markdown: string): string {
   return markdown.replace(/```[\s\S]*?```/g, '')
-}
-
-/**
- * 从指定标题类型的章节中提取列表和自然段短句。
- * @param markdown 当前文章原始 Markdown。
- * @param sectionHeadingPattern 需要进入的章节标题规则。
- * @param requireExplicitListMarker 是否只接受列表项或显式错误标记。
- */
-function extractSectionStatements(
-  markdown: string,
-  sectionHeadingPattern: RegExp,
-  requireExplicitListMarker = false
-): string[] {
-  /** 去除源码后的正文行，保持章节顺序。 */
-  const markdownLines = removeFencedCodeBlocks(markdown).split('\n')
-  /** 当前是否位于目标章节。 */
-  let isInsideTargetSection = false
-  /** 当前目标章节的标题层级。 */
-  let targetHeadingDepth = 0
-  /** 从目标章节提取并去重后的短句。 */
-  const sectionStatements: string[] = []
-
-  for (const markdownLine of markdownLines) {
-    /** 当前行如果是标题，对应的 Markdown 标题层级和内容。 */
-    const headingMatch = markdownLine.match(/^(#{1,4})\s+(.+)$/)
-    if (headingMatch) {
-      /** 当前标题的井号数量。 */
-      const headingDepth = headingMatch[1]?.length || 0
-      /** 当前标题去除 Markdown 后的文本。 */
-      const headingText = normalizeQuizStatement(headingMatch[2] || '')
-
-      if (sectionHeadingPattern.test(headingText)) {
-        isInsideTargetSection = true
-        targetHeadingDepth = headingDepth
-        continue
-      }
-
-      if (isInsideTargetSection && headingDepth <= targetHeadingDepth) {
-        isInsideTargetSection = false
-      }
-      continue
-    }
-
-    if (!isInsideTargetSection || !markdownLine.trim()) {
-      continue
-    }
-
-    // 误区章节常在错误项后追加解释段；仅提取显式列出的错误，避免把纠正说明误判成错项。
-    if (requireExplicitListMarker && !/^\s*(?:[-*+]\s+|\d+[.)]\s+|[❌⚠])/.test(markdownLine)) {
-      continue
-    }
-
-    /** 当前章节行转换成可独立判断的首句。 */
-    const statement = getQuizOptionSentence(normalizeQuizStatement(markdownLine))
-    if (isAssessableStatement(statement) && !sectionStatements.includes(statement)) {
-      sectionStatements.push(statement)
-    }
-  }
-
-  return sectionStatements
 }
 
 /**
@@ -672,150 +649,264 @@ function getStatementClaim(statement: string): string {
  * @param markdown 当前文章原始 Markdown。
  */
 function extractBodyStatements(markdown: string): string[] {
+  /** 自动工程工作表只负责执行验收，不能反向成为核心知识题答案。 */
+  const knowledgeMarkdown = markdown.split('<!-- article-operational-workbook -->')[0] || markdown
   /** 去除代码后能够独立阅读的正文短句。 */
-  const bodyStatements = removeFencedCodeBlocks(markdown)
+  const bodyStatements = removeFencedCodeBlocks(knowledgeMarkdown)
     .split('\n')
-    .filter((line) => !/^\s*(?:#|\||!\[|>\s*(?:VISUAL|DIAGRAM|SCREENSHOT))/.test(line))
+    .filter((line) => !/^\s*(?:#|\||!\[|>)/.test(line))
     .map(normalizeQuizStatement)
-    .map(getQuizOptionSentence)
+    .flatMap(getQuizOptionSentences)
     .filter(isAssessableStatement)
 
   return Array.from(new Set(bodyStatements))
 }
 
+/** 不适合作为核心知识点的写作结构标题。 */
+const NON_KNOWLEDGE_HEADING_PATTERN =
+  /^(?:本文目标|学习目标|读完你能|核心知识清单|前置知识|参考资料|总结|小结|验收清单|如何验收|如何验证|场景基线|按什么顺序|步骤\s*\d+|失败时|上线前|变更记录|工程上真正会踩的坑|常见错误|常见坑|踩坑|误区|错误做法|反模式)/
+
 /**
- * 为正文证据不足的页面提供两条仍有工程价值的验收原则。
- * @param title 已清理序号和 demo 后缀的文章标题。
- * @param articleKind 当前文章是课程还是可执行实验。
+ * 去掉章节编号，保留可以直接放进题干的知识主题。
+ * @param headingText Markdown 标题去掉井号后的原文。
  */
-function createEvidenceFallbackStatements(title: string, articleKind: KnowledgeQuizArticleKind): string[] {
-  if (articleKind === 'practice') {
-    return [
-      `修改“${title}”的输入或参数后，应重新运行并核对预期输出、异常路径和关键中间状态。`,
-      `复用“${title}”的实验代码前，应确认依赖、入口命令和运行环境与文章约定一致。`
-    ]
+function normalizeKnowledgeTopic(headingText: string): string {
+  return normalizeQuizStatement(headingText)
+    .replace(/^(?:第?[一二三四五六七八九十百]+|\d+(?:\.\d+)*)[、.．：:\s-]*/, '')
+    .slice(0, MAX_MISTAKE_LABEL_LENGTH)
+    .trim()
+}
+
+/**
+ * 读取文章显式声明的核心知识清单。
+ * @param markdown 当前文章原始 Markdown。
+ */
+function extractDeclaredKnowledgeTopics(markdown: string): string[] {
+  /** “核心知识清单”标题之后到下一标题之前的正文。 */
+  const knowledgeListSection =
+    markdown.match(/^#{1,4}\s+核心知识清单\s*$([\s\S]*?)(?=^#{1,4}\s+|(?![\s\S]))/m)?.[1] || ''
+  /** 清单中按原顺序提取的知识点名称。 */
+  const declaredTopics = [...knowledgeListSection.matchAll(/^\s*[-*+]\s+(.+)$/gm)]
+    .map((topicMatch) => normalizeKnowledgeTopic(topicMatch[1] || ''))
+    .filter(Boolean)
+
+  return Array.from(new Set(declaredTopics))
+}
+
+/**
+ * 将知识点拆成可匹配正文的中英文术语。
+ * @param topic 当前知识点名称。
+ */
+function getKnowledgeTopicTerms(topic: string): string[] {
+  /** 按并列词和标点拆开的原始术语。 */
+  const rawTerms = topic.split(/[、，,与和及：:（）()\s/+]+/).filter((term) => term.length >= 2)
+  /** Q、K、V 等英文全称对应的公式缩写。 */
+  const aliasTerms = rawTerms.flatMap((term) => {
+    if (/^query$/i.test(term)) return ['Q']
+    if (/^key$/i.test(term)) return ['K']
+    if (/^value$/i.test(term)) return ['V']
+    if (/^feed.?forward$/i.test(term)) return ['FFN']
+    return []
+  })
+
+  return Array.from(new Set([...rawTerms, ...aliasTerms]))
+}
+
+/**
+ * 按术语命中、因果关系和信息长度评估一条正文结论的出题价值。
+ * @param statement 候选正文结论。
+ * @param topic 需要覆盖的知识点。
+ * @param sectionTopic 候选结论所在章节。
+ */
+function scoreKnowledgeStatement(statement: string, topic: string, sectionTopic: string): number {
+  /** 当前知识点中可用于正文匹配的术语。 */
+  const topicTerms = getKnowledgeTopicTerms(topic)
+  /** 结论和章节标题共同命中的术语数量。 */
+  const matchedTermCount = topicTerms.filter(
+    (term) =>
+      statement.toLowerCase().includes(term.toLowerCase()) || sectionTopic.toLowerCase().includes(term.toLowerCase())
+  ).length
+  /** 包含因果、职责、数据流或边界词的结论比背景描述更适合出题。 */
+  const mechanismScore =
+    /(?:因为|所以|因此|通过|用于|负责|决定|得到|阻止|保存|复用|减少|增加|依赖|区别|不等于|不是|不能|必须|需要|只会|只能)/.test(
+      statement
+    )
+      ? 6
+      : 0
+  /** 过短的口号和过长的复合句都降低可辨析性。 */
+  const lengthScore = statement.length >= 24 && statement.length <= 110 ? 3 : 0
+
+  return matchedTermCount * 12 + mechanismScore + lengthScore
+}
+
+/**
+ * 将本身已经表达职责关系的核心知识点补全成可判断结论。
+ * @param topic 核心知识清单中的知识点名称。
+ */
+function createStatementFromKnowledgeTopic(topic: string): string | null {
+  /** “某函数调度入口”结构中的函数名。 */
+  const schedulingEntryName = topic.match(/^(.+?)\s+调度入口$/)?.[1]
+  if (schedulingEntryName) {
+    return `${schedulingEntryName} 是更新流程进入 Reconciler 调度阶段的入口。`
   }
 
-  return [
-    `落地“${title}”前，应核对正文给出的适用条件、失败边界，并用可复现结果完成验收。`,
-    `评审“${title}”方案时，应同时检查输入、核心处理和输出是否形成可观测的完整链路。`
-  ]
-}
-
-/**
- * 选出两条不重复、可独立判断的正确结论。
- * @param markdown 当前文章原始 Markdown。
- * @param title 已清理后的文章标题。
- * @param articleKind 当前文章在学习路径中的用途。
- */
-function extractCorrectStatements(markdown: string, title: string, articleKind: KnowledgeQuizArticleKind): string[] {
-  /** 总结、最佳实践章节和正文共同提供的候选结论。 */
-  const statementCandidates = [
-    ...extractSectionStatements(markdown, POSITIVE_SECTION_HEADING_PATTERN),
-    ...extractBodyStatements(markdown),
-    ...createEvidenceFallbackStatements(title, articleKind)
-  ]
-  /** 最终用于正确项的两条不同结论。 */
-  const correctStatements: string[] = []
-
-  for (const statementCandidate of statementCandidates) {
-    /** 当前候选项完成最终长度与标点清理后的文本。 */
-    const correctStatement = getStatementClaim(normalizeQuizStatement(statementCandidate))
-    if (!isAssessableStatement(correctStatement) || correctStatements.includes(correctStatement)) {
-      continue
-    }
-
-    correctStatements.push(correctStatement)
-    if (correctStatements.length === REQUIRED_CORRECT_OPTION_COUNT) {
-      break
-    }
+  /** “某函数与某系统桥接”结构中的两端对象。 */
+  const schedulerBridgeMatch = topic.match(/^(.+?)\s+与\s+(.+?)\s+桥接$/)
+  if (schedulerBridgeMatch) {
+    /** 桥接关系左侧的函数或组件。 */
+    const bridgeSource = schedulerBridgeMatch[1] || ''
+    /** 桥接关系右侧的调度器或系统。 */
+    const bridgeTarget = schedulerBridgeMatch[2] || ''
+    return `${bridgeSource} 负责把 React 更新调度连接到 ${bridgeTarget}。`
   }
 
-  return correctStatements
+  return null
 }
 
 /**
- * 为错误项不足的文章提供与真实交付相关的反模式。
- * @param title 已清理后的文章标题。
- */
-function createGenericIncorrectOptions(title: string): GeneratedQuizOptionContent[] {
-  return [
-    {
-      label: `“${title}”的示例只要成功运行一次，就可以直接用于生产，不必验证异常路径。`,
-      isCorrect: false,
-      reason: '示例成功只覆盖一条快乐路径，不能替代错误处理、权限、资源限制和回归验证。'
-    },
-    {
-      label: `评审“${title}”时只核对最终输出，不必记录输入、关键中间状态和依赖错误。`,
-      isCorrect: false,
-      reason: '只看最终输出无法定位链路在哪个阶段偏离预期，也无法证明失败路径得到正确处理。'
-    }
-  ]
-}
-
-/**
- * 把正文明确列出的误区转换成主题相关的错误判断。
+ * 从正文章节和自然段中提取至少六个互不重复的出题单元。
  * @param markdown 当前文章原始 Markdown。
- * @param title 已清理后的文章标题。
  */
-function createMistakeIncorrectOptions(markdown: string, title: string): GeneratedQuizOptionContent[] {
-  /** 误区章节中显式列出的错误做法。 */
-  const mistakeStatements = extractSectionStatements(markdown, MISTAKE_SECTION_HEADING_PATTERN, true)
+function extractKnowledgeUnits(markdown: string): QuizKnowledgeUnit[] {
+  /** 自动工程工作表及其后的总结不参与核心知识题抽取。 */
+  const knowledgeMarkdown = markdown.split('<!-- article-operational-workbook -->')[0] || markdown
+  /** 去除代码后按原顺序保留的 Markdown 行。 */
+  const markdownLines = removeFencedCodeBlocks(knowledgeMarkdown).split('\n')
+  /** 遍历正文时最近一个有知识含义的章节主题。 */
+  let currentTopic = ''
+  /** 首个标题是文章名，不应当作为正文知识点。 */
+  let hasSkippedArticleTitle = false
+  /** 当前被跳过的辅助章节层级；其子标题同样不能重新进入题库。 */
+  let excludedHeadingDepth = 0
+  /** 所有章节中具有独立判断价值的候选结论。 */
+  const knowledgeCandidates: QuizKnowledgeUnit[] = []
+  /** 已经进入题库的结论，防止同一句跨题重复。 */
+  const capturedStatements = new Set<string>()
 
-  return mistakeStatements
-    .filter((mistakeStatement) => !/^(?:被|常见|容易)/.test(mistakeStatement))
-    .map((mistakeStatement) => {
-      /** 误区名称第一处句末标点的位置。 */
-      const mistakeLabelEndIndex = mistakeStatement.search(/[。；;！!]/)
-      /** 只保留误区名称，不把后面的风险解释塞进选项。 */
-      const rawMistakeLabel =
-        mistakeLabelEndIndex >= 2 ? mistakeStatement.slice(0, mistakeLabelEndIndex) : mistakeStatement
-      /** 去除句末标点并限制长度后的误区名称。 */
-      const mistakeLabel = rawMistakeLabel.replace(/[。；;！!]$/, '').slice(0, MAX_MISTAKE_LABEL_LENGTH)
-
-      return {
-        label: `“${mistakeLabel}”不会影响“${title}”的可靠性，可以保留为默认做法。`,
-        isCorrect: false,
-        reason: `正文明确把“${mistakeStatement}”列为需要避免的错误做法；该选项反而把反模式当成了默认方案。`
+  for (const markdownLine of markdownLines) {
+    /** 当前行可能包含的 Markdown 标题。 */
+    const headingMatch = markdownLine.match(/^(#{1,4})\s+(.+)$/)
+    if (headingMatch) {
+      if (!hasSkippedArticleTitle) {
+        hasSkippedArticleTitle = true
+        currentTopic = ''
+        continue
       }
-    })
-}
 
-/**
- * 选出两条不重复且不会与正确项冲突的错误判断。
- * @param markdown 当前文章原始 Markdown。
- * @param title 已清理后的文章标题。
- * @param correctStatements 当前题的两条正确结论。
- */
-function extractIncorrectOptions(
-  markdown: string,
-  title: string,
-  correctStatements: readonly string[]
-): GeneratedQuizOptionContent[] {
-  /** 正文具体误区优先，通用交付反模式只负责补足选项。 */
-  const incorrectOptionCandidates = [
-    ...createMistakeIncorrectOptions(markdown, title),
-    ...createGenericIncorrectOptions(title)
-  ]
-  /** 最终用于题目的两条不重复错误判断。 */
-  const incorrectOptions: GeneratedQuizOptionContent[] = []
-
-  for (const incorrectOptionCandidate of incorrectOptionCandidates) {
-    if (
-      !isAssessableStatement(incorrectOptionCandidate.label) ||
-      correctStatements.includes(incorrectOptionCandidate.label) ||
-      incorrectOptions.some((option) => option.label === incorrectOptionCandidate.label)
-    ) {
+      /** 去掉编号和格式标记后的章节主题。 */
+      const headingTopic = normalizeKnowledgeTopic(headingMatch[2] || '')
+      /** 当前标题层级，用于判断是否已经离开辅助章节。 */
+      const headingDepth = (headingMatch[1] || '').length
+      if (NON_KNOWLEDGE_HEADING_PATTERN.test(headingTopic)) {
+        excludedHeadingDepth = headingDepth
+        currentTopic = ''
+      } else if (excludedHeadingDepth > 0 && headingDepth > excludedHeadingDepth) {
+        currentTopic = ''
+      } else {
+        excludedHeadingDepth = 0
+        currentTopic = headingTopic
+      }
       continue
     }
 
-    incorrectOptions.push(incorrectOptionCandidate)
-    if (incorrectOptions.length === REQUIRED_QUIZ_OPTION_COUNT - REQUIRED_CORRECT_OPTION_COUNT) {
+    if (!currentTopic) {
+      continue
+    }
+
+    /** 当前正文行去除 Markdown 标记后的原始内容。 */
+    const normalizedLine = normalizeQuizStatement(markdownLine)
+    if (/^(?:DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION|VISUAL_STRATEGY)[：:]/.test(normalizedLine)) {
+      continue
+    }
+
+    /** 当前正文段落按分号拆开的独立结论。 */
+    const statements = getQuizOptionSentences(normalizedLine).map(getStatementClaim)
+    for (const statement of statements) {
+      if (!isAssessableStatement(statement) || capturedStatements.has(statement)) {
+        continue
+      }
+
+      knowledgeCandidates.push({ topic: currentTopic, statement })
+    }
+  }
+
+  /** 文章显式声明的核心知识点优先决定题组覆盖范围。 */
+  const declaredTopics = extractDeclaredKnowledgeTopics(knowledgeMarkdown)
+  /** 没有知识清单时，使用正文中去重后的真实章节主题。 */
+  const targetTopics =
+    declaredTopics.length > 0
+      ? declaredTopics
+      : Array.from(new Set(knowledgeCandidates.map((knowledgeCandidate) => knowledgeCandidate.topic)))
+  /** 最终用于组题的章节知识单元。 */
+  const knowledgeUnits: QuizKnowledgeUnit[] = []
+
+  for (const targetTopic of targetTopics) {
+    /** 尚未用于其他题、按当前知识点匹配度排序的正文候选。 */
+    const rankedCandidates = knowledgeCandidates
+      .filter((knowledgeCandidate) => !capturedStatements.has(knowledgeCandidate.statement))
+      .map((knowledgeCandidate) => ({
+        knowledgeCandidate,
+        score: scoreKnowledgeStatement(knowledgeCandidate.statement, targetTopic, knowledgeCandidate.topic)
+      }))
+      .sort((leftCandidate, rightCandidate) => rightCandidate.score - leftCandidate.score)
+    /** 当前知识点匹配度最高的具体结论。 */
+    const selectedCandidate = rankedCandidates[0]?.knowledgeCandidate
+    /** 正文将职责直接写在知识清单中时，由关系词补成完整判断。 */
+    const topicStatement = createStatementFromKnowledgeTopic(targetTopic)
+    if (!selectedCandidate && !topicStatement) {
+      continue
+    }
+
+    /** 当前知识点最终采用的正文结论。 */
+    const selectedStatement = selectedCandidate?.statement || topicStatement || ''
+    knowledgeUnits.push({ topic: targetTopic, statement: selectedStatement })
+    capturedStatements.add(selectedStatement)
+    if (knowledgeUnits.length >= MAX_QUIZ_QUESTION_COUNT * REQUIRED_CORRECT_OPTION_COUNT) {
       break
     }
   }
 
-  return incorrectOptions
+  // 少数旧文章章节较少，用正文中的其他独立结论补足题量；知识点名称仍保留具体结论而不是文章标题。
+  for (const bodyStatement of extractBodyStatements(knowledgeMarkdown)) {
+    /** 正文候选完成标签清理后的具体判断。 */
+    const statement = getStatementClaim(bodyStatement)
+    if (!isAssessableStatement(statement) || capturedStatements.has(statement)) {
+      continue
+    }
+
+    /** 从具体结论截取的补充知识点名称。 */
+    const fallbackTopic = statement.replace(/[。；;！!].*$/, '').slice(0, MAX_MISTAKE_LABEL_LENGTH)
+    if (knowledgeUnits.some((knowledgeUnit) => knowledgeUnit.topic === fallbackTopic)) {
+      continue
+    }
+    knowledgeUnits.push({ topic: fallbackTopic, statement })
+    capturedStatements.add(statement)
+    if (knowledgeUnits.length >= MAX_QUIZ_QUESTION_COUNT * REQUIRED_CORRECT_OPTION_COUNT) {
+      break
+    }
+  }
+
+  return knowledgeUnits
+}
+
+/**
+ * 只反转正文结论中的一个条件或因果词，生成与当前知识点直接相关的干扰项。
+ * @param statement 正文中的正确结论。
+ * @param topic 当前结论所属的知识点。
+ */
+function createCounterfactualOption(statement: string, topic: string): GeneratedQuizOptionContent {
+  /** 去掉句末标点后的原始结论，便于执行单点语义替换。 */
+  const statementWithoutEnding = statement.replace(/[。；;！!]$/, '')
+  /** 干扰项明确撤销正文约束，避免机械替词产生“不依赖漂移”等病句。 */
+  const assessableOptionLabel = getQuizOptionSentence(
+    `在“${topic}”中，即使不满足“${statementWithoutEnding.slice(0, 84)}”，结果与副作用仍会保持不变。`
+  )
+
+  return {
+    label: assessableOptionLabel,
+    isCorrect: false,
+    reason: `正文在“${topic}”中给出的结论是“${statement}”；该选项只反转了其中一个条件、因果或适用边界，因此会得到与原机制相反的判断。`
+  }
 }
 
 /**
@@ -848,11 +939,14 @@ function rotateOptions<T>(options: readonly T[], rotationOffset: number): T[] {
  * @param title 阅读页传入的文章标题。
  */
 function getQuizTopicTitle(title: string): string {
-  return title.replace(/\s+(?:demo|实验|自测 quiz|抽题自测)$/i, '').trim()
+  return title
+    .replace(/^[^（(]{1,40}[（(]\d{1,2}[）)]\s*[-—–:：]\s*/, '')
+    .replace(/\s+(?:demo|实验|自测 quiz|抽题自测)$/i, '')
+    .trim()
 }
 
 /**
- * 为没有人工题库的课程生成一题场景化四选多选题。
+ * 为没有人工题库的课程生成三道覆盖不同章节的场景化多选题。
  * @param articlePath 当前文章的公开路径。
  * @param markdown 当前文章原始 Markdown。
  * @param title 已移除模块内课号的文章标题。
@@ -870,45 +964,91 @@ function createGeneratedQuiz(
 
   /** 不包含页面类型后缀的真实知识主题。 */
   const quizTopicTitle = getQuizTopicTitle(title)
-  /** 从正文证据选出的两条正确判断。 */
-  const correctStatements = extractCorrectStatements(markdown, quizTopicTitle, articleKind)
-  /** 与正文边界冲突的两条错误判断。 */
-  const incorrectOptions = extractIncorrectOptions(markdown, quizTopicTitle, correctStatements)
-  /** 尚未分配 A、B、C、D 的四个候选答案。 */
-  const optionCandidates: GeneratedQuizOptionContent[] = [
-    ...correctStatements.map((correctStatement) => ({
-      label: correctStatement,
-      isCorrect: true,
-      reason: `正文把“${correctStatement}”作为核心结论、操作步骤或验收依据。`
-    })),
-    ...incorrectOptions
-  ]
-  /** 根据文章路径稳定打散正确项位置。 */
-  const optionRotationOffset = getStableRotationOffset(articlePath, optionCandidates.length)
-  /** 最终稳定排序的候选答案。 */
-  const orderedOptionCandidates = rotateOptions(optionCandidates, optionRotationOffset)
-  /** 带 A、B、C、D 标识的最终选项。 */
-  const options: KnowledgeQuizOption[] = orderedOptionCandidates.map((option, optionIndex) => ({
-    id: QUIZ_OPTION_IDS[optionIndex] || String(optionIndex + 1),
-    ...option
-  }))
-  /** 当前题完成排序后的正确选项标识。 */
-  const correctOptionIds = options.filter((option) => option.isCorrect).map((option) => option.id)
-  /** 根据课程或实验使用不同的真实决策语境。 */
-  const prompt =
-    articleKind === 'practice'
-      ? `你准备把“${quizTopicTitle}”从可运行示例推进到可复用实现。哪些操作或判断应通过验收？`
-      : `团队正在评审“${quizTopicTitle}”在真实项目中的用法。哪些结论有正文依据？`
+  /** 选项中的短主题放在结论之后，既保留文章语境，也不会截掉结论差异。 */
+  const quizOptionContext = quizTopicTitle.slice(0, 36)
+  /** 文章显式声明的核心知识点数量，用于决定题组需要三到五题中的哪一种规模。 */
+  const declaredKnowledgeTopicCount = extractDeclaredKnowledgeTopics(markdown).length
+  /** 三题至少覆盖五个知识点；知识清单更长时增加题数，最多用五题覆盖十个知识点。 */
+  const targetQuestionCount = Math.min(
+    MAX_QUIZ_QUESTION_COUNT,
+    Math.max(MIN_QUIZ_QUESTION_COUNT, Math.ceil(declaredKnowledgeTopicCount / REQUIRED_CORRECT_OPTION_COUNT))
+  )
+  /** 从不同正文章节提取的具体知识结论。 */
+  const knowledgeUnits = extractKnowledgeUnits(markdown).slice(0, targetQuestionCount * REQUIRED_CORRECT_OPTION_COUNT)
+  /** 当前文章按两个知识点一组生成的题目。 */
+  const generatedQuestions: KnowledgeQuizQuestion[] = []
 
-  return [
-    {
-      id: 'article-engineering-review',
+  for (let questionIndex = 0; questionIndex < targetQuestionCount; questionIndex += 1) {
+    /** 当前题对应的两条章节知识。 */
+    const questionKnowledgeUnits = knowledgeUnits.slice(
+      questionIndex * REQUIRED_CORRECT_OPTION_COUNT,
+      (questionIndex + 1) * REQUIRED_CORRECT_OPTION_COUNT
+    )
+    if (questionKnowledgeUnits.length < REQUIRED_CORRECT_OPTION_COUNT) {
+      break
+    }
+
+    /** 当前题两条正文正确结论。 */
+    const correctOptions: GeneratedQuizOptionContent[] = questionKnowledgeUnits.map((knowledgeUnit) => ({
+      label: getQuizOptionSentence(
+        `${knowledgeUnit.statement.replace(/[。；;！!]$/, '')}（用于判断“${quizOptionContext}”）。`
+      ),
+      isCorrect: true,
+      reason: `“${knowledgeUnit.topic}”章节说明了“${knowledgeUnit.statement}”；该判断保留了正文中的处理方式和适用边界。`
+    }))
+    /** 分别反转两条正文结论中的一个条件得到的主题干扰项。 */
+    const incorrectOptions = questionKnowledgeUnits.map((knowledgeUnit) =>
+      createCounterfactualOption(knowledgeUnit.statement, `${quizOptionContext} / ${knowledgeUnit.topic.slice(0, 32)}`)
+    )
+    /** 尚未分配 A、B、C、D 的四个候选答案。 */
+    const optionCandidates: GeneratedQuizOptionContent[] = [...correctOptions, ...incorrectOptions]
+    /** 根据文章路径和题号稳定打散正确项位置。 */
+    const optionRotationOffset = getStableRotationOffset(`${articlePath}#${questionIndex + 1}`, optionCandidates.length)
+    /** 最终稳定排序的候选答案。 */
+    const orderedOptionCandidates = rotateOptions(optionCandidates, optionRotationOffset)
+    /** 带 A、B、C、D 标识的最终选项。 */
+    const options: KnowledgeQuizOption[] = orderedOptionCandidates.map((option, optionIndex) => ({
+      id: QUIZ_OPTION_IDS[optionIndex] || String(optionIndex + 1),
+      ...option
+    }))
+    /** 当前题完成排序后的正确选项标识。 */
+    const correctOptionIds = options.filter((option) => option.isCorrect).map((option) => option.id)
+    /** 当前题覆盖的两个章节主题。 */
+    const knowledgePoints = questionKnowledgeUnits.map((knowledgeUnit) => knowledgeUnit.topic)
+    /** 三道基础题依次承担机制推演、故障诊断和方案决策任务。 */
+    const assessmentKind: KnowledgeQuizAssessmentKind =
+      questionIndex % MIN_QUIZ_QUESTION_COUNT === 0
+        ? 'mechanism'
+        : questionIndex % MIN_QUIZ_QUESTION_COUNT === 1
+          ? 'diagnosis'
+          : 'decision'
+    /** 第一条正文结论提供题干中的具体输入、状态或约束。 */
+    const primaryStatement = questionKnowledgeUnits[0]?.statement || ''
+    /** 第一条反事实提供故障题中的可观察偏差，避免只替换文章标题。 */
+    const observedDeviation = incorrectOptions[0]?.label || ''
+    /** 根据认知任务和文章用途生成带具体正文条件的题干。 */
+    let prompt = `在“${quizTopicTitle}”中，需要同时满足“${knowledgePoints.join('”与“')}”。给定正文约束“${primaryStatement}”，哪些判断保持了原有处理机制？`
+    if (assessmentKind === 'diagnosis') {
+      prompt = `“${quizTopicTitle}”出现偏差：“${observedDeviation}”已成为实际行为。围绕“${knowledgePoints.join('”与“')}”，哪些判断能定位被改变的职责或边界？`
+    } else if (assessmentKind === 'decision') {
+      prompt =
+        articleKind === 'practice'
+          ? `你准备修改“${quizTopicTitle}”中“${knowledgePoints.join('”与“')}”的实现，同时必须保留“${primaryStatement}”。哪些决策不会破坏该约束？`
+          : `评审“${quizTopicTitle}”方案时，验收条件包含“${primaryStatement}”。关于“${knowledgePoints.join('”与“')}”的哪些决策符合正文机制？`
+    }
+
+    generatedQuestions.push({
+      id: `article-core-${questionIndex + 1}`,
       type: 'multiple',
       prompt,
       options,
-      explanation: `应选择 ${correctOptionIds.join('、')}。判断标准是能否回到正文中的原理、步骤或失败边界，而不是记住标题或跑通一次示例。`
-    }
-  ]
+      explanation: `应选择 ${correctOptionIds.join('、')}。两条正确项分别对应“${knowledgePoints.join('”和“')}”；错误项只改动了一个条件、因果或边界，可据此定位误解。`,
+      knowledgePoints,
+      assessmentKind
+    })
+  }
+
+  return generatedQuestions
 }
 
 /**
@@ -938,6 +1078,47 @@ export function auditKnowledgeQuizQuestions(
   if (questions.length === 0) {
     auditIssues.push({ code: 'missing-quiz', message: `${articlePath} 缺少可评测的自测题。` })
     return auditIssues
+  }
+
+  if (questions.length < MIN_QUIZ_QUESTION_COUNT || questions.length > MAX_QUIZ_QUESTION_COUNT) {
+    auditIssues.push({
+      code: 'question-count',
+      message: `${articlePath} 应有 ${MIN_QUIZ_QUESTION_COUNT}～${MAX_QUIZ_QUESTION_COUNT} 道核心知识题，实际为 ${questions.length} 道。`
+    })
+  }
+
+  /** 题组中去重后的题干数量。 */
+  const uniquePromptCount = new Set(questions.map((question) => question.prompt)).size
+  if (uniquePromptCount !== questions.length) {
+    auditIssues.push({ code: 'duplicate-prompt', message: `${articlePath} 存在重复题干。` })
+  }
+
+  /** 题组明确声明并去重后的正文知识点。 */
+  const coveredKnowledgePoints = new Set(
+    questions.flatMap((question) => question.knowledgePoints || []).map((knowledgePoint) => knowledgePoint.trim())
+  )
+  if (coveredKnowledgePoints.size < MIN_QUIZ_KNOWLEDGE_POINT_COUNT) {
+    auditIssues.push({
+      code: 'insufficient-coverage',
+      message: `${articlePath} 的题组只覆盖 ${coveredKnowledgePoints.size} 个知识点，至少需要 ${MIN_QUIZ_KNOWLEDGE_POINT_COUNT} 个。`
+    })
+  }
+
+  /** 题组实际使用的认知任务类型。 */
+  const assessmentKinds = new Set(questions.map((question) => question.assessmentKind).filter(Boolean))
+  if (assessmentKinds.size < 2) {
+    auditIssues.push({
+      code: 'insufficient-assessment-kinds',
+      message: `${articlePath} 的题组只包含 ${assessmentKinds.size} 种认知任务，至少需要机制、诊断、决策中的两种。`
+    })
+  }
+
+  /** 跨题使用的全部正确结论，用于发现换题干复用同一答案。 */
+  const correctLabelsAcrossQuestions = questions.flatMap((question) =>
+    question.options.filter((option) => option.isCorrect).map((option) => option.label)
+  )
+  if (new Set(correctLabelsAcrossQuestions).size !== correctLabelsAcrossQuestions.length) {
+    auditIssues.push({ code: 'duplicate-correct-option', message: `${articlePath} 在多道题中重复使用同一条正确结论。` })
   }
 
   for (const question of questions) {
@@ -970,6 +1151,18 @@ export function auditKnowledgeQuizQuestions(
       auditIssues.push({
         code: 'low-value-prompt',
         message: `${articlePath}#${question.id} 仍使用低信息题干：${question.prompt}`
+      })
+    }
+    if ((question.knowledgePoints || []).length === 0) {
+      auditIssues.push({
+        code: 'missing-knowledge-point',
+        message: `${articlePath}#${question.id} 没有标记实际评测的正文知识点。`
+      })
+    }
+    if (!question.assessmentKind) {
+      auditIssues.push({
+        code: 'missing-assessment-kind',
+        message: `${articlePath}#${question.id} 没有标记认知任务类型。`
       })
     }
     if (question.explanation.length < 30) {
@@ -1008,10 +1201,30 @@ export function createKnowledgeQuiz(
   title: string,
   articleKind: KnowledgeQuizArticleKind
 ): KnowledgeQuizQuestion[] {
-  /** 人工题优先，其他课程使用正文证据生成。 */
-  const questions = CURATED_QUIZZES[articlePath] || createGeneratedQuiz(articlePath, markdown, title, articleKind)
+  /** 每篇可评测文章都从正文生成三道覆盖不同章节的基础题。 */
+  const generatedQuestions = createGeneratedQuiz(articlePath, markdown, title, articleKind)
+  /** 少数重点课程已有的人工场景题。 */
+  const curatedQuestions = CURATED_QUIZZES[articlePath] || []
+  /** 人工题作为加深理解的第四题，不替代全篇核心知识覆盖。 */
+  const questions = [...curatedQuestions, ...generatedQuestions].slice(0, MAX_QUIZ_QUESTION_COUNT)
   /** 构建期质量门发现的问题。 */
   const auditIssues = auditKnowledgeQuizQuestions(articlePath, articleKind, questions)
+  /** 文章显式声明、必须全部进入题组的核心知识点。 */
+  const declaredKnowledgeTopics = extractDeclaredKnowledgeTopics(markdown)
+  /** 当前题组明确覆盖的知识点。 */
+  const coveredKnowledgeTopics = new Set(
+    questions.flatMap((question) => question.knowledgePoints || []).map((knowledgePoint) => knowledgePoint.trim())
+  )
+  /** 仍未被任何题目覆盖的显式核心知识点。 */
+  const uncoveredKnowledgeTopics = declaredKnowledgeTopics.filter(
+    (knowledgeTopic) => !coveredKnowledgeTopics.has(knowledgeTopic)
+  )
+  if (uncoveredKnowledgeTopics.length > 0) {
+    auditIssues.push({
+      code: 'uncovered-declared-topic',
+      message: `${articlePath} 的题组未覆盖核心知识清单：${uncoveredKnowledgeTopics.join('、')}。`
+    })
+  }
 
   if (auditIssues.length > 0) {
     throw new Error(auditIssues.map((auditIssue) => auditIssue.message).join('\n'))

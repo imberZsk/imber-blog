@@ -39,6 +39,8 @@ export const dynamicParams = false
 export default async function MindmapPage({ params }: MindmapPageProps) {
   /** 当前 URL 中的思维导图标识。 */
   const { slug } = await params
+  /** 可在详情页直接切换的全部思维导图。 */
+  const mindmaps = getMindmaps()
   /** 已读取的思维导图及原始 Markdown。 */
   const mindmap = await getMindmap(slug)
 
@@ -46,5 +48,7 @@ export default async function MindmapPage({ params }: MindmapPageProps) {
     notFound()
   }
 
-  return <MindmapViewer markdown={mindmap.markdown} title={mindmap.title} />
+  return (
+    <MindmapViewer currentSlug={mindmap.slug} markdown={mindmap.markdown} mindmaps={mindmaps} title={mindmap.title} />
+  )
 }

@@ -1,0 +1,4 @@
+# Context7 提供外部库和框架的当前文档，供本项目的 Codex 客户端共享使用。
+[mcp_servers.context7]
+# 使用托管的 Streamable HTTP 服务，避免在仓库中保存个人 API Key。
+url = "https://mcp.context7.com/mcp"

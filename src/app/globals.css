@@ -395,6 +395,51 @@
     border-radius: 6px;
   }
 
+  .knowledge-code-sandbox-model-settings {
+    @apply border-border bg-muted/20 border-b p-4;
+  }
+
+  .knowledge-code-sandbox-model-settings-title {
+    @apply mb-3 flex items-center gap-2 text-sm font-semibold;
+  }
+
+  .knowledge-code-sandbox-model-settings-title svg {
+    @apply text-mint size-4 shrink-0;
+  }
+
+  .knowledge-code-sandbox-model-settings-title small {
+    @apply text-muted-foreground ml-auto text-[11px] font-normal;
+  }
+
+  .knowledge-code-sandbox-model-fields {
+    @apply grid gap-3 md:grid-cols-3;
+  }
+
+  .knowledge-code-sandbox-model-fields label,
+  .knowledge-code-sandbox-model-prompt {
+    @apply text-muted-foreground grid gap-1.5 text-xs font-medium;
+  }
+
+  .knowledge-code-sandbox-model-fields input,
+  .knowledge-code-sandbox-model-fields select,
+  .knowledge-code-sandbox-model-prompt textarea {
+    @apply border-border bg-background text-foreground focus-visible:ring-ring/20 w-full min-w-0 border px-3 text-sm outline-none focus-visible:ring-2;
+    border-radius: 6px;
+  }
+
+  .knowledge-code-sandbox-model-fields input,
+  .knowledge-code-sandbox-model-fields select {
+    @apply h-9;
+  }
+
+  .knowledge-code-sandbox-model-prompt {
+    @apply mt-3;
+  }
+
+  .knowledge-code-sandbox-model-prompt textarea {
+    @apply min-h-20 resize-y py-2 leading-5;
+  }
+
   .knowledge-code-sandbox-workspace {
     @apply grid min-w-0;
   }
@@ -553,6 +598,14 @@
 
     .knowledge-code-sandbox-actions button:not([aria-label]) {
       @apply flex-1;
+    }
+
+    .knowledge-code-sandbox-model-settings-title {
+      @apply flex-wrap;
+    }
+
+    .knowledge-code-sandbox-model-settings-title small {
+      @apply ml-0 w-full;
     }
 
     .knowledge-code-sandbox-preview {

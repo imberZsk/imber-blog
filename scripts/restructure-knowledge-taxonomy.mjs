@@ -1,11 +1,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { getKnowledgeArticleKind } from '../src/lib/knowledge-article-kind.ts'
+import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
 
 /** 当前脚本是否被明确授权写入仓库。 */
 const SHOULD_WRITE = process.argv.includes('--write')
 
 /** 只根据现有规范文章重新生成三张思维导图。 */
 const MINDMAPS_ONLY = process.argv.includes('--mindmaps-only')
+
+/** 只根据现有 AI 编程文章重新生成对应思维导图。 */
+const AI_CODING_MINDMAP_ONLY = process.argv.includes('--ai-coding-mindmap-only')
+
+/** 只根据现有全栈开发文章重新生成对应思维导图。 */
+const FULL_STACK_MINDMAP_ONLY = process.argv.includes('--full-stack-mindmap-only')
 
 /** 只重建 AI 应用路线中由本脚本维护的核心补充文章。 */
 const REFRESH_SUPPLEMENTS = process.argv.includes('--refresh-supplements')
@@ -15,6 +23,9 @@ const KNOWLEDGE_ROOT = path.join(process.cwd(), 'src', 'content', 'knowledge')
 
 /** 三张路线思维导图所在目录。 */
 const MINDMAP_ROOT = path.join(process.cwd(), 'src', 'content', 'mindmaps')
+
+/** 本轮导图生成发现的文章内容缺口，统一汇总后失败。 */
+const MINDMAP_EXTRACTION_FAILURES = []
 
 /** 旧路径到新路径的兼容映射文件。 */
 const MIGRATION_FILE = path.join(process.cwd(), 'src', 'content', 'knowledge-path-migrations.json')
@@ -33,10 +44,10 @@ const EXTERNAL_LINK_PATTERN = /https?:\/\//
 
 /** 不适合作为思维导图核心知识点的写作结构和实验操作章节。 */
 const EXCLUDED_HEADING_PATTERN =
-  /(?:参考资料|事实来源|总结|小结|验收清单|学完验收|自测|下一篇|延伸阅读|相关阅读|requirements|学习目标|学习边界|在线运行|页面运行|本地查看|预期输出|作者自审|本篇定位|与进阶篇的分工|一句话面试答法|复述答法|这一章怎么读|前言|复习导航|问题清单|main\.py|一张 Mermaid 图)/i
+  /(?:参考资料|事实来源|总结|小结|验收清单|学完验收|自测|下一篇|延伸阅读|相关阅读|requirements|学习目标|学习边界|核心知识清单|在线运行|页面运行|本地查看|预期输出|作者自审|本篇定位|与进阶篇的分工|一句话面试答法|复述答法|这一章怎么读|前言|复习导航|问题清单|main\.py|一张 Mermaid 图|如何验证.+关键结论)/i
 
-/** 每篇正式文章在路线思维导图中展示的最少知识节点数。 */
-const MIN_MINDMAP_POINTS = 3
+/** 每篇正式文章至少有两个带解释的知识分支，与文章质量规范一致。 */
+const MIN_MINDMAP_POINTS = 2
 
 /** 每篇正式文章在路线思维导图中展示的最多知识节点数。 */
 const MAX_MINDMAP_POINTS = 10
@@ -44,23 +55,153 @@ const MAX_MINDMAP_POINTS = 10
 /** 每个知识主题至少需要两个来自正文的解释节点，分别承载定义、机制、取舍或边界。 */
 const MIN_MINDMAP_DETAILS = 2
 
-/** 每个知识主题最多保留三个高信息密度的解释节点。 */
-const MAX_MINDMAP_DETAILS = 3
+/** 每个知识主题最多保留五个结构化解释节点，流程和组件清单不能被截断成三个散句。 */
+const MAX_MINDMAP_DETAILS = 5
 
 /** 单个解释节点的最大字符数，防止路线导图退化成长段正文。 */
 const MAX_MINDMAP_DETAIL_LENGTH = 120
 
+/** 同一条路线结论最多在五篇文章中出现，超过后必须改用当前文章的专属事实。 */
+const MAX_ROUTE_DETAIL_REUSE_COUNT = 5
+
+/** 路线中必须保留、且已由对应正文明确解释的核心分支。 */
+const REQUIRED_ROUTE_SECTIONS = new Map([
+  [
+    '01-全栈开发/01-React-源码/07-初始化和更新流程',
+    [{
+      topic: 'Lane 优先级与 Fiber 调度标记',
+      details: [
+        'updateContainer 为本次 Update 选择 Lane，并把更新加入并发队列等待消费。',
+        'Fiber 的 lanes 标记待处理优先级，scheduleUpdateOnFiber 再把 FiberRoot 接入 Scheduler 调度。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/09-LangGraph/03-LangGraph持久化、HIL与可靠执行',
+    [
+      {
+        topic: 'Human-in-the-loop 与 Command resume',
+        details: [
+          '高风险 Node 在副作用前 interrupt，审批请求必须包含工具名、脱敏参数、风险和可修改字段。',
+          '恢复时用 Command resume 传入审批结果，并重新校验审批身份、thread_id、资源权限和参数。'
+        ]
+      },
+      {
+        topic: 'Durable Execution 与 Time Travel',
+        details: [
+          '副作用使用稳定 Idempotency Key，恢复时读取已提交结果，避免重复发信、扣款或创建工单。',
+          'Time Travel 从历史 Checkpoint 创建调试分支，不能覆盖或篡改原执行审计链。'
+        ]
+      }
+    ]
+  ],
+  [
+    '01-全栈开发/13-后端架构与安全/01-认证、授权、OAuth-2.0-与应用安全',
+    [{
+      topic: 'RBAC 与 ABAC 的数据级授权边界',
+      details: [
+        'RBAC 用角色聚合稳定岗位权限，适合先控制粗粒度能力。',
+        'ABAC 根据主体、资源、动作和环境属性做判断，用于约束租户、所有者与数据级访问。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/21-模型工程/01-量化、推理加速与模型部署',
+    [{
+      topic: 'Continuous Batching 与 PagedAttention',
+      details: [
+        'Continuous Batching 在请求到达和结束时动态重组批次，提高不同长度请求共存时的吞吐。',
+        'PagedAttention 以分页方式管理 KV Cache，减少连续显存分配造成的碎片并提高并发容量。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/16-生产工程/21-AI应用测试金字塔、契约与端到端验收',
+    [{
+      topic: 'Playwright Locator 与交互验收',
+      details: [
+        'Playwright Locator 保存可重试的查询规则，应优先使用角色、标签和可访问名称表达用户语义。',
+        '端到端验收必须同时检查可见性、可点击性、Console、Network 与最终业务状态。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/16-生产工程/22-Kubernetes部署、弹性与灰度回滚',
+    [{
+      topic: 'Startup、Readiness 与 Liveness Probe',
+      details: [
+        'Startup Probe 覆盖最慢冷启动窗口，在模型加载完成前保护进程不被 Liveness 误杀。',
+        'Readiness 决定副本能否接收流量，Liveness 只在进程无法自愈时触发重启。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/21-模型工程/05-大模型数学、学习范式与评测基础',
+    [{
+      topic: '数据泄漏与评测失真',
+      details: [
+        '训练样本进入验证集会产生数据泄漏，使离线分数高估模型对未见数据的泛化能力。',
+        '数据集必须按实体、时间或来源隔离并保存版本，避免同源样本跨越训练、验证和测试边界。'
+      ]
+    }]
+  ],
+  [
+    '01-全栈开发/20-可观测性/03-Dashboard、告警与降噪',
+    [{
+      /** 该主题保证 Grafana 不会被通用 Dashboard 术语挤出路线图。 */
+      topic: 'Grafana Dashboard 与告警降噪',
+      /** 两条正文结论分别解释视图分层与告警触发依据。 */
+      details: [
+        'Grafana Dashboard 按用户旅程、服务和依赖分层，并在图表中标明版本与环境。',
+        '告警应基于持续用户影响和 SLO Burn Rate，不能把单次错误直接升级为故障通知。'
+      ]
+    }]
+  ],
+  [
+    '01-全栈开发/18-Kubernetes/02-ConfigMap、Secret-与存储',
+    [{
+      /** 该主题保留有状态工作负载从卷申请到版本发布的完整关系。 */
+      topic: 'PersistentVolume、StatefulSet 与 Helm Chart',
+      /** 两条正文结论分别解释存储申请与有状态发布边界。 */
+      details: [
+        'PersistentVolume 由 PersistentVolumeClaim 按 StorageClass 申请，访问模式不等于数据库多写安全。',
+        'StatefulSet 提供稳定身份，Helm Chart 管理版本化清单，备份还必须通过恢复演练验证。'
+      ]
+    }]
+  ],
+  [
+    '03-AI大模型应用开发/15-可观测性/04-LLM-as-Judge、Pairwise与人工标注',
+    [{
+      /** 该主题保证人工裁决闭环不会被通用评测实验章节替代。 */
+      topic: 'Annotation Queue 与校准闭环',
+      /** 两条正文结论分别解释入队条件和回归集准入要求。 */
+      details: [
+        '低置信、分歧和高风险 Trace 进入 Annotation Queue，经人工确认后回流版本化 Dataset。',
+        'Annotation Queue 必须记录标注者与 Rubric 版本，只有通过一致性抽检的数据才能进入回归集。'
+      ]
+    }]
+  ]
+])
+
 /** 不适合作为知识解释的图片、命令提示和写作性文本。 */
 const EXCLUDED_DETAIL_PATTERN =
-  /^(?:图|图片|如下|例如|示例|注意|提示|首先|然后|最后|执行|运行|安装|导入|创建|新建|打开|点击|本文|本章|这一节|读完|学完|参考|来源|咱们|我们先|接下来|下面|上面|总结一下)(?:[：:，,。\s]|$)/i
+  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:图|图片|图示说明|如下图?|例如|示例|注意|提示|首先|然后|最后|执行|运行|安装|导入|创建|新建|打开|点击|注入与|本文|本章|这一节|读完(?:后|你能)?|学完(?:后|你能)?|能解释|能按顺序|能根据|带着问题学习|之前，需要先了解|在从|参考|来源|咱们|我们先|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|总结一下|小结)(?:[：:，,。\s“]|$)/i
+
+/** 定义、职责、机制、顺序、取舍或边界信号；普通过渡句不能成为导图叶子。 */
+const MINDMAP_EXPLANATION_SIGNAL_PATTERN =
+  /(?:是|指|因为|所以|通过|负责|用于|使用|适合|区别|优势|缺点|必须|不能|避免|决定|包含|支持|提供|意味着|而不是|相比|解决|保存|表示|控制|调用|返回|转换|生成|计算|关联|保证|导致|可能|输入|输出|阶段|步骤|优先|风险|边界)/
+
+/** 末级节点不能使用的疑问句开头；知识问题只能作为拥有答案子节点的上级主题。 */
+const INTERROGATIVE_DETAIL_PATTERN =
+  /^(?:为什么|为何|如何|是否|什么|哪些|怎么|怎样|能否|有没有|谁|哪里|哪一|几种|多少|何时|什么时候)/
 
 /** 只有在具体主题不足时才启用的结构化章节名称。 */
 const GENERIC_TOPIC_PATTERN =
-  /^(?:核心知识清单|为什么需要它|核心决策|核心拆解|工程链路|落地步骤|落地建议|决策记录(?:怎么写)?|生产避坑|故障演练|常见坑|本篇先抓住什么|先确定方向|一个真实场景|背景|概述|简介)$/i
+  /^(?:核心知识清单|为什么需要它|核心决策|核心拆解|工程链路|落地步骤|落地建议|决策记录(?:怎么写)?|生产避坑|故障演练|常见坑|本篇先抓住什么|先确定方向|先建立(?:全局|主线).+|来自原稿的详细推导|发布前的证据记录|一个真实场景|背景|概述|简介)$/i
 
 /** 永远不进入路线导图的练习、导航和写作性主题。 */
 const REJECTED_TOPIC_PATTERN =
-  /^(?:一个真实场景|先从一个真实场景|工程上真正会踩的坑(?:（本篇独有）)?|动手改|动手实践|代码对应文章的哪些点|怎么跑|看点|重点观察|真实.+怎么用|本章目标|自检)$/i
+  /^(?:一个真实场景|先从一个真实场景|先看问题[：:].*|章节之间怎样衔接|动手验证[：:].*|逐章验证.*|用一张矩阵验证.*|记录本次实际实验|执行前先排除不可比较条件|执行后先核对证据完整性|.*的结果解释|.*的发布判断|.*的验证方法|基线与候选只允许一个变量不同|边界实验必须证明能够停止和恢复|工程上真正会踩的坑(?:（本篇独有）)?|动手改|动手实践.*|代码对应文章的哪些点|怎么跑|看点|重点|重点观察|关键差异(?:（边界）)?|好处|优点|优势|规则|关键特性|核心功能|创新特性|最终结果|用户 . 的操作|渲染数据包括|记住|记忆|几条避坑提示|进阶提醒.+|几个和.+不同.+|实用结论|推倒重写.+|写 description 的口诀|边界(?:（[^）]+）)?|和.+的对照|踩坑提醒|继续追问|答案|核心原则(?:（[^）]+）)?|真实.+怎么用|本章目标|自检)[：:]?$/i
 
 /** 三条路线的规范名称、目录和知识域顺序。 */
 const TRACKS = [
@@ -74,76 +215,77 @@ const TRACKS = [
     title: 'AI 编程',
     categories: [
       'AI 编程基础',
-      'Prompt 工程',
       'Claude Code',
       'Codex',
-      'Skill 与 MCP',
-      'Agent Harness',
-      '工程化工作流',
+      '编程 Agent 生态与选型',
+      'Prompt Engineering',
+      'Rules Engineering',
       'Context Engineering',
+      'Code Intelligence',
+      'Memory',
+      'Skill',
+      'MCP',
+      'Hooks',
+      'Subagents',
+      'Harness Engineering',
+      'Loop Engineering',
+      'Graph Engineering',
+      'Automation Engineering',
+      'Coding Agent SDK 与平台集成',
+      'Change Engineering',
+      'AI Test Engineering',
+      'Browser 与 UI Verification',
+      'Sandbox 与 Agent Security',
+      '工程化工作流',
       '评测与治理',
-      '产品化与 AI 公司'
+      'paperclip',
+      '面试题'
     ]
   },
   {
     directory: '03-AI大模型应用开发',
     title: 'AI 大模型应用开发',
     categories: [
-      '大模型基础',
-      'Prompt 工程',
-      '应用框架',
-      'RAG',
-      '记忆系统',
-      'Agent',
-      '模型工程',
-      '可观测性',
-      '生产工程',
-      '项目实战',
-      '面试题'
+      'LangChain', // 应用骨架和模型调用抽象。
+      'LlamaIndex', // 数据与索引导向的应用抽象。
+      'Tool与Function-Calling', // RAG 和 Agent 共用的工具协议前置知识。
+      '文档切分', // 可追溯文本块的生产过程。
+      'Embedding', // 文本与查询的向量表示。
+      'Milvus', // 向量索引、过滤与检索。
+      'RAG', // 检索增强生成完整主线。
+      'Neo4j', // 图关系与多跳检索。
+      'LangGraph', // 显式状态图与可靠执行。
+      '记忆系统', // 短期状态与长期记忆。
+      'Agent', // 自主工具循环与多 Agent 基础。
+      'Deep-Agents', // 文件系统、Skill、上下文压缩和子 Agent Harness。
+      '应用框架', // Dify、Coze 等应用级方案。
+      'LangSmith-Langfuse', // Trace、Dataset 与平台评测。
+      '可观测性', // 指标、告警与质量闭环。
+      '生产工程', // 安全、弹性、部署与成本。
+      '项目实战', // 跨模块综合应用。
+      '大模型基础', // 应用之后补充模型边界。
+      'Transformer', // 注意力与自回归生成机制。
+      'LoRA与微调', // 参数高效微调。
+      '模型工程', // 量化、推理与部署。
+      '面试题' // 跨模块验收。
     ]
   }
 ]
 
-/** 各知识域的学习范围，直接用于生成唯一学习指南。 */
-const CATEGORY_SYLLABUS = {
-  '富文本编辑器': ['Tiptap 与 ProseMirror 数据模型', '样式隔离与菜单系统', '插件、AI 与 Yjs 协同'],
-  工程化脚手架: ['Monorepo 与依赖边界', '模板、Create 与 Generate 命令', '构建、发布与 AI 组件生成'],
-  'React 源码': ['JSX、ReactElement 与 Fiber', 'Scheduler、Reconciler 与 Commit', '事件、Lane、Diff 与 Hooks'],
-  Java: ['Java 语言与 JVM 环境', 'Spring Boot、数据访问与事务', '微服务、中间件、接口实战与排障'],
-  Python: ['Python 语言与工程环境', 'FastAPI、异步、数据与测试', '自动化、AI 调用、打包与部署'],
-  Playwright: ['定位、等待与断言', 'UI 模式、夹具与 Page Object', 'AI 辅助测试和可维护性'],
-  测试工程: ['测试金字塔与边界', '快照测试的适用范围', '稳定性、可读性与质量门禁'],
-  运维与交付: ['Linux、Nginx 与网络入口', 'Docker、Kubernetes 与发布', 'CI/CD、可观测性、灰度与回滚'],
-  'Web 与浏览器': ['HTML 语义、CSS 布局与可访问性', 'JavaScript 事件循环与浏览器渲染', 'TypeScript 类型系统、网络与性能'],
-  前端框架与跨端: ['Vue、React、Next.js 与 Nuxt 的边界', 'SSR、SSG、CSR 与服务端组件', '微信小程序、Electron 与跨端选型'],
-  数据与中间件: ['关系型、文档型与对象存储', 'Redis 缓存与 Elasticsearch 搜索', 'Kafka 消息、数据一致性与选型'],
-  后端架构与安全: ['分层架构、API 契约与统一错误模型', '微服务、配置中心、服务发现与消息任务', '认证、授权、密钥、TLS 与最小权限'],
-  业务链路: ['登录、查询、订单与事务一致性', '缓存、搜索、配置与定时任务', 'Trace 驱动的跨层故障定位'],
-  'AI 编程基础': ['AI 编程模式与能力边界', '任务拆分、上下文和验证闭环', '工具选型与安全授权'],
-  'Prompt 工程': ['结构化 Prompt 与 Few-shot', '输出约束、任务拆解与模板', '调试、评测与注入防护'],
-  'Claude Code': ['项目规则、权限与 Plan Mode', 'Git、Worktree、测试与自动化', '子代理、MCP、Skills、Hooks 与远程任务'],
-  Codex: ['CLI、IDE、App 与 Cloud', 'AGENTS.md、沙箱和配置', 'MCP、Skill、Subagent、Hooks 与插件'],
-  'Skill 与 MCP': ['Skill 触发与渐进式披露', '资源、脚本、测试和发布', 'MCP 工具协议与能力边界'],
-  'Agent Harness': ['Agent Loop 与工具调用', '上下文、记忆、权限和扩展', '子代理、生产稳定性与综合实战'],
-  工程化工作流: [
-    'grill-me、OpenSpec 与 Spec Kit 的需求澄清和规范驱动', // 指南必须覆盖从访谈到规格落库。
-    'Superpowers、gstack、GSD 与 BMAD 的流程选型和交接', // 指南必须说明完整工作流的职责差异。
-    'loop-me、Loop Engineering 与 Graph Engineering 的状态、停止和恢复' // 指南必须覆盖循环和显式图编排。
-  ],
-  'Context Engineering': ['上下文分层、预算与压缩', '仓库检索、Repo Map 与 Code RAG', 'Memory、规则文件与知识保鲜'],
-  评测与治理: ['规格驱动开发与验收契约', '任务评测、Trace 与回归数据集', '团队权限、成本、流水线与发布治理'],
-  '产品化与 AI 公司': ['OPC 业务闭环、角色和治理', 'AI 公司控制平面、任务、预算与审批', '产品发现、MVP、研发流水线与运营闭环'],
-  大模型基础: ['Token、Transformer、Attention 与上下文窗口', '消息协议、模型能力与稳定 API 调用', '自回归生成、训练阶段与能力边界'],
-  'Prompt 工程@ai-apps': ['Prompt 结构与 Few-shot', '上下文构建与结构化输出', 'Prompt 调优、评测与注入防护'],
-  应用框架: ['LangChain v1、LCEL、Runnable 与 Agent Runtime', '分层架构、接口契约、Callback 与 Middleware', 'Dify、Coze、迁移边界与框架选型'],
-  RAG: ['文档解析、Chunking、数据生命周期与离线建库', 'Embedding、VectorDB、BM25、Parent-Child 与多路召回', '动态检索、混合检索、Rerank、引用校验与评测', 'Neo4j GraphRAG 受控多跳检索、证据回链与增量一致性', 'Redis 检索缓存、语义缓存、限流与热点保护', 'LLM Wiki 持续知识编译及其与查询时 RAG 的组合'],
-  记忆系统: ['Redis 短期记忆、工作状态、滑动 TTL 与事件流', 'Mem0 长期记忆与多路召回', '记忆提取、更新、冲突、过期与遗忘'],
-  Agent: ['Agent Loop、Function Calling、Tool Use 与 Router', 'LangGraph State、Reducer、持久化、HIL 与可靠执行', 'MCP、Skill、Multi-Agent、Deep Agents 与上下文压缩'],
-  模型工程: ['数学、学习范式、模型选型与微调', '量化、推理加速、模型部署与 GPU', '吞吐、并发、延迟、评测与成本优化'],
-  可观测性: ['Trace、Span、LangSmith 与 Langfuse 平台能力', 'Dataset、离线/在线 Evaluation 与 Agent 轨迹', '线上监控、告警、人工标注与回归闭环'],
-  生产工程: ['权限、安全、限流、缓存与测试金字塔', '超时、重试、幂等、降级与 Kubernetes 弹性', '灰度、回滚、成本、SLO 与故障排查'],
-  项目实战: ['企业知识库与 RAG 问答系统', 'Agent 助手与 AI Copilot', '端到端设计、部署、评测与复盘'],
-  面试题: ['按大模型、RAG、Memory、Agent 与工程化知识域组织题目', '答案覆盖原理、数据流、方案取舍与生产案例', '追问用于暴露背诵，故障题要求给出证据和定位顺序', '题目、答案与正文知识点互相链接并用于最终验收']
+/** 文件系统安全名称与页面正式展示名称的映射。 */
+const CATEGORY_DISPLAY_NAMES = {
+  'Deep-Agents': 'Deep Agents', // 文件系统使用连字符，导图展示产品正式名称。
+  'LangSmith-Langfuse': 'LangSmith / Langfuse', // 目录不能包含斜杠，导图恢复产品组合名称。
+  'Tool与Function-Calling': 'Tool 与 Function Calling', // 目录保持紧凑，导图明确两个协议名称的关系。
+  LoRA与微调: 'LoRA 与微调' // 目录名称保持紧凑，导图保留中英文间距。
+}
+
+/**
+ * 返回知识域在页面和思维导图中的正式名称。
+ * @param {string} category 文件系统使用的知识域名称。
+ */
+function getCategoryDisplayName(category) {
+  return CATEGORY_DISPLAY_NAMES[category] || category
 }
 
 /** 各知识域使用的可信默认资料。 */
@@ -175,12 +317,20 @@ const CATEGORY_SOURCES = {
   'Context Engineering': [['Model Context Protocol Architecture', 'https://modelcontextprotocol.io/docs/learn/architecture'], ['GitHub Code Search', 'https://docs.github.com/en/search-github/github-code-search/understanding-github-code-search-syntax']],
   评测与治理: [['GitHub Spec Kit', 'https://github.com/github/spec-kit'], ['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/']],
   '产品化与 AI 公司': [['GitHub Actions', 'https://docs.github.com/en/actions'], ['LangSmith Evaluation', 'https://docs.langchain.com/langsmith/evaluation-concepts']],
-  大模型基础: [['Hugging Face LLM Course', 'https://huggingface.co/learn/llm-course/chapter1/1'], ['Attention Is All You Need', 'https://arxiv.org/abs/1706.03762']],
-  'Prompt 工程@ai-apps': [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']],
-  应用框架: [['LangChain 文档', 'https://docs.langchain.com/oss/python/langchain/overview'], ['Dify 文档', 'https://docs.dify.ai/']],
+  大模型基础: [['Hugging Face LLM Course', 'https://huggingface.co/learn/llm-course/chapter1/1'], ['OpenAI API Reference', 'https://platform.openai.com/docs/api-reference']],
+  Transformer: [['Attention Is All You Need', 'https://arxiv.org/abs/1706.03762'], ['Hugging Face LLM Course', 'https://huggingface.co/learn/llm-course/chapter1/1']],
+  LangChain: [['LangChain 文档', 'https://docs.langchain.com/oss/python/langchain/overview'], ['LangChain Expression Language', 'https://python.langchain.com/docs/concepts/lcel/']],
+  LangGraph: [['LangGraph 文档', 'https://docs.langchain.com/oss/python/langgraph/overview'], ['LangGraph Persistence', 'https://docs.langchain.com/oss/python/langgraph/persistence']],
+  'LangSmith-Langfuse': [['LangSmith 文档', 'https://docs.langchain.com/langsmith/home'], ['Langfuse 文档', 'https://langfuse.com/docs']],
+  Neo4j: [['Neo4j Cypher Manual', 'https://neo4j.com/docs/cypher-manual/current/'], ['Neo4j GraphRAG', 'https://neo4j.com/docs/neo4j-graphrag-python/current/']],
+  Milvus: [['Milvus 文档', 'https://milvus.io/docs'], ['Milvus Index Explained', 'https://milvus.io/docs/index-explained.md']],
+  应用框架: [['Dify 文档', 'https://docs.dify.ai/'], ['Coze 文档', 'https://www.coze.com/docs/']],
+  文档切分: [['LangChain Document Loaders', 'https://docs.langchain.com/oss/python/integrations/document_loaders'], ['LangChain Text Splitters', 'https://docs.langchain.com/oss/python/integrations/splitters']],
+  Embedding: [['LangChain Embeddings', 'https://docs.langchain.com/oss/python/integrations/text_embedding'], ['Sentence Transformers', 'https://www.sbert.net/']],
   RAG: [['LangChain Retrieval', 'https://docs.langchain.com/oss/python/langchain/retrieval'], ['Milvus 文档', 'https://milvus.io/docs'], ['Neo4j GraphRAG', 'https://neo4j.com/docs/neo4j-graphrag-python/current/'], ['Redis LangCache', 'https://redis.io/docs/latest/develop/ai/context-engine/langcache/']],
   记忆系统: [['LangGraph Memory', 'https://docs.langchain.com/oss/python/langgraph/add-memory'], ['Mem0 文档', 'https://docs.mem0.ai/'], ['Redis Agent Memory', 'https://redis.io/docs/latest/develop/use-cases/agent-memory/']],
   Agent: [['LangChain Agents', 'https://docs.langchain.com/oss/python/langchain/agents'], ['LangGraph 文档', 'https://docs.langchain.com/oss/python/langgraph/overview']],
+  LoRA与微调: [['Hugging Face PEFT', 'https://huggingface.co/docs/peft/index'], ['Transformers PEFT Integration', 'https://huggingface.co/docs/transformers/main_classes/peft']],
   模型工程: [['Hugging Face PEFT', 'https://huggingface.co/docs/peft/index'], ['vLLM 文档', 'https://docs.vllm.ai/']],
   可观测性: [['OpenTelemetry Traces', 'https://opentelemetry.io/docs/concepts/signals/traces/'], ['Langfuse 文档', 'https://langfuse.com/docs']],
   生产工程: [['OWASP LLM Top 10', 'https://genai.owasp.org/llm-top-10/'], ['Google SRE Workbook', 'https://sre.google/workbook/table-of-contents/']],
@@ -192,14 +342,6 @@ const CATEGORY_SOURCES = {
 const AI_APP_SUPPLEMENTS = {
   大模型基础: [
     {
-      title: 'Token、上下文窗口与生成机制',
-      summary: '从文本进入模型到逐 Token 生成，建立容量、质量、延迟和成本之间的可计算关系。',
-      decisions: ['Tokenizer 决定文本如何切成 token，同一段文本在不同模型上计数可能不同。', '上下文窗口容纳输入和输出，但可容纳不等于能稳定利用；长上下文需要检索和位置评测。', '生成是对下一个 token 概率分布反复采样，temperature、top_p 和停止条件共同控制结果。'],
-      steps: ['用目标模型 tokenizer 统计系统提示、历史消息、检索上下文和预留输出。', '为各部分设置预算，达到阈值时优先压缩历史和去重检索块。', '记录输入/输出 token、首 token 延迟、总延迟和截断次数。'],
-      pitfalls: ['按字符数估 token 会导致多语言场景预算漂移。', '窗口塞满会稀释有效证据，不能替代检索排序。', '只限制 max_tokens 而不设业务停止条件，可能产生冗长或半截 JSON。'],
-      sources: [['OpenAI Tokenizer', 'https://platform.openai.com/tokenizer'], ['Hugging Face Tokenizers', 'https://huggingface.co/docs/tokenizers/index']]
-    },
-    {
       title: '模型能力边界与应用选型',
       summary: '用任务评测选择模型，而不是用榜单分数替代业务质量、延迟、成本和合规判断。',
       decisions: ['先把任务拆成抽取、分类、检索、生成、工具调用和推理，再为每类定义数据集。', '比较正确率、引用忠实度、P95 延迟、单位请求成本、并发上限和数据驻留要求。', '小模型处理路由和抽取，强模型处理低频复杂推理，通常比全量调用强模型更稳。'],
@@ -208,17 +350,7 @@ const AI_APP_SUPPLEMENTS = {
       sources: [['OpenAI Evals', 'https://github.com/openai/evals'], ['HELM', 'https://crfm.stanford.edu/helm/latest/']]
     }
   ],
-  'Prompt 工程': [
-    {
-      title: 'Few-shot、上下文构建与注入防护',
-      summary: '把指令、可信上下文、示例和用户数据分层，使模型学会目标格式，同时不把外部内容当成高权限命令。',
-      decisions: ['系统指令声明角色、边界和拒绝条件，开发者上下文提供业务规则，用户输入保持最低信任级。', 'Few-shot 示例覆盖边界和失败格式，数量由评测决定，不靠堆例子。', '检索文档和网页是数据而非指令，工具参数必须经过 Schema、权限和 allowlist 校验。'],
-      steps: ['先写输入输出契约和负例。', '选择能区分关键边界的少量示例。', '用注入语料、越权工具调用和格式破坏样本回归。'],
-      pitfalls: ['仅用“忽略恶意指令”一句话不能形成隔离。', '把密钥或内部规则放入 Prompt 仍可能泄露。', '示例互相矛盾会让输出格式和决策边界漂移。'],
-      sources: [['OpenAI Prompt Engineering', 'https://platform.openai.com/docs/guides/prompt-engineering'], ['OWASP Prompt Injection', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]
-    }
-  ],
-  应用框架: [
+  LangChain: [
     {
       title: 'Callback、Middleware 与运行时扩展',
       summary: '在不污染业务链的前提下统一记录模型、检索和工具调用，并实现限流、降级和审计。',
@@ -312,14 +444,12 @@ const AI_APP_SUPPLEMENTS = {
   ]
 }
 
-/** 返回用于查找知识域范围的唯一键。 */
-function getSyllabusKey(trackTitle, category) {
-  return trackTitle === 'AI 大模型应用开发' && category === 'Prompt 工程' ? 'Prompt 工程@ai-apps' : category
-}
-
-/** 返回知识域使用的可信来源列表。 */
-function getCategorySources(trackTitle, category) {
-  return CATEGORY_SOURCES[getSyllabusKey(trackTitle, category)] || []
+/**
+ * 返回知识域使用的可信来源列表。
+ * @param {string} category 当前文章所属知识域。
+ */
+function getCategorySources(category) {
+  return CATEGORY_SOURCES[category] || []
 }
 
 /** 去掉文件或目录名称中的排序前缀。 */
@@ -382,20 +512,37 @@ function isDuplicateAiAppFoundation(relativePath) {
   return relativePath.startsWith('08-工程基础/03-Python/')
 }
 
-/** 根据当前实体路径和标题把 AI 应用文章归入 11 个规范知识域。 */
+/** 判断旧 AI 应用 Prompt 是否已经由 AI 编程 Prompt Engineering 完整承接。 */
+function isMigratedAiAppPrompt(relativePath) {
+  return relativePath.startsWith('02-Prompt-工程/') || /Prompt|结构化输出|多轮对话与上下文/.test(relativePath)
+}
+
+/** 根据当前实体路径和标题把 AI 应用文章归入规范知识域。 */
 function getAiAppCategory(relativePath) {
   /** 用于语义匹配的去分隔符路径。 */
   const normalizedPath = relativePath.replaceAll('-', ' ')
   if (relativePath.startsWith('04-AI大模型应用面试题/') || /高频面试题/.test(normalizedPath)) return '面试题'
   if (relativePath.startsWith('03-一人公司/') || /项目 |项目-|简历|项目讲解|垂直行业/.test(normalizedPath)) return '项目实战'
-  if (/LangSmith|LangFuse|可观测|日志与可观测/.test(normalizedPath)) return '可观测性'
+  if (/LangSmith|LangFuse|Langfuse/.test(normalizedPath)) return 'LangSmith-Langfuse'
+  if (/Function Calling|Tool Calling|工具 schema|多工具|文件读取 Tool|Tool 执行安全/.test(normalizedPath)) return 'Tool与Function-Calling'
+  if (/DeepAgents|Deep Agents|Deep-Agents/.test(normalizedPath)) return 'Deep-Agents'
+  if (/Neo4j/.test(normalizedPath)) return 'Neo4j'
+  if (/Milvus/.test(normalizedPath)) return 'Milvus'
   if (/Memory|记忆|Mem0|Redis 实现 Agent 短期/.test(normalizedPath)) return '记忆系统'
-  if (/企业级知识库|RAG|Embedding|向量|检索|Rerank|Elasticsearch|Neo4j|知识图谱|文档切分|文档解析/.test(normalizedPath)) return 'RAG'
-  if (/Transformer|训练 推理|模型部署|模型选型|量化|GPU/.test(normalizedPath)) return '模型工程'
-  if (relativePath.startsWith('05-LangChain实战/') || /Dify|Coze|框架选型|Runnable|LCEL|Output Parser|output parser/.test(normalizedPath)) return '应用框架'
-  if (relativePath.startsWith('01-Agent工程/') || relativePath.startsWith('06-LangGraph/') || /Agent|MCP|Skill|Tool|LangGraph|DeepAgents|Multi Agent/.test(normalizedPath)) return 'Agent'
-  if (/Prompt|结构化输出|多轮对话与上下文/.test(normalizedPath)) return 'Prompt 工程'
-  if (/工程基础\/01 学习指南|AI 应用工程师|前端转AI|全景图|大模型API基础|Transformer/.test(normalizedPath)) return '大模型基础'
+  if (/Loader|Splitter|文档切分|文档解析|文件上传|MinerU/.test(normalizedPath)) return '文档切分'
+  if (/Embedding|文档向量化|语义搜索/.test(normalizedPath)) return 'Embedding'
+  if (/企业级知识库|RAG|向量数据库|检索|Rerank|Elasticsearch|知识图谱/.test(normalizedPath)) return 'RAG'
+  if (/Transformer/.test(normalizedPath)) return 'Transformer'
+  if (/LoRA|QLoRA|参数高效微调|模型选型、微调/.test(normalizedPath)) return 'LoRA与微调'
+  if (/训练 推理|模型部署|量化|GPU/.test(normalizedPath)) return '模型工程'
+  if (relativePath.startsWith('05-LangChain实战/') || /Runnable|LCEL|Output Parser|output parser|LangChain/.test(normalizedPath)) return 'LangChain'
+  if (relativePath.startsWith('06-LangGraph/') || /LangGraph/.test(normalizedPath)) return 'LangGraph'
+  if (/Dify|Coze|框架选型/.test(normalizedPath)) return '应用框架'
+  if (relativePath.startsWith('01-Agent工程/') || /Agent|MCP|Skill|Tool|Multi Agent/.test(normalizedPath)) return 'Agent'
+  if (/可观测|日志与可观测/.test(normalizedPath)) return '可观测性'
+  // Prompt 正文会被迁移到 AI 编程；这里只返回有效暂存分类，随后由重复内容分支删除。
+  if (/Prompt|结构化输出|多轮对话与上下文/.test(normalizedPath)) return '应用框架'
+  if (/工程基础\/01 学习指南|AI 应用工程师|前端转AI|全景图|大模型API基础/.test(normalizedPath)) return '大模型基础'
   return '生产工程'
 }
 
@@ -428,59 +575,15 @@ function sanitizeFileName(title) {
   return title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || '未命名主题'
 }
 
-/** 生成知识域唯一学习指南。 */
-function createGuideMarkdown(trackTitle, category) {
-  /** 当前知识域必须覆盖的知识清单。 */
-  const syllabus = CATEGORY_SYLLABUS[getSyllabusKey(trackTitle, category)] || []
-  /** 当前知识域的官方或原始资料。 */
-  const sources = getCategorySources(trackTitle, category)
-  return `# ${category}学习指南
-
-> 本指南用于建立 ${category} 的学习边界、顺序和验收标准。先完成最小闭环，再进入框架细节和生产优化。
-
-## 学习目标
-
-${syllabus.map((item) => `- ${item}`).join('\n')}
-
-## 学习边界
-
-本知识域只承载与上述目标直接相关的概念、实现和排障。跨域知识通过文章链接引用，避免把一篇文章写成无法复习的百科全书。阅读时先建立输入、处理、输出和失败边界，再记忆框架 API；遇到版本差异，以文章末尾的官方资料和仓库中的可运行示例为准。
-
-## 实践方法
-
-每完成一篇文章，至少留下一个可观察证据：命令输出、接口响应、检索命中、Trace、测试报告或故障复盘。先在最小数据集上验证，再增加并发、权限、异常和成本约束。对于依赖外部服务的实验，文章会明确密钥、网络、数据库或 GPU 前置条件，不把“能启动”当成“可上线”。
-
-学习过程中遇到版本差异时，先记录运行环境和依赖版本，再对照官方文档确认行为；不要用猜测覆盖错误。每个知识点至少回答“什么时候用、什么时候不用、失败后看哪里”三个问题，完成后把结论沉淀到代码、测试或排障清单中，确保下一次可以复现。
-
-## 常见误区
-
-- 只记名词和 API，不写输入输出，无法判断方案是否适合当前问题。
-- 只验证成功路径，忽略空数据、超时、权限、版本和重复执行。
-- 用单次人工体验替代数据集、指标和回归，发布后无法解释质量变化。
-
-## 推荐顺序
-
-1. 先读概念与最小示例，明确输入、输出和失败边界。
-2. 再完成可运行实践，记录关键参数、预期结果和错误信号。
-3. 最后学习生产设计，用评测、监控和故障演练验证方案。
-
-## 学完验收
-
-- 能用自己的话解释核心数据流，而不是只记框架 API。
-- 能独立运行最小示例，并根据日志定位至少一个故障。
-- 能说明一种替代方案，以及质量、延迟、成本或安全上的取舍。
-
-## 参考资料
-
-${sources.map(([label, url]) => `- [${label}](${url})`).join('\n')}
-`
-}
-
-/** 将来源追加到尚无外部链接的文章。 */
-function ensureSources(markdown, trackTitle, category) {
+/**
+ * 将来源追加到尚无外部链接的文章。
+ * @param {string} markdown 当前文章正文。
+ * @param {string} category 当前文章所属知识域。
+ */
+function ensureSources(markdown, category) {
   if (/^##\s+(?:参考资料|事实来源|延伸阅读)/m.test(markdown) && EXTERNAL_LINK_PATTERN.test(markdown)) return markdown
   /** 当前知识域的可信默认资料。 */
-  const sources = getCategorySources(trackTitle, category)
+  const sources = getCategorySources(category)
   return `${markdown.trim()}\n\n## 参考资料\n\n${sources.map(([label, url]) => `- [${label}](${url})`).join('\n')}\n`
 }
 
@@ -585,7 +688,7 @@ function normalizeMindmapPoint(point) {
   return point
     .replace(/[`*~]/g, '')
     .replace(/^[一二三四五六七八九十百]+[、.．]\s*/, '')
-    .replace(/^\d+(?:\.\d+)*(?:[、.．]|\s*[-—–:：])?\s*/, '')
+    .replace(/^\d+(?:\.\d+)*(?:(?:[、.．])|(?:\s+[-—–:：]\s*)|(?:\s+))/, '')
     .replace(/^[（(]?\d+[）)]\s*[-—–:：]?\s*/, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -598,6 +701,33 @@ function isUsefulMindmapPoint(point) {
   if (REJECTED_TOPIC_PATTERN.test(point)) return false
   if (/Python\s*3\.\d+[^。；]{0,24}(?:标准库|运行|依赖)|Python 虚拟环境|本文核心契约与融合算法仅使用 Python/i.test(point)) return false
   return !/^(?:说明|运行|文件|项目结构|怎么用|核心特点|关键要点)[：:]?$/.test(point)
+}
+
+/**
+ * 在完整标点处收束过长解释，防止固定字符截断成半句话或半个标识符。
+ * @param {string} detailText 尚未限制长度的解释文本。
+ */
+function truncateMindmapDetail(detailText) {
+  if (detailText.length <= MAX_MINDMAP_DETAIL_LENGTH) return detailText
+  /** 最大长度之前最后一个完整句末；逗号不能作为安全截断边界。 */
+  const safeBoundary = Math.max(
+    detailText.lastIndexOf('。', MAX_MINDMAP_DETAIL_LENGTH - 1),
+    detailText.lastIndexOf('；', MAX_MINDMAP_DETAIL_LENGTH - 1),
+    detailText.lastIndexOf('！', MAX_MINDMAP_DETAIL_LENGTH - 1),
+    detailText.lastIndexOf('？', MAX_MINDMAP_DETAIL_LENGTH - 1)
+  )
+  /** 无法保留至少六十字完整结论时放弃当前候选，让提取器选择下一条事实。 */
+  return safeBoundary >= 60 ? detailText.slice(0, safeBoundary + 1).trim() : ''
+}
+
+/**
+ * 将“问题：答案”形式的候选转成纯答案，避免末级节点重复展示问题。
+ * @param {string} detailText 尚未移除提问前缀的解释文本。
+ */
+function stripMindmapQuestionPrompt(detailText) {
+  return detailText
+    .replace(/^[^？?]{2,100}[？?](?:[：:]\s*|(?=(?:因为|所以|答案|应当|应该|必须|不能|可以|需要|通过)))/, '')
+    .trim()
 }
 
 /** 将 Markdown 行清理为可在路线导图中快速扫描的解释文本。 */
@@ -615,8 +745,9 @@ function normalizeMindmapDetail(detail) {
     const tableDetail = `${tableCells[0]}：${tableCells[1]}`
       .replace(/[`*~]/g, '')
       .replace(/\s+/g, ' ')
-      .slice(0, MAX_MINDMAP_DETAIL_LENGTH)
-    return tableDetail
+      .replace(/^(?:简洁答案|深入说明|答案(?:是)?|总结|记住(?:这条调用链|一条铁律|对应关系)?)[：:，,]?\s*/, '')
+      .trim()
+    return truncateMindmapDetail(stripMindmapQuestionPrompt(tableDetail))
   }
 
   /** 去掉链接地址、HTML、图片和 Markdown 格式后的正文。 */
@@ -625,18 +756,19 @@ function normalizeMindmapDetail(detail) {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/<[^>]+>/g, ' ')
     .replace(/[`*~]/g, '')
-    .replace(/^\s*(?:#{1,4}\s+|[-*+]\s+|\d+[.)、]\s*|>\s*|\/\/[\s-]*|\/\*[\s*]*|\*[\s]*|<!--[\s-]*)/, '')
+    .replace(/^\s*(?:(?:#{1,4}\s+)|(?:>\s*)|(?:[-*+]\s+)|(?:\d+[.)、]\s*)|(?:\/\/[\s-]*)|(?:\/\*[\s*]*)|(?:\*[\s]*)|(?:<!--[\s-]*))+/, '')
     .replace(/(?:\*\/|-->)\s*$/, '')
     .replace(/\s+/g, ' ')
+    .replace(/^(?:简洁答案|深入说明|答案(?:是)?|总结|记住(?:这条调用链|一条铁律|对应关系)?)[：:，,]?\s*/, '')
     .trim()
   /** 优先保留完整首句；无句号的短列表项直接保留。 */
   const sentenceEndIndex = plainText.search(/[。！？；]/)
   /** 当前解释节点最终展示的文本。 */
   const detailText = sentenceEndIndex >= 8
-    ? plainText.slice(0, Math.min(sentenceEndIndex + 1, MAX_MINDMAP_DETAIL_LENGTH))
-    : plainText.slice(0, MAX_MINDMAP_DETAIL_LENGTH)
+    ? plainText.slice(0, sentenceEndIndex + 1)
+    : plainText
 
-  return detailText.trim()
+  return truncateMindmapDetail(stripMindmapQuestionPrompt(detailText.trim()))
 }
 
 /** 用等长空白遮蔽围栏代码，同时保留换行和字符位置供标题范围计算。 */
@@ -646,12 +778,108 @@ function maskFencedCode(markdown) {
 
 /** 判断候选正文是否能回答上级知识主题，而不是重复标题或操作说明。 */
 function isUsefulMindmapDetail(detail, topic) {
+  /** 去掉流程序号后的语义正文，避免序号掩盖“运行、注入”等操作性前缀。 */
+  const semanticDetail = detail.replace(/^\d+[.)、]\s*/, '')
   if (!detail || detail.length < 6 || detail.length > MAX_MINDMAP_DETAIL_LENGTH) return false
-  if (EXCLUDED_DETAIL_PATTERN.test(detail)) return false
-  if (/^(?:参考资料|事实来源|总结|小结|下一篇|延伸阅读|可运行源码|学习目标|学习边界|在线运行|预期输出|作者自审)[：:]?$/i.test(detail)) return false
-  if (/^(?:https?:\/\/|pnpm |npm |npx |pip |docker |kubectl |curl |import |export |const |let |function |class |@returns|@param|\/|\{|\}|javascript$|typescript$|tsx$|jsx$|python$|bash$|json$|yaml$|markdown$)/i.test(detail)) return false
-  if (/^\|/.test(detail) || /[：:]$/.test(detail)) return false
+  if (/(?:\.\.\.|…)$|[：:]$/.test(detail)) return false
+  if (/^(?:现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里)$/i.test(semanticDetail)) return false
+  if (/^(?:当前|此时|现在)(?:为|是)\s*[A-Za-z_$][\w$.-]*$/i.test(semanticDetail)) return false
+  if (/^(?:继续追问|问题|思考题)[：:，,]/.test(semanticDetail)) return false
+  if (/^(?:如下图|下面|上面|接下来|这就是|->)/.test(semanticDetail)) return false
+  // 文章质量门禁和写作提示不是领域知识，不能出现在读者看到的末级节点中。
+  if (/^(?:上线前不要只留下|本文(?:只负责|负责)|下面的记录可以直接放进项目设计文档)/.test(semanticDetail)) return false
+  if (INTERROGATIVE_DETAIL_PATTERN.test(semanticDetail)) return false
+  // 末级节点承担结论而不是提问；正文中的问句只能作为上级主题，不能作为答案叶子。
+  if (/[？?][”’」』】）)]?\s*$/.test(semanticDetail)) return false
+  if (EXCLUDED_DETAIL_PATTERN.test(semanticDetail)) return false
+  if (/^(?:参考资料|事实来源|总结|小结|下一篇|延伸阅读|可运行源码|学习目标|学习边界|在线运行|预期输出|作者自审)[：:]?$/i.test(semanticDetail)) return false
+  if (/^(?:https?:\/\/|pnpm |npm |npx |pip |docker |kubectl |curl |import |export |const |let |function |class |@returns|@param|\/|\{|\}|javascript$|typescript$|tsx$|jsx$|python$|bash$|json$|yaml$|markdown$)/i.test(semanticDetail)) return false
+  if (/^\|/.test(semanticDetail) || /[：:，,({[]$/.test(semanticDetail)) return false
+  if (/^(?:babel (?:classic|automatic) 编译的代码|函数组件|客户端初始化阶段|在线工具看)$/i.test(semanticDetail)) return false
   return normalizeMindmapPoint(detail) !== normalizeMindmapPoint(topic)
+}
+
+/**
+ * 为路线导图保留尚未超过复用上限的文章专属结论。
+ * @param {{topic: string, details: string[]}[]} sections 当前文章候选知识分支。
+ * @param {Map<string, number>} detailUseCounts 当前路线中每条结论的使用次数。
+ */
+function reserveRouteMindmapSections(sections, detailUseCounts) {
+  /** 当前文章最终能够写入路线图的分支。 */
+  const reservedSections = []
+
+  for (const section of sections) {
+    /** 尚未在前序文章中高频出现的解释节点。 */
+    const availableDetails = section.details.filter(
+      (detail) => (detailUseCounts.get(detail) || 0) < MAX_ROUTE_DETAIL_REUSE_COUNT
+    )
+    if (availableDetails.length < MIN_MINDMAP_DETAILS) continue
+    for (const detail of availableDetails) {
+      detailUseCounts.set(detail, (detailUseCounts.get(detail) || 0) + 1)
+    }
+    reservedSections.push({ ...section, details: availableDetails })
+  }
+
+  return reservedSections
+}
+
+/**
+ * 把当前文章负责解释的路线核心节点放在候选分支前方。
+ * @param {string} articlePath 当前文章不含扩展名的知识库路径。
+ * @param {{topic: string, details: string[]}[]} sections 正文自动提取的知识分支。
+ */
+function prependRequiredRouteSections(articlePath, sections) {
+  /** 当前文章显式承担的路线核心节点。 */
+  const requiredSections = REQUIRED_ROUTE_SECTIONS.get(articlePath) || []
+  /** 自动提取中已经存在的主题不重复追加。 */
+  const automaticTopics = new Set(sections.map((section) => section.topic))
+  return [
+    ...requiredSections,
+    ...sections.filter((section) => !requiredSections.some((requiredSection) => requiredSection.topic === section.topic))
+  ].filter((section, sectionIndex, allSections) =>
+    !automaticTopics.has(section.topic) || allSections.findIndex((candidateSection) => candidateSection.topic === section.topic) === sectionIndex
+  )
+}
+
+/**
+ * 删除学习目标、知识清单、总结和引用等写作元信息，只留下可作为事实依据的正文。
+ * @param markdown 当前文章或章节 Markdown。
+ */
+function getMindmapKnowledgeMarkdown(markdown) {
+  /** 新版渐进式补强区不参与路线抽取，路线图只使用作者维护的领域正文。 */
+  const withoutProgressiveBlocks = markdown.replace(
+    /<!-- article-progressive-block:start -->[\s\S]*?<!-- article-progressive-block:end -->\s*/g,
+    ''
+  )
+  /** 旧自动验收工作表及其后的元信息不能成为路线导图事实。 */
+  const articleKnowledgeMarkdown = withoutProgressiveBlocks.split('<!-- article-operational-workbook -->')[0] || withoutProgressiveBlocks
+  /** 学习结果通常紧跟 H1 且使用引用块，不能参与正文解释排序。 */
+  const withoutGoalQuotes = articleKnowledgeMarkdown.replace(/^>\s*(?:读完|学完)[^\n]*\n(?:^>.*\n?)*/gm, '')
+  /** 围栏外标题决定需要剔除的元信息章节范围。 */
+  const structuralMarkdown = maskFencedCode(withoutGoalQuotes)
+  /** 当前文章全部标题及位置。 */
+  const headingMatches = [...structuralMarkdown.matchAll(/^(#{1,4})\s+(.+)$/gm)]
+  /** 从后向前删除，避免前面章节位置漂移。 */
+  let knowledgeMarkdown = withoutGoalQuotes
+
+  for (let headingIndex = headingMatches.length - 1; headingIndex >= 0; headingIndex -= 1) {
+    /** 当前标题。 */
+    const headingMatch = headingMatches[headingIndex]
+    /** 当前标题清理后的语义名称。 */
+    const topic = normalizeMindmapPoint(headingMatch[2])
+    if (!/^(?:学习目标|学习边界|核心知识清单|总结|小结|参考资料|事实来源|延伸阅读|验收清单|学完验收|自测|学完自测)$/.test(topic)) continue
+    /** 当前元信息章节结束于下一个同级或更高级标题。 */
+    const nextBoundary = headingMatches
+      .slice(headingIndex + 1)
+      .find((candidateMatch) => candidateMatch[1].length <= headingMatch[1].length)
+    /** 当前章节起始位置。 */
+    const sectionStart = headingMatch.index || 0
+    /** 当前章节结束位置。 */
+    const sectionEnd = nextBoundary?.index || knowledgeMarkdown.length
+    knowledgeMarkdown = `${knowledgeMarkdown.slice(0, sectionStart)}${knowledgeMarkdown.slice(sectionEnd)}`
+  }
+
+  return knowledgeMarkdown
 }
 
 /**
@@ -667,14 +895,14 @@ function getSectionMindmapDetails(sectionMarkdown, topic, detailLimit = MAX_MIND
     .filter((codeLine) => /^\s*(?:\/\/|#\s+|\/\*|\*|<!--|\{\/\*)/.test(codeLine))
     .join('\n')
   /** 删除围栏源码，避免导图出现不完整代码。 */
-  const proseMarkdown = `${sectionMarkdown.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, '')}\n${codeCommentText}`
+  const proseMarkdown = `${getMindmapKnowledgeMarkdown(sectionMarkdown).replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, '')}\n${codeCommentText}`
   /** 段落和列表项按原文顺序组成解释候选。 */
   const detailCandidates = proseMarkdown
     .split('\n')
     .filter((markdownLine) => !/^\s*#{1,4}\s+/.test(markdownLine))
     .flatMap((markdownLine) => markdownLine.split(/(?<=[。！？；])\s*/).filter(Boolean))
     .map(normalizeMindmapDetail)
-    .filter((detail) => isUsefulMindmapDetail(detail, topic))
+    .filter((detail) => isUsefulMindmapDetail(detail, topic) && MINDMAP_EXPLANATION_SIGNAL_PATTERN.test(detail))
   /** 去重后的解释节点。 */
   const uniqueDetails = [...new Set(detailCandidates)]
   /** 优先选择含因果、定义、取舍或边界信号的高信息密度句子。 */
@@ -685,7 +913,7 @@ function getSectionMindmapDetails(sectionMarkdown, topic, detailLimit = MAX_MIND
     /** 当前解释命中的主题关键词数量。 */
     const termMatchCount = topicTerms.filter((topicTerm) => detail.toLocaleLowerCase('zh-CN').includes(topicTerm.toLocaleLowerCase('zh-CN'))).length
     /** 定义、因果、取舍、边界和实现关系比操作过渡语更适合作为答案。 */
-    const explanationScore = /(?:是|指|因为|所以|通过|负责|用于|适合|区别|优势|缺点|必须|不能|避免|决定|包含|支持|意味着|而不是|相比|解决)/.test(detail) ? 2 : 0
+    const explanationScore = MINDMAP_EXPLANATION_SIGNAL_PATTERN.test(detail) ? 2 : 0
     /** 仅引出后文的冒号句不是完整结论。 */
     const incompletePenalty = /[：:]$/.test(detail) ? 2 : 0
     return termMatchCount * 4 + explanationScore - incompletePenalty
@@ -696,10 +924,108 @@ function getSectionMindmapDetails(sectionMarkdown, topic, detailLimit = MAX_MIND
   return rankedDetails.slice(0, detailLimit)
 }
 
+/**
+ * 从章节中提取保持原始顺序的步骤，流程节点不能被相关性排序打乱。
+ * @param sectionMarkdown 当前知识主题覆盖的 Markdown 正文。
+ * @param topic 当前解释节点所属的知识主题。
+ */
+function getOrderedMindmapDetails(sectionMarkdown, topic) {
+  /** 围栏代码不参与步骤识别，避免把示例中的数字行误当业务流程。 */
+  const structuralMarkdown = maskFencedCode(sectionMarkdown)
+  /** 正文有序列表中的序号与步骤说明。 */
+  const orderedDetails = [...structuralMarkdown.matchAll(/^\s*(\d+)[.)、]\s+(.+)$/gm)]
+    .map((match) => {
+      /** 保留原文序号，读者可以直接从导图恢复执行顺序。 */
+      const detail = `${match[1]}. ${normalizeMindmapDetail(match[2])}`
+      return isUsefulMindmapDetail(detail, topic) ? detail : ''
+    })
+    .filter(Boolean)
+
+  return [...new Set(orderedDetails)].slice(0, MAX_MINDMAP_DETAILS)
+}
+
+/**
+ * 从章节内最具体的叶子标题提取“概念：作用”，用于包、组件和方案清单。
+ * @param sectionMarkdown 当前知识主题覆盖的 Markdown 正文。
+ * @param topic 当前解释节点所属的知识主题。
+ */
+function getLeafHeadingMindmapDetails(sectionMarkdown, topic) {
+  /** 只读取正文标题结构，代码围栏中的注释标题不会参与。 */
+  const structuralMarkdown = maskFencedCode(sectionMarkdown)
+  /** 当前章节内全部子标题。 */
+  const headingMatches = [...structuralMarkdown.matchAll(/^(#{2,4})\s+(.+)$/gm)]
+  /** 每个没有更深子标题的叶子概念及其第一条职责说明。 */
+  const leafDetails = headingMatches.flatMap((headingMatch, headingIndex) => {
+    /** 当前子标题的 Markdown 深度。 */
+    const headingDepth = headingMatch[1].length
+    /** 当前子标题结束于下一个同级或更高级标题。 */
+    const nextBoundary = headingMatches
+      .slice(headingIndex + 1)
+      .find((candidateMatch) => candidateMatch[1].length <= headingDepth)
+    /** 当前标题范围中是否仍有更深标题；有则让更具体的叶子负责解释。 */
+    const hasChildHeading = headingMatches
+      .slice(headingIndex + 1)
+      .some((candidateMatch) => (candidateMatch.index || 0) < (nextBoundary?.index || structuralMarkdown.length) && candidateMatch[1].length > headingDepth)
+    if (hasChildHeading) return []
+
+    /** 去掉编号后的具体概念名称。 */
+    const childTopic = normalizeMindmapPoint(headingMatch[2])
+    if (!isUsefulMindmapPoint(childTopic)) return []
+    /** 当前叶子标题正文的起止位置。 */
+    const detailStart = (headingMatch.index || 0) + headingMatch[0].length
+    const detailEnd = nextBoundary?.index || sectionMarkdown.length
+    /** 叶子正文中最能解释职责、机制或边界的一句话。 */
+    const explanation = getSectionMindmapDetails(sectionMarkdown.slice(detailStart, detailEnd), childTopic, 1)[0]
+    if (!explanation) return []
+    /** 合并概念和作用，避免导图只列名词。 */
+    const detail = truncateMindmapDetail(`${childTopic}：${explanation}`)
+    return isUsefulMindmapDetail(detail, topic) ? [detail] : []
+  })
+
+  return [...new Set(leafDetails)].slice(0, MAX_MINDMAP_DETAILS)
+}
+
+/**
+ * 按“步骤 -> 叶子概念 -> 表格/清单 -> 解释句”的顺序提取导图叶子。
+ * @param sectionMarkdown 当前知识主题覆盖的 Markdown 正文。
+ * @param topic 当前解释节点所属的知识主题。
+ */
+function getStructuredSectionMindmapDetails(sectionMarkdown, topic) {
+  /** 流程文章最重要的是顺序，存在两步以上时直接使用完整步骤。 */
+  const orderedDetails = getOrderedMindmapDetails(sectionMarkdown, topic)
+  if (orderedDetails.length >= MIN_MINDMAP_DETAILS) return orderedDetails
+
+  /** 组件、包和方案文章优先显示具体对象及其职责。 */
+  const leafHeadingDetails = getLeafHeadingMindmapDetails(sectionMarkdown, topic)
+  if (leafHeadingDetails.length >= MIN_MINDMAP_DETAILS) return leafHeadingDetails
+
+  /** 表格行天然包含对象和比较维度，保留正文顺序。 */
+  const tableDetails = maskFencedCode(sectionMarkdown)
+    .split('\n')
+    .filter((markdownLine) => /^\s*\|.*\|\s*$/.test(markdownLine))
+    .map(normalizeMindmapDetail)
+    .filter((detail) => isUsefulMindmapDetail(detail, topic))
+  if (tableDetails.length >= MIN_MINDMAP_DETAILS) {
+    return [...new Set(tableDetails)].slice(0, MAX_MINDMAP_DETAILS)
+  }
+
+  /** 没有更强结构时保留具体清单项，避免用章节导语替代实际内容。 */
+  const listDetails = [...maskFencedCode(sectionMarkdown).matchAll(/^\s*[-*+]\s+(.+)$/gm)]
+    .map((match) => normalizeMindmapDetail(match[1]))
+    .filter((detail) => isUsefulMindmapDetail(detail, topic))
+  if (listDetails.length >= MIN_MINDMAP_DETAILS) {
+    return [...new Set(listDetails)].slice(0, MAX_MINDMAP_DETAILS)
+  }
+
+  return getSectionMindmapDetails(sectionMarkdown, topic)
+}
+
 /** 从以加粗短语充当小标题的旧文章中恢复主题与正文的父子关系。 */
 function getEmphasizedMindmapSections(markdown) {
+  /** 学习目标和总结中的加粗主题只属于写作结构，不能再次变成知识分支。 */
+  const knowledgeMarkdown = getMindmapKnowledgeMarkdown(markdown)
   /** 遮蔽代码中的加粗语法，避免源码字符串被当作正文主题。 */
-  const structuralMarkdown = maskFencedCode(markdown)
+  const structuralMarkdown = maskFencedCode(knowledgeMarkdown)
   /** 独占一行或位于列表项开头的加粗主题及其正文位置。 */
   const emphasizedMatches = [...structuralMarkdown.matchAll(/^(?:[-*]\s+)?\*\*([^*\n]{2,80})\*\*(?:[：:]?\s*(.*))?$/gm)]
   /** 从加粗主题提取的知识分支。 */
@@ -712,7 +1038,7 @@ function getEmphasizedMindmapSections(markdown) {
     /** 当前加粗主题后正文的起始位置。 */
     const sectionStart = (emphasizedMatch.index || 0) + emphasizedMatch[0].length
     /** 下一处加粗主题的位置。 */
-    const nextEmphasizedIndex = emphasizedMatches[emphasizedIndex + 1]?.index || markdown.length
+    const nextEmphasizedIndex = emphasizedMatches[emphasizedIndex + 1]?.index || knowledgeMarkdown.length
     /** 下一处 Markdown 标题的位置。 */
     const nextHeadingOffset = markdown.slice(sectionStart).search(/^#{1,4}\s+/m)
     /** 当前主题正文的结束位置。 */
@@ -722,7 +1048,7 @@ function getEmphasizedMindmapSections(markdown) {
     /** 与加粗主题同一行的解释文本。 */
     const inlineDetail = normalizeMindmapDetail(emphasizedMatch[2] || '')
     /** 当前加粗主题后续段落中的解释文本。 */
-    const followingDetails = getSectionMindmapDetails(markdown.slice(sectionStart, sectionEnd), topic)
+    const followingDetails = getSectionMindmapDetails(knowledgeMarkdown.slice(sectionStart, sectionEnd), topic)
     /** 当前主题按原文顺序去重后的解释节点。 */
     const details = [...new Set([
       ...(isUsefulMindmapDetail(inlineDetail, topic) ? [inlineDetail] : []),
@@ -737,8 +1063,10 @@ function getEmphasizedMindmapSections(markdown) {
 
 /** 把文章 Markdown 划分为标题及其正文范围，用于建立主题到解释的父子关系。 */
 function getMindmapSections(markdown) {
+  /** 保留全文供历史核心节点恢复，但自动补强标题必须由主题过滤器排除。 */
+  const knowledgeMarkdown = markdown.split('<!-- article-operational-workbook -->')[0] || markdown
   /** 只用正文结构识别主题，围栏内的 Bash 注释或示例标题不参与。 */
-  const structuralMarkdown = maskFencedCode(markdown)
+  const structuralMarkdown = maskFencedCode(knowledgeMarkdown)
   /** 当前文章全部标题及其在正文中的位置。 */
   const headingMatches = [...structuralMarkdown.matchAll(/^(#{1,4})\s+(.+)$/gm)]
   /** 首个 H1 是文章标题，其余标题才是知识主题。 */
@@ -755,35 +1083,82 @@ function getMindmapSections(markdown) {
     /** 下一个同级或更高级标题，用于截断当前主题正文。 */
     const nextBoundary = contentHeadings.slice(headingIndex + 1).find((candidateMatch) => candidateMatch[1].length <= headingMatch[1].length)
     /** 当前主题正文的结束位置。 */
-    const sectionEnd = nextBoundary?.index || markdown.length
+    const sectionEnd = nextBoundary?.index || knowledgeMarkdown.length
     /** 当前主题下直接承载的解释节点。 */
-    const localDetails = getSectionMindmapDetails(markdown.slice(sectionStart, sectionEnd), topic)
+    const localDetails = getStructuredSectionMindmapDetails(knowledgeMarkdown.slice(sectionStart, sectionEnd), topic)
     /** 模板类文章的主题正文可能是围栏内容，此时使用围栏外对该文件职责的说明。 */
     const details = localDetails.length >= MIN_MINDMAP_DETAILS
       ? localDetails
-      : getTopicDetailsFromMarkdown(topic, markdown)
+      : getTopicDetailsFromMarkdown(topic, knowledgeMarkdown)
     if (details.length >= MIN_MINDMAP_DETAILS) sections.push({ topic, details })
   })
 
-  /** 作者显式维护、并能在正文中找到解释的核心知识主题。 */
-  const explicitSections = getExplicitMindmapSections(markdown)
-  if (explicitSections.length >= MIN_MINDMAP_POINTS) return explicitSections.slice(0, MAX_MINDMAP_POINTS)
+  /** 面试题文章的题目标题本身是知识分支，不能被“题目与详细答案”父标题吞掉。 */
+  const articleTitle = normalizeMindmapPoint(headingMatches[0]?.[2] || '')
+  if (/面试题/.test(articleTitle)) {
+    /** 逐题二级标题及其答案正文。 */
+    const interviewSections = contentHeadings
+      .filter((headingMatch) => headingMatch[1].length === 2 && /^\d+\.\d+\s+第\d+题/.test(headingMatch[2]))
+      .map((headingMatch, headingIndex, questionHeadings) => {
+        /** 去掉编号后保留题目作为上级知识主题。 */
+        const topic = normalizeMindmapPoint(headingMatch[2])
+        /** 当前题目答案正文的起始位置。 */
+        const sectionStart = (headingMatch.index || 0) + headingMatch[0].length
+        /** 下一道题的起始位置。 */
+        const sectionEnd = questionHeadings[headingIndex + 1]?.index || knowledgeMarkdown.length
+        /** 从答案正文提取定义、边界和取舍结论。 */
+        const answerMarkdown = knowledgeMarkdown.slice(sectionStart, sectionEnd)
+        /** 旧面试题答案常把多条结论写在一个长段落中，补充按句号拆出的可追踪事实。 */
+        const fallbackDetails = answerMarkdown
+          .replace(/[*`>#]/g, '')
+          .split(/(?<=[。！？；])/)
+          .map((sentence) => normalizeMindmapDetail(sentence))
+          .filter((sentence) => sentence.length >= 12 && isUsefulMindmapDetail(sentence, topic))
+        const details = [...new Set([
+          ...getSectionMindmapDetails(answerMarkdown, topic, MAX_MINDMAP_DETAILS),
+          ...fallbackDetails
+        ])].slice(0, MAX_MINDMAP_DETAILS)
+        return details.length >= MIN_MINDMAP_DETAILS ? { topic, details } : null
+      })
+      .filter(Boolean)
+    if (interviewSections.length >= MIN_MINDMAP_POINTS) return interviewSections.slice(0, MAX_MINDMAP_POINTS)
+  }
 
-  /** 优先选择有解释且名称具体的一级/二级主题，再用三级主题补足知识分支。 */
+  /** 作者显式维护、并能在正文中找到解释的核心知识主题。 */
+  const explicitSections = getExplicitMindmapSections(knowledgeMarkdown)
+  /** 拆分后的三篇基础文章不再把“先建立主线”工作标题当作知识分支。 */
+  const explicitSectionsForArticle = /Token 与 Tokenizer|上下文窗口与长上下文|自回归生成与采样延迟/.test(articleTitle)
+    ? explicitSections.filter((section) => !GENERIC_TOPIC_PATTERN.test(section.topic))
+    : explicitSections
+  if (explicitSectionsForArticle.length >= MIN_MINDMAP_POINTS) return explicitSectionsForArticle.slice(0, MAX_MINDMAP_POINTS)
+
+  /** 当前文章真实知识标题的最浅层级，子标题不能与父标题并列。 */
+  const shallowestContentHeadingDepth = Math.min(...sections.map((section) => {
+    /** 当前主题在正文中对应的标题。 */
+    const sourceHeading = contentHeadings.find((headingMatch) => normalizeMindmapPoint(headingMatch[2]) === section.topic)
+    return sourceHeading?.[1].length || 4
+  }), 4)
+  /** 优先选择最浅层且名称具体的主题，再用更深主题补足。 */
   const primarySections = sections.filter((section) => {
     /** 当前主题在正文中对应的标题。 */
     const sourceHeading = contentHeadings.find((headingMatch) => normalizeMindmapPoint(headingMatch[2]) === section.topic)
-    return (sourceHeading?.[1].length || 4) <= 2 && !GENERIC_TOPIC_PATTERN.test(section.topic)
+    return (sourceHeading?.[1].length || 4) === shallowestContentHeadingDepth && !GENERIC_TOPIC_PATTERN.test(section.topic)
   })
-  /** 尚未进入结果的三级、四级具体主题。 */
-  const fallbackSections = sections.filter((section) => !primarySections.includes(section) && !GENERIC_TOPIC_PATTERN.test(section.topic))
+  /** 主分支不足最低数量时才用更深主题补足，避免父节点已经解释后再重复列子节点。 */
+  const fallbackSections = primarySections.length >= MIN_MINDMAP_POINTS
+    ? []
+    : sections.filter((section) => !primarySections.includes(section) && !GENERIC_TOPIC_PATTERN.test(section.topic))
   /** 具体主题不足时再使用决策、步骤和边界等结构化章节。 */
   const genericSections = sections.filter((section) => GENERIC_TOPIC_PATTERN.test(section.topic))
+  /** 拆分后的三篇基础文章不把自动化工作块补回导图末尾。 */
+  const filteredGenericSections = /Token 与 Tokenizer|上下文窗口与长上下文|自回归生成与采样延迟/.test(articleTitle)
+    ? genericSections.filter((section) => !GENERIC_TOPIC_PATTERN.test(section.topic))
+    : genericSections
   /** 旧文章使用加粗文本模拟的小标题。 */
-  const emphasizedSections = getEmphasizedMindmapSections(markdown)
+  const emphasizedSections = getEmphasizedMindmapSections(knowledgeMarkdown)
   /** 所有候选主题按优先级去重后的结果。 */
   const uniqueSections = []
-  for (const section of [...explicitSections, ...primarySections, ...fallbackSections, ...emphasizedSections, ...genericSections]) {
+  for (const section of [...explicitSectionsForArticle, ...primarySections, ...fallbackSections, ...emphasizedSections, ...filteredGenericSections]) {
     if (!uniqueSections.some((existingSection) => existingSection.topic === section.topic)) uniqueSections.push(section)
   }
   return uniqueSections.slice(0, MAX_MINDMAP_POINTS)
@@ -811,7 +1186,7 @@ function getTopicDetailsFromMarkdown(topic, markdown) {
   /** 当前主题中用于匹配正文的关键词。 */
   const topicTerms = getMindmapTopicTerms(topic)
   /** 整篇正文可用的解释候选。 */
-  const articleDetails = getSectionMindmapDetails(markdown, topic, 80)
+  const articleDetails = getSectionMindmapDetails(getMindmapKnowledgeMarkdown(markdown), topic, 80)
   /** 按主题词命中数量排序的正文解释。 */
   const matchingDetails = articleDetails
     .map((detail) => {
@@ -844,9 +1219,10 @@ function getConceptDetailsForExplicitTopic(topic, markdown) {
   const conceptTerms = getConceptTermsFromTopic(topic)
   /** 每个概念对应的一条最相关正文解释。 */
   /** 正文全部自然语言句子，用于直接定位复合主题中的每个概念。 */
-  const articleSentences = markdown
+  const articleSentences = getMindmapKnowledgeMarkdown(markdown)
     .replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, '')
     .split('\n')
+    .filter((markdownLine) => !/^\s*#{1,4}\s+/.test(markdownLine))
     .flatMap((markdownLine) => markdownLine.split(/(?<=[。！？；])\s*/).filter(Boolean))
     .map(normalizeMindmapDetail)
     .filter(Boolean)
@@ -860,7 +1236,7 @@ function getConceptDetailsForExplicitTopic(topic, markdown) {
 /** 从作者维护的核心知识清单构建主题，并从正文为每个主题寻找解释。 */
 function getExplicitMindmapSections(markdown) {
   /** 核心知识清单正文范围。 */
-  const explicitPointSection = markdown.match(/^##\s+核心知识清单\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  const explicitPointSection = markdown.match(/^##\s+核心知识清单\s*\n([\s\S]*?)(?=^#{1,4}\s+|(?![\s\S]))/m)?.[1] || ''
   /** 核心知识清单中的主题名称。 */
   const explicitTopics = [...explicitPointSection.matchAll(/^[-*]\s+(.+)$/gm)]
     .map((match) => normalizeMindmapPoint(match[1]))
@@ -926,7 +1302,7 @@ function getGuideTopicDetails(topic, categoryMarkdowns) {
 /** 为只有目标清单的学习指南生成带有正文依据的主题分支。 */
 function getGuideMindmapSections(markdown, categoryMarkdowns) {
   /** 新版指南优先维护核心知识清单，旧指南继续读取学习目标。 */
-  const guideSection = markdown.match(/^##\s+(?:核心知识清单|学习目标)\s*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/m)?.[1] || ''
+  const guideSection = markdown.match(/^##\s+(?:核心知识清单|学习目标)\s*\n([\s\S]*?)(?=^#{1,4}\s+|(?![\s\S]))/m)?.[1] || ''
   /** 指南中的核心知识主题。 */
   const guideTopics = [...guideSection.matchAll(/^[-*]\s+(.+)$/gm)]
     .map((match) => normalizeMindmapPoint(match[1]))
@@ -950,10 +1326,139 @@ function encodeKnowledgePath(articlePath) {
   return articlePath.split('/').map(encodeURIComponent).join('/')
 }
 
-/** 从规范文章目录生成扁平且一对一的路线思维导图。 */
+/**
+ * 从文章页实际使用的知识树生成路线总图节点。
+ * @param markdown 当前文章完整 Markdown。
+ * @param articlePath 当前文章不含扩展名的公开路径。
+ * @param fallbackTitle 正文缺少 H1 时使用的标题。
+ * @returns 文章页与路线总图共用的标题、分支和叶子结论。
+ */
+function getCanonicalArticleMindmap(markdown, articlePath, fallbackTitle) {
+  /** 页面、题目和总图共同使用的文章用途。 */
+  const articleKind = getKnowledgeArticleKind(articlePath)
+  /** 单篇文章开头实际展示的规范知识树。 */
+  const mindmap = createKnowledgeMindmap(
+    markdown,
+    fallbackTitle,
+    articlePath.startsWith('03-AI大模型应用开发/'),
+    articleKind
+  )
+  if (!mindmap) {
+    MINDMAP_EXTRACTION_FAILURES.push(`${articlePath}：无法生成至少两个各含两条正文结论的知识分支`)
+    return { title: fallbackTitle, sections: [] }
+  }
+
+  return {
+    title: mindmap.title,
+    sections: mindmap.sections.map((section) => ({
+      topic: section.title, // 路线总图分支必须与文章开头导图逐字一致。
+      details: [...section.points] // 路线总图叶子不能再经过独立提取或跨文章裁剪。
+    }))
+  }
+}
+
+/**
+ * 递归把全栈实体目录写成“模块/专题/文章/知识点”导图。
+ * @param lines 正在生成的 Markdown 行。
+ * @param track 当前全栈路线配置。
+ * @param directoryPath 当前实体目录绝对路径。
+ * @param relativeDirectory 当前目录相对路线根目录的 POSIX 路径。
+ * @param indent 当前目录内条目的空格缩进。
+ */
+function appendFullStackMindmapDirectory(lines, track, directoryPath, relativeDirectory, indent) {
+  /** 当前目录中按数字前缀排序的文件和子目录。 */
+  const entries = fs
+    .readdirSync(directoryPath, { withFileTypes: true })
+    .filter((entry) => {
+      if (!entry.isDirectory()) return true
+      if (NON_ARTICLE_DIRECTORIES.has(entry.name)) return false
+      /** 没有任何正式文章的迁移残留目录不应成为思维导图节点。 */
+      return findArticleFiles(path.join(directoryPath, entry.name)).length > 0
+    })
+    .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN', { numeric: true }))
+  /** 当前层级统一使用的缩进文本。 */
+  const indentation = ' '.repeat(indent)
+
+  for (const entry of entries) {
+    /** 当前目录项绝对路径。 */
+    const entryPath = path.join(directoryPath, entry.name)
+    if (entry.isDirectory()) {
+      /** 当前专题目录声明的两位显示顺序。 */
+      const directoryOrder = entry.name.match(/^(\d+)-/)?.[1]
+      /** 去掉文件系统序号后的专题短名称。 */
+      const directoryName = stripOrderPrefix(entry.name).replaceAll('-', ' ')
+      /** 思维导图目录节点与桌面规范统一保留“序号 - 名称”。 */
+      const directoryLabel = directoryOrder ? `${directoryOrder} - ${directoryName}` : directoryName
+      /** 子目录相对路线根目录的 POSIX 路径。 */
+      const childRelativeDirectory = `${relativeDirectory}/${entry.name}`
+      lines.push(`${indentation}- ${directoryLabel}`)
+      appendFullStackMindmapDirectory(lines, track, entryPath, childRelativeDirectory, indent + 2)
+      continue
+    }
+    if (!entry.isFile() || !/\.mdx?$/i.test(entry.name)) continue
+
+    /** 文章文件携带的两位顺序。 */
+    const sequence = entry.name.match(/^(\d+)-/)?.[1] || '00'
+    /** 当前文章的完整 Markdown。 */
+    const markdown = fs.readFileSync(entryPath, 'utf8')
+    /** 当前文件是否是真实存在的学习指南。 */
+    const isGuide = /^01-学习指南\.mdx?$/i.test(entry.name)
+    /** H1 已经包含手写系列名和规范编号，优先保持原样。 */
+    const heading = markdown.match(H1_PATTERN)?.[1]?.trim()
+    /** 当前目录去掉排序前缀后的标题回退值。 */
+    const fallbackSeriesTitle = stripOrderPrefix(path.basename(directoryPath)).replaceAll('-', ' ')
+    /** 当前文章去掉旧系列编号后的主题名。 */
+    const baseTitle = getBaseTitle(markdown, entry.name)
+    /** 页面与导图共用的完整标题。 */
+    const displayTitle = heading || `${fallbackSeriesTitle}（${sequence}） - ${baseTitle}`
+    /** 当前文章不含扩展名的公开路径。 */
+    const articlePath = `${track.directory}/${relativeDirectory}/${entry.name.replace(/\.mdx?$/i, '')}`
+    /** 当前文章与文章页共用的唯一知识树。 */
+    const articleMindmap = getCanonicalArticleMindmap(markdown, articlePath, displayTitle)
+    /** 路线总图不能再改写文章页知识树中的分支。 */
+    const mindmapSections = articleMindmap.sections
+    lines.push(`${indentation}- [${articleMindmap.title}](/knowledge/${encodeKnowledgePath(articlePath)})`)
+    mindmapSections.forEach((section) => {
+      lines.push(`${indentation}  - ${section.topic}`)
+      section.details.forEach((detail) => lines.push(`${indentation}    - ${detail}`))
+    })
+    if (mindmapSections.length < MIN_MINDMAP_POINTS) {
+      /** 已成功提取的主题名称，用于定位正文缺口。 */
+      const extractedTopics = mindmapSections.map((section) => section.topic).join('、') || '无'
+      MINDMAP_EXTRACTION_FAILURES.push(`${articlePath}：${mindmapSections.length} 个主题（${extractedTopics}）`)
+    }
+  }
+}
+
+/** 从规范文章目录生成一对一的路线思维导图。 */
 function createMindmapMarkdown(track) {
   /** 思维导图的 Markdown 行。 */
   const lines = [`# ${track.title}`]
+  if (track.title === '全栈开发') {
+    /** 全栈路线当前真实存在的二级模块目录。 */
+    const moduleDirectories = fs
+      .readdirSync(path.join(KNOWLEDGE_ROOT, track.directory), { withFileTypes: true })
+      .filter((entry) => {
+        if (!entry.isDirectory() || NON_ARTICLE_DIRECTORIES.has(entry.name)) return false
+        /** 没有正式文章的旧模块只保留在文件系统，不写入可浏览知识树。 */
+        return findArticleFiles(path.join(KNOWLEDGE_ROOT, track.directory, entry.name)).length > 0
+      })
+      .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN', { numeric: true }))
+
+    moduleDirectories.forEach((moduleDirectory) => {
+      /** 当前二级模块目录声明的两位显示顺序。 */
+      const moduleOrder = moduleDirectory.name.match(/^(\d+)-/)?.[1]
+      /** 去掉文件系统序号后的二级模块短名称。 */
+      const moduleName = stripOrderPrefix(moduleDirectory.name).replaceAll('-', ' ')
+      /** 思维导图模块节点与桌面规范统一保留“序号 - 名称”。 */
+      const moduleLabel = moduleOrder ? `${moduleOrder} - ${moduleName}` : moduleName
+      /** 当前二级模块的绝对目录。 */
+      const modulePath = path.join(KNOWLEDGE_ROOT, track.directory, moduleDirectory.name)
+      lines.push(`- ${moduleLabel}`)
+      appendFullStackMindmapDirectory(lines, track, modulePath, moduleDirectory.name, 2)
+    })
+    return `${lines.join('\n')}\n`
+  }
 
   track.categories.forEach((category, categoryIndex) => {
     /** 当前知识域的实体目录名。 */
@@ -962,11 +1467,9 @@ function createMindmapMarkdown(track) {
     const categoryPath = path.join(KNOWLEDGE_ROOT, track.directory, categoryDirectory)
     /** 当前知识域中的规范文章文件。 */
     const articleFiles = fs.readdirSync(categoryPath).filter((fileName) => /\.mdx?$/i.test(fileName)).sort((left, right) => left.localeCompare(right, 'zh-CN', { numeric: true }))
-    /** 当前知识域除学习指南外的课程正文，用于为指南主题提供事实解释。 */
-    const categoryMarkdowns = articleFiles
-      .filter((fileName) => !/^01-/.test(fileName))
-      .map((fileName) => fs.readFileSync(path.join(categoryPath, fileName), 'utf8'))
-    lines.push(`- ${category}`)
+    /** 当前知识域在页面中的正式展示名称。 */
+    const categoryDisplayName = getCategoryDisplayName(category)
+    lines.push(`- ${String(categoryIndex + 1).padStart(2, '0')} - ${categoryDisplayName}`)
 
     articleFiles.forEach((fileName) => {
       /** 文章文件携带的两位顺序。 */
@@ -975,17 +1478,17 @@ function createMindmapMarkdown(track) {
       const markdown = fs.readFileSync(path.join(categoryPath, fileName), 'utf8')
       /** 当前文章的基础标题。 */
       const baseTitle = getBaseTitle(markdown, fileName)
+      /** 当前文件是否真的是学习指南，不能再用 01 课号推断。 */
+      const isGuide = /^01-学习指南\.mdx?$/i.test(fileName)
       /** 页面与导图共用的完整标题。 */
-      const displayTitle = sequence === '01' ? `${category}（01） - 学习指南` : `${category}（${sequence}） - ${baseTitle}`
+      const displayTitle = `${categoryDisplayName}（${sequence}） - ${isGuide ? '学习指南' : baseTitle}`
       /** 当前文章不含扩展名的公开路径。 */
       const articlePath = `${track.directory}/${categoryDirectory}/${fileName.replace(/\.mdx?$/i, '')}`
-      /** 当前文章的可信资料。 */
-      const sourceMatch = markdown.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/)
-      /** 当前文章从正文提取的知识主题及解释分支。 */
-      const mindmapSections = sequence === '01'
-        ? getGuideMindmapSections(markdown, categoryMarkdowns)
-        : getMindmapSections(markdown)
-      lines.push(`  - [${displayTitle}](/knowledge/${encodeKnowledgePath(articlePath)})`)
+      /** 当前文章与文章页共用的唯一知识树。 */
+      const articleMindmap = getCanonicalArticleMindmap(markdown, articlePath, displayTitle)
+      /** 路线总图不能再改写文章页知识树中的分支。 */
+      const mindmapSections = articleMindmap.sections
+      lines.push(`  - [${articleMindmap.title}](/knowledge/${encodeKnowledgePath(articlePath)})`)
       mindmapSections.forEach((section) => {
         lines.push(`    - ${section.topic}`)
         section.details.forEach((detail) => lines.push(`      - ${detail}`))
@@ -994,9 +1497,8 @@ function createMindmapMarkdown(track) {
         /** 缺少主题时立即失败，防止生成只有标题、没有知识解释的导图。 */
         /** 已成功提取的主题名称，用于定位缺少解释的正文结构。 */
         const extractedTopics = mindmapSections.map((section) => section.topic).join('、') || '无'
-        throw new Error(`${articlePath} 只能提取 ${mindmapSections.length} 个带解释的知识主题（${extractedTopics}），至少需要 ${MIN_MINDMAP_POINTS} 个。`)
+        MINDMAP_EXTRACTION_FAILURES.push(`${articlePath}：${mindmapSections.length} 个主题（${extractedTopics}）`)
       }
-      if (sourceMatch) lines.push(`    - [来源：${sourceMatch[1]}](${sourceMatch[2]})`)
     })
   })
 
@@ -1049,8 +1551,10 @@ function restructureKnowledge() {
       /** 当前文章对应的规范知识域。 */
       const category = getTargetCategory(track.directory, relativePath)
       /** 由其他路线完整覆盖的重复 AI 应用 Python 课程。 */
-      const shouldDropDuplicate = track.title === 'AI 大模型应用开发' && isDuplicateAiAppFoundation(relativePath)
-      /** 迁移后每个知识域只保留一个新生成的指南。 */
+      const shouldDropDuplicate =
+        track.title === 'AI 大模型应用开发' &&
+        (isDuplicateAiAppFoundation(relativePath) || isMigratedAiAppPrompt(relativePath))
+      /** 旧指南和已被其他路线完整覆盖的文章不再写入规范目录。 */
       if (isLegacyGuide(relativePath) || shouldDropDuplicate) {
         articlesByCategory.get(category).push({ sourceFile, oldArticlePath, dropped: true })
         continue
@@ -1067,15 +1571,12 @@ function restructureKnowledge() {
       /** 当前知识域的规范绝对目录。 */
       const categoryPath = path.join(trackRoot, categoryDirectory)
       fs.mkdirSync(categoryPath, { recursive: true })
-      /** 当前知识域的唯一指南路径。 */
-      const guidePath = path.join(categoryPath, '01-学习指南.md')
-      fs.writeFileSync(guidePath, createGuideMarkdown(track.title, category))
       /** 当前知识域需要优先排列的新增关键文章。 */
       const supplements = track.title === 'AI 大模型应用开发' ? AI_APP_SUPPLEMENTS[category] || [] : []
 
       supplements.forEach((definition, supplementIndex) => {
-        /** 补充文章在指南后的固定顺序。 */
-        const sequence = String(supplementIndex + 2).padStart(2, '0')
+        /** 没有学习指南占位，补充文章直接从 01 开始。 */
+        const sequence = String(supplementIndex + 1).padStart(2, '0')
         /** 补充文章的规范路径。 */
         const targetPath = path.join(categoryPath, `${sequence}-${sanitizeFileName(definition.title)}.md`)
         fs.writeFileSync(targetPath, createSupplementMarkdown(definition))
@@ -1083,22 +1584,21 @@ function restructureKnowledge() {
 
       /** 当前知识域按原始目录顺序排列的文章。 */
       const categoryArticles = articlesByCategory.get(category).sort((left, right) => left.oldArticlePath.localeCompare(right.oldArticlePath, 'zh-CN', { numeric: true }))
-      /** 被删除的旧指南和重复文章统一映射到知识域指南。 */
-      categoryArticles.filter((article) => article.dropped).forEach((article) => {
+      /** 当前知识域中已确认删除或由其他路线承接的旧文章。 */
+      const droppedArticles = categoryArticles.filter((article) => article.dropped)
+      droppedArticles.forEach((article) => {
         /** 重复的 AI Python 基础文章延迟到全栈同主题文章映射。 */
         if (track.title === 'AI 大模型应用开发' && isDuplicateAiAppFoundation(article.oldArticlePath)) {
           /** 被重复文章的 Markdown 正文。 */
           const duplicateMarkdown = fs.readFileSync(article.sourceFile, 'utf8')
           pendingDuplicateAiAppArticles.push({ oldArticlePath: article.oldArticlePath, title: getBaseTitle(duplicateMarkdown, article.sourceFile) })
-        } else {
-          pathMigrations[article.oldArticlePath] = getArticlePath(guidePath)
         }
         fs.rmSync(article.sourceFile)
       })
       /** 文章名冲突时使用的已分配名称集合。 */
       const usedFileNames = new Set(fs.readdirSync(categoryPath))
       /** 迁移旧文章时从补充文章之后继续顺序。 */
-      let nextSequence = supplements.length + 2
+      let nextSequence = supplements.length + 1
 
       for (const article of categoryArticles.filter((candidate) => !candidate.dropped)) {
         /** 当前文章不带旧顺序的语义文件名。 */
@@ -1118,7 +1618,7 @@ function restructureKnowledge() {
         const sourceLabPath = article.sourceFile.replace(/\.mdx?$/i, path.sep + 'lab')
         /** 当前文章新路径旁的实验目录。 */
         const targetLabPath = targetPath.replace(/\.mdx?$/i, path.sep + 'lab')
-        fs.writeFileSync(article.sourceFile, ensureSources(article.markdown, track.title, category))
+        fs.writeFileSync(article.sourceFile, ensureSources(article.markdown, category))
         fs.renameSync(article.sourceFile, targetPath)
         if (fs.existsSync(sourceLabPath)) {
           fs.mkdirSync(path.dirname(targetLabPath), { recursive: true })
@@ -1130,6 +1630,21 @@ function restructureKnowledge() {
         }
         nextSequence += 1
       }
+
+      /** 当前知识域第一篇真实文章承接已删除学习指南的旧 URL。 */
+      const firstArticlePath = fs
+        .readdirSync(categoryPath)
+        .filter((fileName) => /\.mdx?$/i.test(fileName))
+        .sort((left, right) => left.localeCompare(right, 'zh-CN', { numeric: true }))[0]
+      if (!firstArticlePath) throw new Error(`${track.title}/${category} 没有可承接旧链接的正式文章。`)
+      droppedArticles
+        .filter((article) => !isDuplicateAiAppFoundation(article.oldArticlePath))
+        .forEach((article) => {
+          // AI 应用旧 Prompt 已迁到 AI 编程，其余旧指南落到当前知识域第一篇真实文章。
+          pathMigrations[article.oldArticlePath] = isMigratedAiAppPrompt(article.oldArticlePath)
+            ? '02-AI编程/05-Prompt-Engineering/01-认识提示词工程'
+            : getArticlePath(path.join(categoryPath, firstArticlePath))
+        })
     })
 
     removeEmptyDirectories(trackRoot)
@@ -1147,7 +1662,23 @@ function restructureKnowledge() {
   fs.writeFileSync(MIGRATION_FILE, `${JSON.stringify(pathMigrations, null, 2)}\n`)
 }
 
-if (REFRESH_SUPPLEMENTS) {
+if (FULL_STACK_MINDMAP_ONLY) {
+  /** 全栈开发路线配置。 */
+  const fullStackTrack = TRACKS.find((track) => track.title === '全栈开发')
+  if (!fullStackTrack) throw new Error('缺少全栈开发路线配置。')
+  /** 全栈开发思维导图固定文件名。 */
+  const fullStackMindmapFileName = '01-全栈开发.md'
+  fs.writeFileSync(path.join(MINDMAP_ROOT, fullStackMindmapFileName), createMindmapMarkdown(fullStackTrack))
+  console.log('全栈开发思维导图已根据当前规范文章重新生成。')
+} else if (AI_CODING_MINDMAP_ONLY) {
+  /** AI 编程路线配置。 */
+  const aiCodingTrack = TRACKS.find((track) => track.title === 'AI 编程')
+  if (!aiCodingTrack) throw new Error('缺少 AI 编程路线配置。')
+  /** AI 编程思维导图固定文件名。 */
+  const aiCodingMindmapFileName = '02-AI编程.md'
+  fs.writeFileSync(path.join(MINDMAP_ROOT, aiCodingMindmapFileName), createMindmapMarkdown(aiCodingTrack))
+  console.log('AI 编程思维导图已根据当前规范文章重新生成。')
+} else if (REFRESH_SUPPLEMENTS) {
   refreshAiAppSupplements()
   console.log('AI 应用路线核心补充文章已刷新。')
 } else if (MINDMAPS_ONLY) {
@@ -1159,6 +1690,9 @@ if (REFRESH_SUPPLEMENTS) {
     const markdown = createMindmapMarkdown(track)
     return { mindmapFileName, markdown }
   })
+  if (MINDMAP_EXTRACTION_FAILURES.length > 0) {
+    throw new Error(`以下文章无法生成至少 ${MIN_MINDMAP_POINTS} 个带解释的知识主题：\n${MINDMAP_EXTRACTION_FAILURES.join('\n')}`)
+  }
   generatedMindmaps.forEach(({ mindmapFileName, markdown }) => fs.writeFileSync(path.join(MINDMAP_ROOT, mindmapFileName), markdown))
   console.log('三张思维导图已根据当前规范文章重新生成。')
 } else if (!SHOULD_WRITE) {

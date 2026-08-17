@@ -1,5 +1,7 @@
+import type { KnowledgeModelSandboxFramework } from './knowledge-sandbox'
+
 /** Markdown 可执行代码围栏支持的运行时。 */
-export type RunnableCodeRuntime = 'python' | 'html'
+export type RunnableCodeRuntime = 'python' | 'html' | 'model'
 
 /** 可执行代码围栏中经过校验的元数据。 */
 export interface RunnableCodeBlockMetadata {
@@ -7,12 +9,18 @@ export interface RunnableCodeBlockMetadata {
   language: string
   /** 当前代码块是否允许在文章内执行。 */
   runnable: boolean
+  /** 代码块使用本地浏览器运行时，还是受控的真实模型调用。 */
+  runtime: RunnableCodeRuntime
   /** 沙盒中展示和执行的文件名。 */
   fileName: string
   /** 在线实验面板使用的简短标题。 */
   title: string
   /** 运行前告诉读者应观察什么。 */
   description: string
+  /** 模型实验运行前预填的非敏感问题。 */
+  prompt: string
+  /** 模型实验在服务端实际运行的框架。 */
+  modelFramework: KnowledgeModelSandboxFramework
 }
 
 /** 可执行围栏允许保存的安全文件名。 */
@@ -24,7 +32,8 @@ const FENCE_ATTRIBUTE_PATTERN = /([a-z][a-z\d-]*)=(?:"([^"]*)"|'([^']*)'|([^\s]+
 /** 不同代码语言默认使用的沙盒入口文件。 */
 const DEFAULT_FILE_NAMES: Readonly<Record<RunnableCodeRuntime, string>> = {
   python: 'main.py', // Python 在 Pyodide Worker 中从 main.py 启动。
-  html: 'index.html' // HTML 在隔离 iframe 中直接预览 index.html。
+  html: 'index.html', // HTML 在隔离 iframe 中直接预览 index.html。
+  model: 'main.ts' // 模型实验展示与服务端一致的 TypeScript LangChain 源码。
 }
 
 /**
@@ -39,14 +48,18 @@ export function parseRunnableCodeBlockMetadata(
 ): RunnableCodeBlockMetadata | null {
   /** 去掉围栏属性后的规范小写语言。 */
   const normalizedLanguage = (language || '').trim().toLowerCase()
-  /** 当前语言对应的浏览器运行时。 */
-  const runtime: RunnableCodeRuntime | null = /^(?:python|py)$/.test(normalizedLanguage)
+  /** 围栏是否显式声明为真实模型实验。 */
+  const isModelSandbox = /(?:^|\s)model-sandbox(?:\s|$)/i.test(meta || '')
+  /** 当前围栏的源码语言，模型实验额外允许 TypeScript。 */
+  const sourceLanguage: 'python' | 'html' | 'typescript' | null = /^(?:python|py)$/.test(normalizedLanguage)
     ? 'python'
     : /^(?:html|htm)$/.test(normalizedLanguage)
       ? 'html'
-      : null
+      : isModelSandbox && /^(?:typescript|ts)$/.test(normalizedLanguage)
+        ? 'typescript'
+        : null
 
-  if (!runtime) {
+  if (!sourceLanguage) {
     return null
   }
 
@@ -62,6 +75,18 @@ export function parseRunnableCodeBlockMetadata(
     }
   }
 
+  /** Python 或 TypeScript 围栏可以声明真实模型实验，HTML 继续留在隔离 iframe。 */
+  const runtime: RunnableCodeRuntime = sourceLanguage !== 'html' && isModelSandbox
+    ? 'model'
+    : sourceLanguage === 'html'
+      ? 'html'
+      : 'python'
+
+  /** 只有显式声明 LlamaIndex 时才切换框架，其余历史文章继续使用 LangChain。 */
+  const modelFramework: KnowledgeModelSandboxFramework = attributes.get('framework') === 'llamaindex'
+    ? 'llamaindex'
+    : 'langchain'
+
   /** file 属性必须是直接文件名，拒绝目录穿越和路径分隔符。 */
   const requestedFileName = attributes.get('file') || ''
   /** 通过白名单校验的沙盒文件名。 */
@@ -70,11 +95,14 @@ export function parseRunnableCodeBlockMetadata(
     : DEFAULT_FILE_NAMES[runtime]
 
   return {
-    language: runtime,
+    language: sourceLanguage,
     runnable: /(?:^|\s)runnable(?:\s|$)/i.test(meta || ''),
+    runtime,
     fileName,
     title: attributes.get('title') || '',
-    description: attributes.get('description') || ''
+    description: attributes.get('description') || '',
+    prompt: attributes.get('prompt') || '',
+    modelFramework
   }
 }
 
@@ -88,9 +116,12 @@ export function serializeRunnableCodeBlockInfo(metadata: RunnableCodeBlockMetada
   const runnableAttributes = metadata.runnable
     ? [
         'runnable',
+        metadata.runtime === 'model' ? 'model-sandbox' : '',
+        metadata.runtime === 'model' && metadata.modelFramework === 'llamaindex' ? 'framework=llamaindex' : '',
         `file=${metadata.fileName}`,
         metadata.title ? `title=${JSON.stringify(metadata.title)}` : '',
-        metadata.description ? `description=${JSON.stringify(metadata.description)}` : ''
+        metadata.description ? `description=${JSON.stringify(metadata.description)}` : '',
+        metadata.prompt ? `prompt=${JSON.stringify(metadata.prompt)}` : ''
       ].filter(Boolean)
     : []
 

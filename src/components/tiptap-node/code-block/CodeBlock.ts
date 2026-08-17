@@ -18,6 +18,11 @@ export const CodeBlock = CodeBlockLowlight.extend({
         parseHTML: (element) => element.getAttribute('data-runnable') === 'true', // 从静态 HTML 恢复执行开关。
         renderHTML: (attributes) => attributes.runnable ? { 'data-runnable': 'true' } : {} // 仅启用时输出标记。
       },
+      sandboxRuntime: {
+        default: '', // 普通代码没有独立于源码语言的运行时。
+        parseHTML: (element) => element.getAttribute('data-sandbox-runtime') || '', // 恢复模型实验标记。
+        renderHTML: (attributes) => attributes.sandboxRuntime ? { 'data-sandbox-runtime': attributes.sandboxRuntime } : {} // 仅模型实验输出。
+      },
       fileName: {
         default: '', // 普通代码不需要虚拟文件名。
         parseHTML: (element) => element.getAttribute('data-file-name') || '', // 恢复沙盒入口文件。
@@ -34,6 +39,20 @@ export const CodeBlock = CodeBlockLowlight.extend({
         renderHTML: (attributes) => attributes.sandboxDescription
           ? { 'data-sandbox-description': attributes.sandboxDescription }
           : {} // 仅保存显式说明。
+      },
+      sandboxPrompt: {
+        default: '', // 普通代码不携带模型问题。
+        parseHTML: (element) => element.getAttribute('data-sandbox-prompt') || '', // 恢复模型实验默认问题。
+        renderHTML: (attributes) => attributes.sandboxPrompt
+          ? { 'data-sandbox-prompt': attributes.sandboxPrompt }
+          : {} // 问题不为空时才写入 HTML。
+      },
+      sandboxFramework: {
+        default: 'langchain', // 历史模型实验继续使用 LangChain，避免改变既有文章行为。
+        parseHTML: (element) => element.getAttribute('data-sandbox-framework') || 'langchain', // 恢复明确的模型框架。
+        renderHTML: (attributes) => attributes.sandboxFramework === 'llamaindex'
+          ? { 'data-sandbox-framework': 'llamaindex' }
+          : {} // 默认框架无需写入 HTML。
       }
     }
   },
@@ -49,9 +68,12 @@ export const CodeBlock = CodeBlockLowlight.extend({
       {
         language: metadata?.language || language || null,
         runnable: metadata?.runnable || false,
+        sandboxRuntime: metadata?.runtime || '',
         fileName: metadata?.fileName || '',
         sandboxTitle: metadata?.title || '',
-        sandboxDescription: metadata?.description || ''
+        sandboxDescription: metadata?.description || '',
+        sandboxPrompt: metadata?.prompt || '',
+        sandboxFramework: metadata?.modelFramework || 'langchain'
       },
       token.text ? [helpers.createTextNode(token.text)] : []
     )
@@ -63,9 +85,16 @@ export const CodeBlock = CodeBlockLowlight.extend({
     const fenceInfo = serializeRunnableCodeBlockInfo({
       language: node.attrs?.language || '',
       runnable: node.attrs?.runnable === true,
+      runtime: node.attrs?.sandboxRuntime === 'model'
+        ? 'model'
+        : node.attrs?.language === 'html'
+          ? 'html'
+          : 'python',
       fileName: node.attrs?.fileName || '',
       title: node.attrs?.sandboxTitle || '',
-      description: node.attrs?.sandboxDescription || ''
+      description: node.attrs?.sandboxDescription || '',
+      prompt: node.attrs?.sandboxPrompt || '',
+      modelFramework: node.attrs?.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain'
     })
     /** 当前代码块的可编辑文本内容。 */
     const sourceCode = node.content ? helpers.renderChildren(node.content) : ''
