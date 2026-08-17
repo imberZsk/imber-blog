@@ -41,23 +41,23 @@ flowchart LR
 在“Router、Plan-and-Execute 与 Reflection”的对象和顺序已经明确后，再看可观察的失败：路径或命令直通执行、工具结果跨会话泄漏、循环失控或重试重复副作用。定位时不从最后一条错误猜原因，而是沿上图找第一个偏离正文结论的节点。
 <!-- article-progressive-block:end -->
 
-# 二、为什么需要它
+# 二、为什么需要 Router、Plan-and-Execute 与 Reflection
 
 本章给出可以进入设计评审和生产检查的最小框架。
 
-# 三、核心决策
+# 三、Router、Plan-and-Execute 与 Reflection的核心决策
 
 - Router 适合类别稳定、目标处理器明确的请求。
 - Plan-and-Execute 适合多步骤且依赖关系清楚的任务，计划必须允许执行反馈后重排。
 - Reflection 只在结果可验证且修正收益高时启用，并设置最大轮次和终止原因。
 
-# 四、落地步骤
+# 四、Router、Plan-and-Execute 与 Reflection的落地步骤
 
 1. 先定义状态、可用动作和成功条件。
 2. 路由输出使用枚举 Schema，计划步骤绑定工具和完成证据。
 3. 每轮记录决策、工具结果、预算和停止原因。
 
-# 五、决策记录怎么写
+# 五、Router、Plan-and-Execute 与 Reflection的决策记录怎么写
 
 上线前不要只留下“采用 Router、Plan-and-Execute 与 Reflection”这一句结论。
 
@@ -86,13 +86,13 @@ rollback:
   owner: named_on_call
 ```
 
-# 六、生产避坑
+# 六、Router、Plan-and-Execute 与 Reflection的生产避坑
 
 - 无限反思会增加成本但不提高正确率。
 - 计划与执行共享未裁剪上下文容易超窗。
 - 没有确定性校验器时，模型自评不能作为唯一验收。
 
-# 七、故障演练
+# 七、Router、Plan-and-Execute 与 Reflection的故障演练
 
 1. 注入与“无限反思会增加成本但不提高正确率。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。
 2. 注入与“计划与执行共享未裁剪上下文容易超窗。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。

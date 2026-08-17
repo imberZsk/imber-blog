@@ -50,23 +50,23 @@ flowchart LR
 在“Trace、Span 与 Langfuse 实战”的对象和顺序已经明确后，再看可观察的失败：只报告均分、数据泄漏、评审器未校准、Trace 断链或回退阈值缺失。定位时不从最后一条错误猜原因，而是沿上图找第一个偏离正文结论的节点。
 <!-- article-progressive-block:end -->
 
-# 二、为什么需要它
+# 二、为什么需要 Trace、Span 与 Langfuse 实战
 
 本章给出可以进入设计评审和生产检查的最小框架。
 
-# 三、核心决策
+# 三、Trace、Span 与 Langfuse 实战的核心决策
 
 - Trace 表示端到端请求，Span 表示一个有开始、结束、属性和状态的操作。
 - 输入输出需脱敏和采样，tenant_id 等权限字段只存不可逆标识。
 - Langfuse 负责 AI Trace、Prompt、Dataset 和评测，但基础设施指标仍交给 OpenTelemetry 体系。
 
-# 四、落地步骤
+# 四、Trace、Span 与 Langfuse 实战的落地步骤
 
 1. 建立 trace_id 并贯穿网关、RAG、Agent 和模型调用。
 2. 记录模型、token、延迟、命中证据、工具错误和最终评分。
 3. 从线上坏例进入 Dataset，再回放形成回归闭环。
 
-# 五、决策记录怎么写
+# 五、Trace、Span 与 Langfuse 实战的决策记录怎么写
 
 上线前不要只留下“采用 Trace、Span 与 Langfuse 实战”这一句结论。
 
@@ -95,13 +95,13 @@ rollback:
   owner: named_on_call
 ```
 
-# 六、生产避坑
+# 六、Trace、Span 与 Langfuse 实战的生产避坑
 
 - 只记总耗时无法定位慢在检索还是生成。
 - 全量保存用户正文会产生隐私风险。
 - Trace 成功不等于回答正确，必须关联质量评分。
 
-# 七、故障演练
+# 七、Trace、Span 与 Langfuse 实战的故障演练
 
 1. 注入与“只记总耗时无法定位慢在检索还是生成。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。
 2. 注入与“全量保存用户正文会产生隐私风险。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。

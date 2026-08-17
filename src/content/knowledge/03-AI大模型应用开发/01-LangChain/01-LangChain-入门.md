@@ -16,7 +16,7 @@
 - Base URL、API Key、模型名属于运行配置，不应写死在文章源码里
 - 简单单次调用不一定需要 LangChain，多步骤组合和可观测性才是主要价值
 
-# 一、LangChain 是什么：它为什么不只是一层 HTTP 封装？
+# 一、LangChain 是什么？
 
 LangChain 是用于组装大模型应用步骤的开源框架。它把 Prompt、模型、检索器、输出解析器等组件收敛到 Runnable 协议，使这些组件能用统一的输入输出方式执行和组合。
 
@@ -63,7 +63,7 @@ TypeScript 项目安装 `@langchain/core` 与 `@langchain/openai`。
 
 本文真实 API 沙盒使用 TypeScript，是因为博客服务端本身运行在 Node.js，可以真正执行与页面源码一致的 LangChain 链。
 
-# 三、Prompt 不是字符串拼接，而是输入契约
+# 三、LangChain Prompt 不是字符串拼接，而是输入契约
 
 模板最重要的价值不是少写一个格式化函数。
 
@@ -73,13 +73,13 @@ TypeScript 项目安装 `@langchain/core` 与 `@langchain/openai`。
 
 失败越靠近输入层，越容易定位；如果等模型返回错误答案才发现缺少资料，代价更高。
 
-## 3.1 可运行实验：模板变量与消息格式
+## 3.1 可运行实验：LangChain Prompt 模板变量与消息格式
 
 下面的代码不访问模型，也不需要 API Key。
 
 点击运行后应看到两条格式化消息，以及一次明确的缺失变量错误。
 
-```python runnable file=main.py title="模板输入契约" description="在浏览器中验证模板变量、消息角色和缺失字段错误。"
+```python runnable file=main.py title="LangChain Prompt 输入契约" description="在浏览器中验证模板变量、消息角色和缺失字段错误。"
 """用标准库模拟 ChatPromptTemplate 的输入契约。"""
 
 from __future__ import annotations

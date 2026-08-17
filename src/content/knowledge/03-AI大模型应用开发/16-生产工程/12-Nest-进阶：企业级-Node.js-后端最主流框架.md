@@ -39,23 +39,23 @@ flowchart LR
 在“Nest 进阶：企业级 Node.js 后端架构与适用边界”的对象和顺序已经明确后，再看可观察的失败：只报告均分、数据泄漏、评审器未校准、Trace 断链或回退阈值缺失。定位时不从最后一条错误猜原因，而是沿上图找第一个偏离正文结论的节点。
 <!-- article-progressive-block:end -->
 
-# 二、本篇定位
+# 二、Nest 进阶的学习定位与边界
 
 这是 Node 后端工程篇，为前端/全栈同学把 Agent 服务做成可维护项目。
 
-# 三、一个真实场景
+# 三、Nest 进阶的真实应用场景
 
 一个 AI 后端慢慢会长出 chat、rag、tool、task、memory、auth、billing、observability 等模块。
 如果只用一个 Express 文件堆路由，很快不可维护。
 Nest 的模块、Controller、Service、Provider、Guard、Interceptor 能帮助你划清边界。
 
-# 四、核心拆解
+# 四、Nest 进阶的核心对象与机制
 
 - Controller 负责 HTTP/SSE/WebSocket 入口，Service 负责业务流程，Provider 封装模型、向量库、数据库、工具客户端。
 - Guard 适合做鉴权和权限校验，Interceptor 适合做日志、trace、耗时统计和统一响应。
 - Module 让 RAG、Tool、Task、Memory 分成独立单元，依赖关系更清楚。
 
-# 五、工程链路
+# 五、Nest 进阶的工程链路
 
 - 按领域建模块。
 - Controller 接收请求并做 DTO 校验。
@@ -64,24 +64,24 @@ Nest 的模块、Controller、Service、Provider、Guard、Interceptor 能帮助
 - Guard 控权限。
 - Interceptor 写 trace 和指标。
 
-# 六、落地建议
+# 六、Nest 进阶的落地建议
 
 - AI 调用统一封装 ModelProvider，方便换模型。
 - 工具执行统一经过 ToolService，避免散落权限逻辑。
 - SSE 接口和普通 REST 接口分清响应模型。
 
-# 七、常见坑
+# 七、Nest 进阶的常见故障与误区
 
 - Controller 里写所有业务。
 - 每个模块各自调模型，成本和日志分散。
 - 没有 DTO 校验，模型参数错误直接进业务层。
 
-# 八、和已有主线的关系
+# 八、Nest 进阶在学习路线中的位置
 
 15 FastAPI 是 Python 入门后端；
 87 给 Node/Nest 技术栈下的企业级组织方式。
 
-# 九、复述答法
+# 九、Nest 进阶的核心结论
 
 > Nest 适合 AI 后端模块化：Controller 管入口，Service 管流程，Provider 管外部依赖，Guard 管权限，Interceptor 管日志和 trace。Agent 项目复杂后，模块边界比框架名字更重要。
 

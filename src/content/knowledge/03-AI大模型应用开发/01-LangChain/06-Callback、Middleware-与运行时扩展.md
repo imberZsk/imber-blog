@@ -41,23 +41,23 @@ flowchart LR
 在“Callback、Middleware 与运行时扩展”的对象和顺序已经明确后，再看可观察的失败：字段到模型阶段才报错、Parser 吞掉原始输出、流式中断被当成完整成功。定位时不从最后一条错误猜原因，而是沿上图找第一个偏离正文结论的节点。
 <!-- article-progressive-block:end -->
 
-# 二、为什么需要它
+# 二、为什么需要 Callback、Middleware 与运行时扩展
 
 本章给出可以进入设计评审和生产检查的最小框架。
 
-# 三、核心决策
+# 三、Callback、Middleware 与运行时扩展的核心决策
 
 - Callback 适合观察生命周期事件，Middleware 适合在调用前后修改上下文或拦截执行。
 - Trace 必须携带 request_id、tenant_id、model、token、latency 和 error_type，但不能记录密钥与完整敏感正文。
 - 扩展点失败默认不能拖垮主链路；审计类事件则需要可靠缓冲和告警。
 
-# 四、落地步骤
+# 四、Callback、Middleware 与运行时扩展的落地步骤
 
 1. 定义统一事件 Schema。
 2. 在模型、Retriever、Tool 三个边界注入追踪。
 3. 用正常、超时、解析失败和回调故障四类用例验证。
 
-# 五、决策记录怎么写
+# 五、Callback、Middleware 与运行时扩展的决策记录怎么写
 
 上线前不要只留下“采用 Callback、Middleware 与运行时扩展”这一句结论。
 
@@ -86,13 +86,13 @@ rollback:
   owner: named_on_call
 ```
 
-# 六、生产避坑
+# 六、Callback、Middleware 与运行时扩展的生产避坑
 
 - 同步上报 Trace 会放大尾延迟。
 - 重复注册 Callback 会产生重复 Span 和成本统计。
 - 把业务分支写进通用回调会导致链条不可理解。
 
-# 七、故障演练
+# 七、Callback、Middleware 与运行时扩展的故障演练
 
 1. 注入与“同步上报 Trace 会放大尾延迟。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。
 2. 注入与“重复注册 Callback 会产生重复 Span 和成本统计。”对应的失败条件，记录用户侧现象、Trace 中的首个异常 Span 和恢复动作。
