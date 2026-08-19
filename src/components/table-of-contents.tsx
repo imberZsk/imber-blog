@@ -40,29 +40,6 @@ export function TableOfContents({ containerSelector = '.knowledge-article', clas
     const container = document.querySelector(containerSelector)
     if (!container) return
 
-    /** 文章中的所有标题元素 */
-    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'))
-
-    /** 为每个标题生成唯一 ID 并构建目录数据 */
-    const tocItems: TocItem[] = headings.map((heading, index) => {
-      /** 标题的层级（1-6） */
-      const level = parseInt(heading.tagName.substring(1))
-      /** 标题文本内容 */
-      const text = heading.textContent || ''
-      /** 标题的唯一 ID，优先使用已有 ID，否则生成新 ID */
-      let id = heading.id
-
-      if (!id) {
-        // 使用文本内容生成 ID，处理中文和特殊字符
-        id = `heading-${index}-${text.replace(/\s+/g, '-').toLowerCase()}`
-        heading.id = id
-      }
-
-      return { id, text, level }
-    })
-
-    setToc(tocItems)
-
     /** 创建 IntersectionObserver 监听标题元素的可见性 */
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
@@ -88,26 +65,42 @@ export function TableOfContents({ containerSelector = '.knowledge-article', clas
       }
     }
 
-    /** 滚动容器作为 IntersectionObserver 的 root */
-    const scrollContainer = document.querySelector('.simple-editor-wrapper')
+    /** 扫描当前语言正文，并重建目录与标题可见性观察器。 */
+    const synchronizeTableOfContents = () => {
+      observerRef.current?.disconnect()
+      headingElementsRef.current = {}
 
-    observerRef.current = new IntersectionObserver(observerCallback, {
-      root: scrollContainer, // 指定自定义滚动容器
-      rootMargin: '-100px 0px -70% 0px', // 顶部留出导航栏空间，底部留出大部分空间
-      threshold: 0
-    })
+      /** 当前语言文章中的所有标题元素。 */
+      const headings = Array.from(container.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6'))
+      /** 为每个标题生成唯一 ID 后得到的目录数据。 */
+      const tocItems: TocItem[] = headings.map((heading, index) => {
+        /** 标题的层级（1-6）。 */
+        const level = parseInt(heading.tagName.substring(1))
+        /** 标题展示文本。 */
+        const text = heading.textContent || ''
+        /** 标题锚点 ID；服务端未生成时根据当前目录顺序补齐。 */
+        const id = heading.id || `heading-${index}-${text.replace(/\s+/g, '-').toLowerCase()}`
+        heading.id = id
+        return { id, text, level }
+      })
 
-    /** 观察所有标题元素 */
-    headings.forEach((heading) => {
-      if (observerRef.current) {
-        observerRef.current.observe(heading)
-      }
-    })
+      setToc(tocItems)
+      setActiveId('')
+
+      /** 文章页面的主滚动容器。 */
+      const scrollContainer = document.querySelector('.simple-editor-wrapper')
+      observerRef.current = new IntersectionObserver(observerCallback, {
+        root: scrollContainer, // 指定自定义滚动容器
+        rootMargin: '-100px 0px -70% 0px', // 顶部留出导航栏空间，底部留出大部分空间
+        threshold: 0
+      })
+      headings.forEach((heading) => observerRef.current?.observe(heading))
+    }
+
+    synchronizeTableOfContents()
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
+      observerRef.current?.disconnect()
     }
   }, [containerSelector])
 

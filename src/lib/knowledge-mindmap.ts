@@ -373,6 +373,11 @@ export function createKnowledgeMindmap(
       continue
     }
 
+    if (markdownNode.type === 'blockquote' && /^读完后/u.test(normalizeMindmapText(getNodeText(markdownNode)))) {
+      // 学习成果引用块是验收说明，不是正文知识结论，不能用来补足思维导图节点。
+      continue
+    }
+
     if (markdownNode.type === 'paragraph' || markdownNode.type === 'blockquote') {
       appendSectionPoints(currentSection, getNodeText(markdownNode), pointLimit)
       continue

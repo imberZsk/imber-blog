@@ -1,9 +1,21 @@
-# LangChain（05） - Output Parser 实战：智能录入 + 流式版 mini cursor
+# LangChain（12） - Output Parser 实战：智能录入 + 流式版 mini cursor
+
+
+## Python 实现地图
+
+Python 可用 `JsonOutputParser` 处理流式输出，用 Pydantic 在最终提交前校验。部分对象不能直接视为可持久化的完整记录。
+
+```python runnable file=main.py title="Python 本篇最小实验" description="运行本篇 Python 核心数据流。"
+import json
+chunks = ['{"title":', '"修复登录"}']
+print(json.loads("".join(chunks)))
+```
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（05） - Output Parser 实战：智能录入 + 流式版 mini cursor / 本篇定位”的关键对象与数据流，解释“这是 64 的实战篇，把 parser 放进真实交互：一边生成，一边展示，一边最终校验。”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（05） - Output Parser 实战：智能录入 + 流式版 mini cursor / 核心拆解”设计正常与异常输入，验证“智能录入不是把用户原话塞进一个字段，而是把自然语言转成业务表单。”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（05） - Output Parser 实战：智能录入 + 流式版 mini cursor / 工程链路”的最小代码或配置，检验“后端请求模型按 schema 抽取字段。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（12） - Output Parser 实战：智能录入 + 流式版 mini cursor / 本篇定位”的关键对象与数据流，解释“这是 64 的实战篇，把 parser 放进真实交互：一边生成，一边展示，一边最终校验。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（12） - Output Parser 实战：智能录入 + 流式版 mini cursor / 核心拆解”设计正常与异常输入，验证“智能录入不是把用户原话塞进一个字段，而是把自然语言转成业务表单。”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（12） - Output Parser 实战：智能录入 + 流式版 mini cursor / 工程链路”的最小代码或配置，检验“后端请求模型按 schema 抽取字段。”，输出命令、结果与 Diff，并说明不适用边界。
 
 ## 核心知识清单
 

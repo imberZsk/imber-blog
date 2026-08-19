@@ -53,6 +53,13 @@ export const CodeBlock = CodeBlockLowlight.extend({
         renderHTML: (attributes) => attributes.sandboxFramework === 'llamaindex'
           ? { 'data-sandbox-framework': 'llamaindex' }
           : {} // 默认框架无需写入 HTML。
+      },
+      sandboxMode: {
+        default: 'chat', // 历史模型实验默认执行普通聊天。
+        parseHTML: (element) => element.getAttribute('data-sandbox-mode') || 'chat', // 恢复 Tool Calling 模式。
+        renderHTML: (attributes) => attributes.sandboxMode === 'tools'
+          ? { 'data-sandbox-mode': 'tools' }
+          : {} // 普通聊天无需写入额外属性。
       }
     }
   },
@@ -73,7 +80,8 @@ export const CodeBlock = CodeBlockLowlight.extend({
         sandboxTitle: metadata?.title || '',
         sandboxDescription: metadata?.description || '',
         sandboxPrompt: metadata?.prompt || '',
-        sandboxFramework: metadata?.modelFramework || 'langchain'
+        sandboxFramework: metadata?.modelFramework || 'langchain',
+        sandboxMode: metadata?.modelMode || 'chat'
       },
       token.text ? [helpers.createTextNode(token.text)] : []
     )
@@ -89,12 +97,15 @@ export const CodeBlock = CodeBlockLowlight.extend({
         ? 'model'
         : node.attrs?.language === 'html'
           ? 'html'
-          : 'python',
+          : /^(?:typescript|ts)$/.test(node.attrs?.language || '')
+            ? 'typescript'
+            : 'python',
       fileName: node.attrs?.fileName || '',
       title: node.attrs?.sandboxTitle || '',
       description: node.attrs?.sandboxDescription || '',
       prompt: node.attrs?.sandboxPrompt || '',
-      modelFramework: node.attrs?.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain'
+      modelFramework: node.attrs?.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain',
+      modelMode: node.attrs?.sandboxMode === 'tools' ? 'tools' : 'chat'
     })
     /** 当前代码块的可编辑文本内容。 */
     const sourceCode = node.content ? helpers.renderChildren(node.content) : ''

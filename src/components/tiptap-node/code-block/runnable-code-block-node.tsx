@@ -13,8 +13,10 @@ function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
   /** 代码块声明的规范运行时。 */
   const runtime: KnowledgeSandboxRuntime = props.node.attrs.sandboxRuntime === 'model'
     ? 'model'
-      : props.node.attrs.language === 'html'
-        ? 'html'
+    : props.node.attrs.language === 'html'
+      ? 'html'
+      : /^(?:typescript|ts)$/.test(props.node.attrs.language || '')
+        ? 'typescript'
         : 'python'
   /** 未声明文件名时按运行时选择直接入口。 */
   const entryFile =
@@ -24,6 +26,8 @@ function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
         ? 'index.html'
         : runtime === 'model'
           ? 'main.ts'
+          : runtime === 'typescript'
+            ? 'main.ts'
           : 'main.py'
 
   return {
@@ -41,6 +45,7 @@ function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
     modelRequest: runtime === 'model'
       ? {
           framework: props.node.attrs.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain', // 模型框架来自围栏白名单属性。
+          mode: props.node.attrs.sandboxMode === 'tools' ? 'tools' : 'chat', // 模型模式来自围栏白名单属性。
           prompt: typeof props.node.attrs.sandboxPrompt === 'string' ? props.node.attrs.sandboxPrompt : '' // 默认问题允许读者在运行前修改。
         }
       : undefined

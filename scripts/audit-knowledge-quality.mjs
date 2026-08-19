@@ -7,6 +7,7 @@ import {
 } from '../src/app/knowledge/config.ts'
 import { getKnowledgeArticleKind } from '../src/lib/knowledge-article-kind.ts'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
+import { getKnowledgeLanguageFromPath, projectKnowledgeMarkdown } from '../src/lib/knowledge-language.ts'
 
 /** 正式知识文章根目录。 */
 const KNOWLEDGE_ROOT = path.join(process.cwd(), 'src', 'content', 'knowledge')
@@ -162,8 +163,8 @@ const STALE_NAVIGATION_PATTERN = /(?:appendices|第\s*\d+\s*篇)/i
 /** 正文中不应保留的临时写作任务指令。 */
 const WRITING_TASK_ARTIFACT_PATTERN = /(?:只需要\s*step\s*1\s*让我确认|后续任务你持续进行直到完成|Workflow（必须按顺序执行）)/i
 
-/** LangChain 入门文章要求每段可执行源码都有沙盒，并且真实模型配置只出现一次。 */
-const LANGCHAIN_INTRO_ARTICLE_PATH = '03-AI大模型应用开发/01-LangChain/01-LangChain-入门'
+/** LangChain 模型与 Tools 文章要求每段可执行源码都有沙盒，并且真实模型配置只出现一次。 */
+const LANGCHAIN_MODEL_TOOLS_ARTICLE_PATH = '03-AI大模型应用开发/01-LangChain/02-LangChain-接入大模型与注册-Tools'
 
 /** LlamaIndex 入门文章同样要求全部源码可运行，且只在答案生成处请求模型凭据。 */
 const LLAMAINDEX_INTRO_ARTICLE_PATH = '03-AI大模型应用开发/02-LlamaIndex/01-LlamaIndex-入门'
@@ -371,9 +372,8 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
     /** 当前可执行围栏的源码。 */
     const sourceCode = markdownNode.value?.trim() || ''
 
-    /** 真实模型实验允许 TypeScript，其余 runnable 仍只接受 Python 或 HTML。 */
-    const isModelSandbox = /(?:^|\s)model-sandbox(?:\s|$)/i.test(markdownNode.meta || '')
-    if (!['python', 'py', 'html', 'htm'].includes(language) && !(isModelSandbox && ['typescript', 'ts'].includes(language))) {
+    /** 浏览器沙盒支持 Python、TypeScript 和完整 HTML。 */
+    if (!['python', 'py', 'typescript', 'ts', 'html', 'htm'].includes(language)) {
       failures.push(`${articlePath} 的 runnable 围栏使用了不支持的语言：${language || '未声明'}`)
     }
     if (!RUNNABLE_FILE_NAME_PATTERN.test(fileName)) {
@@ -390,7 +390,7 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
   }
 
   if (
-    [LANGCHAIN_INTRO_ARTICLE_PATH, LLAMAINDEX_INTRO_ARTICLE_PATH].includes(articlePath) &&
+    [LANGCHAIN_MODEL_TOOLS_ARTICLE_PATH, LLAMAINDEX_INTRO_ARTICLE_PATH].includes(articlePath) &&
     (executableCodeBlockCount !== runnableCodeBlockCount || modelSandboxCount !== 1)
   ) {
     failures.push(
@@ -710,19 +710,30 @@ function getRouteMindmapArticleTrees() {
   const articleTrees = new Map()
 
   for (const fileName of MINDMAP_FILE_NAMES) {
-    /** 当前路线总图的 Markdown 行。 */
-    const mindmapLines = fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8').split('\n')
+    /** 当前路线总图的原始 Markdown。 */
+    const mindmapMarkdown = fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
+    for (const mindmapLanguage of ['typescript', 'python']) {
+      /** 当前语言路线总图的 Markdown 行。 */
+      const mindmapLines = projectKnowledgeMarkdown(mindmapMarkdown, mindmapLanguage).split('\n')
     /** 当前文章链接在总图中的缩进。 */
     let articleIndent = -1
     /** 当前正在收集的文章知识树。 */
     let currentArticleTree = null
 
-    for (const line of mindmapLines) {
+      for (const line of mindmapLines) {
       /** 路线总图中的文章链接节点。 */
       const articleMatch = line.match(/^(\s*)- \[([^\]]+)]\(\/knowledge\/([^)]+)\)$/)
       if (articleMatch) {
         /** 解码后的文章公开路径。 */
         const articlePath = articleMatch[3].split('/').map(decodeURIComponent).join('/')
+        /** Python 投影只补充独立 Python 文章，避免覆盖普通文章中的 JavaScript 文本。 */
+        const shouldCollectArticle =
+          mindmapLanguage === 'python' ? articlePath.includes('/python/') : !articlePath.includes('/python/')
+        if (!shouldCollectArticle) {
+          articleIndent = -1
+          currentArticleTree = null
+          continue
+        }
         articleIndent = articleMatch[1].length
         currentArticleTree = {
           title: articleMatch[2], // 总图中的文章标题必须与文章开头导图根节点一致。
@@ -750,6 +761,7 @@ function getRouteMindmapArticleTrees() {
       /** 总图中最近出现的知识分支。 */
       const currentSection = currentArticleTree.sections.at(-1)
       if (currentSection) currentSection.points.push(pointMatch[1])
+      }
     }
   }
 
@@ -768,7 +780,10 @@ function auditMindmapSemanticCorrespondence(articleFiles) {
     /** 当前文章公开路径。 */
     const articlePath = getArticlePath(filePath)
     /** 当前文章完整 Markdown。 */
-    const markdown = fs.readFileSync(filePath, 'utf8')
+    const markdown = projectKnowledgeMarkdown(
+      fs.readFileSync(filePath, 'utf8'),
+      getKnowledgeLanguageFromPath(articlePath) || 'typescript'
+    )
     /** 当前文章 H1；缺失时使用文件名帮助定位，但文章深度门禁会另行报错。 */
     const articleTitle = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.basename(filePath, path.extname(filePath))
     /** 页面运行时与审计共用的文章用途。 */
@@ -840,11 +855,11 @@ function auditMindmapModuleCoverage(articlePaths) {
     const trackName = fileName.replace(/^\d+-/, '').replace(/\.md$/, '')
     /** 导图中以单个短横线开头的一级知识域名称。 */
     const mindmapModules = new Set(
-      fs
-        .readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
+      projectKnowledgeMarkdown(fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8'), 'typescript')
         .split('\n')
         .filter((line) => /^- [^[]/.test(line))
         .map((line) => line.replace(/^- /, '').trim().replace(/^\d+\s*-\s*/, ''))
+        .filter((moduleName) => !moduleName.startsWith('当前代码语言：'))
     )
     const directoryModules = directoryModulesByTrack.get(trackName) || new Set()
     for (const moduleName of directoryModules) {
@@ -876,10 +891,15 @@ function auditModuleSequences(articlePaths) {
     const isNestedFullStackArticle =
       pathSegments[0] === FULL_STACK_DIRECTORY_NAME &&
       pathSegments.length >= NESTED_FULL_STACK_ARTICLE_SEGMENT_COUNT
+    /** LangChain 独立语言文章在模块和文件名之间多一层语言目录。 */
+    const isLanguageSpecificLangChainArticle =
+      pathSegments[1] === '01-LangChain' && ['typescript', 'python'].includes(pathSegments[2])
     /** 当前文章所属的连续编号目录；嵌套全栈内容按专题独立从 01 编号。 */
-    const modulePath = pathSegments.slice(0, isNestedFullStackArticle ? 3 : 2).join('/')
+    const modulePath = pathSegments
+      .slice(0, isNestedFullStackArticle || isLanguageSpecificLangChainArticle ? 3 : 2)
+      .join('/')
     /** 当前文章文件名中的数字前缀。 */
-    const sequenceSegment = pathSegments[isNestedFullStackArticle ? 3 : 2]
+    const sequenceSegment = pathSegments[isNestedFullStackArticle || isLanguageSpecificLangChainArticle ? 3 : 2]
     /** 当前文章解析出的数字课号。 */
     const sequence = Number.parseInt(sequenceSegment?.match(/^(\d+)-/)?.[1] || '', 10)
     if (!Number.isInteger(sequence)) {

@@ -1,9 +1,20 @@
-# LangChain（03） - 实战练习 LCEL 组装 chain
+# LangChain（10） - 实战练习 LCEL 组装 chain
+
+
+## Python 实现地图
+
+Python 用 `prompt | model | parser` 组成 LCEL，用 `RunnablePassthrough.assign()` 添加上下文，并通过 `with_config()` 传递 tags 与 metadata。
+
+```python runnable file=main.py title="Python 本篇最小实验" description="运行本篇 Python 核心数据流。"
+context = ["证据 A", "证据 B"]
+print({"question": "什么是 LCEL？", "context": "\n".join(context)})
+```
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（03） - 实战练习 LCEL 组装 chain / 本篇定位”的关键对象与数据流，解释“这是 LangChain 实战练习篇，重点练固定流程的组件串联。”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（03） - 实战练习 LCEL 组装 chain / 核心拆解”设计正常与异常输入，验证“LCEL 适合固定流程。”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（03） - 实战练习 LCEL 组装 chain / 工程链路”的最小代码或配置，检验“定义输入 question。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（15） - 实战练习 LCEL 组装 chain / 本篇定位”的关键对象与数据流，解释“这是 LangChain 实战练习篇，重点练固定流程的组件串联。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（15） - 实战练习 LCEL 组装 chain / 核心拆解”设计正常与异常输入，验证“LCEL 适合固定流程。”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（15） - 实战练习 LCEL 组装 chain / 工程链路”的最小代码或配置，检验“定义输入 question。”，输出命令、结果与 Diff，并说明不适用边界。
 
 # 一、实战练习 LCEL 组装 chain的学习定位与边界
 

@@ -1,9 +1,20 @@
-# LangChain（08） - Nest + LangChain 实现基于 SSE 的流式 ai 接口
+# LangChain（15） - Nest + LangChain 实现基于 SSE 的流式 ai 接口
+
+## TypeScript 实现地图
+
+TypeScript 服务端用 NestJS `@Sse()` 或原始 Response 输出 SSE，把 `model.stream()` 的 `AIMessageChunk` 映射成受控事件；断连时必须取消上游迭代，不能继续消耗 Token。
+
+```typescript runnable file=main.ts title="TypeScript 本篇最小实验" description="运行本篇 TypeScript 核心数据流。"
+const chunks = ['你', '好']
+chunks.forEach((chunk) => console.log(`data: ${JSON.stringify({ type: 'token', chunk })}\n`))
+```
+
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（08） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 本篇定位”的关键对象与数据流，解释“这是前后端工程化篇，衔接 13 流式响应、16 前端调用 AI 接口和 35 LangChain。”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（08） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 核心拆解”设计正常与异常输入，验证“SSE 是服务端持续向浏览器推送文本事件的协议，适合模型流式 token。”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（08） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 工程链路”的最小代码或配置，检验“Nest 建立 SSE 响应。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（15） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 本篇定位”的关键对象与数据流，解释“这是前后端工程化篇，衔接 13 流式响应、16 前端调用 AI 接口和 35 LangChain。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（15） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 核心拆解”设计正常与异常输入，验证“SSE 是服务端持续向浏览器推送文本事件的协议，适合模型流式 token。”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（15） - Nest + LangChain 实现基于 SSE 的流式 ai 接口 / 工程链路”的最小代码或配置，检验“Nest 建立 SSE 响应。”，输出命令、结果与 Diff，并说明不适用边界。
 
 <!-- article-progressive-block:start -->
 # 一、先建立全局：Nest + LangChain 实现基于 SSE 的流式 ai 接口 是什么？
@@ -226,4 +237,4 @@ recovery_replay: required_after_failure
 
 - [MDN：使用 Server-Sent Events](https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events/Using_server-sent_events)
 - [NestJS：Server-Sent Events](https://docs.nestjs.com/techniques/server-sent-events)
-- [LangChain：Streaming](https://docs.langchain.com/oss/python/langchain/streaming)
+- [LangChain：Streaming](https://docs.langchain.com/oss/javascript/langchain/streaming)

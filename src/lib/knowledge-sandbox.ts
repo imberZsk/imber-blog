@@ -1,13 +1,18 @@
 /** 知识文章在线实验支持的执行环境。 */
-export type KnowledgeSandboxRuntime = 'python' | 'html' | 'model'
+export type KnowledgeSandboxRuntime = 'python' | 'typescript' | 'html' | 'model'
 
 /** 真实模型实验由哪个文章框架负责组装并发起请求。 */
 export type KnowledgeModelSandboxFramework = 'langchain' | 'llamaindex'
+
+/** LangChain 真实模型实验验证普通对话，还是只验证 Tool 注册与调用提议。 */
+export type KnowledgeModelSandboxMode = 'chat' | 'tools'
 
 /** 真实模型实验在页面中预填的非敏感请求配置。 */
 export interface KnowledgeModelSandboxRequest {
   /** 服务端必须使用的框架实现，不能根据文章标题猜测。 */
   framework: KnowledgeModelSandboxFramework
+  /** 服务端执行普通聊天或 Tool Calling 注册实验。 */
+  mode: KnowledgeModelSandboxMode
   /** 用户可以在运行前修改的默认问题。 */
   prompt: string
 }

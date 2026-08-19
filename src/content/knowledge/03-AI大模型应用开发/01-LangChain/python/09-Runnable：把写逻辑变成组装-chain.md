@@ -1,4 +1,18 @@
-# LangChain（02） - Runnable：把写逻辑变成组装 chain
+# LangChain（09） - Runnable：把写逻辑变成组装 chain
+
+
+## Python 实现地图
+
+Python 使用 `langchain_core.runnables` 的 `RunnableLambda`、`RunnableSequence`、`RunnableParallel`，同样提供 `invoke()`、`batch()`、`stream()`。
+
+```python runnable file=main.py title="Python 本篇最小实验" description="运行本篇 Python 核心数据流。"
+steps = [lambda value: value + 2, lambda value: value * 3]
+value = 4
+for step in steps:
+    value = step(value)
+print(value)
+```
+
 
 > 读完后，你应能：
 > - 给定“规范化问题、检索证据、生成答案”三段胶水代码，能将它们改成有稳定输入输出的 Runnable chain，并用 Trace 证明步骤顺序与结果没有改变。
@@ -674,7 +688,82 @@ Runnable 是组装工具，不是所有代码的唯一容器。
 - [ ] Trace 能定位到具体 Runnable，且不记录 API Key、完整敏感 Prompt 或隐私文档。
 - [ ] 依赖版本已进入锁文件，升级后重跑契约与回归用例。
 
-# 九、总结
+# 九、先补上 LangChain Prompt 输入契约
+
+Runnable 组合之前，Prompt 的变量必须先成为可检查的输入契约。
+
+下面的实验不访问模型，只验证消息角色、模板变量和缺失字段错误。
+
+## 9.1 可运行实验：LangChain Prompt 模板变量与消息格式
+
+```python runnable file=main.py title="LangChain Prompt 模板变量与消息格式" description="在浏览器中验证模板变量、消息角色和缺失字段错误。"
+"""用标准库模拟 ChatPromptTemplate 的输入契约。"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class MessageTemplate:
+    """保存消息角色和带变量的文本模板。"""
+
+    # 当前消息的角色，例如 system 或 human。
+    role: str
+    # 使用 str.format 语法的消息模板。
+    template: str
+
+    def format(self, values: dict[str, str]) -> dict[str, str]:
+        """填充一条消息。
+
+        Args:
+            values: 本轮调用提供的模板变量。
+        """
+        try:
+            # 格式化后的消息正文。
+            content = self.template.format(**values)
+        except KeyError as error:
+            # 缺失的变量名。
+            missing_name = str(error).strip("'")
+            raise ValueError(f"缺少模板变量：{missing_name}") from error
+        return {"role": self.role, "content": content}
+
+
+def main() -> None:
+    """格式化正常消息，并演示缺失变量时的快速失败。"""
+    # 模板包含的两条消息。
+    templates = [
+        MessageTemplate("system", "只能根据资料回答。资料：{context}"),
+        MessageTemplate("human", "问题：{question}"),
+    ]
+    # 正常调用使用的完整输入。
+    valid_values = {
+        "context": "报销应在消费后 30 天内提交。",
+        "question": "报销期限是多少？",
+    }
+    # 格式化后的消息列表。
+    messages = [template.format(valid_values) for template in templates]
+    print("正常输入：")
+    for message in messages:
+        print(f"- {message['role']}: {message['content']}")
+
+    try:
+        # 故意缺少 context 的错误输入。
+        invalid_values = {"question": "报销期限是多少？"}
+        templates[0].format(invalid_values)
+    except ValueError as error:
+        print(f"\n契约检查：{error}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+运行通过需要同时看到两条消息和一次缺失 `context` 的错误。
+
+这能证明失败停在模型调用之前，而不是等错误答案出现后再猜原因。
+
+# 十、总结
 
 - Runnable 的核心价值是统一调用、组合和配置协议，不是单纯缩短代码。
 - LCEL 的 `|` 只负责连接步骤，数据形状是否匹配仍然由开发者负责。

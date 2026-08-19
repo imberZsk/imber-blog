@@ -10,6 +10,8 @@ import type { KnowledgeSandbox } from '@/lib/knowledge-sandbox'
 const PYTHON_INITIALIZATION_TIMEOUT_MS = 60_000
 /** Python 代码开始执行后的最长时间。 */
 const PYTHON_EXECUTION_TIMEOUT_MS = 10_000
+/** TypeScript 编译和执行共用的最长时间。 */
+const TYPESCRIPT_EXECUTION_TIMEOUT_MS = 10_000
 /** Python Worker 的同源静态资源路径。 */
 const PYTHON_WORKER_URL = '/knowledge-python-worker.mjs'
 /** Python Worker 使用 ES module，以便加载同源 Pyodide ESM 入口。 */
@@ -358,6 +360,94 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
     worker.postMessage({ entryFile: sandbox.entryFile, files: sandbox.files })
   }, [clearRunTimeout, disposeWorker, sandbox.entryFile, sandbox.files, scheduleTimeout])
 
+  /** 按需编译并在独立 Worker 中运行当前 TypeScript 实验。 */
+  const runTypeScriptSandbox = useCallback(async () => {
+    disposeWorker()
+    setOutputLines(['正在加载 TypeScript 编译器……'])
+    setStatus('loading')
+    scheduleTimeout(TYPESCRIPT_EXECUTION_TIMEOUT_MS, 'TypeScript 编译或执行超过 10 秒，已自动终止。')
+
+    try {
+      /** TypeScript 编译器只在用户运行 TypeScript 沙盒时下载。 */
+      const typescript = await import('typescript')
+      /** 仓库可信 TypeScript 源码编译后的浏览器 JavaScript。 */
+      const compiledSource = typescript.transpileModule(entrySource, {
+        compilerOptions: {
+          target: typescript.ScriptTarget.ES2022,
+          module: typescript.ModuleKind.None,
+          strict: true
+        },
+        reportDiagnostics: true
+      })
+      /** 阻断语法诊断，避免执行已知不完整的 JavaScript。 */
+      const diagnostics = compiledSource.diagnostics || []
+      if (diagnostics.some((diagnostic) => diagnostic.category === typescript.DiagnosticCategory.Error)) {
+        /** 可直接展示给读者的 TypeScript 编译错误。 */
+        const diagnosticText = typescript.formatDiagnostics(diagnostics, {
+          getCanonicalFileName: (fileName) => fileName,
+          getCurrentDirectory: () => '',
+          getNewLine: () => '\n'
+        })
+        throw new Error(diagnosticText.trim() || 'TypeScript 编译失败。')
+      }
+
+      /** Worker 内统一捕获 console 输出和未处理异常。 */
+      const workerPrelude = `
+        const formatValue = (value) => typeof value === 'string' ? value : JSON.stringify(value)
+        console.log = (...values) => self.postMessage({ type: 'stdout', text: values.map(formatValue).join(' ') })
+        console.error = (...values) => self.postMessage({ type: 'stderr', text: values.map(formatValue).join(' ') })
+        self.addEventListener('unhandledrejection', (event) => {
+          self.postMessage({ type: 'error', text: String(event.reason || '未处理的 Promise 异常') })
+        })
+      `
+      /** Worker 在源码结束后发送完成消息。 */
+      const workerEpilogue = `\nself.postMessage({ type: 'complete' })`
+      /** 每次运行使用独立 Blob URL，执行完成后立即释放。 */
+      const workerUrl = URL.createObjectURL(
+        new Blob([workerPrelude, compiledSource.outputText, workerEpilogue], { type: 'text/javascript' })
+      )
+      /** 隔离执行编译结果的浏览器 Worker。 */
+      const worker = new Worker(workerUrl)
+      URL.revokeObjectURL(workerUrl)
+      workerRef.current = worker
+      setStatus('running')
+      setOutputLines(['TypeScript 编译完成，开始执行 main.ts。'])
+
+      /**
+       * 处理 TypeScript Worker 的输出和完成状态。
+       * @param event Worker 回传的结构化消息。
+       */
+      worker.onmessage = (event: MessageEvent<PythonWorkerMessage>) => {
+        /** 当前 Worker 输出消息。 */
+        const message = event.data
+        if (message.type === 'stdout' || message.type === 'stderr') {
+          setOutputLines((currentLines) => [...currentLines, message.text || ''])
+          return
+        }
+
+        clearRunTimeout()
+        if (message.type === 'complete') {
+          setStatus('success')
+          setOutputLines((currentLines) => [...currentLines, '执行完成。'])
+          return
+        }
+
+        setStatus('error')
+        setOutputLines((currentLines) => [...currentLines, message.text || 'TypeScript 执行失败。'])
+      }
+
+      worker.onerror = (event) => {
+        disposeWorker()
+        setStatus('error')
+        setOutputLines((currentLines) => [...currentLines, event.message || 'TypeScript Worker 执行失败。'])
+      }
+    } catch (error) {
+      disposeWorker()
+      setStatus('error')
+      setOutputLines([error instanceof Error ? error.message : 'TypeScript 编译失败。'])
+    }
+  }, [clearRunTimeout, disposeWorker, entrySource, scheduleTimeout])
+
   /** 使用页面内临时连接信息执行一次真实模型调用。 */
   const runModelSandbox = useCallback(async () => {
     disposeWorker()
@@ -391,6 +481,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
         },
         body: JSON.stringify({
           framework: sandbox.modelRequest?.framework || 'langchain', // 服务端按文章声明运行对应框架。
+          mode: sandbox.modelRequest?.mode || 'chat', // LangChain 沙盒按文章声明验证普通对话或 Tool 注册。
           baseUrl: modelBaseUrl.trim(), // 用户指定的 OpenAI 兼容根地址。
           apiKey: modelApiKey.trim(), // 只用于本次请求的临时密钥。
           model: resolvedModel, // 下拉选择或自定义模型名。
@@ -429,7 +520,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
     }
   }, [clearRunTimeout, disposeModelRequest, disposeWorker, modelApiKey, modelBaseUrl, modelPrompt, resolvedModel])
 
-  /** 启动当前 HTML 预览或 Python Worker。 */
+  /** 启动当前 HTML、TypeScript、模型或 Python 沙盒。 */
   const runSandbox = useCallback(() => {
     if (sandbox.runtime === 'html') {
       setHtmlPreviewVersion((currentVersion) => currentVersion + 1)
@@ -443,8 +534,13 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
       return
     }
 
+    if (sandbox.runtime === 'typescript') {
+      void runTypeScriptSandbox()
+      return
+    }
+
     runPythonSandbox()
-  }, [runModelSandbox, runPythonSandbox, sandbox.runtime])
+  }, [runModelSandbox, runPythonSandbox, runTypeScriptSandbox, sandbox.runtime])
 
   /** 清空输出并恢复等待运行状态。 */
   const resetSandbox = useCallback(() => {
@@ -476,6 +572,8 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
             <span className="knowledge-code-sandbox-runtime">
               {sandbox.runtime === 'python'
                 ? 'Python · Pyodide'
+                : sandbox.runtime === 'typescript'
+                  ? 'TypeScript · Worker'
                 : sandbox.runtime === 'model'
                   ? 'LangChain · Real API'
                   : 'HTML · iframe'}

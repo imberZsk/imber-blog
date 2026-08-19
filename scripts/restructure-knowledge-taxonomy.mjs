@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getKnowledgeArticleKind } from '../src/lib/knowledge-article-kind.ts'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
+import { projectKnowledgeMarkdown } from '../src/lib/knowledge-language.ts'
 
 /** 当前脚本是否被明确授权写入仓库。 */
 const SHOULD_WRITE = process.argv.includes('--write')
@@ -1436,6 +1437,26 @@ function appendFullStackMindmapDirectory(lines, track, directoryPath, relativeDi
 function createMindmapMarkdown(track) {
   /** 思维导图的 Markdown 行。 */
   const lines = [`# ${track.title}`]
+  lines.push('<!-- knowledge-language:typescript:start -->')
+  lines.push('- 当前代码语言：TypeScript')
+  if (track.title === '全栈开发') {
+    lines.push('  - Node.js、浏览器、React、Next.js 与 TypeScript 工程链路')
+  } else if (track.title === 'AI 编程') {
+    lines.push('  - TypeScript Agent、Node.js 工具链与前端 AI 应用')
+  } else {
+    lines.push('  - LangChain.js、Zod、npm 集成包与 Node.js Runtime')
+  }
+  lines.push('<!-- knowledge-language:end -->')
+  lines.push('<!-- knowledge-language:python:start -->')
+  lines.push('- 当前代码语言：Python')
+  if (track.title === '全栈开发') {
+    lines.push('  - Python、FastAPI、数据处理与服务端工程链路')
+  } else if (track.title === 'AI 编程') {
+    lines.push('  - Python Agent、自动化工具链与数据/模型工作流')
+  } else {
+    lines.push('  - LangChain Python、Pydantic、PyPI 集成包与 Python Runtime')
+  }
+  lines.push('<!-- knowledge-language:end -->')
   if (track.title === '全栈开发') {
     /** 全栈路线当前真实存在的二级模块目录。 */
     const moduleDirectories = fs
@@ -1468,33 +1489,51 @@ function createMindmapMarkdown(track) {
     /** 当前知识域的实体绝对目录。 */
     const categoryPath = path.join(KNOWLEDGE_ROOT, track.directory, categoryDirectory)
     /** 当前知识域中的规范文章文件。 */
-    const articleFiles = fs.readdirSync(categoryPath).filter((fileName) => /\.mdx?$/i.test(fileName)).sort((left, right) => left.localeCompare(right, 'zh-CN', { numeric: true }))
+    const articleFiles = findArticleFiles(categoryPath)
+      .map((filePath) => path.relative(categoryPath, filePath).split(path.sep).join('/'))
+      .sort((left, right) => left.localeCompare(right, 'zh-CN', { numeric: true }))
     /** 当前知识域在页面中的正式展示名称。 */
     const categoryDisplayName = getCategoryDisplayName(category)
     lines.push(`- ${String(categoryIndex + 1).padStart(2, '0')} - ${categoryDisplayName}`)
 
     articleFiles.forEach((fileName) => {
       /** 文章文件携带的两位顺序。 */
-      const sequence = fileName.match(/^(\d+)-/)?.[1] || '00'
+      const sequence = path.basename(fileName).match(/^(\d+)-/)?.[1] || '00'
       /** 当前文章的完整 Markdown。 */
       const markdown = fs.readFileSync(path.join(categoryPath, fileName), 'utf8')
       /** 当前文章的基础标题。 */
-      const baseTitle = getBaseTitle(markdown, fileName)
+      const baseTitle = getBaseTitle(markdown, path.basename(fileName))
       /** 当前文件是否真的是学习指南，不能再用 01 课号推断。 */
-      const isGuide = /^01-学习指南\.mdx?$/i.test(fileName)
+      const isGuide = /^01-学习指南\.mdx?$/i.test(path.basename(fileName))
       /** 页面与导图共用的完整标题。 */
       const displayTitle = `${categoryDisplayName}（${sequence}） - ${isGuide ? '学习指南' : baseTitle}`
       /** 当前文章不含扩展名的公开路径。 */
       const articlePath = `${track.directory}/${categoryDirectory}/${fileName.replace(/\.mdx?$/i, '')}`
-      /** 当前文章与文章页共用的唯一知识树。 */
-      const articleMindmap = getCanonicalArticleMindmap(markdown, articlePath, displayTitle)
+      /** 独立 LangChain 文章从相对目录读取语言，其他文章不包条件分支。 */
+      const articleLanguage = fileName.startsWith('typescript/')
+        ? 'typescript'
+        : fileName.startsWith('python/')
+          ? 'python'
+          : null
+      /** 当前独立文章与文章页共用的唯一知识树。 */
+      const articleMindmap = getCanonicalArticleMindmap(
+        markdown,
+        articlePath,
+        displayTitle
+      )
       /** 路线总图不能再改写文章页知识树中的分支。 */
       const mindmapSections = articleMindmap.sections
+      if (articleLanguage) {
+        lines.push(`<!-- knowledge-language:${articleLanguage}:start -->`)
+      }
       lines.push(`  - [${articleMindmap.title}](/knowledge/${encodeKnowledgePath(articlePath)})`)
       mindmapSections.forEach((section) => {
         lines.push(`    - ${section.topic}`)
         section.details.forEach((detail) => lines.push(`      - ${detail}`))
       })
+      if (articleLanguage) {
+        lines.push('<!-- knowledge-language:end -->')
+      }
       if (mindmapSections.length < MIN_MINDMAP_POINTS) {
         /** 缺少主题时立即失败，防止生成只有标题、没有知识解释的导图。 */
         /** 已成功提取的主题名称，用于定位缺少解释的正文结构。 */

@@ -1,7 +1,7 @@
-import type { KnowledgeModelSandboxFramework } from './knowledge-sandbox'
+import type { KnowledgeModelSandboxFramework, KnowledgeModelSandboxMode } from './knowledge-sandbox'
 
 /** Markdown 可执行代码围栏支持的运行时。 */
-export type RunnableCodeRuntime = 'python' | 'html' | 'model'
+export type RunnableCodeRuntime = 'python' | 'typescript' | 'html' | 'model'
 
 /** 可执行代码围栏中经过校验的元数据。 */
 export interface RunnableCodeBlockMetadata {
@@ -21,6 +21,8 @@ export interface RunnableCodeBlockMetadata {
   prompt: string
   /** 模型实验在服务端实际运行的框架。 */
   modelFramework: KnowledgeModelSandboxFramework
+  /** LangChain 模型实验执行普通聊天或 Tool 注册验证。 */
+  modelMode: KnowledgeModelSandboxMode
 }
 
 /** 可执行围栏允许保存的安全文件名。 */
@@ -32,6 +34,7 @@ const FENCE_ATTRIBUTE_PATTERN = /([a-z][a-z\d-]*)=(?:"([^"]*)"|'([^']*)'|([^\s]+
 /** 不同代码语言默认使用的沙盒入口文件。 */
 const DEFAULT_FILE_NAMES: Readonly<Record<RunnableCodeRuntime, string>> = {
   python: 'main.py', // Python 在 Pyodide Worker 中从 main.py 启动。
+  typescript: 'main.ts', // TypeScript 在浏览器 Worker 中编译后执行。
   html: 'index.html', // HTML 在隔离 iframe 中直接预览 index.html。
   model: 'main.ts' // 模型实验展示与服务端一致的 TypeScript LangChain 源码。
 }
@@ -55,7 +58,7 @@ export function parseRunnableCodeBlockMetadata(
     ? 'python'
     : /^(?:html|htm)$/.test(normalizedLanguage)
       ? 'html'
-      : isModelSandbox && /^(?:typescript|ts)$/.test(normalizedLanguage)
+      : /^(?:typescript|ts)$/.test(normalizedLanguage)
         ? 'typescript'
         : null
 
@@ -80,12 +83,16 @@ export function parseRunnableCodeBlockMetadata(
     ? 'model'
     : sourceLanguage === 'html'
       ? 'html'
-      : 'python'
+      : sourceLanguage === 'typescript'
+        ? 'typescript'
+        : 'python'
 
   /** 只有显式声明 LlamaIndex 时才切换框架，其余历史文章继续使用 LangChain。 */
   const modelFramework: KnowledgeModelSandboxFramework = attributes.get('framework') === 'llamaindex'
     ? 'llamaindex'
     : 'langchain'
+  /** 只有显式声明 tools 时才运行 Tool Calling 实验。 */
+  const modelMode: KnowledgeModelSandboxMode = attributes.get('mode') === 'tools' ? 'tools' : 'chat'
 
   /** file 属性必须是直接文件名，拒绝目录穿越和路径分隔符。 */
   const requestedFileName = attributes.get('file') || ''
@@ -102,7 +109,8 @@ export function parseRunnableCodeBlockMetadata(
     title: attributes.get('title') || '',
     description: attributes.get('description') || '',
     prompt: attributes.get('prompt') || '',
-    modelFramework
+    modelFramework,
+    modelMode
   }
 }
 
@@ -118,6 +126,7 @@ export function serializeRunnableCodeBlockInfo(metadata: RunnableCodeBlockMetada
         'runnable',
         metadata.runtime === 'model' ? 'model-sandbox' : '',
         metadata.runtime === 'model' && metadata.modelFramework === 'llamaindex' ? 'framework=llamaindex' : '',
+        metadata.runtime === 'model' && metadata.modelMode === 'tools' ? 'mode=tools' : '',
         `file=${metadata.fileName}`,
         metadata.title ? `title=${JSON.stringify(metadata.title)}` : '',
         metadata.description ? `description=${JSON.stringify(metadata.description)}` : '',

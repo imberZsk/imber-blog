@@ -1,9 +1,20 @@
-# LangChain（07） - LangChain v1 运行时、中间件与迁移边界
+# LangChain（14） - LangChain v1 运行时、中间件与迁移边界
+
+## TypeScript 实现地图
+
+TypeScript v1 以 `createAgent` 和 Middleware 为高层入口，底层复杂状态进入 `@langchain/langgraph`。迁移时逐项核对 npm 包、camelCase API、Zod schema 和 Node.js 运行时要求。
+
+```typescript runnable file=main.ts title="TypeScript 本篇最小实验" description="运行本篇 TypeScript 核心数据流。"
+const migrationChecks = ['package', 'import path', 'schema', 'runtime']
+console.log(migrationChecks.every(Boolean))
+```
+
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（07） - LangChain v1 运行时、中间件与迁移边界 / 三种编排方式”的关键对象与数据流，解释“模型需要在有限工具间循环选择时使用 create_agent；”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（07） - LangChain v1 运行时、中间件与迁移边界 / 中间件生命周期”设计正常与异常输入，验证“before_agent 适合初始化运行上下文；”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（07） - LangChain v1 运行时、中间件与迁移边界 / Context Engineering”的最小代码或配置，检验“消息历史只是上下文的一部分。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（14） - LangChain v1 运行时、中间件与迁移边界 / 三种编排方式”的关键对象与数据流，解释“模型需要在有限工具间循环选择时使用 createAgent；”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（14） - LangChain v1 运行时、中间件与迁移边界 / 中间件生命周期”设计正常与异常输入，验证“before_agent 适合初始化运行上下文；”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（14） - LangChain v1 运行时、中间件与迁移边界 / Context Engineering”的最小代码或配置，检验“消息历史只是上下文的一部分。”，输出命令、结果与 Diff，并说明不适用边界。
 
 > LangChain v1 的核心价值是统一 Model、Message、Tool、Middleware 和 Agent Runtime，而不是让业务代码依赖更多魔法封装。
 
@@ -23,11 +34,11 @@
 
 理解“LangChain v1 运行时、中间件与迁移边界”，先要把标题中的对象放进同一条处理链：它接收什么输入，经过哪些状态变化，最终用什么证据判断结果。下表不另造概念，只把作者正文已经解释的章节按依赖顺序连起来。
 
-“LangChain v1 运行时、中间件与迁移边界”的第一个核心判断是：模型需要在有限工具间循环选择时使用 create_agent；。先弄清这个判断中的对象和输入输出，后面的实现、故障和验收才有共同语境。
+“LangChain v1 运行时、中间件与迁移边界”的第一个核心判断是：模型需要在有限工具间循环选择时使用 createAgent；。先弄清这个判断中的对象和输入输出，后面的实现、故障和验收才有共同语境。
 
 | 顺序 | 章节 | 读完本节应抓住的结论 |
 | --- | --- | --- |
-| 1 | 三种编排方式 | 模型需要在有限工具间循环选择时使用 create_agent； |
+| 1 | 三种编排方式 | 模型需要在有限工具间循环选择时使用 createAgent； |
 | 2 | 中间件生命周期 | before_agent 适合初始化运行上下文； |
 | 3 | Context Engineering | 消息历史只是上下文的一部分。 |
 | 4 | 从旧教程迁移 | 迁移顺序是：明确输入输出 Schema， |
@@ -55,11 +66,11 @@ flowchart LR
 # 二、三种编排方式
 
 固定步骤、无模型决策时使用 LCEL Chain；
-模型需要在有限工具间循环选择时使用 `create_agent`；
+模型需要在有限工具间循环选择时使用 `createAgent`；
 需要分支、并行、人工中断、持久化恢复或确定性节点时使用 LangGraph。
 不要因为“以后可能复杂”就把简单抽取做成 Agent。
 
-`create_agent` 需要显式控制：
+`createAgent` 需要显式控制：
 
 - `response_format`：最终结构化结果的 Schema。
 - `context_schema`：运行期依赖，如用户、租户和权限上下文。
@@ -164,7 +175,7 @@ flowchart LR
 
 | 正文章节 | 已解释的结论 | 本轮唯一变量 | 必须保存的证据 |
 | --- | --- | --- | --- |
-| 三种编排方式 | 模型需要在有限工具间循环选择时使用 create_agent； | 只改变与“三种编排方式”相关的条件 | 各 Runnable 的序列化输入输出、Trace、异常类型、预期断言和依赖版本 |
+| 三种编排方式 | 模型需要在有限工具间循环选择时使用 createAgent； | 只改变与“三种编排方式”相关的条件 | 各 Runnable 的序列化输入输出、Trace、异常类型、预期断言和依赖版本 |
 | 中间件生命周期 | before_agent 适合初始化运行上下文； | 只改变与“中间件生命周期”相关的条件 | 各 Runnable 的序列化输入输出、Trace、异常类型、预期断言和依赖版本 |
 | Context Engineering | 消息历史只是上下文的一部分。 | 只改变与“Context Engineering”相关的条件 | 各 Runnable 的序列化输入输出、Trace、异常类型、预期断言和依赖版本 |
 | 从旧教程迁移 | 迁移顺序是：明确输入输出 Schema， | 只改变与“从旧教程迁移”相关的条件 | 各 Runnable 的序列化输入输出、Trace、异常类型、预期断言和依赖版本 |
@@ -239,14 +250,14 @@ recovery_replay: required_after_failure
 
 # 十、总结
 
-- **三种编排方式**：模型需要在有限工具间循环选择时使用 create_agent；
+- **三种编排方式**：模型需要在有限工具间循环选择时使用 createAgent；
 - **中间件生命周期**：before_agent 适合初始化运行上下文；
 - **Context Engineering**：消息历史只是上下文的一部分。
 - **从旧教程迁移**：迁移顺序是：明确输入输出 Schema，抽离 Tool，显式定义 Context 和 State，再迁移到 v1 Agent 或 LangGraph，最后用固定 Dataset 对比行为。
 
 ## 参考资料
 
-- [LangChain Agents](https://docs.langchain.com/oss/python/langchain/agents)
-- [LangChain Middleware](https://docs.langchain.com/oss/python/langchain/middleware/overview)
-- [LangChain Runtime](https://docs.langchain.com/oss/python/langchain/runtime)
-- [LangChain v1 Migration](https://docs.langchain.com/oss/python/migrate/langchain-v1)
+- [LangChain Agents](https://docs.langchain.com/oss/javascript/langchain/agents)
+- [LangChain Middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/overview)
+- [LangChain Runtime](https://docs.langchain.com/oss/javascript/langchain/runtime)
+- [LangChain v1 Migration](https://docs.langchain.com/oss/javascript/migrate/langchain-v1)

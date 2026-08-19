@@ -258,17 +258,19 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
       /** 当前实验入口文件的仓库源码。 */
       const entrySource = sandbox.files.find((file) => file.name === sandbox.entryFile)?.content || ''
       /** 正文中与实际执行入口完全一致的代码块。 */
-      const matchingSourceElement = entrySource
+      let matchingSourceElement = entrySource
         ? sourceCodeElements.find(
             (sourceElement) =>
               !claimedSourceElements.has(sourceElement) &&
               normalizeSandboxSource(sourceElement.textContent || '') === normalizeSandboxSource(entrySource)
           )
         : undefined
+      /** 去掉展示后缀后的实验名称，用于关联所在正文标题。 */
+      const contextualSandboxTitle = sandbox.title.replace(/·在线运行$/, '')
       /** 与实验标题匹配的正文知识点标题。 */
       const contextualHeadingElement = Array.from(
         contentElement.querySelectorAll<HTMLHeadingElement>('h1, h2, h3, h4, h5, h6')
-      ).find((headingElement) => headingElement.textContent?.includes(sandbox.title))
+      ).find((headingElement) => headingElement.textContent?.includes(contextualSandboxTitle))
       /** 知识点标题后第一个代码块，HTML 实验会紧跟它展示且保留服务端示例。 */
       let contextualSourceElement: HTMLPreElement | null = null
       /** 知识点标题后最后一个 Python 代码块，优先于依赖清单等辅助代码。 */
@@ -285,6 +287,15 @@ export function KnowledgeArticleContent({ content, sandboxes }: KnowledgeArticle
         contextualSiblingElement = contextualSiblingElement.nextElementSibling
       }
       contextualSourceElement = contextualPythonSourceElement || contextualSourceElement
+      // 源码序列化存在差异时，仍用同章节代码块承载 Python 或模型沙盒，避免实验漂移到文章末尾。
+      if (
+        !matchingSourceElement &&
+        sandbox.runtime !== 'html' &&
+        contextualSourceElement &&
+        !claimedSourceElements.has(contextualSourceElement)
+      ) {
+        matchingSourceElement = contextualSourceElement
+      }
       mountNode.className = 'knowledge-code-sandbox-mount'
 
       if (matchingSourceElement) {
