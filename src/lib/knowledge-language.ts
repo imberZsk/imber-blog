@@ -13,6 +13,9 @@ export const KNOWLEDGE_LANGUAGES: ReadonlyArray<{ value: KnowledgeLanguage; labe
 /** LangChain 独立文章树中语言目录所在的模块名。 */
 const LANGCHAIN_MODULE_SEGMENT = '01-LangChain'
 
+/** 知识库列表与文章返回链接共用的 LangChain 模块名称。 */
+export const LANGCHAIN_MODULE_LABEL = 'LangChain'
+
 /**
  * 从知识文章路径中读取独立语言目录。
  * @param articlePath 不含 `/knowledge` 前缀的文章路径。

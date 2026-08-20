@@ -1,6 +1,7 @@
 import { PADDING_TOP } from '@/app/const'
 import { cn } from '@/lib/utils'
 import { getKnowledgeArticles, type KnowledgeListArticle } from '@/lib/knowledge'
+import { getKnowledgeLanguageFromPath } from '@/lib/knowledge-language'
 import { KnowledgeBrowser } from './knowledge-browser'
 import { KNOWLEDGE_TRACKS, type KnowledgeTrackSlug } from './config'
 
@@ -24,7 +25,9 @@ export function KnowledgePageView({ activeTrack }: KnowledgePageViewProps) {
   const trackArticleCounts = KNOWLEDGE_TRACKS.reduce<KnowledgeTrackArticleCounts>(
     (articleCounts, knowledgeTrack) => {
       articleCounts[knowledgeTrack.slug] = allArticles.filter(
-        (article) => article.track === null || article.track === knowledgeTrack.slug
+        (article) =>
+          (article.track === null || article.track === knowledgeTrack.slug) &&
+          getKnowledgeLanguageFromPath(article.path) !== 'python'
       ).length
       return articleCounts
     },

@@ -4,6 +4,13 @@ import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from 
 import Link from 'next/link'
 import { ArrowUpRight, Network, Search } from 'lucide-react'
 import type { KnowledgeArticleKind, KnowledgeListArticle } from '@/lib/knowledge'
+import { KnowledgeLanguageSwitch } from '@/components/knowledge-language-switch'
+import {
+  DEFAULT_KNOWLEDGE_LANGUAGE,
+  getKnowledgeLanguageFromPath,
+  LANGCHAIN_MODULE_LABEL,
+  type KnowledgeLanguage
+} from '@/lib/knowledge-language'
 import { Input } from '@/components/ui'
 import {
   getKnowledgeArticleAnchor,
@@ -31,6 +38,9 @@ const SUBTOPIC_HEADING_SELECTOR = '[data-knowledge-subtopic-heading]'
 
 /** 知识库地址中记录当前可见模块的查询参数名。 */
 const MODULE_QUERY_PARAM = 'module'
+
+/** AI 应用路线显式查看全部模块时使用的稳定查询值。 */
+const ALL_MODULE_QUERY_VALUE = 'all'
 
 /** 旧版知识库地址中记录学习路线的查询参数名。 */
 const LEGACY_TRACK_QUERY_PARAM = 'track'
@@ -102,8 +112,12 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   const articleListRef = useRef<HTMLDivElement>(null)
   /** 用户当前输入的搜索关键词。 */
   const [query, setQuery] = useState('')
-  /** 当前 URL 选中且在本路线中有效的一级模块。 */
-  const [activeModule, setActiveModule] = useState<string | null>(null)
+  /** LangChain 列表当前只展示的独立文章语言。 */
+  const [langChainLanguage, setLangChainLanguage] = useState<KnowledgeLanguage>(DEFAULT_KNOWLEDGE_LANGUAGE)
+  /** 当前 URL 选中且在本路线中有效的一级模块；AI 应用路线默认直接展示 LangChain。 */
+  const [activeModule, setActiveModule] = useState<string | null>(
+    activeTrack === 'ai-apps' ? LANGCHAIN_MODULE_LABEL : null
+  )
   /** 浏览器地址中的模块和文章定位是否已经完成首次同步。 */
   const [hasSyncedLocation, setHasSyncedLocation] = useState(false)
   /** 全部模块模式下根据右侧滚动位置识别出的当前模块。 */
@@ -114,18 +128,35 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
   const [focusedArticlePath, setFocusedArticlePath] = useState<string | null>(null)
   /** 当前筛选范围内用于恢复位置的文章序号。 */
   const focusedArticleIndex = articles
+    .filter((article) => {
+      /** 非 LangChain 文章没有语言目录，两种列表状态都需要保留。 */
+      const articleLanguage = getKnowledgeLanguageFromPath(article.path)
+      return articleLanguage === null || articleLanguage === langChainLanguage
+    })
     .filter((article) => activeModule === null || article.topic === activeModule)
     .findIndex((article) => article.path === focusedArticlePath)
   /** 当前主线对应的标签和思维导图链接。 */
   const activeTrackConfig = KNOWLEDGE_TRACKS.find((track) => track.slug === activeTrack) || KNOWLEDGE_TRACKS[0]
   /** 当前主线按照实体内容目录顺序声明的一级模块。 */
   const activeTrackModules = activeTrackConfig.modules
-  /** 当前学习主线下按照实体目录顺序排列的模块与文章数量。 */
+  /** 只保留当前 LangChain 语言以及所有非 LangChain 文章的列表数据。 */
+  const languageFilteredArticles = useMemo(
+    () =>
+      articles.filter((article) => {
+        /** 物理路径中的语言目录是两套文章唯一可靠的区分依据。 */
+        const articleLanguage = getKnowledgeLanguageFromPath(article.path)
+        return articleLanguage === null || articleLanguage === langChainLanguage
+      }),
+    [articles, langChainLanguage]
+  )
+  /** 当前语言过滤后可展示的模块选项。 */
   const moduleOptions = useMemo(() => {
     /** 用于累计当前主线各一级模块文章数量的映射。 */
     const moduleCounts = new Map<string, number>()
 
-    articles.forEach((article) => moduleCounts.set(article.topic, (moduleCounts.get(article.topic) || 0) + 1))
+    languageFilteredArticles.forEach((article) =>
+      moduleCounts.set(article.topic, (moduleCounts.get(article.topic) || 0) + 1)
+    )
 
     /** 公共总览内容的文章数量。 */
     const overviewCount = moduleCounts.get(OVERVIEW_MODULE_LABEL) || 0
@@ -138,7 +169,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
       ...(overviewCount > 0 ? [{ label: OVERVIEW_MODULE_LABEL, count: overviewCount }] : []),
       ...orderedModuleOptions
     ]
-  }, [activeTrack, activeTrackModules, articles])
+  }, [activeTrack, activeTrackModules, languageFilteredArticles])
   /** 去除总览后从 01 开始编号的正式学习模块。 */
   const numberedModuleOptions = useMemo(
     () => moduleOptions.filter((moduleOption) => moduleOption.label !== OVERVIEW_MODULE_LABEL),
@@ -153,7 +184,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
     /** 一级模块名称对应的正文排序位置。 */
     const moduleOrderByLabel = new Map(orderedModuleLabels.map((label, index) => [label, index]))
 
-    return articles
+    return languageFilteredArticles
       .filter((article) => {
         /** 选中模块后只展示该模块文章，不混入公共总览。 */
         const matchesModule = activeModule === null || article.topic === activeModule
@@ -173,7 +204,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
 
         return leftModuleOrder - rightModuleOrder
       })
-  }, [activeModule, activeTrack, activeTrackModules, articles, query])
+  }, [activeModule, activeTrack, activeTrackModules, languageFilteredArticles, query])
   /** 当前筛选范围内一次性进入页面 DOM 的完整文章列表。 */
   const visibleArticles = filteredArticles
   /** 右侧模块导航当前应高亮的模块；页面顶部尚未触发滚动识别时回退到首个真实模块。 */
@@ -239,7 +270,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
     /** 浏览器返回时需要恢复的知识库列表地址。 */
     const returnListHref = getKnowledgeListHref({
       track: activeTrack,
-      module: activeModule,
+      module: activeModule === LANGCHAIN_MODULE_LABEL ? null : activeModule,
       focus: articlePath
     })
 
@@ -259,7 +290,10 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
 
     event.preventDefault()
     /** 模块切换后的可分享静态路线地址。 */
-    const nextModuleHref = getKnowledgeListHref({ track: activeTrack, module: nextModule })
+    /** AI 应用路线的干净 URL 已代表默认 LangChain，全部模块需要独立可分享状态。 */
+    const nextModuleLocation = nextModule ?? (activeTrack === 'ai-apps' ? ALL_MODULE_QUERY_VALUE : null)
+    /** 模块切换后的可分享静态路线地址。 */
+    const nextModuleHref = getKnowledgeListHref({ track: activeTrack, module: nextModuleLocation })
     window.history.pushState(window.history.state, '', nextModuleHref)
     setActiveModule(nextModule)
     setFocusedArticlePath(null)
@@ -301,8 +335,15 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
       /** 当前地址中请求的模块。 */
       const requestedModule = knowledgeUrl.searchParams.get(MODULE_QUERY_PARAM)
       /** 仅允许使用当前静态索引中真实存在的模块。 */
-      const currentModule =
-        requestedModule && articles.some((article) => article.topic === requestedModule) ? requestedModule : null
+      const currentModule = requestedModule
+        ? requestedModule === ALL_MODULE_QUERY_VALUE
+          ? null
+          : articles.some((article) => article.topic === requestedModule)
+          ? requestedModule
+          : null
+        : activeTrack === 'ai-apps'
+          ? LANGCHAIN_MODULE_LABEL
+          : null
       /** 当前地址中请求恢复位置的文章路径。 */
       const requestedFocusedArticlePath = knowledgeUrl.searchParams.get('focus')
       /** 仅接受当前模块筛选范围内真实存在的文章定位。 */
@@ -314,6 +355,24 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
         )
           ? requestedFocusedArticlePath
           : null
+
+      /** 从 Python 文章返回列表时，外层语言选择必须跟随目标文章。 */
+      const focusedArticleLanguage = currentFocusedArticlePath
+        ? getKnowledgeLanguageFromPath(currentFocusedArticlePath)
+        : null
+      if (focusedArticleLanguage) {
+        setLangChainLanguage(focusedArticleLanguage)
+      }
+
+      // LangChain 是 AI 应用路线默认模块，旧链接中的重复参数应迁移为干净路径。
+      if (requestedModule === LANGCHAIN_MODULE_LABEL) {
+        knowledgeUrl.searchParams.delete(MODULE_QUERY_PARAM)
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${knowledgeUrl.pathname}${knowledgeUrl.search}${knowledgeUrl.hash}`
+        )
+      }
 
       setActiveModule(currentModule)
       setFocusedArticlePath(currentFocusedArticlePath)
@@ -380,20 +439,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
 
         setVisibleModule((currentModule) => (currentModule === nextVisibleModule ? currentModule : nextVisibleModule))
 
-        /** 保留当前主线等参数，仅替换滚动对应的模块参数。 */
-        const knowledgeUrl = new URL(window.location.href)
-        if (nextVisibleModule) {
-          knowledgeUrl.searchParams.set(MODULE_QUERY_PARAM, nextVisibleModule)
-        } else {
-          knowledgeUrl.searchParams.delete(MODULE_QUERY_PARAM)
-        }
-
-        /** 地址栏已经一致时不重复写入浏览器历史状态。 */
-        const nextKnowledgePath = `${knowledgeUrl.pathname}${knowledgeUrl.search}${knowledgeUrl.hash}`
-        const currentKnowledgePath = `${window.location.pathname}${window.location.search}${window.location.hash}`
-        if (nextKnowledgePath !== currentKnowledgePath) {
-          window.history.replaceState(window.history.state, '', nextKnowledgePath)
-        }
+        // 滚动只负责侧栏高亮，避免浏览文章时把模块名持续写回干净的路线 URL。
       }
 
       /** 当前文章列表中已经渲染的细分类标题。 */
@@ -439,7 +485,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
         window.cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [activeModule, activeTrack, hasSyncedLocation, query])
+  }, [activeModule, activeTrack, hasSyncedLocation, langChainLanguage, query])
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_220px]">
@@ -501,6 +547,13 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
           <span className="text-mint shrink-0 font-mono text-xs">{filteredArticles.length} 篇</span>
         </div>
 
+        {activeTrack === 'ai-apps' && (activeModule === null || activeModule === LANGCHAIN_MODULE_LABEL) && (
+          <div className="border-border mb-5 flex flex-wrap items-center justify-between gap-3 border-y py-3">
+            <span className="text-muted-foreground text-sm font-medium">LangChain 代码语言</span>
+            <KnowledgeLanguageSwitch language={langChainLanguage} onLanguageChange={setLangChainLanguage} />
+          </div>
+        )}
+
         <div ref={articleListRef}>
           {visibleArticles.map((article, index) => {
             /** 当前文章在所属模块中稳定且从 01 开始的 UI 展示顺序。 */
@@ -514,6 +567,7 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
             /** 模块切换或细分类切换处展示实体三级目录标题，单篇专题也必须保留。 */
             const showsSubtopicHeading =
               article.topic !== OVERVIEW_MODULE_LABEL &&
+              article.topic !== LANGCHAIN_MODULE_LABEL &&
               article.subtopic !== article.topic &&
               (index === 0 ||
                 visibleArticles[index - 1]?.topic !== article.topic ||
@@ -592,7 +646,10 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
           <nav ref={moduleNavigationRef} className="mt-3" aria-label={`${activeTrackConfig.label}细分目录`}>
             <Link
               ref={highlightedModule === null ? activeModuleLinkRef : undefined}
-              href={getKnowledgeListHref({ track: activeTrack })}
+              href={getKnowledgeListHref({
+                track: activeTrack,
+                module: activeTrack === 'ai-apps' ? ALL_MODULE_QUERY_VALUE : null
+              })}
               onClick={(event) => handleModuleNavigation(event, null)}
               aria-current={highlightedModule === null ? 'page' : undefined}
               className={`grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2 text-xs transition-colors ${
@@ -631,7 +688,10 @@ export function KnowledgeBrowser({ articles, activeTrack, trackArticleCounts }: 
               )
             })}
           </nav>
-          {highlightedModule && highlightedModuleOrder >= 0 && outlinedSubtopics.length > 0 && (
+          {highlightedModule &&
+            highlightedModule !== LANGCHAIN_MODULE_LABEL &&
+            highlightedModuleOrder >= 0 &&
+            outlinedSubtopics.length > 0 && (
             <>
               <p className="border-border text-foreground mt-4 border-t pt-4 text-xs font-medium">
                 <span className="text-mint mr-2 font-mono text-[11px]">

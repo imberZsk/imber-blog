@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getKnowledgeListHref } from './article-anchor'
+import { LANGCHAIN_MODULE_LABEL } from '@/lib/knowledge-language'
 import { DEFAULT_KNOWLEDGE_TRACK, type KnowledgeTrackSlug } from './config'
 
 /** 返回知识库链接在加载前后共用的外观。 */
@@ -24,7 +25,10 @@ export function KnowledgeReturnLink({ articlePath, articleTrack, articleTopic }:
   /** 普通文章返回自身路线，公共总览文章回到默认路线。 */
   const returnTrack = articleTrack || DEFAULT_KNOWLEDGE_TRACK
   /** 返回知识库时用于恢复筛选和原文章位置的链接。 */
-  const returnHref = getKnowledgeListHref({ track: returnTrack, module: articleTopic, focus: articlePath })
+  /** LangChain 是 AI 应用路线的默认模块，返回列表时无需重复写入模块参数。 */
+  const returnModule = articleTopic === LANGCHAIN_MODULE_LABEL ? null : articleTopic
+  /** 返回知识库并恢复当前文章位置的地址。 */
+  const returnHref = getKnowledgeListHref({ track: returnTrack, module: returnModule, focus: articlePath })
 
   return (
     <Link href={returnHref} className={KNOWLEDGE_RETURN_LINK_CLASS_NAME}>
