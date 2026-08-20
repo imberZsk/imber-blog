@@ -99,8 +99,6 @@ LangChain 不会让模型自动拥有最新知识。
 - `langchain-openai`（导入名 `langchain_openai`）等供应商包：提供 ChatModel 和 Embeddings 集成。
 - `langchain-text-splitters`、`langchain-mcp-adapters`、`langchain-milvus`：分别提供文档分块、MCP Tool 转换和向量库集成。
 
-## 3.1 Python 核心包地图
-
 | 包 | 负责什么 | 典型导入 |
 | --- | --- | --- |
 | `langchain` | `create_agent`、Middleware 等高层应用入口 | `langchain.agents` |

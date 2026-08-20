@@ -66,8 +66,15 @@ const MAX_MINDMAP_DETAILS = 5
 const INVALID_MINDMAP_DETAIL_PATTERN =
   /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:(?:\d+[.)、]\s*)?(?:注入与|运行最小案例|选择机制)|如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里|为什么|为何|如何|是否|什么|哪些|怎么|怎样|能否|有没有|谁|哪里|哪一|几种|多少|何时|什么时候|https?:\/\/|pnpm |npm |npx |pip |docker |kubectl |curl |import |export |const |let |function |class |@returns|@param|\/|\{|\}|\||javascript$|typescript$|tsx$|jsx$|python$|bash$|json$|yaml$|markdown$)/i
 
+/** 导图叶子不能只声明数量或使用缺少明确主语的代词开头。 */
+const DANGLING_MINDMAP_DETAIL_PATTERN =
+  /(?:只有|分为|包括|包含|归纳为|拆成|经过|需要|做|完成)(?:以下|如下)?[一二三四五六七八九十两\d]+(?:个|步|类|种|层|部分|阶段|方面|件事)(?:内容|对象|流程|步骤)?[：:]?$|^(?:(?:它|这(?:个|些|种|一)|其|其中|两者|前者|后者)(?:是|不|会|能|可以|负责|处理|用于|表示|对应|包含|依赖|支持|与)|不是|而不是|并不是|不能|不要)/i
+
 /** 同一末级结论跨过多文章复用时视为模板污染。 */
 const MAX_MINDMAP_DETAIL_REUSE_COUNT = 5
+
+/** 多个记忆与恢复主题都必须保留的跨域治理原则，不作为模板污染处理。 */
+const ALLOWED_REUSED_MINDMAP_DETAILS = new Set(['只有写入没有治理的记忆会持续污染后续任务。'])
 
 /** 同一条知识正文跨文章复用上限；标题、表头、来源链接和代码不参与统计。 */
 const MAX_ARTICLE_PROSE_REUSE_COUNT = 5
@@ -667,11 +674,15 @@ function auditMindmaps(articlePaths) {
         if (/[：:]$/.test(detail) || /[？?][”’」』】）)]?\s*$/.test(detail)) {
           failures.push(`路线总图中的“${routeArticleTree.title} / ${section.title}”包含不完整或仅提问的结论：${detail}`)
         }
+        if (DANGLING_MINDMAP_DETAIL_PATTERN.test(detail)) {
+          failures.push(`路线总图中的“${routeArticleTree.title} / ${section.title}”包含无法独立理解的结论：${detail}`)
+        }
       }
     }
   }
 
   for (const [detail, articleTitles] of detailArticleTitles) {
+    if (ALLOWED_REUSED_MINDMAP_DETAILS.has(detail)) continue
     if (articleTitles.size <= MAX_MINDMAP_DETAIL_REUSE_COUNT) continue
     /** 只展示少量来源，完整数量已经能够证明模板污染。 */
     const sourceExamples = [...articleTitles].slice(0, 3).join('、')

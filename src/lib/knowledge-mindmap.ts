@@ -58,14 +58,16 @@ const MIN_SECTION_POINT_COUNT = 2
 const MAX_POINT_LENGTH = 140
 
 /** 不属于文章知识体系的写作、导航和资源章节。 */
-const EXCLUDED_SECTION_PATTERN = /(?:下一篇|继续阅读|参考资料|事实来源|可视化规格|作者自审|可运行源码|附录|延伸阅读|相关阅读|学习目标|学习边界|核心知识清单|验收清单|学完验收|自测|总结|小结|如何验证.+关键结论)/
+const EXCLUDED_SECTION_PATTERN =
+  /^(?:(?:[一二三四五六七八九十]+、|\d+(?:\.\d+)*[.、]?\s*))?(?:下一篇|继续阅读|参考资料|事实来源|可视化规格|作者自审|可运行源码(?:[：:].*)?|附录(?:[：:].*)?|延伸阅读|相关阅读|学习目标|学习边界|核心知识清单|验收清单|学完验收|自测(?:题)?|总结|小结|代码\s*↔\s*概念对应|动手实践(?:[：:].*)?|如何验证.+关键结论)$/
 
 /** 不应进入导图的写作说明和图片规格。 */
 const EXCLUDED_POINT_PATTERN =
-  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:本文围绕|本章将|本 demo 配套|更新日期|如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里|\d+[.、]\s*(?:运行|选择|执行|配置|安装))/i
+  /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:本文围绕|本章将|本 demo 配套|更新日期|如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|代码\s*↔\s*概念对应|现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里|\d+[.、]\s*(?:运行|选择|执行|配置|安装))/i
 
 /** 表头、导航和不完整句不能作为脱离正文展示的末级节点。 */
-const NON_STANDALONE_POINT_PATTERN = /(?:\.\.\.|…)$|[：:]$|[？?][”’」』】）)]?$|^(?:现象|环节|状态|项目|维度|步骤|编号)[：:]?(?:常见根因|要回答的问题)?$/i
+const NON_STANDALONE_POINT_PATTERN =
+  /(?:\.\.\.|…)$|[：:]$|[？?][”’」』】）)]?$|(?:只有|分为|包括|包含|归纳为|拆成|经过|需要|做|完成)(?:以下|如下)?[一二三四五六七八九十两\d]+(?:个|步|类|种|层|部分|阶段|方面|件事)(?:内容|对象|流程|步骤)?[：:]?$|^(?:(?:它|这(?:个|些|种|一)|其|其中|两者|前者|后者)(?:是|不|会|能|可以|负责|处理|用于|表示|对应|包含|依赖|支持|与)|不是|而不是|并不是|不能|不要)|^(?:现象|环节|状态|项目|维度|步骤|编号)[：:]?(?:常见根因|要回答的问题)?$/i
 
 /** 不能脱离正文成为知识结论的地址、命令和纯文件路径。 */
 const NON_KNOWLEDGE_POINT_PATTERN = /^(?:https?:\/\/|\/[\w.-]+\/|[\w.-]+\.(?:py|ts|tsx|js|jsx|json|ya?ml|md|txt)$|(?:pnpm|npm|npx|pip|docker|kubectl|curl)\s)/i
@@ -142,22 +144,12 @@ function getMindmapPointCandidates(text: string): string[] {
     const completeSentences = lineCandidate.match(/[^。；;！!?？]+[。；;！!?？]?/g) || []
     return completeSentences.map((sentenceCandidate) => sentenceCandidate.trim()).filter(Boolean)
   })
-  /** 只有一个长句时，尝试识别由中文逗号分隔的并列完整陈述。 */
-  const expandedCandidates = sentenceCandidates.flatMap((sentenceCandidate) => {
-    /** 当前句按中文逗号拆出的并列分句。 */
-    const clauseCandidates = sentenceCandidate.split(/[，,]/).map((clauseCandidate) => clauseCandidate.trim()).filter(Boolean)
-    /** 每个分句都需要具备足够长度和陈述谓词，避免把普通修饰语拆成残句。 */
-    const hasStandaloneClauses = clauseCandidates.length >= 2 && clauseCandidates.every(
-      (clauseCandidate) => clauseCandidate.length >= 8 && /(?:是|负责|用于|属于|对应|必须|可以|不能|会|应当|需要|表示|决定|控制|提供|保存|创建|隔离|复用|执行|返回|包含|依赖|支持)/.test(clauseCandidate)
-    )
-    return hasStandaloneClauses ? clauseCandidates : [sentenceCandidate]
-  })
   /** 去除重复、过长和不完整节点后的最终候选。 */
   const usefulCandidates: string[] = []
 
-  for (const expandedCandidate of expandedCandidates) {
+  for (const sentenceCandidate of sentenceCandidates) {
     /** 当前候选压缩后的思维导图结论。 */
-    const pointText = getMindmapPoint(expandedCandidate)
+    const pointText = getMindmapPoint(sentenceCandidate)
     if (isUsefulMindmapPoint(pointText) && !usefulCandidates.includes(pointText)) {
       usefulCandidates.push(pointText)
     }
@@ -178,6 +170,43 @@ function isUsefulMindmapPoint(text: string): boolean {
     && !NON_STANDALONE_POINT_PATTERN.test(text)
     && !NON_KNOWLEDGE_POINT_PATTERN.test(text)
     && !GENERIC_PROCESS_POINT_PATTERN.test(text)
+}
+
+/**
+ * 将父子标题转换为仅保留主题词的比较文本，用于识别“核心包 / 核心包地图”式重复节点。
+ * @param headingText 已完成 Markdown 语法清理的标题。
+ */
+function getComparableHeadingText(headingText: string): string {
+  return headingText
+    .replace(/^(?:[一二三四五六七八九十]+、|\d+(?:\.\d+)*[.、]?\s*)/, '')
+    .replace(/(?:TypeScript|Python|JavaScript|LangChain|地图|一览|概览|总览|详解|说明|职责|的)/gi, '')
+    .replace(/[\p{P}\p{S}\s]+/gu, '')
+    .trim()
+}
+
+/**
+ * 判断更深层标题是否只是重复当前章主题，避免父子节点换一种说法重复出现。
+ * @param sectionTitle 当前章级节点标题。
+ * @param childHeadingTitle 当前更深层标题。
+ */
+function isRepeatedChildHeading(sectionTitle: string, childHeadingTitle: string): boolean {
+  /** 当前章标题去掉编号、语言名和“地图”等展示词后的主题。 */
+  const comparableSectionTitle = getComparableHeadingText(sectionTitle)
+  /** 子标题去掉编号、语言名和“地图”等展示词后的主题。 */
+  const comparableChildTitle = getComparableHeadingText(childHeadingTitle)
+  if (comparableSectionTitle.length < 4 || comparableChildTitle.length < 4) {
+    return false
+  }
+
+  return comparableSectionTitle.includes(comparableChildTitle) || comparableChildTitle.includes(comparableSectionTitle)
+}
+
+/**
+ * 去掉子标题的章节编号，导图通过真实缩进表达层级，不再显示容易误解为平级章节的 3.1。
+ * @param headingText 正文中的完整子标题。
+ */
+function getMindmapChildHeadingLabel(headingText: string): string {
+  return headingText.replace(/^\d+(?:\.\d+)+[.、]?\s*/, '').trim()
 }
 
 /**
@@ -224,14 +253,10 @@ function appendTablePoints(section: KnowledgeMindmapSection, tableNode: MindmapM
   /** 表格首行是列名，仅遍历后续数据行。 */
   const tableBodyRows = (tableNode.children || []).slice(1)
   for (const tableRow of tableBodyRows) {
-    /** 当前数据行中可以脱离表格独立阅读的单元格结论。 */
-    const cellCandidates = (tableRow.children || [])
-      .map((tableCell) => getNodeText(tableCell))
-      .flatMap(getMindmapPointCandidates)
-      .filter((cellCandidate) => isUsefulMindmapPoint(cellCandidate))
-      .sort((leftCandidate, rightCandidate) => rightCandidate.length - leftCandidate.length)
-    /** 每行只取信息最完整的单元格，避免同一行拆出标签和值两个孤立节点。 */
-    const rowPoint = cellCandidates[0]
+    /** 当前数据行全部非空单元格；组合后才能保留条件、决策和值之间的关系。 */
+    const cellTexts = (tableRow.children || []).map((tableCell) => normalizeMindmapText(getNodeText(tableCell))).filter(Boolean)
+    /** 用箭头组合整行，避免分号被误当成句末，只留下“固定 Prompt”一类场景标签。 */
+    const rowPoint = getMindmapPoint(cellTexts.join(' → '))
     if (rowPoint) {
       appendSectionPoint(section, rowPoint, pointLimit)
     }
@@ -293,14 +318,20 @@ export function createKnowledgeMindmap(
   const pointLimit = isAiAppArticle ? AI_APP_POINT_LIMIT : DEFAULT_POINT_LIMIT
   /** 按正文顺序收集的知识分支。 */
   const sections: KnowledgeMindmapSection[] = []
+  /** 一级章不足两个有效分支时，用下一层知识标题形成的候选分支。 */
+  const fallbackSections: KnowledgeMindmapSection[] = []
   /** 位于首个章节之前、可在短文章中作为核心目标的正文结论。 */
   const introductionPoints: string[] = []
   /** 当前正在接收正文知识点的章节。 */
   let currentSection: KnowledgeMindmapSection | null = null
+  /** 当前正在接收正文知识点的下一层候选章节。 */
+  let currentFallbackSection: KnowledgeMindmapSection | null = null
   /** 首个一级标题是文章标题，不重复生成章节节点。 */
   let hasSkippedArticleTitle = false
   /** 当前被排除章节的标题层级；该章节的所有子标题同样不能进入导图。 */
   let excludedHeadingDepth = 0
+  /** 正文首个有效章节确定的章级深度，后续更深标题只能成为该章的解释节点。 */
+  let sectionHeadingDepth: number | null = null
 
   for (const markdownNode of markdownTree.children || []) {
     if (markdownNode.type === 'heading') {
@@ -317,12 +348,16 @@ export function createKnowledgeMindmap(
 
       if (!headingText || EXCLUDED_SECTION_PATTERN.test(headingText)) {
         excludedHeadingDepth = headingDepth
-        currentSection = null
+        if (sectionHeadingDepth === null || headingDepth <= sectionHeadingDepth) {
+          currentSection = null
+        }
+        currentFallbackSection = null
         continue
       }
 
       if (excludedHeadingDepth > 0 && headingDepth > excludedHeadingDepth) {
         currentSection = null
+        currentFallbackSection = null
         continue
       }
       excludedHeadingDepth = 0
@@ -336,26 +371,53 @@ export function createKnowledgeMindmap(
         }
 
         currentSection = { title: guideSectionLabel, points: [] }
+        currentFallbackSection = null
         sections.push(currentSection)
         continue
       }
 
-      /** 结构很短的文档可能直接从三级标题开始，此时前两个三级标题也作为知识分支。 */
-      const shouldCreateSection = headingDepth <= 2 || (headingDepth === 3 && sections.length < 2)
+      if (sectionHeadingDepth === null) {
+        sectionHeadingDepth = headingDepth
+      }
+
+      /** 只有正文真实章级标题才能成为平级分支，避免把 3.1 与第三章压到同一层。 */
+      const shouldCreateSection = headingDepth <= sectionHeadingDepth
       if (shouldCreateSection) {
-        if (sections.length >= sectionLimit || sections.some((section) => section.title === headingText)) {
+        sectionHeadingDepth = Math.min(sectionHeadingDepth, headingDepth)
+        /** 十进制编号只属于正文目录，导图分支统一依靠缩进表达层级。 */
+        const sectionTitle = getMindmapChildHeadingLabel(headingText)
+        if (sections.length >= sectionLimit || sections.some((section) => section.title === sectionTitle)) {
           currentSection = null
           continue
         }
 
-        currentSection = { title: headingText, points: [] }
+        currentSection = { title: sectionTitle, points: [] }
+        currentFallbackSection = null
         sections.push(currentSection)
         continue
       }
 
       if (currentSection) {
-        appendSectionPoint(currentSection, headingText, pointLimit)
+        /** 子标题在导图中依靠缩进表达层级，不继续携带 3.1 一类正文编号。 */
+        const childHeadingLabel = getMindmapChildHeadingLabel(headingText)
+        // 子标题若只是复述父标题，保留其正文解释即可，不再生成一条重复导图节点。
+        if (!isRepeatedChildHeading(currentSection.title, childHeadingLabel)) {
+          appendSectionPoint(currentSection, childHeadingLabel, pointLimit)
+        }
       }
+      /** 下一层候选同样去掉十进制编号，避免回退后再次出现 2.1 伪平级节点。 */
+      const fallbackSectionTitle = getMindmapChildHeadingLabel(headingText)
+      if (
+        headingDepth === sectionHeadingDepth + 1 &&
+        !fallbackSections.some((section) => section.title === fallbackSectionTitle)
+      ) {
+        currentFallbackSection = { title: fallbackSectionTitle, points: [] }
+        fallbackSections.push(currentFallbackSection)
+      }
+      continue
+    }
+
+    if (excludedHeadingDepth > 0) {
       continue
     }
 
@@ -380,30 +442,49 @@ export function createKnowledgeMindmap(
 
     if (markdownNode.type === 'paragraph' || markdownNode.type === 'blockquote') {
       appendSectionPoints(currentSection, getNodeText(markdownNode), pointLimit)
+      if (currentFallbackSection) {
+        appendSectionPoints(currentFallbackSection, getNodeText(markdownNode), pointLimit)
+      }
       continue
     }
 
     if (markdownNode.type === 'list') {
       for (const listItemNode of markdownNode.children || []) {
         appendSectionPoints(currentSection, getListItemText(listItemNode), pointLimit)
+        if (currentFallbackSection) {
+          appendSectionPoints(currentFallbackSection, getListItemText(listItemNode), pointLimit)
+        }
       }
       continue
     }
 
     if (markdownNode.type === 'table') {
       appendTablePoints(currentSection, markdownNode, pointLimit)
+      if (currentFallbackSection) {
+        appendTablePoints(currentFallbackSection, markdownNode, pointLimit)
+      }
       continue
     }
 
     if (markdownNode.type === 'code') {
       for (const instructionStep of getInstructionSteps(markdownNode)) {
         appendSectionPoint(currentSection, instructionStep, pointLimit)
+        if (currentFallbackSection) {
+          appendSectionPoint(currentFallbackSection, instructionStep, pointLimit)
+        }
       }
     }
   }
 
   /** 至少两个分支才能形成比正文目录更有价值的知识关系。 */
-  const usefulSections = sections.filter((section) => section.points.length >= MIN_SECTION_POINT_COUNT)
+  /** 首选最浅层完整分支；不足两个时回退到下一层，避免单章教程和面试题丢失主题。 */
+  const primaryUsefulSections = sections.filter((section) => section.points.length >= MIN_SECTION_POINT_COUNT)
+  /** 下一层标题中同样拥有至少两条正文解释的完整候选分支。 */
+  const fallbackUsefulSections = fallbackSections.filter((section) => section.points.length >= MIN_SECTION_POINT_COUNT)
+  /** 最终用于文章页和路线总图的同层知识分支。 */
+  const usefulSections = (
+    primaryUsefulSections.length >= 2 ? primaryUsefulSections : fallbackUsefulSections
+  ).slice(0, sectionLimit)
   if (usefulSections.length < 2 && introductionPoints.length >= MIN_SECTION_POINT_COUNT) {
     usefulSections.unshift({ title: '核心目标', points: introductionPoints.slice(0, pointLimit) })
   }

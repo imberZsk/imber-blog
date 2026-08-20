@@ -98,8 +98,6 @@ LangChain 不会让模型自动拥有最新知识。
 - `@langchain/openai` 等供应商包：提供 ChatModel 和 Embeddings 集成。
 - `@langchain/textsplitters`、`@langchain/mcp-adapters`、`@langchain/milvus`：分别提供文档分块、MCP Tool 转换和向量库集成。
 
-## 3.1 TypeScript 核心包地图
-
 | 包 | 负责什么 | 典型导入 |
 | --- | --- | --- |
 | `langchain` | `createAgent`、Middleware 等高层应用入口 | `langchain`、`langchain/agents` |
