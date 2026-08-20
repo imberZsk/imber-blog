@@ -2177,8 +2177,14 @@ export async function getKnowledgeArticle(
     return null
   }
 
-  /** 文章原始 Markdown 内容。 */
-  const markdown = projectKnowledgeMarkdown(await readFile(filePath, 'utf8'), language)
+  /**
+   * 文章原始 Markdown 内容。
+   * 文章路径已由静态参数完整枚举；忽略动态路径追踪，避免 Netlify 函数误打包整个工作区。
+   */
+  const markdown = projectKnowledgeMarkdown(
+    await readFile(/* turbopackIgnore: true */ filePath, 'utf8'),
+    language
+  )
   /** 当前文件在知识库中的无扩展名源路径。 */
   const sourceArticlePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath)
     .split(sep)
