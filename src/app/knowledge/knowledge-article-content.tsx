@@ -131,7 +131,7 @@ interface KnowledgeSandboxPortal {
  * @returns 可用于精确匹配的标准化源码。
  */
 function normalizeSandboxSource(sourceCode: string): string {
-  return sourceCode.replace(/\r\n?/g, '\n').trim()
+  return sourceCode.replace(/\r\n?/g, '\n').replace(/\n{2,}/g, '\n\n').trim()
 }
 
 /**

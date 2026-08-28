@@ -80,8 +80,20 @@ export const BROWSER_PYTHON_SUPPORT_FILE_PATTERN = /\.(?:py|json|txt|md|csv|ya?m
  * @param sourceCode 仓库内 main.py 的完整源码。
  * @returns 不依赖服务监听、外部包或系统进程时返回 true。
  */
-export function isBrowserRunnablePythonSource(sourceCode: string): boolean {
-  return !BROWSER_UNSUPPORTED_PYTHON_SOURCE_PATTERN.test(sourceCode)
+export function isBrowserRunnablePythonSource(
+  sourceCode: string,
+  allowedExternalModuleNames: ReadonlySet<string> = new Set()
+): boolean {
+  /** 已由受控依赖声明覆盖的 import 行不参与默认外部依赖拒绝规则。 */
+  const sourceWithoutAllowedImports = sourceCode
+    .split('\n')
+    .filter((sourceLine) => {
+      /** 当前 import 或 from 语句引用的根模块名。 */
+      const importedModuleName = sourceLine.match(/^\s*(?:from|import)\s+([a-zA-Z_]\w*)/)?.[1]
+      return !importedModuleName || !allowedExternalModuleNames.has(importedModuleName)
+    })
+    .join('\n')
+  return !BROWSER_UNSUPPORTED_PYTHON_SOURCE_PATTERN.test(sourceWithoutAllowedImports)
 }
 
 /**
@@ -96,7 +108,8 @@ export function isInlinePythonSandboxCandidate(
   sourceArticlePath: string,
   headingText: string,
   sourceCode: string,
-  localModuleNames: ReadonlySet<string> = new Set()
+  localModuleNames: ReadonlySet<string> = new Set(),
+  allowedExternalModuleNames: ReadonlySet<string> = new Set()
 ): boolean {
   /** 源码中 import 和 from 声明引用的根模块名。 */
   const importedModuleNames = Array.from(
@@ -105,7 +118,9 @@ export function isInlinePythonSandboxCandidate(
   )
   /** 当前程序是否只使用 Pyodide 默认可用的标准库。 */
   const usesOnlyAvailableModules = importedModuleNames.every((moduleName) =>
-    INLINE_PYTHON_STANDARD_LIBRARY_MODULES.has(moduleName) || localModuleNames.has(moduleName)
+    INLINE_PYTHON_STANDARD_LIBRARY_MODULES.has(moduleName) ||
+    localModuleNames.has(moduleName) ||
+    allowedExternalModuleNames.has(moduleName)
   )
 
   return (
@@ -115,7 +130,7 @@ export function isInlinePythonSandboxCandidate(
     INLINE_PYTHON_EXECUTION_SIGNAL_PATTERN.test(sourceCode) &&
     !INLINE_PYTHON_INCOMPLETE_SOURCE_PATTERN.test(sourceCode) &&
     usesOnlyAvailableModules &&
-    isBrowserRunnablePythonSource(sourceCode)
+    isBrowserRunnablePythonSource(sourceCode, allowedExternalModuleNames)
   )
 }
 
@@ -141,6 +156,8 @@ export interface KnowledgeSandbox {
   entryFile: string
   /** 入口及其依赖的仓库内可信文件。 */
   files: KnowledgeSandboxFile[]
+  /** Python Worker 在执行入口前安装的受控 PyPI 包。 */
+  pythonPackages?: string[]
   /** 只有 model 运行时才存在的非敏感默认请求。 */
   modelRequest?: KnowledgeModelSandboxRequest
 }

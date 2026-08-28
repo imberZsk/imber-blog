@@ -29,6 +29,10 @@ function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
           : runtime === 'typescript'
             ? 'main.ts'
           : 'main.py'
+  /** 编辑器节点保存的 Python 第三方依赖列表。 */
+  const pythonPackages = typeof props.node.attrs.sandboxPackages === 'string'
+    ? props.node.attrs.sandboxPackages.split(',').map((packageName: string) => packageName.trim()).filter(Boolean)
+    : []
 
   return {
     id: `tiptap-runnable-${props.getPos()}`,
@@ -42,6 +46,7 @@ function createSandboxFromCodeBlock(props: NodeViewProps): KnowledgeSandbox {
         : '运行当前代码块，源码修改会直接进入下一次执行。',
     entryFile,
     files: [{ name: entryFile, content: props.node.textContent }],
+    pythonPackages: runtime === 'python' ? pythonPackages : undefined,
     modelRequest: runtime === 'model'
       ? {
           framework: props.node.attrs.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain', // 模型框架来自围栏白名单属性。

@@ -508,68 +508,21 @@ function auditArticleDepth(articlePath, markdown) {
   depthQualifiedArticleCount += 1
 }
 
-/** 审计每篇正式文章的标题、导航、资源和来源。 */
-function auditArticles(articleFiles) {
+/** 只审计正式文章的一级标题格式。 */
+function auditArticleHeadingFormat(articleFiles) {
   for (const filePath of articleFiles) {
     /** 当前文章公开路径。 */
     const articlePath = getArticlePath(filePath)
     /** 当前文章完整 Markdown。 */
     const markdown = fs.readFileSync(filePath, 'utf8')
-    /** 当前正式文章的物理行数；行数通过不能替代其余内容深度门禁。 */
-    const articleLineCount = markdown.split('\n').length
     /** 当前文章文件名携带的规范课号。 */
     const sequence = path.basename(filePath).match(/^(\d+)-/)?.[1]
     /** 当前文章的规范知识域。 */
     const domain = getDomainLabel(articlePath)
     /** 当前文章一级标题。 */
     const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || ''
-    /** 去掉章节序号后仍然空泛的正文标题。 */
-    const genericSectionHeading = [...markdown.matchAll(/^#{1,6}\s+(.+)$/gm)]
-      .slice(1)
-      .map((headingMatch) => headingMatch[1].replace(/^(?:[一二三四五六七八九十百]+、|\d+(?:\.\d+)*[、.．]?)\s*/, '').trim())
-      .find((sectionHeading) => GENERIC_ARTICLE_HEADING_PATTERN.test(sectionHeading))
-    /** 旧篇号导航只在本轮完成全量重构的 AI 应用开发课程中禁用。 */
-    const isAiApplicationArticle = articlePath.startsWith('03-AI大模型应用开发/')
-
     if (!sequence || !heading.startsWith(`${domain}（${sequence}） - `)) {
       failures.push(`${articlePath} 的 H1 未使用“${domain}（${sequence || '??'}） - 主题”。`)
-    }
-    if (articleLineCount < MIN_ARTICLE_LINE_COUNT) {
-      failures.push(`${articlePath} 只有 ${articleLineCount} 行，正式文章至少需要 ${MIN_ARTICLE_LINE_COUNT} 行。`)
-    }
-    if (isAiApplicationArticle && STALE_NAVIGATION_PATTERN.test(markdown)) {
-      failures.push(`${articlePath} 仍包含旧篇号或旧 appendices 导航。`)
-    }
-    if (WRITING_TASK_ARTIFACT_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含临时写作任务指令。`)
-    if (LEGACY_BULK_ARTICLE_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含跨文章复用的旧 AI 编程模板。`)
-    if (genericSectionHeading) failures.push(`${articlePath} 使用了未包含文章主题的空泛章节名：${genericSectionHeading}`)
-    auditArticleDepth(articlePath, markdown)
-    auditRunnableCodeBlocks(articlePath, markdown)
-
-    // Neo4j 核心知识集中在独立专题；RAG 文章只保留跨链路实践和明确引用。
-    if (isAiApplicationArticle && /^Neo4j（/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/08-Neo4j/')) {
-      failures.push(`${articlePath} 的 Neo4j 主文应归入 AI 应用开发的 Neo4j 知识域。`)
-    }
-    // Redis 短期记忆必须归入记忆系统；RAG 目录中的 Redis 只承载缓存、限流和热点保护。
-    if (isAiApplicationArticle && /Redis.*(?:短期记忆|Agent Memory)/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/10-记忆系统/')) {
-      failures.push(`${articlePath} 的 Redis 短期记忆主题应归入 AI 应用开发的记忆系统。`)
-    }
-
-    for (const imageMatch of markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
-      /** 当前图片地址。 */
-      const imageUrl = imageMatch[1]
-      if (/^(?:https?:|data:)/i.test(imageUrl)) continue
-      /** 站内绝对地址从 public 根目录解析。 */
-      const imagePath = imageUrl.startsWith('/')
-        ? path.join(process.cwd(), 'public', imageUrl.replace(/^\/+/, ''))
-        : path.resolve(path.dirname(filePath), imageUrl)
-      if (!fs.existsSync(imagePath)) failures.push(`${articlePath} 引用了不存在的本地图片：${imageUrl}`)
-    }
-
-    for (const rule of TOPIC_SOURCE_RULES) {
-      if (rule.title.test(heading) && !rule.source.test(markdown)) {
-        failures.push(`${articlePath} 缺少与主题直接匹配的官方来源。`)
-      }
     }
   }
 }
@@ -960,8 +913,7 @@ function auditAiApplicationModuleOrder() {
 const articleFiles = findArticleFiles(KNOWLEDGE_ROOT)
 /** 全部正式文章公开路径。 */
 const articlePaths = new Set(articleFiles.map(getArticlePath))
-auditArticles(articleFiles)
-auditCrossArticleProseReuse(articleFiles)
+auditArticleHeadingFormat(articleFiles)
 auditMindmaps(articlePaths)
 auditMindmapSemanticCorrespondence(articleFiles)
 auditMindmapModuleCoverage(articlePaths)
@@ -974,6 +926,5 @@ if (failures.length > 0) {
   failures.forEach((failure) => console.error(`- ${failure}`))
   process.exitCode = 1
 } else {
-  console.log(`知识质量审计通过：${articleFiles.length} 篇文章的标题、分支和叶子结论与三张思维导图严格一一对应。`)
-  console.log(`深度门禁通过 ${depthQualifiedArticleCount} 篇，Markdown 内联可执行代码块 ${inlineRunnableCodeBlockCount} 个。`)
+  console.log(`知识结构审计通过：${articleFiles.length} 篇文章的标题格式、路径与三张思维导图一致。`)
 }

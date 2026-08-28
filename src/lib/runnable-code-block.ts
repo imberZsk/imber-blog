@@ -23,10 +23,15 @@ export interface RunnableCodeBlockMetadata {
   modelFramework: KnowledgeModelSandboxFramework
   /** LangChain 模型实验执行普通聊天或 Tool 注册验证。 */
   modelMode: KnowledgeModelSandboxMode
+  /** Python 浏览器运行时按需安装的受控 PyPI 包。 */
+  pythonPackages: string[]
 }
 
 /** 可执行围栏允许保存的安全文件名。 */
 const RUNNABLE_FILE_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/
+
+/** Python 围栏只允许安装名称和版本均不含 URL、路径或命令字符的 PyPI 包。 */
+const PYTHON_PACKAGE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*(?:==[a-zA-Z0-9][a-zA-Z0-9._+-]*)?$/
 
 /** 解析围栏键值时匹配引号值或不含空格的普通值。 */
 const FENCE_ATTRIBUTE_PATTERN = /([a-z][a-z\d-]*)=(?:"([^"]*)"|'([^']*)'|([^\s]+))/gi
@@ -100,6 +105,11 @@ export function parseRunnableCodeBlockMetadata(
   const fileName = RUNNABLE_FILE_NAME_PATTERN.test(requestedFileName)
     ? requestedFileName
     : DEFAULT_FILE_NAMES[runtime]
+  /** 逗号分隔的 Python 依赖只保留规范 PyPI 名称，拒绝 URL、路径和额外 pip 参数。 */
+  const pythonPackages = (attributes.get('packages') || '')
+    .split(',')
+    .map((packageName) => packageName.trim())
+    .filter((packageName) => PYTHON_PACKAGE_PATTERN.test(packageName))
 
   return {
     language: sourceLanguage,
@@ -110,7 +120,8 @@ export function parseRunnableCodeBlockMetadata(
     description: attributes.get('description') || '',
     prompt: attributes.get('prompt') || '',
     modelFramework,
-    modelMode
+    modelMode,
+    pythonPackages
   }
 }
 
@@ -127,6 +138,9 @@ export function serializeRunnableCodeBlockInfo(metadata: RunnableCodeBlockMetada
         metadata.runtime === 'model' ? 'model-sandbox' : '',
         metadata.runtime === 'model' && metadata.modelFramework === 'llamaindex' ? 'framework=llamaindex' : '',
         metadata.runtime === 'model' && metadata.modelMode === 'tools' ? 'mode=tools' : '',
+        metadata.runtime === 'python' && metadata.pythonPackages.length > 0
+          ? `packages=${metadata.pythonPackages.join(',')}`
+          : '',
         `file=${metadata.fileName}`,
         metadata.title ? `title=${JSON.stringify(metadata.title)}` : '',
         metadata.description ? `description=${JSON.stringify(metadata.description)}` : '',

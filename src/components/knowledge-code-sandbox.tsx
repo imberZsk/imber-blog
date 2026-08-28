@@ -12,6 +12,12 @@ const PYTHON_INITIALIZATION_TIMEOUT_MS = 60_000
 const PYTHON_EXECUTION_TIMEOUT_MS = 10_000
 /** TypeScript 编译和执行共用的最长时间。 */
 const TYPESCRIPT_EXECUTION_TIMEOUT_MS = 10_000
+/** 首次下载 Python 第三方依赖允许的最长时间。 */
+const PYTHON_DEPENDENCY_TIMEOUT_MS = 120_000
+/** 由站点依赖提供、允许正文 TypeScript 沙盒使用的 LangChain 与 Zod 导入行。 */
+const TYPESCRIPT_BUNDLED_IMPORT_PATTERN = /^import\s+.*\s+from\s+['"](?:@langchain\/core\/(?:messages|runnables|tools)|zod)['"]\s*$/gm
+/** 判断源码是否引用由站点提供的 LangChain 或 Zod 包。 */
+const TYPESCRIPT_BUNDLED_SOURCE_PATTERN = /from\s+['"](?:@langchain\/core\/(?:messages|runnables|tools)|zod)['"]/
 /** Python Worker 的同源静态资源路径。 */
 const PYTHON_WORKER_URL = '/knowledge-python-worker.mjs'
 /** Python Worker 使用 ES module，以便加载同源 Pyodide ESM 入口。 */
@@ -71,6 +77,15 @@ interface KnowledgeCodeSandboxProps {
   sandbox: KnowledgeSandbox
   /** Tiptap NodeView 已直接展示可编辑源码时隐藏重复源码面板。 */
   showSource?: boolean
+}
+
+/**
+ * 把沙盒 console 参数转换为稳定的单行文本。
+ * @param value 正文代码传给 console 的任意值。
+ * @returns 字符串保持原值，其他值按 JSON 输出。
+ */
+function formatOutputValue(value: unknown): string {
+  return typeof value === 'string' ? value : JSON.stringify(value)
 }
 
 /** Lowlight 返回的安全语法树节点。 */
@@ -312,7 +327,10 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
     /** 每次点击运行都创建独立 Worker，确保上一次代码不能残留。 */
     const worker = new Worker(PYTHON_WORKER_URL, PYTHON_WORKER_OPTIONS)
     workerRef.current = worker
-    scheduleTimeout(PYTHON_INITIALIZATION_TIMEOUT_MS, 'Python 运行时加载超时，请检查网络后重试。')
+    scheduleTimeout(
+      sandbox.pythonPackages?.length ? PYTHON_DEPENDENCY_TIMEOUT_MS : PYTHON_INITIALIZATION_TIMEOUT_MS,
+      'Python 运行时或依赖加载超时，请检查网络后重试。'
+    )
 
     /**
      * 处理 Python Worker 的状态和输出消息。
@@ -357,8 +375,12 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
       setOutputLines((currentLines) => [...currentLines, 'Python Worker 加载失败，请检查网络或浏览器策略。'])
     }
 
-    worker.postMessage({ entryFile: sandbox.entryFile, files: sandbox.files })
-  }, [clearRunTimeout, disposeWorker, sandbox.entryFile, sandbox.files, scheduleTimeout])
+    worker.postMessage({
+      entryFile: sandbox.entryFile,
+      files: sandbox.files,
+      pythonPackages: sandbox.pythonPackages || []
+    })
+  }, [clearRunTimeout, disposeWorker, sandbox.entryFile, sandbox.files, sandbox.pythonPackages, scheduleTimeout])
 
   /** 按需编译并在独立 Worker 中运行当前 TypeScript 实验。 */
   const runTypeScriptSandbox = useCallback(async () => {
@@ -370,11 +392,17 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
     try {
       /** TypeScript 编译器只在用户运行 TypeScript 沙盒时下载。 */
       const typescript = await import('typescript')
+      /** LangChain 示例是否只使用站点明确支持的两个 core 导入。 */
+      const usesBundledLangChainCore = TYPESCRIPT_BUNDLED_SOURCE_PATTERN.test(entrySource)
+      /** 站点依赖会作为参数注入，编译前移除浏览器无法直接解析的包导入。 */
+      const browserEntrySource = usesBundledLangChainCore
+        ? entrySource.replace(TYPESCRIPT_BUNDLED_IMPORT_PATTERN, '')
+        : entrySource
       /** 仓库可信 TypeScript 源码编译后的浏览器 JavaScript。 */
-      const compiledSource = typescript.transpileModule(entrySource, {
+      const compiledSource = typescript.transpileModule(browserEntrySource, {
         compilerOptions: {
           target: typescript.ScriptTarget.ES2022,
-          module: typescript.ModuleKind.None,
+          module: typescript.ModuleKind.ESNext,
           strict: true
         },
         reportDiagnostics: true
@@ -389,6 +417,58 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
           getNewLine: () => '\n'
         })
         throw new Error(diagnosticText.trim() || 'TypeScript 编译失败。')
+      }
+
+      if (usesBundledLangChainCore) {
+        /** 与文章版本一致的真实 LangChain Message 实现。 */
+        const { AIMessage, HumanMessage, SystemMessage, ToolMessage } = await import('@langchain/core/messages')
+        /** 与文章版本一致的真实 LangChain Runnable 实现。 */
+        const { RunnableLambda } = await import('@langchain/core/runnables')
+        /** 与文章版本一致的真实 LangChain Tool 工厂。 */
+        const { tool } = await import('@langchain/core/tools')
+        /** Tool schema 使用项目锁定版本的 Zod 运行时。 */
+        const { z } = await import('zod')
+        /** 收集正文 console.log 产生的可见运行证据。 */
+        const capturedOutputLines: string[] = []
+        /** 只暴露文章示例需要的日志接口，避免覆盖页面全局 console。 */
+        const sandboxConsole = {
+          log: (...values: unknown[]) => capturedOutputLines.push(values.map(formatOutputValue).join(' ')),
+          error: (...values: unknown[]) => capturedOutputLines.push(values.map(formatOutputValue).join(' '))
+        }
+        /** AsyncFunction 支持文章示例中的顶层 await，源码仅来自仓库可信文章。 */
+        const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+        /** 编译后的正文函数通过参数取得真实 LangChain 类。 */
+        const executeLangChainExample = new AsyncFunction(
+          'HumanMessage',
+          'SystemMessage',
+          'AIMessage',
+          'ToolMessage',
+          'RunnableLambda',
+          'tool',
+          'z',
+          'console',
+          compiledSource.outputText
+        )
+        setStatus('running')
+        setOutputLines(['TypeScript 编译完成，开始执行 main.ts。'])
+        await executeLangChainExample(
+          HumanMessage,
+          SystemMessage,
+          AIMessage,
+          ToolMessage,
+          RunnableLambda,
+          tool,
+          z,
+          sandboxConsole
+        )
+        clearRunTimeout()
+        setStatus('success')
+        setOutputLines([
+          'TypeScript 编译完成，开始执行 main.ts。',
+          ...capturedOutputLines,
+          '执行完成。'
+        ])
+        return
       }
 
       /** Worker 内统一捕获 console 输出和未处理异常。 */
@@ -407,8 +487,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
         new Blob([workerPrelude, compiledSource.outputText, workerEpilogue], { type: 'text/javascript' })
       )
       /** 隔离执行编译结果的浏览器 Worker。 */
-      const worker = new Worker(workerUrl)
-      URL.revokeObjectURL(workerUrl)
+      const worker = new Worker(workerUrl, { type: 'module' })
       workerRef.current = worker
       setStatus('running')
       setOutputLines(['TypeScript 编译完成，开始执行 main.ts。'])
@@ -426,6 +505,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
         }
 
         clearRunTimeout()
+        URL.revokeObjectURL(workerUrl)
         if (message.type === 'complete') {
           setStatus('success')
           setOutputLines((currentLines) => [...currentLines, '执行完成。'])
@@ -437,6 +517,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
       }
 
       worker.onerror = (event) => {
+        URL.revokeObjectURL(workerUrl)
         disposeWorker()
         setStatus('error')
         setOutputLines((currentLines) => [...currentLines, event.message || 'TypeScript Worker 执行失败。'])
@@ -573,7 +654,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
               {sandbox.runtime === 'python'
                 ? 'Python · Pyodide'
                 : sandbox.runtime === 'typescript'
-                  ? 'TypeScript · Worker'
+                  ? 'TypeScript · Browser'
                 : sandbox.runtime === 'model'
                   ? 'LangChain · Real API'
                   : 'HTML · iframe'}
@@ -589,7 +670,7 @@ export function KnowledgeCodeSandbox({ sandbox, showSource = true }: KnowledgeCo
               停止
             </Button>
           ) : (
-            <Button type="button" size="sm" onClick={runSandbox} title="在浏览器隔离环境中运行">
+            <Button type="button" size="sm" onClick={runSandbox} title="在浏览器运行">
               <Play aria-hidden="true" />
               {hasStarted ? '重新运行' : '运行'}
             </Button>

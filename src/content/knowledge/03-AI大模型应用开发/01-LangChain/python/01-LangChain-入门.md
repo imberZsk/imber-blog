@@ -1,9 +1,17 @@
-# LangChain（01） - LangChain 基础：定位、核心包与生态
+# LangChain（01） - LangChain 是什么、核心包与生态
 
-> 读完后，你应能：
-> - 用一张职责表解释 LangChain 解决什么问题，并输出“不需要使用 LangChain”的反例记录。
-> - 根据项目要使用的能力选择 `langchain`、`langchain-core` 和供应商集成包，并输出带选择依据的依赖清单。
-> - 绘制 LangChain、LangGraph、LangSmith、模型供应商与业务代码的关系图，并输出每一层的边界检查结果。
+## 参考资料
+
+- [LangChain Python Overview](https://docs.langchain.com/oss/python/langchain/overview)
+- [LangChain Python Agents](https://docs.langchain.com/oss/python/langchain/agents)
+- [ChatOpenAI Integration](https://docs.langchain.com/oss/python/integrations/chat/openai)
+- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview)
+- [LangSmith Documentation](https://docs.langchain.com/langsmith/home)
+
+> 读完后，你应能回答：
+> - 什么时候该用 LangChain，什么时候不用？
+> - LangChain 有哪些包？
+> - LangChain 的生态是什么？
 
 ## 核心知识清单
 
@@ -14,7 +22,7 @@
 - LangGraph 承担更复杂的状态、分支、循环和持久化执行
 - LangSmith 用于 Trace、评测与线上观测，不参与业务答案生成
 
-# 一、LangChain 是干什么的？
+# 一、什么时候该用 LangChain，什么时候不用？
 
 LangChain 是用来构建大模型应用的框架。
 
@@ -45,54 +53,7 @@ LangChain 为这些对象提供相对统一的接口。
 
 它更适合依赖 LangChain 的消息和模型接口，再由集成包完成协议转换。
 
-## 1.1 LangChain 不负责什么？
-
-LangChain 不会让模型自动拥有最新知识。
-
-它不会替你定义业务权限。
-
-它不会自动判断一次 Tool 调用是否安全。
-
-它也不会替你准备评测数据集或发布标准。
-
-下面这些职责仍然属于应用本身：
-
-| 职责 | 为什么不能交给框架默认决定 |
-| --- | --- |
-| 数据权限 | 框架不知道当前用户能访问哪些租户和资源 |
-| Tool 审批 | 框架不知道转账、删除和发信的业务风险 |
-| 回答质量 | 框架不知道什么结果才满足当前业务目标 |
-| 成本预算 | 框架不知道单次请求允许消耗多少 Token 和时间 |
-| 失败恢复 | 框架不知道哪些副作用已经发生且不能重复执行 |
-
-因此，使用 LangChain 不是把业务逻辑交给框架。
-
-正确理解是：让框架负责通用接口，让业务代码继续负责业务规则。
-
-# 二、什么时候需要 LangChain？
-
-判断是否需要 LangChain，先看应用中是否存在可替换、可组合的步骤。
-
-| 场景 | 建议 | 原因 |
-| --- | --- | --- |
-| 固定 Prompt，只调用一次模型 | 暂不使用 | 供应商 SDK 更直接 |
-| 同一业务需要切换模型 | 可以使用 | 统一 ChatModel 接口减少改动范围 |
-| 需要注册多个 Tools | 建议使用 | Tool schema、调用请求与 Agent 生态可以复用 |
-| 需要结构化输出 | 建议使用 | 可以复用 schema 与解析能力 |
-| 需要分支、循环和持久化 | 使用 LangGraph | 单条顺序链不足以表达状态机 |
-| 需要 Trace 与回归评测 | 接入 LangSmith | 运行证据需要独立观测平台 |
-
-不要因为“未来可能复杂”就提前增加很多抽象。
-
-先写出当前请求的输入、输出和失败边界。
-
-如果只有一次模型调用，保持直接调用通常更容易维护。
-
-如果已经出现模型、Tools、Middleware 和状态组合，LangChain 才开始体现价值。
-
-# 三、LangChain 的核心包
-
-
+# 二、LangChain 有哪些包？
 
 - `langchain`：提供 `create_agent`、Agent 和 Middleware 等高层应用入口。
 - `langchain-core`（导入名 `langchain_core`）：提供 Message、Document、Prompt、Runnable、Tool 和 Retriever 等基础契约。
@@ -113,7 +74,7 @@ LangChain 不会让模型自动拥有最新知识。
 
 Python 的安装名通常用连字符，导入名则用下划线。例如安装 `langchain-text-splitters` 后，要从 `langchain_text_splitters` 导入。
 
-## 3.2 Python 项目的安装与导入
+## 2.1 LangChain 在 Python 项目的安装与导入
 
 Python 生态使用 PyPI 包拆分核心能力和供应商集成：
 
@@ -129,33 +90,32 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 ```
 
-## 3.3 Python 如何按任务选包？
+## 2.2 `langchain` 包基础使用
 
-| 当前任务 | 最小依赖集合 |
-| --- | --- |
-| 只调用 OpenAI 兼容模型 | `langchain-core` + `langchain-openai` |
-| 定义 Tool 或结构化输出 | 上述依赖 + `pydantic` |
-| 创建 Agent | 上述依赖 + `langchain` |
-| 加载并切分文档 | `langchain-core` + 对应 Loader + `langchain-text-splitters` |
-| 接入 MCP | `langchain-core` + `langchain-mcp-adapters` |
-| 使用 Milvus | `langchain-core` + `langchain-milvus` + Embeddings 集成包 |
-| 编写显式状态图 | `langgraph` |
+`langchain` 提供 Agent 等高层入口。下面的代码需要已配置模型凭据：
+
+```python runnable model-sandbox mode=tools file=main.py title="langchain Agent 基础使用" description="使用临时模型连接创建 Agent，并观察 Tool Calling。" prompt="请查询成都的天气，并调用 get_weather 工具。"
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
 
 
-## 3.4 `langchain`：高层应用入口
+def get_weather(city: str) -> str:
+    """返回演示天气，实际项目应调用真实天气服务。"""
+    return f"{city}今天晴，25°C"
 
-`langchain` 包提供 Agent 等高层能力。
 
+model = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
+agent = create_agent(
+    model=model,
+    tools=[get_weather],
+    system_prompt="你是天气助手，查询天气时必须调用工具。",
+)
 
-当前官方 Python 文档把 `create_agent` 作为构建 Agent 的主要入口。
+result = agent.invoke({"messages": [{"role": "user", "content": "成都天气如何？"}]})
+print(result["messages"][-1].content)
+```
 
-Agent 会把模型、Tools 和运行循环组合在一起。
-
-第一篇只确认它的职责，不立即展开 Agent 循环。
-
-Tools 如何注册，会在下一篇单独实践。
-
-## 3.5 核心包：稳定的基础契约
+## 2.3 `langchain-core` 包基础使用
 
 语言对应的 core 包保存跨供应商复用的基础对象。
 
@@ -172,28 +132,47 @@ Tools 如何注册，会在下一篇单独实践。
 
 但“统一接口”不代表所有供应商能力完全一致。
 
-某些模型不支持 Tool Calling，某些兼容接口也不会返回完整 Token Usage。
+某些模型不支持 Tool Calling，某些兼容接口也不会返回完整 Token Usage。能力差异仍要通过集成文档和真实测试确认。
 
-能力差异仍要通过集成文档和真实测试确认。
+```python runnable packages=langchain-core file=main.py title="langchain-core Message 与 Runnable" description="安装 langchain-core，运行真实 HumanMessage 与 RunnableLambda。"
+from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableLambda
 
-## 3.5 供应商集成包：连接真实模型
+
+def to_message(question: str) -> HumanMessage:
+    """把普通字符串转换为 HumanMessage。"""
+    return HumanMessage(content=question.strip())
 
 
-`langchain-openai` 负责 OpenAI 和兼容接口的 ChatModel 集成，代码从 `langchain_openai` 导入。
+message = RunnableLambda(to_message).invoke("  LangChain core 负责什么？  ")
+print(type(message).__name__)
+print(message.content)
+```
+
+## 2.4 `langchain-openai` 包基础使用
 
 其他模型供应商通常有各自的集成包。
 
-集成包负责把 LangChain 消息转换为供应商请求，再把响应转换回统一消息。
+下面的代码需要设置 `OPENAI_API_KEY`：
 
-它还会暴露供应商特有配置。
+```python runnable model-sandbox file=main.py title="langchain-openai 基础使用" description="使用临时连接调用真实 ChatModel，并查看 AIMessage。" prompt="LangChain 是模型吗？请只用一句话回答。"
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 
-因此，不要只安装 `langchain-core` 就期待能够调用所有模型。
 
-也不要从旧教程复制已经迁移的导入路径。
+model = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
+response = model.invoke(
+    [
+        SystemMessage(content="只用一句话回答。"),
+        HumanMessage(content="LangChain 是模型吗？"),
+    ]
+)
 
-先查目标版本文档，再确认类属于核心包还是供应商包。
+print(type(response).__name__)
+print(response.content)
+```
 
-# 四、LangChain 的生态怎么分层？
+# 三、LangChain 的生态是什么？
 
 LangChain 不是一个包包办全部能力。
 
@@ -216,7 +195,7 @@ flowchart LR
 
 <!-- DIAGRAM_DESCRIPTION: 业务应用通过 LangChain 组合模型、Tools 和 Middleware；复杂状态进入 LangGraph；模型由供应商集成连接；LangSmith旁路收集 Trace 与评测证据。 -->
 
-## 4.1 LangGraph：复杂执行流程
+## 3.1 LangGraph：复杂执行流程
 
 LangGraph 适合表达状态、分支、循环和可恢复执行。
 
@@ -226,7 +205,7 @@ LangChain 的 Agent 能力本身也建立在 LangGraph 的运行能力之上。
 
 学习顺序上，不应在还没理解模型和 Tool 前直接进入复杂图状态。
 
-## 4.2 LangSmith：运行证据
+## 3.2 LangSmith：运行证据
 
 LangSmith 负责记录和评估运行过程。
 
@@ -236,75 +215,13 @@ LangSmith 不替代 LangChain。
 
 一个负责执行应用逻辑，一个负责观察和评估执行结果。
 
-## 4.3 Integrations：连接外部世界
+## 3.3 Integrations：连接外部世界
 
 模型、向量数据库、文档加载器和第三方服务都属于集成层。
 
 集成数量多不代表每个集成都由 LangChain 核心团队维护。
 
-选用前至少确认：
-
-- 维护者是谁。
-- 支持哪个 LangChain 版本。
-- 是否支持当前运行时。
-- 是否覆盖所需能力。
-- 失败时能否看到原始错误。
-
-# 五、项目应该安装哪些包？
-
-不要一次安装整个生态。
-
-按当前任务选择最小依赖集合。
-
-| 当前任务 | 最小依赖思路 |
-| --- | --- |
-| 只调用 OpenAI 兼容模型 | `langchain-core` + `langchain-openai` |
-| 定义 schema | 在上面基础上增加 `pydantic` |
-| 创建 Agent 并注册 Tools | 增加 `langchain` |
-| 编写显式状态图 | 增加 `langgraph` |
-| 接入其他供应商 | 替换或增加对应集成包 |
-
-依赖清单应该能回答每个包为什么存在。
-
-无法说明用途的包不应因为教程中出现就直接安装。
-
-# 六、常见误区
-
-## 6.1 把 LangChain 当成模型
-
-LangChain 不生成答案。
-
-真正生成内容的是它连接的模型。
-
-框架只负责准备输入、组织调用和处理输出。
-
-## 6.2 把所有流程都写成 Chain
-
-顺序明确的步骤适合 Chain。
-
-需要循环、暂停、审批和恢复的流程更适合 LangGraph。
-
-业务规则仍应保留清晰的函数与服务边界。
-
-## 6.3 混用不同版本教程
-
-LangChain 的包结构和高层 API 变化较快。
-
-旧文章中的导入路径可能已经迁移。
-
-同一篇实现应固定版本，并只使用对应版本的文档。
-
-# 七、学完如何验收？
-
-- [ ] 能用一句话说明 LangChain 负责模型周围的应用编排。
-- [ ] 能给出一个不需要 LangChain 的简单场景。
-- [ ] 能区分 `langchain`、`langchain-core` 与供应商集成包。
-- [ ] 能说明 LangGraph 负责复杂状态流程。
-- [ ] 能说明 LangSmith 负责 Trace 与评测。
-- [ ] 能根据目标能力写出最小依赖清单。
-- [ ] 能指出权限、审批、预算和发布标准仍属于业务职责。
-
-# 八、下一步学什么？
+## 3.4 下一步学什么？
 
 下一篇只做两件事：
 
@@ -315,31 +232,10 @@ Prompt、Runnable、LCEL 和 Output Parser 会在后续文章逐层展开。
 
 现在不需要一次理解完整链路。
 
-## 可运行实验：按任务生成最小依赖清单
+# 四、总结
 
+> **什么时候该用 LangChain，什么时候不用？** 只有固定 Prompt 和一次模型调用时，直接使用模型供应商 SDK 即可；需要统一消息、切换模型、组合 Tools、管理上下文或接入 Trace 时，再使用 LangChain。
 
+> **LangChain 有哪些包？** `langchain` 提供 Agent 等高层入口，`langchain-core` 提供 Message、Runnable、Prompt 和 Tool 等基础契约，`langchain-openai` 等集成包负责连接具体模型与外部系统。
 
-```python runnable file=main.py title="LangChain 包职责选择器" description="根据任务输出最小依赖集合，并标出每个包的职责。"
-TASK_PACKAGES = {
-    "model": [("langchain-core", "基础契约"), ("langchain-openai", "ChatOpenAI")],
-    "split": [("langchain-core", "Document/Runnable"), ("langchain-text-splitters", "文本分块")],
-    "mcp": [("langchain-core", "Tool 契约"), ("langchain-mcp-adapters", "MCP 适配")],
-    "milvus": [("langchain-core", "VectorStore 契约"), ("langchain-milvus", "Milvus 适配")],
-}
-
-for task, packages in TASK_PACKAGES.items():
-    print(f"[{task}]")
-    for package, responsibility in packages:
-        print(f"- {package}: {responsibility}")
-```
-
-
-运行结果应证明：不同任务需要的包集合不同，不能把整套生态无差别安装。
-
-## 参考资料
-
-- [LangChain Python Overview](https://docs.langchain.com/oss/python/langchain/overview)
-- [LangChain Python Tools](https://docs.langchain.com/oss/python/langchain/tools)
-- [ChatOpenAI Integration](https://docs.langchain.com/oss/python/integrations/chat/openai)
-- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview)
-- [LangSmith Documentation](https://docs.langchain.com/langsmith/home)
+> **LangChain 的生态是什么？** LangChain 负责组织大模型应用，LangGraph 负责复杂状态与可恢复执行，Integrations 连接模型和外部数据，LangSmith 负责 Trace、评测与观测。

@@ -1,21 +1,9 @@
 # LangChain（02） - LangChain 接入大模型与注册 Tools
 
-
-## Python 实现地图
-
-Python 从 `langchain_core.messages` 导入四种核心 Message，用 `langchain_core.tools.tool` 装饰器和类型注解定义参数。模型通过 `bind_tools()` 注册工具；执行 Tool 后用对应的 `tool_call_id` 构造 `ToolMessage`。
-
-```python runnable file=main.py title="Python Message 流转" description="观察四种核心 Message 在 Tool Calling 循环中的顺序。"
-messages = ["SystemMessage", "HumanMessage", "AIMessage(tool_calls)", "ToolMessage", "AIMessage(final)"]
-for index, message in enumerate(messages, start=1):
-    print(f"{index}. {message}")
-```
-
-
-> 读完后，你应能：
-> - 使用临时 Base URL、API Key 和模型名完成一次真实 ChatModel 调用，并输出模型响应与 Token 用量记录。
-> - 使用 `tool` 和 Pydantic schema 定义 `get_weather`，再通过 `bind_tools` 注册给模型，并输出 schema 检查结果。
-> - 区分“模型提出 Tool Call”和“应用执行 Tool”，并输出运行结果证明本文只完成前者。
+> 读完后，你应能回答：
+> - LangChain 接入大模型时需要设置哪些参数？
+> - LangChain 怎么注册 Tool，并约束 Tool 的参数？
+> - Function Calling、Tool Call 和 Tool 执行是什么关系？
 
 ## 核心知识清单
 
@@ -28,20 +16,12 @@ for index, message in enumerate(messages, start=1):
 
 # 一、本篇只解决哪两个问题？
 
-第一篇已经说明 LangChain 的定位、包和生态。
-
-这一篇不进入 Runnable、LCEL 和 Agent 循环。
-
 只完成两个最小目标：
 
 1. 让 LangChain 成功连接真实大模型。
 2. 给模型注册一个 Tool，并看到模型生成 Tool Call。
 
-完成这两步后，你会知道模型能力和外部能力如何进入 LangChain。
-
-后续文章再解释它们如何组合成 Chain。
-
-# 二、接入大模型需要哪些信息？
+# 二、langchain 接入大模型需要哪些信息？
 
 模型连接至少需要三个值。
 
@@ -61,7 +41,19 @@ for index, message in enumerate(messages, start=1):
 
 服务端会拒绝 HTTP、localhost、私网 IP 和云元数据地址。
 
-## 2.1 为什么使用 `ChatOpenAI`？
+```python runnable model-sandbox file=main.py title="ChatOpenAI 普通调用" description="通过页面临时连接调用真实 ChatModel，观察 AIMessage 与 Token Usage。" prompt="用一句话说明 LangChain 和大模型的关系。"
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+
+
+model = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
+response = model.invoke([HumanMessage(content="LangChain 和大模型是什么关系？")])
+print(type(response).__name__)
+print(response.content)
+print(response.usage_metadata or "供应商没有返回 Token Usage")
+```
+
+## 2.1 langchain 为什么使用 `ChatOpenAI`？
 
 本文使用 Python 的 `langchain-openai`。
 
@@ -81,7 +73,7 @@ for index, message in enumerate(messages, start=1):
 
 所以连接成功后还要针对实际功能单独验证。
 
-# 三、先理解一次普通模型调用
+# 三、一次普通模型调用
 
 一次普通调用的链路很短。
 
@@ -128,7 +120,22 @@ SystemMessage -> HumanMessage -> AIMessage(tool_calls) -> ToolMessage -> AIMessa
 
 `AIMessage` 提出调用，`ToolMessage` 只能由应用在完成权限校验和执行后创建。不能把模型返回的 JSON 直接伪装成 `ToolMessage`，也不能漏掉 `tool_call_id`，否则模型无法知道结果对应哪一次调用。
 
-# 四、LangChain Tool 是什么？
+```python runnable file=main.py title="四种 Message 的 Tool Calling 顺序" description="用 LangChain 的真实 Message 类型表示一次 Tool Calling 循环，不访问外部服务。" packages=langchain-core
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+
+
+messages = [
+    SystemMessage(content="你是天气助手。"),
+    HumanMessage(content="成都天气如何？"),
+    AIMessage(content="", tool_calls=[{"name": "get_weather", "args": {"city": "成都"}, "id": "call-1", "type": "tool_call"}]),
+    ToolMessage(content="成都晴，24 摄氏度。", tool_call_id="call-1"),
+    AIMessage(content="成都今天晴，24 摄氏度。"),
+]
+for index, message in enumerate(messages, start=1):
+    print(index, type(message).__name__)
+```
+
+# 五、LangChain Tool 是什么？
 
 Tool 是应用暴露给模型的一项受控能力。
 
@@ -149,7 +156,35 @@ schema 是运行时契约，不只是 Python 类型提示。
 
 执行函数必须把不可信参数当成外部输入重新校验。
 
-## 4.1 为什么需要 schema？
+```python runnable file=main.py title="Tool schema 参数校验" description="用 Pydantic schema 校验 Tool 参数，验证注册契约与执行函数是两件事。" packages=langchain-core,pydantic
+from pydantic import BaseModel, ValidationError
+from langchain_core.tools import StructuredTool
+
+
+class WeatherInput(BaseModel):
+    city: str
+
+
+def get_weather(city: str) -> str:
+    return f"{city}的教学天气结果：晴，24 摄氏度。"
+
+
+weather_tool = StructuredTool.from_function(
+    get_weather,
+    name="get_weather",
+    description="查询指定城市天气。",
+    args_schema=WeatherInput,
+)
+validated = weather_tool.args_schema.model_validate({"city": "成都"})
+print(weather_tool.name)
+print(validated.model_dump())
+try:
+    weather_tool.args_schema.model_validate({"city": 42})
+except ValidationError as error:
+    print(type(error).__name__)
+```
+
+## 5.1 为什么需要 schema？
 
 模型生成的是调用建议，不是可信程序输入。
 
@@ -165,7 +200,7 @@ Pydantic schema 可以先检查数据形状。
 
 例如 `city` 是合法字符串，不代表当前业务允许查询任意位置的内部数据。
 
-# 五、`bind_tools` 到底做了什么？
+# 六、`bind_tools` 到底做了什么？
 
 `bind_tools` 会把 Tool 的名称、描述和 schema 放进模型请求。
 
@@ -182,7 +217,7 @@ Pydantic schema 可以先检查数据形状。
 
 应用收到后仍要决定是否执行。
 
-## 5.1 注册不等于执行
+## 6.1 注册不等于执行
 
 下面的状态图把两者分开。
 
@@ -209,45 +244,44 @@ stateDiagram-v2
 
 这样可以先验证模型是否理解 Tool schema，又不会产生外部副作用。
 
-# 六、可运行实验：真实模型与 Tool 注册
+# 七、可运行实验：真实模型与 Tool 注册
 
-这个沙盒会执行真实 LangChain 模型调用。
+下面的沙盒会连接真实 ChatModel，把 `get_weather` 的名称、描述和参数 schema 注册给模型，并观察模型返回的 Tool Call。
 
-它注册一个确定性的 `get_weather` 教学 Tool。
+它只验证“模型提出调用”，不会执行天气函数。
 
-为了稳定观察 Tool Call，服务端会要求模型选择该 Tool。
+```python runnable model-sandbox mode=tools file=main.py title="LangChain 模型接入与 Tool 注册" description="通过真实 ChatModel 注册 get_weather，并观察模型返回的 Tool Call；实验不会执行外部 Tool。" prompt="请查询成都的天气，并使用已经注册的 get_weather 工具。"
+from pydantic import BaseModel, Field
+from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
 
-运行后应看到：
 
-- 实际模型名。
-- Token Usage（供应商支持时）。
-- `get_weather` Tool 名称。
-- 模型生成的 `city` 参数。
-- 明确提示“本文未执行 Tool”。
+class WeatherInput(BaseModel):
+    city: str = Field(description="需要查询天气的城市名称")
 
-```python runnable file=main.py title="Python Tool Call 消息契约" description="验证 Tool Call 与 ToolMessage 必须使用同一个关联 ID。"
-tool_call = {"id": "call_weather_1", "name": "get_weather", "args": {"city": "成都"}}
-tool_message = {"tool_call_id": tool_call["id"], "content": "晴，24 摄氏度"}
-assert tool_message["tool_call_id"] == tool_call["id"]
-print(tool_call)
-print(tool_message)
-print("应用完成权限校验后才允许执行 Tool")
+
+@tool(args_schema=WeatherInput)
+def get_weather(city: str) -> str:
+    """查询指定城市天气。"""
+    return f"{city}的教学天气结果：晴，24 摄氏度。"
+
+
+model = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
+model_with_tools = model.bind_tools([get_weather], tool_choice="get_weather")
+response = model_with_tools.invoke("请查询成都的天气。")
+tool_call = response.tool_calls[0]
+print(tool_call["name"])
+print(tool_call["args"])
+print("本文未执行 Tool")
 ```
 
-## 6.1 如何判断实验通过？
+运行后至少检查三项：
 
-不能只看页面显示“运行成功”。
+1. Tool 名称是 `get_weather`。
+2. 参数包含非空 `city`。
+3. 输出明确说明本文没有执行 Tool。
 
-至少检查下面四项：
-
-1. Tool 名称必须是 `get_weather`。
-2. 参数必须包含非空 `city`。
-3. 输出必须声明 Tool 尚未执行。
-4. API Key 不能出现在源码、URL、日志或输出中。
-
-如果模型直接返回天气文本，而没有 Tool Call，说明当前供应商或模型的 Tool Calling 兼容性需要检查。
-
-# 七、模型返回 Tool Call 后怎么办？
+# 八、模型返回 Tool Call 后怎么办？
 
 完整执行循环还有四步：
 
@@ -264,52 +298,13 @@ print("应用完成权限校验后才允许执行 Tool")
 
 真正执行动作的是应用代码。
 
-# 八、常见失败怎么定位？
+# 九、总结
 
-| 现象 | 优先检查 |
-| --- | --- |
-| 401 或 403 | API Key、账号权限和模型权限 |
-| 404 | Base URL 版本路径和模型名 |
-| 429 | 余额、RPM、TPM 与并发限制 |
-| 请求超时 | 网络、上游状态和模型响应时间 |
-| 模型没有 Tool Call | 模型能力、供应商兼容性与 Tool 描述 |
-| Tool 参数缺失 | schema 描述、用户问题和模型能力 |
-| Tool 参数越权 | 应用权限校验，而不是继续改 Prompt |
+> **LangChain 接入大模型时需要设置哪些参数？** 至少需要 Base URL、API Key 和模型名。`ChatOpenAI` 还可以设置 `temperature`、超时、重试等运行参数；这些属于模型连接与调用配置，不应写进 Prompt，也不能把 API Key 提交到仓库。
 
-认证失败不是 Prompt 问题。
+> **LangChain 怎么注册 Tool，并约束 Tool 的参数？** 使用 `@tool` 或 `StructuredTool` 定义稳定的名称、描述、Pydantic 输入 schema 和执行函数，再通过 `model.bind_tools([tool])` 把 Tool schema 注册给模型。Pydantic 只校验参数形状，应用仍需检查 Tool 白名单、用户权限和副作用。
 
-Tool 参数合法也不代表权限合法。
-
-每次只改变一个条件，保留原始响应再判断根因。
-
-# 九、上线前边界
-
-- [ ] API Key 只通过环境变量或密钥服务注入。
-- [ ] Base URL 只允许批准的公网 HTTPS 地址。
-- [ ] 模型名来自供应商真实支持列表。
-- [ ] 所有 Tool 名称进入白名单。
-- [ ] 所有 Tool 参数通过 schema 与业务权限双重校验。
-- [ ] 有副作用的 Tool 在执行前进行确认。
-- [ ] Tool 调用使用幂等键，避免重试产生重复副作用。
-- [ ] Tool Call、执行结果与调用身份进入审计记录。
-- [ ] 超时和中止不会把半成品结果当成成功。
-- [ ] 错误信息不会回显 API Key。
-
-# 十、本篇与后续课程的边界
-
-本篇只建立 Model 和 Tool 两个入口。
-
-后续课程按下面顺序继续：
-
-1. Runnable：理解统一输入输出接口。
-2. LCEL：理解多个 Runnable 如何组合。
-3. Output Parser：理解模型输出如何进入业务类型。
-4. Callback 与 Middleware：理解运行时扩展。
-5. LangGraph 与 Tool Calling：理解完整循环、状态和恢复。
-
-不要在第二篇一次学习完所有抽象。
-
-先确认模型能连通，再确认 Tool 能注册。
+> **Function Calling、Tool Call 和 Tool 执行是什么关系？** Function Calling 是模型根据函数或 Tool schema 生成结构化调用请求的能力；LangChain 把一次请求表示在 `AIMessage.tool_calls` 中，这就是 Tool Call。Tool Call 只是模型提出的调用建议，应用校验后才真正执行函数，并使用相同 `tool_call_id` 创建 `ToolMessage`，再交给模型生成最终回答。
 
 ## 参考资料
 

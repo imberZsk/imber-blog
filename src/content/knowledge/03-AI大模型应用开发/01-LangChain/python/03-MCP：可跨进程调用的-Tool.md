@@ -1,19 +1,5 @@
 # LangChain（03） - MCP：通过进程边界接入 Tool
 
-
-## Python 实现地图
-
-安装 `langchain-mcp-adapters`，从 `langchain_mcp_adapters.client` 导入 `MultiServerMCPClient`。本地 Server 使用 `stdio`，远程 Server 使用 Streamable HTTP；`get_tools()` 返回可交给 Agent 的工具。
-
-```python runnable file=main.py title="Python MCP 传输选择" description="根据工具部署位置选择 stdio 或 HTTP。"
-def choose_transport(same_machine: bool) -> str:
-    return "stdio: child process" if same_machine else "http: remote server"
-
-print(choose_transport(True))
-print(choose_transport(False))
-```
-
-
 > 读完后，你应能完成以下任务：
 > - 绘制“Agent（06） - MCP：可跨进程调用的 Tool / 本篇定位”的关键对象与数据流，解释“这是工具系统从“项目内函数”走向“可复用外部工具服务”的篇章。”，并用源码位置、日志或 Trace 标注证据。
 > - 为“Agent（06） - MCP：可跨进程调用的 Tool / 核心拆解”设计正常与异常输入，验证“普通 Tool 往往是应用内函数，生命周期跟应用绑在一起。”，输出首个偏差位置与回归测试结果。

@@ -50,11 +50,26 @@ function writeSandboxFiles(pyodide, files) {
 
 /**
  * 执行一次 Python 实验并把标准输出实时回传给文章页面。
- * @param {{entryFile: string, files: Array<{name: string, content: string}>}} request 可信实验文件与入口。
+ * @param {{entryFile: string, files: Array<{name: string, content: string}>, pythonPackages?: string[]}} request 可信实验文件、入口与受控依赖。
  */
 async function runPythonSandbox(request) {
   /** 浏览器中的 Pyodide 实例。 */
   const pyodide = await getPyodide()
+  /** 文章围栏声明且服务端已校验格式的 PyPI 依赖。 */
+  const pythonPackages = Array.isArray(request.pythonPackages) ? request.pythonPackages : []
+  if (pythonPackages.length > 0) {
+    self.postMessage({ type: 'stage', text: `正在安装 Python 依赖：${pythonPackages.join('、')}……` })
+    await pyodide.loadPackage('micropip')
+    pyodide.globals.set('__knowledge_sandbox_packages', pythonPackages)
+    try {
+      await pyodide.runPythonAsync(`
+import micropip
+await micropip.install(__knowledge_sandbox_packages)
+`)
+    } finally {
+      pyodide.globals.delete('__knowledge_sandbox_packages')
+    }
+  }
   self.postMessage({ type: 'ready' })
 
   pyodide.setStdout({

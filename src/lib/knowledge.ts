@@ -161,6 +161,8 @@ interface InlinePythonSandboxCandidate {
   entryFile: string
   /** 同一个可运行源码章节公开的入口和支持文件。 */
   files: KnowledgeSandboxFile[]
+  /** 运行入口前需要安装的受控 PyPI 包。 */
+  pythonPackages: string[]
 }
 
 /** 正在从 Markdown “可运行源码”章节收集的多文件 Python 实验。 */
@@ -1864,7 +1866,8 @@ function findInlinePythonSandboxCandidates(
       candidates.push({
         title: sandboxTitle || '正文 Python 示例',
         entryFile: INLINE_PYTHON_SANDBOX_ENTRY_FILE,
-        files: sourceSection.files
+        files: sourceSection.files,
+        pythonPackages: []
       })
     }
 
@@ -1933,13 +1936,19 @@ function findInlinePythonSandboxCandidates(
 
     /** 当前候选程序的完整源码。 */
     const sourceCode = node.value.trim()
+    /** 依赖名中的连字符转换为 Python import 使用的下划线根模块名。 */
+    const allowedExternalModuleNames = new Set(
+      (runnableMetadata?.pythonPackages || []).map((packageName) => packageName.split('==')[0]?.replaceAll('-', '_') || '')
+    )
     /** 显式 runnable 围栏仍必须通过浏览器依赖与完整性检查。 */
     const sandboxHeading = runnableMetadata?.title || currentHeading
     if (
       !isInlinePythonSandboxCandidate(
         sourceArticlePath,
         runnableMetadata?.runnable ? `可运行 ${sandboxHeading}` : sandboxHeading,
-        sourceCode
+        sourceCode,
+        new Set(),
+        allowedExternalModuleNames
       )
     ) {
       continue
@@ -1953,7 +1962,8 @@ function findInlinePythonSandboxCandidates(
           name: runnableMetadata?.fileName || INLINE_PYTHON_SANDBOX_ENTRY_FILE,
           content: sourceCode
         }
-      ] // 运行与正文展示共用同一份内容。
+      ], // 运行与正文展示共用同一份内容。
+      pythonPackages: runnableMetadata?.pythonPackages || []
     })
   }
 
@@ -2157,7 +2167,8 @@ function createInlinePythonSandboxes(
     title: `${candidate.title}·在线运行`, // 明确该单元属于当前知识点。
     description: '运行正文中的完整 Python 示例，对照源码观察真实输出。', // 不暗示使用外部服务。
     entryFile: candidate.entryFile, // 执行文章源码章节明确声明的入口。
-    files: candidate.files // 入口和夹具全部来自正文公开代码块。
+    files: candidate.files, // 入口和夹具全部来自正文公开代码块。
+    pythonPackages: candidate.pythonPackages // 只安装围栏显式声明且已通过格式白名单的依赖。
   }))
 }
 

@@ -116,7 +116,9 @@ function createCuratedQuizQuestion(
   prompt: string,
   correctOptions: readonly CuratedQuizOptionContent[],
   incorrectOptions: readonly CuratedQuizOptionContent[],
-  explanation: string
+  explanation: string,
+  knowledgePoints: readonly string[] = [prompt],
+  assessmentKind: KnowledgeQuizAssessmentKind = 'decision'
 ): KnowledgeQuizQuestion {
   /** 正确项和错误项组成的固定四项候选答案。 */
   const optionCandidates: GeneratedQuizOptionContent[] = [
@@ -137,13 +139,134 @@ function createCuratedQuizQuestion(
       ...option
     })),
     explanation,
-    knowledgePoints: [prompt],
-    assessmentKind: 'decision'
+    knowledgePoints: [...knowledgePoints],
+    assessmentKind
   }
+}
+
+/**
+ * 为 Python 或 TypeScript LangChain 入门文章生成三道与开篇问题一一对应的自测题。
+ * @param corePackage 当前语言的 LangChain core 包名。
+ * @param providerPackage 当前语言的 OpenAI 集成包名。
+ * @param declaredKnowledgePoints 当前文章核心知识清单中的原文条目。
+ * @returns 只覆盖框架选型、包职责和生态边界的三道题。
+ */
+function createLangChainIntroQuiz(
+  corePackage: string,
+  providerPackage: string,
+  declaredKnowledgePoints: readonly string[]
+): KnowledgeQuizQuestion[] {
+  return [
+    createCuratedQuizQuestion(
+      'langchain-intro-when-to-use',
+      '一个页面只有固定 Prompt 和一次模型调用；另一个 Agent 需要切换模型、注册多个 Tools 并记录 Trace。应该怎样选择？',
+      [
+        {
+          label: '固定 Prompt 页面直接使用模型供应商 SDK。',
+          reason: '只有一次稳定调用时，LangChain 的组合抽象不会带来额外价值。'
+        },
+        {
+          label: '需要切换模型、组合 Tools 和记录 Trace 的 Agent 使用 LangChain。',
+          reason: '这些需求正好需要统一 Message、Model、Tool 和运行扩展接口。'
+        }
+      ],
+      [
+        {
+          label: '两个页面都必须使用 LangChain，因为所有大模型调用都依赖它。',
+          reason: 'LangChain 是可选的应用框架，不是调用模型的必需依赖。'
+        },
+        {
+          label: '两个页面都直接使用供应商 SDK，Tools 和 Trace 由 Prompt 自动完成。',
+          reason: 'Prompt 不能替应用注册 Tool、管理调用循环或记录完整 Trace。'
+        }
+      ],
+      '是否使用 LangChain 取决于当前是否需要统一和组合多个应用步骤，而不是项目是否调用了大模型。',
+      declaredKnowledgePoints.slice(0, 2),
+      'decision'
+    ),
+    createCuratedQuizQuestion(
+      'langchain-intro-packages',
+      `项目要创建 Agent、复用 Message/Runnable 契约并调用 OpenAI 模型，${corePackage} 与 ${providerPackage} 分别负责什么？`,
+      [
+        {
+          label: `${corePackage} 提供 Message、Runnable、Prompt 和 Tool 等基础契约。`,
+          reason: 'core 包保存跨供应商复用的接口，不负责连接某个具体模型。'
+        },
+        {
+          label: `${providerPackage} 负责把统一消息转换为 OpenAI 请求并还原响应。`,
+          reason: '供应商集成包负责协议转换和供应商特有配置。'
+        }
+      ],
+      [
+        {
+          label: `${corePackage} 会自动选择并调用任意模型，不需要供应商集成包。`,
+          reason: 'core 只定义契约，本身没有具体模型连接实现。'
+        },
+        {
+          label: `${providerPackage} 负责定义业务权限、Tool 审批和 Agent 流程。`,
+          reason: '供应商包只处理模型协议，业务规则和运行流程仍由应用与 LangChain 管理。'
+        }
+      ],
+      `高层 langchain 包组织 Agent，${corePackage} 保存稳定契约，${providerPackage} 连接 OpenAI 模型。`,
+      declaredKnowledgePoints.slice(2, 4),
+      'mechanism'
+    ),
+    createCuratedQuizQuestion(
+      'langchain-intro-ecosystem',
+      '一个 Agent 需要分支、暂停恢复和持久化，同时团队还要查看 Trace 并做回归评测。LangGraph 与 LangSmith 应怎样分工？',
+      [
+        {
+          label: 'LangGraph 管理状态、分支、循环、暂停恢复和持久化执行。',
+          reason: '这些能力属于复杂运行流程和状态图，需要由 LangGraph 的执行状态统一管理。'
+        },
+        {
+          label: 'LangSmith 记录 Trace、错误、耗时和评测结果。',
+          reason: 'LangSmith 是观测与评测平台，不参与业务答案生成。'
+        }
+      ],
+      [
+        {
+          label: 'LangSmith 负责执行 Agent 的分支和循环，LangGraph 只展示 Trace。',
+          reason: '两者职责正好相反：LangGraph 执行状态图，LangSmith 观察和评估运行。'
+        },
+        {
+          label: '接入 LangGraph 后就不再需要 LangChain 的 Model、Message 和 Tool 接口。',
+          reason: 'LangGraph 只承担复杂运行状态，不会替代 LangChain 已经定义的应用组件契约。'
+        }
+      ],
+      'LangChain 组织应用组件，LangGraph 管理复杂执行状态，LangSmith 记录和评估运行过程。',
+      declaredKnowledgePoints.slice(4, 6),
+      'diagnosis'
+    )
+  ]
 }
 
 /** 重点课程人工设计的核心知识题。 */
 const CURATED_QUIZZES: Record<string, KnowledgeQuizQuestion[]> = {
+  '03-AI大模型应用开发/01-LangChain/python/01-LangChain-入门': createLangChainIntroQuiz(
+    'langchain-core',
+    'langchain-openai',
+    [
+      'LangChain 是大模型应用框架，不是模型，也不会提升模型本身的知识和推理能力',
+      'LangChain v1 的高层入口围绕 Agent、Model、Tool、Middleware 等能力组织',
+      'langchain-core 保存消息、Runnable、Prompt 和 Tool 等基础契约',
+      'langchain-openai 等集成包负责连接具体模型供应商',
+      'LangGraph 承担更复杂的状态、分支、循环和持久化执行',
+      'LangSmith 用于 Trace、评测与线上观测，不参与业务答案生成'
+    ]
+  ),
+  '03-AI大模型应用开发/01-LangChain/typescript/01-LangChain-入门': createLangChainIntroQuiz(
+    '@langchain/core',
+    '@langchain/openai',
+    [
+      'LangChain 是大模型应用框架，不是模型，也不会提升模型本身的知识和推理能力',
+      'LangChain v1 的高层入口围绕 Agent、Model、Tool、Middleware 等能力组织',
+      '@langchain/core 保存消息、Runnable、Prompt 和 Tool 等基础契约',
+      '@langchain/openai 等集成包负责连接具体模型供应商',
+      'LangGraph 承担更复杂的状态、分支、循环和持久化执行',
+      'LangSmith 用于 Trace、评测与线上观测，不参与业务答案生成'
+    ]
+  ),
   '01-全栈开发/02-后端/java/17-Spring事务与Transactional': [
     createCuratedQuizQuestion(
       'spring-transaction-boundary',
@@ -1205,8 +1328,10 @@ export function createKnowledgeQuiz(
   const generatedQuestions = createGeneratedQuiz(articlePath, markdown, title, articleKind)
   /** 少数重点课程已有的人工场景题。 */
   const curatedQuestions = CURATED_QUIZZES[articlePath] || []
-  /** 人工题作为加深理解的第四题，不替代全篇核心知识覆盖。 */
-  const questions = [...curatedQuestions, ...generatedQuestions].slice(0, MAX_QUIZ_QUESTION_COUNT)
+  /** 三道完整人工题直接覆盖全文；单道人工题仍作为通用题组的补充。 */
+  const questions = curatedQuestions.length >= MIN_QUIZ_QUESTION_COUNT
+    ? curatedQuestions.slice(0, MAX_QUIZ_QUESTION_COUNT)
+    : [...curatedQuestions, ...generatedQuestions].slice(0, MAX_QUIZ_QUESTION_COUNT)
   /** 构建期质量门发现的问题。 */
   const auditIssues = auditKnowledgeQuizQuestions(articlePath, articleKind, questions)
   /** 文章显式声明、必须全部进入题组的核心知识点。 */

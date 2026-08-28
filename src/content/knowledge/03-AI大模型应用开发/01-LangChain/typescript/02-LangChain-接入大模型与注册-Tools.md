@@ -11,10 +11,10 @@ messages.forEach((message, index) => console.log(`${index + 1}. ${message}`))
 
 
 
-> 读完后，你应能：
-> - 使用临时 Base URL、API Key 和模型名完成一次真实 ChatModel 调用，并输出模型响应与 Token 用量记录。
-> - 使用 `tool` 和 Zod schema 定义 `get_weather`，再通过 `bindTools` 注册给模型，并输出 schema 检查结果。
-> - 区分“模型提出 Tool Call”和“应用执行 Tool”，并输出运行结果证明本文只完成前者。
+> 读完后，你应能回答：
+> - LangChain 接入大模型时需要设置哪些参数？
+> - LangChain 怎么注册 Tool，并约束 Tool 的参数？
+> - Function Calling、Tool Call 和 Tool 执行是什么关系？
 
 ## 核心知识清单
 
@@ -127,7 +127,20 @@ SystemMessage -> HumanMessage -> AIMessage(tool_calls) -> ToolMessage -> AIMessa
 
 `AIMessage` 提出调用，`ToolMessage` 只能由应用在完成权限校验和执行后创建。不能把模型返回的 JSON 直接伪装成 `ToolMessage`，也不能漏掉 `tool_call_id`，否则模型无法知道结果对应哪一次调用。
 
-# 四、LangChain Tool 是什么？
+```typescript runnable file=main.ts title="四种 Message 的 Tool Calling 顺序" description="用 LangChain 的真实 Message 类型表示一次 Tool Calling 循环，不访问外部服务。"
+import { AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages'
+
+const messages = [
+  new SystemMessage('你是天气助手。'),
+  new HumanMessage('成都天气如何？'),
+  new AIMessage({ content: '', tool_calls: [{ name: 'get_weather', args: { city: '成都' }, id: 'call-1', type: 'tool_call' }] }),
+  new ToolMessage({ content: '成都晴，24 摄氏度。', tool_call_id: 'call-1' }),
+  new AIMessage('成都今天晴，24 摄氏度。')
+]
+messages.forEach((message, index) => console.log(index + 1, message.constructor.name))
+```
+
+# 五、LangChain Tool 是什么？
 
 Tool 是应用暴露给模型的一项受控能力。
 
@@ -148,7 +161,7 @@ schema 是运行时契约，不只是 TypeScript 类型提示。
 
 执行函数必须把不可信参数当成外部输入重新校验。
 
-## 4.1 为什么需要 schema？
+## 5.1 为什么需要 schema？
 
 模型生成的是调用建议，不是可信程序输入。
 
@@ -164,7 +177,29 @@ Zod schema 可以先检查数据形状。
 
 例如 `city` 是合法字符串，不代表当前业务允许查询任意位置的内部数据。
 
-# 五、`bindTools` 到底做了什么？
+```typescript runnable file=main.ts title="Tool schema 参数校验" description="用 Zod schema 校验 Tool 参数，验证注册契约与执行函数是两件事。"
+import { tool } from '@langchain/core/tools'
+import { z } from 'zod'
+
+const weatherTool = tool(
+  async ({ city }) => `${city}的教学天气结果：晴，24 摄氏度。`,
+  {
+    name: 'get_weather',
+    description: '查询指定城市天气。',
+    schema: z.object({ city: z.string().min(1) })
+  }
+)
+
+console.log(weatherTool.name)
+console.log(weatherTool.schema.parse({ city: '成都' }))
+try {
+  weatherTool.schema.parse({ city: 42 })
+} catch (error) {
+  console.log(error.constructor.name)
+}
+```
+
+# 六、`bindTools` 到底做了什么？
 
 `bindTools` 会把 Tool 的名称、描述和 schema 放进模型请求。
 
@@ -181,7 +216,7 @@ Zod schema 可以先检查数据形状。
 
 应用收到后仍要决定是否执行。
 
-## 5.1 注册不等于执行
+## 6.1 注册不等于执行
 
 下面的状态图把两者分开。
 
@@ -208,7 +243,7 @@ stateDiagram-v2
 
 这样可以先验证模型是否理解 Tool schema，又不会产生外部副作用。
 
-# 六、可运行实验：真实模型与 Tool 注册
+# 七、可运行实验：真实模型与 Tool 注册
 
 这个沙盒会执行真实 LangChain 模型调用。
 
@@ -297,7 +332,7 @@ async function invokeLangChainTools(
 export { invokeLangChainTools }
 ```
 
-## 6.1 如何判断实验通过？
+## 7.1 如何判断实验通过？
 
 不能只看页面显示“运行成功”。
 
@@ -310,7 +345,7 @@ export { invokeLangChainTools }
 
 如果模型直接返回天气文本，而没有 Tool Call，说明当前供应商或模型的 Tool Calling 兼容性需要检查。
 
-# 七、模型返回 Tool Call 后怎么办？
+# 八、模型返回 Tool Call 后怎么办？
 
 完整执行循环还有四步：
 
@@ -327,7 +362,7 @@ export { invokeLangChainTools }
 
 真正执行动作的是应用代码。
 
-# 八、常见失败怎么定位？
+# 九、常见失败怎么定位？
 
 | 现象 | 优先检查 |
 | --- | --- |
@@ -345,7 +380,7 @@ Tool 参数合法也不代表权限合法。
 
 每次只改变一个条件，保留原始响应再判断根因。
 
-# 九、上线前边界
+# 十、上线前边界
 
 - [ ] API Key 只通过环境变量或密钥服务注入。
 - [ ] Base URL 只允许批准的公网 HTTPS 地址。
@@ -358,7 +393,7 @@ Tool 参数合法也不代表权限合法。
 - [ ] 超时和中止不会把半成品结果当成成功。
 - [ ] 错误信息不会回显 API Key。
 
-# 十、本篇与后续课程的边界
+# 十一、本篇与后续课程的边界
 
 本篇只建立 Model 和 Tool 两个入口。
 
@@ -373,6 +408,14 @@ Tool 参数合法也不代表权限合法。
 不要在第二篇一次学习完所有抽象。
 
 先确认模型能连通，再确认 Tool 能注册。
+
+# 十二、总结
+
+> **LangChain 接入大模型时需要设置哪些参数？** 至少需要 Base URL、API Key 和模型名。`ChatOpenAI` 还可以设置 `temperature`、超时、重试等运行参数；这些属于模型连接与调用配置，不应写进 Prompt，也不能把 API Key 提交到仓库。
+
+> **LangChain 怎么注册 Tool，并约束 Tool 的参数？** 使用 `tool` 定义稳定的名称、描述、Zod 输入 schema 和执行函数，再通过 `model.bindTools([tool])` 把 Tool schema 注册给模型。Zod 只校验参数形状，应用仍需检查 Tool 白名单、用户权限和副作用。
+
+> **Function Calling、Tool Call 和 Tool 执行是什么关系？** Function Calling 是模型根据函数或 Tool schema 生成结构化调用请求的能力；LangChain 把一次请求表示在 `AIMessage.tool_calls` 中，这就是 Tool Call。Tool Call 只是模型提出的调用建议，应用校验后才真正执行函数，并使用相同 `tool_call_id` 创建 `ToolMessage`，再交给模型生成最终回答。
 
 ## 参考资料
 
