@@ -1,19 +1,21 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { InteractiveMindmap } from '@/components/interactive-mindmap'
+import { ArrowLeft } from 'lucide-react'
 import {
   getKnowledgeArticle,
   getKnowledgeArticleAliasPaths,
   getKnowledgeArticles,
   getMergedDemoAliasPath
 } from '@/lib/knowledge'
-import { KnowledgeArticleContent } from '../knowledge-article-content'
-import { KnowledgeQuiz } from '../knowledge-quiz'
+import { KnowledgeLanguageView, type KnowledgeLanguageArticleVariant } from '../knowledge-language-view'
 import { KNOWLEDGE_RETURN_LINK_CLASS_NAME, KnowledgeReturnLink } from '../knowledge-return-link'
 import { TableOfContents } from '@/components/table-of-contents'
+import {
+  DEFAULT_KNOWLEDGE_LANGUAGE,
+  getKnowledgeLanguageFromPath,
+  replaceKnowledgeLanguageInPath
+} from '@/lib/knowledge-language'
 import '@/components/tiptap-templates/simple/simple-editor.scss'
 import '@/components/table-of-contents.scss'
 
@@ -29,8 +31,12 @@ interface KnowledgeArticlePageProps {
 export async function generateMetadata({ params }: KnowledgeArticlePageProps): Promise<Metadata> {
   /** 当前 URL 中的文章路径。 */
   const { slug } = await params
+  /** 当前 URL 解码后声明的独立文章语言。 */
+  const articlePath = slug.map((pathSegment) => decodeURIComponent(pathSegment)).join('/')
+  /** 元数据必须读取当前物理文章，避免 Python 页面复用 TypeScript 投影。 */
+  const articleLanguage = getKnowledgeLanguageFromPath(articlePath) || DEFAULT_KNOWLEDGE_LANGUAGE
   /** 与文章路径匹配的知识文章。 */
-  const article = await getKnowledgeArticle(slug)
+  const article = await getKnowledgeArticle(slug, articleLanguage)
 
   return {
     title: article?.title || '文章未找到',
@@ -65,23 +71,41 @@ export const dynamicParams = false
 export default async function KnowledgeArticlePage({ params }: KnowledgeArticlePageProps) {
   /** 当前 URL 中的文章路径。 */
   const { slug } = await params
-  /** 已解析并完成链接改写的知识文章。 */
-  const article = await getKnowledgeArticle(slug)
+  /** 当前请求中的新版或旧版文章路径。 */
+  const requestedArticlePath = slug.map((pathSegment) => decodeURIComponent(pathSegment)).join('/')
+  /** 当前独立文章路径声明的语言。 */
+  const articleLanguage = getKnowledgeLanguageFromPath(requestedArticlePath) || DEFAULT_KNOWLEDGE_LANGUAGE
+  /** 只读取当前路由对应的单一语言文章。 */
+  const article = await getKnowledgeArticle(slug, articleLanguage)
 
   if (!article) {
     notFound()
   }
 
-  /** 当前请求中的新版或旧版文章路径。 */
-  const requestedArticlePath = slug.map((pathSegment) => decodeURIComponent(pathSegment)).join('/')
   // 修复规范路径自跳转：生产环境路由参数保留 URL 编码，必须解码后再与中文文章路径比较。
   if (requestedArticlePath !== article.path) {
     redirect(article.href)
   }
 
+  /** 当前语言文章交给客户端渲染的完整派生数据。 */
+  const articleVariant: KnowledgeLanguageArticleVariant = {
+    referenceContent: article.referenceContent,
+    content: article.content,
+    mindmap: article.mindmap,
+    sandboxes: article.sandboxes,
+    quiz: article.quiz
+  }
+  /** 另一套语言文章中与当前课号对应的规范路径。 */
+  const alternateLanguage = articleLanguage === 'typescript' ? 'python' : 'typescript'
+  /** 语言切换按钮导航到的另一套独立文章 URL。 */
+  const alternateLanguageHref = `/knowledge/${replaceKnowledgeLanguageInPath(article.path, alternateLanguage)
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/')}`
+
   return (
     <main className="simple-editor-wrapper">
-      <TableOfContents />
+      <TableOfContents key={article.path} />
       <div className="simple-editor-content">
         <article className="tiptap ProseMirror simple-editor knowledge-article">
           <nav className="mb-8 border-b border-zinc-200 pb-5 dark:border-zinc-800" aria-label="知识文章路径">
@@ -102,46 +126,14 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
             <p className="mt-4 text-xs break-all text-zinc-500">{article.displayPath}</p>
           </nav>
 
-          {article.mindmap && (
-            <InteractiveMindmap
-              markdown={article.mindmap.markdown}
-              title={article.title}
-              variant="article"
-              nodeCount={article.mindmap.nodeCount}
-            />
-          )}
-          {article.referenceContent && <KnowledgeArticleContent content={article.referenceContent} sandboxes={[]} />}
-          <KnowledgeArticleContent content={article.content} sandboxes={article.sandboxes} />
-          <KnowledgeQuiz questions={article.quiz} />
-
-          <nav className="knowledge-article-navigation" aria-label="上一篇和下一篇">
-            {article.previousArticle ? (
-              <Link href={article.previousArticle.href} className="knowledge-article-navigation-link">
-                <span className="knowledge-article-navigation-label">
-                  <ArrowLeft aria-hidden="true" />
-                  上一篇
-                </span>
-                <span className="knowledge-article-navigation-title">{article.previousArticle.title}</span>
-              </Link>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-
-            {article.nextArticle ? (
-              <Link
-                href={article.nextArticle.href}
-                className="knowledge-article-navigation-link knowledge-article-navigation-link-next"
-              >
-                <span className="knowledge-article-navigation-label">
-                  下一篇
-                  <ArrowRight aria-hidden="true" />
-                </span>
-                <span className="knowledge-article-navigation-title">{article.nextArticle.title}</span>
-              </Link>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-          </nav>
+          <KnowledgeLanguageView
+            title={article.title}
+            article={articleVariant}
+            previousArticle={article.previousArticle}
+            nextArticle={article.nextArticle}
+            language={articleLanguage}
+            alternateLanguageHref={alternateLanguageHref}
+          />
         </article>
       </div>
     </main>

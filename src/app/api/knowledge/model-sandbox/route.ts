@@ -3,6 +3,7 @@ import { isIP } from 'node:net'
 import { StringOutputParser } from '@langchain/core/output_parsers'
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { ChatOpenAI } from '@langchain/openai'
+import { tool } from 'langchain'
 import {
   BaseLLM,
   Settings,
@@ -14,6 +15,7 @@ import {
   type MessageContent
 } from 'llamaindex'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 /** 模型代理只使用 Node.js 运行时，以便在请求前解析并校验目标地址。 */
 export const runtime = 'nodejs'
@@ -32,10 +34,15 @@ const LLAMAINDEX_ADAPTER_CONTEXT_WINDOW = 128_000
 /** 页面允许选择的模型实验框架。 */
 type ModelSandboxFramework = 'langchain' | 'llamaindex'
 
+/** LangChain 实验支持的受控执行模式。 */
+type ModelSandboxMode = 'chat' | 'tools'
+
 /** 浏览器提交的模型实验请求。 */
 interface ModelSandboxRequestBody {
   /** 当前文章声明的模型框架。 */
   framework?: unknown
+  /** 当前文章要求验证普通对话还是 Tool 注册。 */
+  mode?: unknown
   /** OpenAI 兼容接口的根地址。 */
   baseUrl?: unknown
   /** 只用于当前请求的供应商密钥。 */
@@ -411,6 +418,10 @@ export async function POST(request: Request) {
     const modelFramework: ModelSandboxFramework = requestBody.framework === 'llamaindex'
       ? 'llamaindex'
       : 'langchain'
+    /** 只有 LangChain 文章显式声明 tools 时才执行 Tool Calling 验证。 */
+    const modelMode: ModelSandboxMode = modelFramework === 'langchain' && requestBody.mode === 'tools'
+      ? 'tools'
+      : 'chat'
     /** 通过公网和 HTTPS 校验的供应商根地址。 */
     const baseUrl = await validateModelBaseUrl(readRequiredString(requestBody.baseUrl, 'Base URL', MAX_BASE_URL_LENGTH))
 
@@ -472,6 +483,53 @@ export async function POST(request: Request) {
         fetch: createRestrictedProviderFetch(baseUrl) // 阻止跨主机、跨路径和重定向。
       }
     })
+    if (modelMode === 'tools') {
+      /** 教学 Tool 只定义输入契约；本接口不会执行 Tool 函数或访问外部天气服务。 */
+      const weatherTool = tool(
+        async ({ city }) => `${city}的教学天气结果：晴，24 摄氏度。`,
+        {
+          name: 'get_weather', // 稳定名称用于验证模型返回的 Tool Call。
+          description: '当用户询问某个城市的天气时使用。', // 描述帮助模型判断选择条件。
+          schema: z.object({
+            city: z.string().min(1).describe('需要查询天气的城市名称') // 城市是唯一必填参数。
+          })
+        }
+      )
+      /** 强制选择教学 Tool，使实验结果只受供应商 Tool Calling 兼容性影响。 */
+      const modelWithTools = chatModel.bindTools([weatherTool], { tool_choice: 'get_weather' })
+      /** 超时会终止模型请求，Tool 本身不会在服务端执行。 */
+      const toolsResponseMessage = await modelWithTools.invoke(prompt, {
+        signal: AbortSignal.timeout(MODEL_REQUEST_TIMEOUT_MS)
+      })
+      /** 模型提出的第一个 Tool Call。 */
+      const firstToolCall = toolsResponseMessage.tool_calls?.[0]
+      if (!firstToolCall || firstToolCall.name !== 'get_weather') {
+        throw new Error('模型没有返回 get_weather Tool Call，请确认当前模型支持 Tool Calling。')
+      }
+      /** 页面只展示模型提议，明确阻止读者把注册误解为已经执行。 */
+      const toolCallSummary = JSON.stringify({
+        tool: firstToolCall.name, // 模型选择的 Tool 名称。
+        args: firstToolCall.args, // 模型生成且尚未执行的参数。
+        executed: false // 本实验故意停在 Tool Call 提议阶段。
+      }, null, 2)
+
+      return NextResponse.json(
+        {
+          content: `模型已提出 Tool Call，本文未执行 Tool：\n${toolCallSummary}`,
+          model,
+          usage: {
+            promptTokens: normalizeUsageNumber(toolsResponseMessage.usage_metadata?.input_tokens),
+            completionTokens: normalizeUsageNumber(toolsResponseMessage.usage_metadata?.output_tokens),
+            totalTokens: normalizeUsageNumber(toolsResponseMessage.usage_metadata?.total_tokens)
+          }
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store' // Tool Call 与临时输入不得进入中间缓存。
+          }
+        }
+      )
+    }
     /** 真实模型实验使用的消息模板。 */
     const promptTemplate = ChatPromptTemplate.fromMessages([
       ['system', '你是技术学习助手。回答要准确、简洁，不编造未提供的事实。'],

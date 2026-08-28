@@ -53,6 +53,20 @@ export const CodeBlock = CodeBlockLowlight.extend({
         renderHTML: (attributes) => attributes.sandboxFramework === 'llamaindex'
           ? { 'data-sandbox-framework': 'llamaindex' }
           : {} // 默认框架无需写入 HTML。
+      },
+      sandboxMode: {
+        default: 'chat', // 历史模型实验默认执行普通聊天。
+        parseHTML: (element) => element.getAttribute('data-sandbox-mode') || 'chat', // 恢复 Tool Calling 模式。
+        renderHTML: (attributes) => attributes.sandboxMode === 'tools'
+          ? { 'data-sandbox-mode': 'tools' }
+          : {} // 普通聊天无需写入额外属性。
+      },
+      sandboxPackages: {
+        default: '', // 普通代码和非 Python 沙盒不安装第三方依赖。
+        parseHTML: (element) => element.getAttribute('data-sandbox-packages') || '', // 恢复围栏声明的受控 PyPI 包。
+        renderHTML: (attributes) => attributes.sandboxPackages
+          ? { 'data-sandbox-packages': attributes.sandboxPackages }
+          : {} // 仅 Python 依赖非空时保存属性。
       }
     }
   },
@@ -73,7 +87,9 @@ export const CodeBlock = CodeBlockLowlight.extend({
         sandboxTitle: metadata?.title || '',
         sandboxDescription: metadata?.description || '',
         sandboxPrompt: metadata?.prompt || '',
-        sandboxFramework: metadata?.modelFramework || 'langchain'
+        sandboxFramework: metadata?.modelFramework || 'langchain',
+        sandboxMode: metadata?.modelMode || 'chat',
+        sandboxPackages: metadata?.pythonPackages.join(',') || ''
       },
       token.text ? [helpers.createTextNode(token.text)] : []
     )
@@ -89,12 +105,19 @@ export const CodeBlock = CodeBlockLowlight.extend({
         ? 'model'
         : node.attrs?.language === 'html'
           ? 'html'
-          : 'python',
+          : /^(?:typescript|ts)$/.test(node.attrs?.language || '')
+            ? 'typescript'
+            : 'python',
       fileName: node.attrs?.fileName || '',
       title: node.attrs?.sandboxTitle || '',
       description: node.attrs?.sandboxDescription || '',
       prompt: node.attrs?.sandboxPrompt || '',
-      modelFramework: node.attrs?.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain'
+      modelFramework: node.attrs?.sandboxFramework === 'llamaindex' ? 'llamaindex' : 'langchain',
+      modelMode: node.attrs?.sandboxMode === 'tools' ? 'tools' : 'chat',
+      pythonPackages: String(node.attrs?.sandboxPackages || '')
+        .split(',')
+        .map((packageName) => packageName.trim())
+        .filter(Boolean)
     })
     /** 当前代码块的可编辑文本内容。 */
     const sourceCode = node.content ? helpers.renderChildren(node.content) : ''

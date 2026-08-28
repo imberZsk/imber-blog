@@ -1,9 +1,22 @@
-# LangChain（04） - 结构化大模型输出：output parser 还是 tool?
+# LangChain（11） - 结构化大模型输出：output parser 还是 tool?
+
+
+## Python 实现地图
+
+Python 常用 Pydantic `BaseModel` 配合 `model.with_structured_output(Schema)`；Tool 用于动作决策，Parser 用于固定输出契约。
+
+```python runnable file=main.py title="Python 本篇最小实验" description="运行本篇 Python 核心数据流。"
+ticket = {"category": "bug", "priority": 2}
+if ticket["category"] not in {"bug", "feature"}:
+    raise ValueError("非法类别")
+print(ticket)
+```
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（04） - 结构化大模型输出：output parser 还是 tool? / 本篇定位”的关键对象与数据流，解释“这是结构化输出的进阶取舍篇。”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（04） - 结构化大模型输出：output parser 还是 tool? / 核心拆解”设计正常与异常输入，验证“Output parser 适合轻量任务：模型输出文本后，后端按 schema 解析和校验。”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（04） - 结构化大模型输出：output parser 还是 tool? / 工程链路”的最小代码或配置，检验“只需要展示结构化结果，用 structured output。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（16） - 结构化大模型输出：output parser 还是 tool? / 本篇定位”的关键对象与数据流，解释“这是结构化输出的进阶取舍篇。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（16） - 结构化大模型输出：output parser 还是 tool? / 核心拆解”设计正常与异常输入，验证“Output parser 适合轻量任务：模型输出文本后，后端按 schema 解析和校验。”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（16） - 结构化大模型输出：output parser 还是 tool? / 工程链路”的最小代码或配置，检验“只需要展示结构化结果，用 structured output。”，输出命令、结果与 Diff，并说明不适用边界。
 
 # 一、结构化大模型输出的学习定位与边界
 

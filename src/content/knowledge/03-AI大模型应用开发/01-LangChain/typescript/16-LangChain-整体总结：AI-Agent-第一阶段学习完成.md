@@ -1,9 +1,20 @@
-# LangChain（09） - LangChain 整体总结：AI Agent 第一阶段学习完成
+# LangChain（16） - LangChain 整体总结：AI Agent 第一阶段学习完成
+
+## TypeScript 实现地图
+
+TypeScript 路线应能串起 `@langchain/core` 契约、供应商包、`@langchain/textsplitters`、`@langchain/milvus`、`@langchain/mcp-adapters`、LCEL、Memory 与 Agent，并能说明 Zod、camelCase API 和 Node.js 部署边界。
+
+```typescript runnable file=main.ts title="TypeScript 本篇最小实验" description="运行本篇 TypeScript 核心数据流。"
+const modules = ['messages', 'tools', 'mcp', 'splitter', 'vectorstore', 'rag', 'memory', 'agent']
+console.log(`已完成 ${modules.length} 个模块：${modules.join(' -> ')}`)
+```
+
+
 
 > 读完后，你应能完成以下任务：
-> - 绘制“LangChain（09） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 本篇定位”的关键对象与数据流，解释“这是 LangChain 小阶段总结，帮助你判断自己是否真的掌握了框架本质。”，并用源码位置、日志或 Trace 标注证据。
-> - 为“LangChain（09） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 核心拆解”设计正常与异常输入，验证“LangChain 的价值是标准化组件和组合方式。”，输出首个偏差位置与回归测试结果。
-> - 实现“LangChain（09） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 工程链路”的最小代码或配置，检验“用 Parser 稳定输出。”，输出命令、结果与 Diff，并说明不适用边界。
+> - 绘制“LangChain（16） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 本篇定位”的关键对象与数据流，解释“这是 LangChain 小阶段总结，帮助你判断自己是否真的掌握了框架本质。”，并用源码位置、日志或 Trace 标注证据。
+> - 为“LangChain（16） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 核心拆解”设计正常与异常输入，验证“LangChain 的价值是标准化组件和组合方式。”，输出首个偏差位置与回归测试结果。
+> - 实现“LangChain（16） - LangChain 整体总结：AI Agent 第一阶段学习完成 / 工程链路”的最小代码或配置，检验“用 Parser 稳定输出。”，输出命令、结果与 Diff，并说明不适用边界。
 
 ## 核心知识清单
 
@@ -227,5 +238,5 @@ recovery_replay: required_after_failure
 
 ## 参考资料
 
-- [LangChain 文档](https://docs.langchain.com/oss/python/langchain/overview)
+- [LangChain 文档](https://docs.langchain.com/oss/javascript/langchain/overview)
 - [Dify 文档](https://docs.dify.ai/)

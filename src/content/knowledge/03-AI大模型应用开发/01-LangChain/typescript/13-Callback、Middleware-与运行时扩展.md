@@ -1,4 +1,16 @@
-# LangChain（06） - Callback、Middleware 与运行时扩展
+# LangChain（13） - Callback、Middleware 与运行时扩展
+
+## TypeScript 实现地图
+
+TypeScript 的 Callback 通过 `callbacks` 或 Runnable config 观察事件；Agent Middleware 从 `langchain` 导入并包裹模型、Tool 和 Agent 生命周期。观察逻辑与改变行为的逻辑必须分开。
+
+```typescript runnable file=main.ts title="TypeScript 本篇最小实验" description="运行本篇 TypeScript 核心数据流。"
+const events: string[] = []
+events.push('on_chain_start', 'on_tool_start', 'on_tool_end', 'on_chain_end')
+console.log(events)
+```
+
+
 
 > 读完后，你应能：
 > - 能验证“在不污染业务链的前提下统一记录模型、检索和工具调用，并实现限流、降级和审计”，并保存输入、输出与失败样本。
@@ -243,4 +255,4 @@ recovery_replay: required_after_failure
 ## 参考资料
 
 - [LangChain Callbacks](https://python.langchain.com/docs/concepts/callbacks/)
-- [LangChain Middleware](https://docs.langchain.com/oss/python/langchain/middleware/overview)
+- [LangChain Middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/overview)

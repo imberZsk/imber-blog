@@ -46,3 +46,6 @@ tiptap-develop
 demo-ai
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Local Netlify folder
+.netlify

@@ -13,6 +13,12 @@ import {
 } from '@/app/knowledge/config'
 import { getKnowledgeArticleKind, type KnowledgeArticleKind } from '@/lib/knowledge-article-kind'
 import { createKnowledgeMindmap, type KnowledgeMindmapData } from '@/lib/knowledge-mindmap'
+import {
+  DEFAULT_KNOWLEDGE_LANGUAGE,
+  getKnowledgeLanguageFromPath,
+  projectKnowledgeMarkdown,
+  type KnowledgeLanguage
+} from '@/lib/knowledge-language'
 import { createKnowledgeQuiz, type KnowledgeQuizQuestion } from '@/lib/knowledge-quiz'
 import {
   BROWSER_PYTHON_SUPPORT_FILE_PATTERN,
@@ -155,6 +161,8 @@ interface InlinePythonSandboxCandidate {
   entryFile: string
   /** 同一个可运行源码章节公开的入口和支持文件。 */
   files: KnowledgeSandboxFile[]
+  /** 运行入口前需要安装的受控 PyPI 包。 */
+  pythonPackages: string[]
 }
 
 /** 正在从 Markdown “可运行源码”章节收集的多文件 Python 实验。 */
@@ -1521,10 +1529,18 @@ function createArticleMetadata(filePath: string): KnowledgeArticle {
   const contentSectionName = getDisplayName(slug[1] || trackSectionName)
   /** 与实体目录一一对应的模块名称。 */
   const topic = getArticleTopic(trackSectionName, contentSectionName)
+  /** LangChain 独立文章树从路径读取的代码语言。 */
+  const articleLanguage = getKnowledgeLanguageFromPath(articlePath)
   /** 全栈路线使用“路线/模块/专题/文章”四级结构，存量模块仍允许扁平文章。 */
   const isNestedFullStackArticle = trackSectionName === FULL_STACK_SECTION_NAME && slug.length >= 4
   /** 嵌套全栈文章按真实专题分组，避免不同技术系列混成一个目录。 */
-  const subtopic = isNestedFullStackArticle ? getDisplayName(slug[2] || topic) : topic
+  const subtopic = articleLanguage
+    ? articleLanguage === 'typescript'
+      ? 'TypeScript'
+      : 'Python'
+    : isNestedFullStackArticle
+      ? getDisplayName(slug[2] || topic)
+      : topic
   /** 手写 H1 中显式声明的系列名，例如目录“脚手架”对应文章系列“工程化脚手架”。 */
   const declaredSeriesTitle = rawTitle.match(/^([^（）()\n]{1,80})[（(]\s*\d+\s*[）)]\s*[-—–:：]\s*/)?.[1]?.trim()
   /** 全栈手写文章即使目录扁平化，也优先保留 H1 显式声明的系列名。 */
@@ -1585,8 +1601,10 @@ function getPhysicalCourseSequence(article: KnowledgeArticle): number | null {
   /** 嵌套全栈知识域比扁平模块多一层专题目录，文章课号位于第四段。 */
   const isNestedFullStackArticle =
     getDisplayName(pathSegments[0] || '') === FULL_STACK_SECTION_NAME && pathSegments.length >= 4
+  /** LangChain 双语言文章比原模块多一层语言目录。 */
+  const isLanguageSpecificLangChainArticle = getKnowledgeLanguageFromPath(article.path) !== null
   /** 当前文章真正携带顺序前缀的文件路径片段。 */
-  const coursePathSegment = pathSegments[isNestedFullStackArticle ? 3 : 2] || ''
+  const coursePathSegment = pathSegments[isNestedFullStackArticle || isLanguageSpecificLangChainArticle ? 3 : 2] || ''
   return getCourseOrder(coursePathSegment)
 }
 
@@ -1848,7 +1866,8 @@ function findInlinePythonSandboxCandidates(
       candidates.push({
         title: sandboxTitle || '正文 Python 示例',
         entryFile: INLINE_PYTHON_SANDBOX_ENTRY_FILE,
-        files: sourceSection.files
+        files: sourceSection.files,
+        pythonPackages: []
       })
     }
 
@@ -1917,13 +1936,19 @@ function findInlinePythonSandboxCandidates(
 
     /** 当前候选程序的完整源码。 */
     const sourceCode = node.value.trim()
+    /** 依赖名中的连字符转换为 Python import 使用的下划线根模块名。 */
+    const allowedExternalModuleNames = new Set(
+      (runnableMetadata?.pythonPackages || []).map((packageName) => packageName.split('==')[0]?.replaceAll('-', '_') || '')
+    )
     /** 显式 runnable 围栏仍必须通过浏览器依赖与完整性检查。 */
     const sandboxHeading = runnableMetadata?.title || currentHeading
     if (
       !isInlinePythonSandboxCandidate(
         sourceArticlePath,
         runnableMetadata?.runnable ? `可运行 ${sandboxHeading}` : sandboxHeading,
-        sourceCode
+        sourceCode,
+        new Set(),
+        allowedExternalModuleNames
       )
     ) {
       continue
@@ -1937,7 +1962,8 @@ function findInlinePythonSandboxCandidates(
           name: runnableMetadata?.fileName || INLINE_PYTHON_SANDBOX_ENTRY_FILE,
           content: sourceCode
         }
-      ] // 运行与正文展示共用同一份内容。
+      ], // 运行与正文展示共用同一份内容。
+      pythonPackages: runnableMetadata?.pythonPackages || []
     })
   }
 
@@ -2000,6 +2026,54 @@ function createInlineHtmlSandboxes(
 }
 
 /**
+ * 从 Markdown 中提取显式标记为 runnable 的完整 TypeScript 程序。
+ * @param sourceArticlePath 当前文章无扩展名路径。
+ * @param markdown 当前语言投影后的 Markdown 原文。
+ * @param sandboxOffset 当前文章已有实验数量。
+ * @returns 在隔离浏览器 Worker 中编译并执行的 TypeScript 实验。
+ */
+function createInlineTypeScriptSandboxes(
+  sourceArticlePath: string,
+  markdown: string,
+  sandboxOffset: number
+): KnowledgeSandbox[] {
+  /** 当前文章解析后的 Markdown 根节点。 */
+  const markdownTree = remark().parse(markdown) as MarkdownNode
+  /** 遍历时最近的正文标题。 */
+  let currentHeading = '正文 TypeScript 示例'
+  /** 已显式启用的 TypeScript 沙盒。 */
+  const sandboxes: KnowledgeSandbox[] = []
+
+  for (const node of markdownTree.children || []) {
+    if (node.type === 'heading') {
+      currentHeading = getInlineSandboxHeadingText(node) || currentHeading
+      continue
+    }
+
+    /** 当前 TypeScript 围栏声明的可信运行属性。 */
+    const metadata = node.type === 'code' ? parseRunnableCodeBlockMetadata(node.lang, node.meta) : null
+    /** 当前需要在 Worker 中执行的完整源码。 */
+    const sourceCode = node.value?.trim() || ''
+    if (!metadata?.runnable || metadata.runtime !== 'typescript' || !sourceCode) {
+      continue
+    }
+
+    /** TypeScript 沙盒的直接入口文件。 */
+    const entryFile = metadata.fileName || 'main.ts'
+    sandboxes.push({
+      id: `${sourceArticlePath}:inline-typescript-${sandboxOffset + sandboxes.length + 1}`,
+      runtime: 'typescript',
+      title: metadata.title || currentHeading,
+      description: metadata.description || '编译并运行文章中的 TypeScript 程序，观察标准输出。',
+      entryFile,
+      files: [{ name: entryFile, content: sourceCode }]
+    })
+  }
+
+  return sandboxes
+}
+
+/**
  * 从 Markdown 中提取需要用户临时凭据的真实模型实验。
  * @param sourceArticlePath 当前文章无扩展名路径。
  * @param markdown 当前文章 Markdown 原文。
@@ -2051,6 +2125,7 @@ function createInlineModelSandboxes(
       files: [{ name: entryFile, content: sourceCode }],
       modelRequest: {
         framework: metadata.modelFramework, // 围栏明确决定服务端执行 LangChain 还是 LlamaIndex。
+        mode: metadata.modelMode, // 围栏明确决定执行普通聊天或 Tool 注册实验。
         prompt:
           metadata.prompt ||
           (metadata.modelFramework === 'llamaindex'
@@ -2092,15 +2167,20 @@ function createInlinePythonSandboxes(
     title: `${candidate.title}·在线运行`, // 明确该单元属于当前知识点。
     description: '运行正文中的完整 Python 示例，对照源码观察真实输出。', // 不暗示使用外部服务。
     entryFile: candidate.entryFile, // 执行文章源码章节明确声明的入口。
-    files: candidate.files // 入口和夹具全部来自正文公开代码块。
+    files: candidate.files, // 入口和夹具全部来自正文公开代码块。
+    pythonPackages: candidate.pythonPackages // 只安装围栏显式声明且已通过格式白名单的依赖。
   }))
 }
 
 /**
  * 读取并渲染一篇知识文章。
  * @param slug URL 中的文章路径片段。
+ * @param language 当前文章需要投影的代码语言。
  */
-export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArticlePageData | null> {
+export async function getKnowledgeArticle(
+  slug: string[],
+  language: KnowledgeLanguage = DEFAULT_KNOWLEDGE_LANGUAGE
+): Promise<KnowledgeArticlePageData | null> {
   /** 已验证且实际存在的文章文件路径。 */
   const filePath = resolveArticleFile(slug)
 
@@ -2108,8 +2188,14 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
     return null
   }
 
-  /** 文章原始 Markdown 内容。 */
-  const markdown = await readFile(filePath, 'utf8')
+  /**
+   * 文章原始 Markdown 内容。
+   * 文章路径已由静态参数完整枚举；忽略动态路径追踪，避免 Netlify 函数误打包整个工作区。
+   */
+  const markdown = projectKnowledgeMarkdown(
+    await readFile(/* turbopackIgnore: true */ filePath, 'utf8'),
+    language
+  )
   /** 当前文件在知识库中的无扩展名源路径。 */
   const sourceArticlePath = relative(KNOWLEDGE_CONTENT_ROOT, filePath)
     .split(sep)
@@ -2125,7 +2211,10 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
   }
   /** 当前实体模块中按阅读顺序排列的全部文章。 */
   const moduleArticles = knowledgeArticles.filter(
-    (article) => article.track === metadata.track && article.topic === metadata.topic
+    (article) =>
+      article.track === metadata.track &&
+      article.topic === metadata.topic &&
+      getKnowledgeLanguageFromPath(article.path) === getKnowledgeLanguageFromPath(metadata.path)
   )
   /** 当前文章在实体模块阅读序列中的位置。 */
   const currentArticleIndex = moduleArticles.findIndex((article) => article.path === metadata.path)
@@ -2165,17 +2254,23 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
     .process(bodyMarkdown)
   /** 正文中经完整性与浏览器安全筛选的 Python 实验。 */
   const inlinePythonSandboxes = createInlinePythonSandboxes(metadata.sourcePath, normalizedMarkdown, 0, [])
+  /** 正文中显式声明 runnable 的完整 TypeScript 实验。 */
+  const inlineTypeScriptSandboxes = createInlineTypeScriptSandboxes(
+    metadata.sourcePath,
+    normalizedMarkdown,
+    inlinePythonSandboxes.length
+  )
   /** 正文中显式声明、需要临时用户凭据的模型实验。 */
   const inlineModelSandboxes = createInlineModelSandboxes(
     metadata.sourcePath,
     normalizedMarkdown,
-    inlinePythonSandboxes.length
+    inlinePythonSandboxes.length + inlineTypeScriptSandboxes.length
   )
   /** 正文中显式声明 runnable 的完整 HTML 实验。 */
   const inlineHtmlSandboxes = createInlineHtmlSandboxes(
     metadata.sourcePath,
     normalizedMarkdown,
-    inlinePythonSandboxes.length + inlineModelSandboxes.length
+    inlinePythonSandboxes.length + inlineTypeScriptSandboxes.length + inlineModelSandboxes.length
   )
 
   return {
@@ -2183,7 +2278,12 @@ export async function getKnowledgeArticle(slug: string[]): Promise<KnowledgeArti
     referenceContent: processedReferenceContent?.toString() || '',
     content: processedContent.toString(),
     mindmap: createKnowledgeMindmap(markdown, quizTitle, metadata.track === 'ai-apps', metadata.kind),
-    sandboxes: [...inlinePythonSandboxes, ...inlineModelSandboxes, ...inlineHtmlSandboxes],
+    sandboxes: [
+      ...inlinePythonSandboxes,
+      ...inlineTypeScriptSandboxes,
+      ...inlineModelSandboxes,
+      ...inlineHtmlSandboxes
+    ],
     quiz: createKnowledgeQuiz(metadata.path, markdown, quizTitle, metadata.kind),
     previousArticle,
     nextArticle

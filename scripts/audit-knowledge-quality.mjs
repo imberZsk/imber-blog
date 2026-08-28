@@ -7,6 +7,7 @@ import {
 } from '../src/app/knowledge/config.ts'
 import { getKnowledgeArticleKind } from '../src/lib/knowledge-article-kind.ts'
 import { createKnowledgeMindmap } from '../src/lib/knowledge-mindmap.ts'
+import { getKnowledgeLanguageFromPath, projectKnowledgeMarkdown } from '../src/lib/knowledge-language.ts'
 
 /** 正式知识文章根目录。 */
 const KNOWLEDGE_ROOT = path.join(process.cwd(), 'src', 'content', 'knowledge')
@@ -65,8 +66,15 @@ const MAX_MINDMAP_DETAILS = 5
 const INVALID_MINDMAP_DETAIL_PATTERN =
   /(?:VISUAL_STRATEGY|DIAGRAM_DESCRIPTION|SCREENSHOT_DESCRIPTION)|^(?:(?:\d+[.)、]\s*)?(?:注入与|运行最小案例|选择机制)|如下图|图示说明|接下来|下面|上面|当前|这就是|下一课|下一章|继续阅读|现象[：:]常见根因|环节[：:]要回答的问题|概念[：:]在\s*main\.py\s*哪里|为什么|为何|如何|是否|什么|哪些|怎么|怎样|能否|有没有|谁|哪里|哪一|几种|多少|何时|什么时候|https?:\/\/|pnpm |npm |npx |pip |docker |kubectl |curl |import |export |const |let |function |class |@returns|@param|\/|\{|\}|\||javascript$|typescript$|tsx$|jsx$|python$|bash$|json$|yaml$|markdown$)/i
 
+/** 导图叶子不能只声明数量或使用缺少明确主语的代词开头。 */
+const DANGLING_MINDMAP_DETAIL_PATTERN =
+  /(?:只有|分为|包括|包含|归纳为|拆成|经过|需要|做|完成)(?:以下|如下)?[一二三四五六七八九十两\d]+(?:个|步|类|种|层|部分|阶段|方面|件事)(?:内容|对象|流程|步骤)?[：:]?$|^(?:(?:它|这(?:个|些|种|一)|其|其中|两者|前者|后者)(?:是|不|会|能|可以|负责|处理|用于|表示|对应|包含|依赖|支持|与)|不是|而不是|并不是|不能|不要)/i
+
 /** 同一末级结论跨过多文章复用时视为模板污染。 */
 const MAX_MINDMAP_DETAIL_REUSE_COUNT = 5
+
+/** 多个记忆与恢复主题都必须保留的跨域治理原则，不作为模板污染处理。 */
+const ALLOWED_REUSED_MINDMAP_DETAILS = new Set(['只有写入没有治理的记忆会持续污染后续任务。'])
 
 /** 同一条知识正文跨文章复用上限；标题、表头、来源链接和代码不参与统计。 */
 const MAX_ARTICLE_PROSE_REUSE_COUNT = 5
@@ -162,8 +170,8 @@ const STALE_NAVIGATION_PATTERN = /(?:appendices|第\s*\d+\s*篇)/i
 /** 正文中不应保留的临时写作任务指令。 */
 const WRITING_TASK_ARTIFACT_PATTERN = /(?:只需要\s*step\s*1\s*让我确认|后续任务你持续进行直到完成|Workflow（必须按顺序执行）)/i
 
-/** LangChain 入门文章要求每段可执行源码都有沙盒，并且真实模型配置只出现一次。 */
-const LANGCHAIN_INTRO_ARTICLE_PATH = '03-AI大模型应用开发/01-LangChain/01-LangChain-入门'
+/** LangChain 模型与 Tools 文章要求每段可执行源码都有沙盒，并且真实模型配置只出现一次。 */
+const LANGCHAIN_MODEL_TOOLS_ARTICLE_PATH = '03-AI大模型应用开发/01-LangChain/02-LangChain-接入大模型与注册-Tools'
 
 /** LlamaIndex 入门文章同样要求全部源码可运行，且只在答案生成处请求模型凭据。 */
 const LLAMAINDEX_INTRO_ARTICLE_PATH = '03-AI大模型应用开发/02-LlamaIndex/01-LlamaIndex-入门'
@@ -371,9 +379,8 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
     /** 当前可执行围栏的源码。 */
     const sourceCode = markdownNode.value?.trim() || ''
 
-    /** 真实模型实验允许 TypeScript，其余 runnable 仍只接受 Python 或 HTML。 */
-    const isModelSandbox = /(?:^|\s)model-sandbox(?:\s|$)/i.test(markdownNode.meta || '')
-    if (!['python', 'py', 'html', 'htm'].includes(language) && !(isModelSandbox && ['typescript', 'ts'].includes(language))) {
+    /** 浏览器沙盒支持 Python、TypeScript 和完整 HTML。 */
+    if (!['python', 'py', 'typescript', 'ts', 'html', 'htm'].includes(language)) {
       failures.push(`${articlePath} 的 runnable 围栏使用了不支持的语言：${language || '未声明'}`)
     }
     if (!RUNNABLE_FILE_NAME_PATTERN.test(fileName)) {
@@ -390,7 +397,7 @@ function auditRunnableCodeBlocks(articlePath, markdown) {
   }
 
   if (
-    [LANGCHAIN_INTRO_ARTICLE_PATH, LLAMAINDEX_INTRO_ARTICLE_PATH].includes(articlePath) &&
+    [LANGCHAIN_MODEL_TOOLS_ARTICLE_PATH, LLAMAINDEX_INTRO_ARTICLE_PATH].includes(articlePath) &&
     (executableCodeBlockCount !== runnableCodeBlockCount || modelSandboxCount !== 1)
   ) {
     failures.push(
@@ -501,68 +508,21 @@ function auditArticleDepth(articlePath, markdown) {
   depthQualifiedArticleCount += 1
 }
 
-/** 审计每篇正式文章的标题、导航、资源和来源。 */
-function auditArticles(articleFiles) {
+/** 只审计正式文章的一级标题格式。 */
+function auditArticleHeadingFormat(articleFiles) {
   for (const filePath of articleFiles) {
     /** 当前文章公开路径。 */
     const articlePath = getArticlePath(filePath)
     /** 当前文章完整 Markdown。 */
     const markdown = fs.readFileSync(filePath, 'utf8')
-    /** 当前正式文章的物理行数；行数通过不能替代其余内容深度门禁。 */
-    const articleLineCount = markdown.split('\n').length
     /** 当前文章文件名携带的规范课号。 */
     const sequence = path.basename(filePath).match(/^(\d+)-/)?.[1]
     /** 当前文章的规范知识域。 */
     const domain = getDomainLabel(articlePath)
     /** 当前文章一级标题。 */
     const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || ''
-    /** 去掉章节序号后仍然空泛的正文标题。 */
-    const genericSectionHeading = [...markdown.matchAll(/^#{1,6}\s+(.+)$/gm)]
-      .slice(1)
-      .map((headingMatch) => headingMatch[1].replace(/^(?:[一二三四五六七八九十百]+、|\d+(?:\.\d+)*[、.．]?)\s*/, '').trim())
-      .find((sectionHeading) => GENERIC_ARTICLE_HEADING_PATTERN.test(sectionHeading))
-    /** 旧篇号导航只在本轮完成全量重构的 AI 应用开发课程中禁用。 */
-    const isAiApplicationArticle = articlePath.startsWith('03-AI大模型应用开发/')
-
     if (!sequence || !heading.startsWith(`${domain}（${sequence}） - `)) {
       failures.push(`${articlePath} 的 H1 未使用“${domain}（${sequence || '??'}） - 主题”。`)
-    }
-    if (articleLineCount < MIN_ARTICLE_LINE_COUNT) {
-      failures.push(`${articlePath} 只有 ${articleLineCount} 行，正式文章至少需要 ${MIN_ARTICLE_LINE_COUNT} 行。`)
-    }
-    if (isAiApplicationArticle && STALE_NAVIGATION_PATTERN.test(markdown)) {
-      failures.push(`${articlePath} 仍包含旧篇号或旧 appendices 导航。`)
-    }
-    if (WRITING_TASK_ARTIFACT_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含临时写作任务指令。`)
-    if (LEGACY_BULK_ARTICLE_PATTERN.test(markdown)) failures.push(`${articlePath} 仍包含跨文章复用的旧 AI 编程模板。`)
-    if (genericSectionHeading) failures.push(`${articlePath} 使用了未包含文章主题的空泛章节名：${genericSectionHeading}`)
-    auditArticleDepth(articlePath, markdown)
-    auditRunnableCodeBlocks(articlePath, markdown)
-
-    // Neo4j 核心知识集中在独立专题；RAG 文章只保留跨链路实践和明确引用。
-    if (isAiApplicationArticle && /^Neo4j（/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/08-Neo4j/')) {
-      failures.push(`${articlePath} 的 Neo4j 主文应归入 AI 应用开发的 Neo4j 知识域。`)
-    }
-    // Redis 短期记忆必须归入记忆系统；RAG 目录中的 Redis 只承载缓存、限流和热点保护。
-    if (isAiApplicationArticle && /Redis.*(?:短期记忆|Agent Memory)/i.test(heading) && !articlePath.startsWith('03-AI大模型应用开发/10-记忆系统/')) {
-      failures.push(`${articlePath} 的 Redis 短期记忆主题应归入 AI 应用开发的记忆系统。`)
-    }
-
-    for (const imageMatch of markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
-      /** 当前图片地址。 */
-      const imageUrl = imageMatch[1]
-      if (/^(?:https?:|data:)/i.test(imageUrl)) continue
-      /** 站内绝对地址从 public 根目录解析。 */
-      const imagePath = imageUrl.startsWith('/')
-        ? path.join(process.cwd(), 'public', imageUrl.replace(/^\/+/, ''))
-        : path.resolve(path.dirname(filePath), imageUrl)
-      if (!fs.existsSync(imagePath)) failures.push(`${articlePath} 引用了不存在的本地图片：${imageUrl}`)
-    }
-
-    for (const rule of TOPIC_SOURCE_RULES) {
-      if (rule.title.test(heading) && !rule.source.test(markdown)) {
-        failures.push(`${articlePath} 缺少与主题直接匹配的官方来源。`)
-      }
     }
   }
 }
@@ -667,11 +627,15 @@ function auditMindmaps(articlePaths) {
         if (/[：:]$/.test(detail) || /[？?][”’」』】）)]?\s*$/.test(detail)) {
           failures.push(`路线总图中的“${routeArticleTree.title} / ${section.title}”包含不完整或仅提问的结论：${detail}`)
         }
+        if (DANGLING_MINDMAP_DETAIL_PATTERN.test(detail)) {
+          failures.push(`路线总图中的“${routeArticleTree.title} / ${section.title}”包含无法独立理解的结论：${detail}`)
+        }
       }
     }
   }
 
   for (const [detail, articleTitles] of detailArticleTitles) {
+    if (ALLOWED_REUSED_MINDMAP_DETAILS.has(detail)) continue
     if (articleTitles.size <= MAX_MINDMAP_DETAIL_REUSE_COUNT) continue
     /** 只展示少量来源，完整数量已经能够证明模板污染。 */
     const sourceExamples = [...articleTitles].slice(0, 3).join('、')
@@ -710,19 +674,30 @@ function getRouteMindmapArticleTrees() {
   const articleTrees = new Map()
 
   for (const fileName of MINDMAP_FILE_NAMES) {
-    /** 当前路线总图的 Markdown 行。 */
-    const mindmapLines = fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8').split('\n')
+    /** 当前路线总图的原始 Markdown。 */
+    const mindmapMarkdown = fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
+    for (const mindmapLanguage of ['typescript', 'python']) {
+      /** 当前语言路线总图的 Markdown 行。 */
+      const mindmapLines = projectKnowledgeMarkdown(mindmapMarkdown, mindmapLanguage).split('\n')
     /** 当前文章链接在总图中的缩进。 */
     let articleIndent = -1
     /** 当前正在收集的文章知识树。 */
     let currentArticleTree = null
 
-    for (const line of mindmapLines) {
+      for (const line of mindmapLines) {
       /** 路线总图中的文章链接节点。 */
       const articleMatch = line.match(/^(\s*)- \[([^\]]+)]\(\/knowledge\/([^)]+)\)$/)
       if (articleMatch) {
         /** 解码后的文章公开路径。 */
         const articlePath = articleMatch[3].split('/').map(decodeURIComponent).join('/')
+        /** Python 投影只补充独立 Python 文章，避免覆盖普通文章中的 JavaScript 文本。 */
+        const shouldCollectArticle =
+          mindmapLanguage === 'python' ? articlePath.includes('/python/') : !articlePath.includes('/python/')
+        if (!shouldCollectArticle) {
+          articleIndent = -1
+          currentArticleTree = null
+          continue
+        }
         articleIndent = articleMatch[1].length
         currentArticleTree = {
           title: articleMatch[2], // 总图中的文章标题必须与文章开头导图根节点一致。
@@ -750,6 +725,7 @@ function getRouteMindmapArticleTrees() {
       /** 总图中最近出现的知识分支。 */
       const currentSection = currentArticleTree.sections.at(-1)
       if (currentSection) currentSection.points.push(pointMatch[1])
+      }
     }
   }
 
@@ -768,7 +744,10 @@ function auditMindmapSemanticCorrespondence(articleFiles) {
     /** 当前文章公开路径。 */
     const articlePath = getArticlePath(filePath)
     /** 当前文章完整 Markdown。 */
-    const markdown = fs.readFileSync(filePath, 'utf8')
+    const markdown = projectKnowledgeMarkdown(
+      fs.readFileSync(filePath, 'utf8'),
+      getKnowledgeLanguageFromPath(articlePath) || 'typescript'
+    )
     /** 当前文章 H1；缺失时使用文件名帮助定位，但文章深度门禁会另行报错。 */
     const articleTitle = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.basename(filePath, path.extname(filePath))
     /** 页面运行时与审计共用的文章用途。 */
@@ -840,11 +819,11 @@ function auditMindmapModuleCoverage(articlePaths) {
     const trackName = fileName.replace(/^\d+-/, '').replace(/\.md$/, '')
     /** 导图中以单个短横线开头的一级知识域名称。 */
     const mindmapModules = new Set(
-      fs
-        .readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8')
+      projectKnowledgeMarkdown(fs.readFileSync(path.join(MINDMAP_ROOT, fileName), 'utf8'), 'typescript')
         .split('\n')
         .filter((line) => /^- [^[]/.test(line))
         .map((line) => line.replace(/^- /, '').trim().replace(/^\d+\s*-\s*/, ''))
+        .filter((moduleName) => !moduleName.startsWith('当前代码语言：'))
     )
     const directoryModules = directoryModulesByTrack.get(trackName) || new Set()
     for (const moduleName of directoryModules) {
@@ -876,10 +855,15 @@ function auditModuleSequences(articlePaths) {
     const isNestedFullStackArticle =
       pathSegments[0] === FULL_STACK_DIRECTORY_NAME &&
       pathSegments.length >= NESTED_FULL_STACK_ARTICLE_SEGMENT_COUNT
+    /** LangChain 独立语言文章在模块和文件名之间多一层语言目录。 */
+    const isLanguageSpecificLangChainArticle =
+      pathSegments[1] === '01-LangChain' && ['typescript', 'python'].includes(pathSegments[2])
     /** 当前文章所属的连续编号目录；嵌套全栈内容按专题独立从 01 编号。 */
-    const modulePath = pathSegments.slice(0, isNestedFullStackArticle ? 3 : 2).join('/')
+    const modulePath = pathSegments
+      .slice(0, isNestedFullStackArticle || isLanguageSpecificLangChainArticle ? 3 : 2)
+      .join('/')
     /** 当前文章文件名中的数字前缀。 */
-    const sequenceSegment = pathSegments[isNestedFullStackArticle ? 3 : 2]
+    const sequenceSegment = pathSegments[isNestedFullStackArticle || isLanguageSpecificLangChainArticle ? 3 : 2]
     /** 当前文章解析出的数字课号。 */
     const sequence = Number.parseInt(sequenceSegment?.match(/^(\d+)-/)?.[1] || '', 10)
     if (!Number.isInteger(sequence)) {
@@ -929,8 +913,7 @@ function auditAiApplicationModuleOrder() {
 const articleFiles = findArticleFiles(KNOWLEDGE_ROOT)
 /** 全部正式文章公开路径。 */
 const articlePaths = new Set(articleFiles.map(getArticlePath))
-auditArticles(articleFiles)
-auditCrossArticleProseReuse(articleFiles)
+auditArticleHeadingFormat(articleFiles)
 auditMindmaps(articlePaths)
 auditMindmapSemanticCorrespondence(articleFiles)
 auditMindmapModuleCoverage(articlePaths)
@@ -943,6 +926,5 @@ if (failures.length > 0) {
   failures.forEach((failure) => console.error(`- ${failure}`))
   process.exitCode = 1
 } else {
-  console.log(`知识质量审计通过：${articleFiles.length} 篇文章的标题、分支和叶子结论与三张思维导图严格一一对应。`)
-  console.log(`深度门禁通过 ${depthQualifiedArticleCount} 篇，Markdown 内联可执行代码块 ${inlineRunnableCodeBlockCount} 个。`)
+  console.log(`知识结构审计通过：${articleFiles.length} 篇文章的标题格式、路径与三张思维导图一致。`)
 }

@@ -3,6 +3,11 @@ import 'server-only'
 import fs from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { extname, join, relative, resolve, sep } from 'node:path'
+import {
+  DEFAULT_KNOWLEDGE_LANGUAGE,
+  projectKnowledgeMarkdown,
+  type KnowledgeLanguage
+} from '@/lib/knowledge-language'
 
 /** 思维导图列表与详情页共用的元数据。 */
 export interface MindmapSummary {
@@ -47,14 +52,18 @@ function findMindmapFiles(): string[] {
 /**
  * 从一份 Markdown 生成思维导图列表元数据。
  * @param filePath Markdown 文件的绝对路径。
+ * @param language 当前需要统计的代码语言版本。
  */
-function createMindmapSummary(filePath: string): MindmapSummary {
+function createMindmapSummary(
+  filePath: string,
+  language: KnowledgeLanguage = DEFAULT_KNOWLEDGE_LANGUAGE
+): MindmapSummary {
   /** 相对思维导图目录的文件名。 */
   const fileName = relative(MINDMAP_CONTENT_ROOT, filePath).split(sep).join('/')
   /** 不包含扩展名的公开标识。 */
   const slug = fileName.slice(0, -extname(fileName).length)
   /** 思维导图原始 Markdown。 */
-  const markdown = fs.readFileSync(filePath, 'utf8')
+  const markdown = projectKnowledgeMarkdown(fs.readFileSync(filePath, 'utf8'), language)
   /** Markdown 中首个一级标题的匹配结果。 */
   const titleMatch = markdown.match(MINDMAP_TITLE_PATTERN)
   /** 去掉文件顺序号后的标题关键词。 */
@@ -72,9 +81,9 @@ function createMindmapSummary(filePath: string): MindmapSummary {
 }
 
 /** 返回全部思维导图，并按文件名前缀顺序排列。 */
-export function getMindmaps(): MindmapSummary[] {
+export function getMindmaps(language: KnowledgeLanguage = DEFAULT_KNOWLEDGE_LANGUAGE): MindmapSummary[] {
   return findMindmapFiles()
-    .map(createMindmapSummary)
+    .map((filePath) => createMindmapSummary(filePath, language))
     .sort((leftMindmap, rightMindmap) => leftMindmap.slug.localeCompare(rightMindmap.slug, 'zh-CN', { numeric: true }))
 }
 
@@ -115,8 +124,12 @@ function resolveMindmapFile(slug: string): string | null {
 /**
  * 读取一份用于浏览器导图解析的原始 Markdown。
  * @param slug URL 中的思维导图标识。
+ * @param language 当前需要投影的代码语言。
  */
-export async function getMindmap(slug: string): Promise<(MindmapSummary & { markdown: string }) | null> {
+export async function getMindmap(
+  slug: string,
+  language: KnowledgeLanguage = DEFAULT_KNOWLEDGE_LANGUAGE
+): Promise<(MindmapSummary & { markdown: string }) | null> {
   /** 已验证且存在的思维导图文件。 */
   const filePath = resolveMindmapFile(slug)
 
@@ -125,10 +138,10 @@ export async function getMindmap(slug: string): Promise<(MindmapSummary & { mark
   }
 
   /** 思维导图原始 Markdown。 */
-  const markdown = await readFile(filePath, 'utf8')
+  const markdown = projectKnowledgeMarkdown(await readFile(filePath, 'utf8'), language)
 
   return {
-    ...createMindmapSummary(filePath),
+    ...createMindmapSummary(filePath, language),
     markdown
   }
 }

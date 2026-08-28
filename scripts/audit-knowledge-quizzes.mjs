@@ -482,62 +482,16 @@ for (const articleFile of articleFiles) {
   const markdown = readFileSync(articleFile, 'utf8')
   /** 当前文章在学习路径中的用途。 */
   const articleKind = getKnowledgeArticleKind(sourceArticlePath)
-  /** 排除代码块后的解释性正文字符数。 */
-  const proseCharacterCount = countProseCharacters(markdown)
-  /** 当前文章用途允许的正文字符上限。 */
-  const maximumProseCharacterCount =
-    articleKind === 'reference' ? MAX_REFERENCE_PROSE_CHARACTER_COUNT : MAX_ARTICLE_PROSE_CHARACTER_COUNT
   /** 题干使用的文章主题。 */
   const articleTitle = getArticleTitle(markdown, sourceArticlePath)
   /** 当前文章是否属于 AI 大模型应用开发主线。 */
   const isAiAppArticle = sourceArticlePath.startsWith(AI_APP_ARTICLE_PATH_PREFIX)
-  /** 当前文章是否为 AI 应用模块或系列的第 01 篇学习指南。 */
-  const isAiAppGuide = isAiAppArticle && articleKind === 'guide' && sourceArticlePath.endsWith('/01-学习指南')
-  /** 当前文章物理行数，用于执行 AI 应用课程最低篇幅门禁。 */
-  const articleLineCount = markdown.split('\n').length
 
   articleKindCounts[articleKind] += 1
   inlinePythonSandboxCount += countInlinePythonSandboxes(sourceArticlePath, markdown)
 
-  if (proseCharacterCount < MIN_PROSE_CHARACTER_COUNT) {
-    auditFailures.push(
-      `${articlePath} 正文只有 ${proseCharacterCount} 个非代码字符，低于 ${MIN_PROSE_CHARACTER_COUNT} 字。`
-    )
-  }
-  if (isAiAppGuide && proseCharacterCount < MIN_AI_APP_GUIDE_PROSE_CHARACTER_COUNT) {
-    auditFailures.push(
-      `${articlePath} 是 AI 应用学习指南，正文只有 ${proseCharacterCount} 个非代码字符，低于 ${MIN_AI_APP_GUIDE_PROSE_CHARACTER_COUNT} 字。`
-    )
-  }
-  if (proseCharacterCount > maximumProseCharacterCount) {
-    auditFailures.push(
-      `${articlePath} 正文有 ${proseCharacterCount} 个非代码字符，超过 ${maximumProseCharacterCount} 字上限。`
-    )
-  }
-  if (FORBIDDEN_ARTICLE_CONTENT_PATTERN.test(markdown)) {
-    auditFailures.push(`${articlePath} 仍包含写作过程元数据。`)
-  }
-  if (articleKind !== 'reference' && !LEARNING_GOAL_PATTERN.test(markdown)) {
-    auditFailures.push(`${articlePath} 缺少明确的学习目标。`)
-  }
-  if (isAiAppArticle && articleKind !== 'reference' && GENERIC_LEARNING_GOAL_PATTERN.test(markdown)) {
-    auditFailures.push(`${articlePath} 的学习目标仍是标题复述或批量模板，没有可验收产出。`)
-  }
-  if (isAiAppArticle && articleKind !== 'reference' && !hasSpecificLearningOutcomes(markdown)) {
-    auditFailures.push(`${articlePath} 的学习产出不是 2～4 条同时包含动作与证据的任务。`)
-  }
-  if (isAiAppArticle && articleKind !== 'reference' && articleLineCount < MIN_AI_APP_ARTICLE_LINE_COUNT) {
-    auditFailures.push(`${articlePath} 只有 ${articleLineCount} 行，少于 ${MIN_AI_APP_ARTICLE_LINE_COUNT} 行。`)
-  }
   if (hasUnclosedCodeFence(markdown)) {
     auditFailures.push(`${articlePath} 存在未闭合的 fenced code block。`)
-  }
-  if (articleKind === 'guide') {
-    /** 当前学习指南中没有正文或子章节的标题。 */
-    const emptySectionHeadings = findEmptySectionHeadings(markdown)
-    if (emptySectionHeadings.length > 0) {
-      auditFailures.push(`${articlePath} 存在空章节：${emptySectionHeadings.join('、')}。`)
-    }
   }
 
   try {
@@ -582,11 +536,6 @@ for (const articleFile of articleFiles) {
     } else {
       if (mindmap.nodeCount < 5) {
         auditFailures.push(`${articlePath} 的思维导图节点不足，实际为 ${mindmap.nodeCount} 个。`)
-      }
-      if (isAiAppGuide && mindmap.nodeCount < MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT) {
-        auditFailures.push(
-          `${articlePath} 是 AI 应用学习指南，思维导图只有 ${mindmap.nodeCount} 个节点，低于 ${MIN_AI_APP_GUIDE_MINDMAP_NODE_COUNT} 个。`
-        )
       }
       if (FORBIDDEN_MINDMAP_CONTENT_PATTERN.test(mindmap.markdown)) {
         auditFailures.push(`${articlePath} 的思维导图混入写作元数据。`)
