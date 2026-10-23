@@ -73,7 +73,7 @@ export const projectsConfig: Project[] = [
     name: 'Imber Frontend',
     description: 'Web 动画、3D 交互与前端工程实践的可运行实验场和知识库',
     tech: ['GSAP', 'Three.js', 'Next.js'],
-    link: 'https://imber-frontend.netlify.app/',
+    link: '/lab',
     github: 'https://github.com/imberZsk/imber-frontend',
     image: '/posts/friends/imber-frontend.png',
     type: 'personal'
