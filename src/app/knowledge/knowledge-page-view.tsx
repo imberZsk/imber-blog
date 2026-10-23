@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { PADDING_TOP } from '@/app/const'
 import { cn } from '@/lib/utils'
 import { getKnowledgeArticles, type KnowledgeListArticle } from '@/lib/knowledge'
@@ -58,6 +59,18 @@ export function KnowledgePageView({ activeTrack }: KnowledgePageViewProps) {
           {activeTrackConfig?.label || '全栈开发'}。
         </p>
       </header>
+      <Link
+        href="/geekbang"
+        className="border-border hover:border-mint mb-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-5 py-4"
+      >
+        <span>
+          <span className="block font-medium">极客知识库</span>
+          <span className="text-muted-foreground mt-1 block text-sm">
+            18 个专题 · 320 篇原文备份，涵盖大模型、Agent 与工程化
+          </span>
+        </span>
+        <span className="text-mint text-sm">浏览专题 →</span>
+      </Link>
       <KnowledgeBrowser articles={routeArticles} activeTrack={activeTrack} trackArticleCounts={trackArticleCounts} />
     </main>
   )
