@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
+/** 组合条件类名并合并 Tailwind 冲突；inputs 为各调用方的类名片段。
+ * 通用入口不再导出编辑器工具，避免首页仅导入 cn 也引入 Tiptap，导致客户端边界编译失败。
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -12,6 +15,3 @@ const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp
 export const isImageFileOrVideo = (filename: string) => {
   return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext)) || filename.toLowerCase().endsWith('.mp4')
 }
-
-export * from './isCustomNodeSelected'
-export * from './isTextSelected'

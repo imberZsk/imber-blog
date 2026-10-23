@@ -41,3 +41,22 @@
 - 首页“阅读文集”改为“极客知识库目录”，避免继续引导到空列表。
 - 聚合页新增按主题分组的 18 个专题锚点目录；桌面侧栏固定定位，手机端折叠展示，搜索和分类变化时目录同步筛选。
 - 保留 `/posts` 路由，不删除文章基础能力。
+
+## 首页导航 500 修复
+
+复现地址：`http://localhost:3110/`（Webpack 开发服务）。点击首页触发编译错误：`It's currently unsupported to use "export *" in a client boundary`。请求链为首页 → 通用 Button
+→ `@/lib/utils` → 编辑器选择工具 → HorizontalRule →
+`@tiptap/react`。通用入口转导出编辑器辅助方法，使服务端仅使用 `cn` 也触达客户端依赖。
+
+修复只移除通用入口的两条编辑器转导出，并将唯一的编辑器消费方 `useTextMenuStates`
+改为从原文件直接导入，辅助方法本身及编辑器行为保持原样。仓库引用搜索确认没有其他调用方依赖这两条转导出。
+
+验证：
+
+- 同一个 Webpack 服务下，首页、极客知识库、原知识库、作品、关于、编辑器均返回 200。
+- Playwright 实际点击桌面“首页”、手机菜单“首页”，页面正常出现首页标题，无新增
+  `pageerror`。
+- `node --conditions=react-server --experimental-strip-types --test scripts/utils-server.test.mjs`
+  通过：无 DOM 的服务端环境可直接加载通用工具，并保留类名合并行为。
+- 本次两个改动文件 ESLint 和 TypeScript 检查通过；回归测试已接入 CI。
+- 浏览器验证编辑器仍能正常输入，无新增 `pageerror`。

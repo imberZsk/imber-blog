@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Test server utility boundary # 防止编辑器依赖再次污染服务端通用工具。
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --experimental-strip-types --test scripts/utils-server.test.mjs # 在无 DOM 的服务端环境加载真实入口。
+
       # 阻止低信息题目、缺少解析或无法生成知识点思维导图的文章进入构建产物。
       - name: Audit knowledge content
         run: pnpm audit:knowledge

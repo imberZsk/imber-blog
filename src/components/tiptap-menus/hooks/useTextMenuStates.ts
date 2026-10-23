@@ -1,6 +1,8 @@
 import { Editor, useEditorState } from '@tiptap/react'
 import { useCallback } from 'react'
-import { isCustomNodeSelected, isTextSelected } from '@/lib/utils'
+// 编辑器状态判断只由编辑器菜单直接引入，避免污染通用工具的服务端依赖图。
+import { isCustomNodeSelected } from '@/lib/utils/isCustomNodeSelected'
+import { isTextSelected } from '@/lib/utils/isTextSelected'
 
 export const useTextMenuStates = (editor: Editor) => {
   const states = useEditorState({
