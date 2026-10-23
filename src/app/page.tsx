@@ -5,6 +5,7 @@ import { Metadata } from 'next'
 import { JuejinSvg } from '@/components/icons'
 import { Button } from '@/components/ui'
 import { HomeHero } from './home-hero'
+import { FrontendLab } from './frontend-lab'
 
 export const metadata: Metadata = {
   title: 'Imber | NodeJS Full Stack Developer',
@@ -199,6 +200,7 @@ export default function HomePage() {
             </div>
           </div>
         </HomeHero>
+        <FrontendLab />
       </main>
     </>
   )

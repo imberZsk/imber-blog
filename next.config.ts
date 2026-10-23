@@ -1,6 +1,22 @@
 import { withSentryConfig } from '@sentry/nextjs'
+import { realpathSync } from 'node:fs'
+import { dirname, relative, resolve, sep } from 'node:path'
+
+/** 当前工作树对应的应用目录。 */
+const applicationRoot = process.cwd()
+/** 依赖的真实目录，工作树可能通过符号链接复用已有依赖。 */
+const dependencyRoot = realpathSync(resolve(applicationRoot, 'node_modules'))
+/** 同时包含应用与依赖的最小公共目录。 */
+let turbopackRoot = applicationRoot
+// 工作树依赖在默认根目录之外时，Turbopack 会在 Ready 后崩溃；扩展到公共目录允许解析该链接。
+while (relative(turbopackRoot, dependencyRoot).split(sep).includes('..')) {
+  turbopackRoot = dirname(turbopackRoot)
+}
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: turbopackRoot // 将工作树与符号链接依赖同时纳入模块解析范围。
+  },
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
   reactStrictMode: false,
   images: {
@@ -60,9 +76,7 @@ const nextConfig = {
   }
 }
 
-module.exports = nextConfig
-
-export default withSentryConfig(undefined, {
+export default withSentryConfig(nextConfig, {
   // 所有可用选项请参见：
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

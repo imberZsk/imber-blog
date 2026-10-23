@@ -1,0 +1,14 @@
+.lab-animation .colorful {
+  position: absolute;
+  inset: -32px;
+  border: solid 57px;
+  border-image: conic-gradient(#a99cf6, #f5b9ea, #8d99ff, #d3b2fa, #f7947d, #ffba71, #e59cd8, #968bfe, #a99cf6) 1;
+  -webkit-filter: blur(24px);
+  filter: blur(24px);
+  content: '';
+  animation: a-b308def2 8s linear infinite;
+}
+
+.lab-animation .section-container {
+  background: linear-gradient(180deg, #acefeb 0%, #c0e9ed 51.68%, #d2e4ee 100%);
+}

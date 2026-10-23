@@ -4,7 +4,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals'
 export default defineConfig([
   ...nextVitals,
   {
-    ignores: ['public/vendor/pyodide/**'] // Pyodide 是安装阶段复制的第三方 Emscripten 构建产物，不参与源码检查。
+    ignores: ['public/vendor/pyodide/**', 'public/frontend-lab/three/draco/**'] // Pyodide 是安装阶段复制的第三方 Emscripten 构建产物，不参与源码检查。
   },
   {
     rules: {

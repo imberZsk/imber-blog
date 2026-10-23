@@ -1,0 +1,56 @@
+/* 原实验的布局辅助类仅在实验室内生效，避免影响博客其他页面。 */
+.lab-shell .flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lab-animation {
+  min-height: calc(100svh - 7rem);
+}
+.lab-animation > div {
+  position: relative;
+  min-height: calc(100svh - 7rem);
+}
+/* 原示例卡片的灰色背景跟随博客主题；演示本身的彩色动画仍保留。 */
+.lab-animation .bg-gray-900\/50 {
+  background: var(--card);
+}
+.lab-animation .border-gray-700 {
+  border-color: var(--border);
+}
+.lab-animation .text-gray-300,
+.lab-animation .text-gray-400 {
+  color: var(--muted-foreground);
+}
+.lab-source {
+  max-height: 85svh;
+}
+.lab-source::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+/* ScrollSmoother 原来占满整窗；迁入博客后留出站点导航与实验索引。 */
+.lab-animation #smooth-wrapper {
+  top: 7rem !important;
+  left: 240px !important;
+  right: 0 !important;
+  width: auto !important;
+}
+@media (max-width: 767px) {
+  .lab-animation #smooth-wrapper {
+    top: 12rem !important;
+    left: 0 !important;
+  }
+}
+
+/* 仅将本实验室复用的目录内嵌，知识库原有固定目录保持原布局。 */
+.lab-shell .lab-docs-toc {
+  position: static;
+  display: block;
+  width: auto;
+  max-height: 20rem;
+  margin-top: 1rem;
+  pointer-events: auto;
+}
+.lab-shell .knowledge-article :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 8rem;
+}

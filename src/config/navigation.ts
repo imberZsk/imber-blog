@@ -38,6 +38,12 @@ export const navigationConfig: NavItem[] = [
     enabled: false
   },
   {
+    path: '/lab', // 统一承载动画、3D 场景和原前端文档。
+    name: '实验室', // 主导航中的功能集合名称。
+    title: '前端实验室', // 导航链接的说明。
+    enabled: true // 桌面和移动导航均展示迁移功能入口。
+  },
+  {
     path: '/projects',
     name: '作品',
     title: '作品',
