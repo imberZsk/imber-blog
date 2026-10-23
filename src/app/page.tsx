@@ -155,9 +155,9 @@ export default function HomePage() {
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/posts">
+                  <Link href="/geekbang">
                     <BookOpen aria-hidden="true" />
-                    阅读文集
+                    极客知识库目录
                   </Link>
                 </Button>
               </div>

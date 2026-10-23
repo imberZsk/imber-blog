@@ -14,10 +14,10 @@ export const navigationConfig: NavItem[] = [
     enabled: true
   },
   {
-    path: '/posts',
-    name: '文集',
-    title: '文集',
-    enabled: true
+    path: '/geekbang', // 直接打开迁入内容的专题目录。
+    name: '极客知识库', // 替换没有文章的文集 Tab。
+    title: '极客知识库目录', // 明确该入口提供课程和章节导航。
+    enabled: true // 桌面和手机导航统一展示目录入口。
   },
   {
     path: '/knowledge',

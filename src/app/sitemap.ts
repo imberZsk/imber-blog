@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { geekbangCourses } from '@/lib/geekbang'
 import { getKnowledgeArticles } from '@/lib/knowledge'
 import { getMindmaps } from '@/lib/mindmaps'
 import { getPosts } from '@/lib/posts'
@@ -86,6 +87,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.5
     },
+    {
+      url: `${baseUrl}/geekbang`, // 新增知识库的聚合入口。
+      lastModified: currentDate, // 与章节条目保持构建时间一致。
+      changeFrequency: 'monthly', // 本地备份按批次更新。
+      priority: 0.8 // 聚合页高于单篇内容的发现优先级。
+    },
+    ...geekbangCourses.flatMap((course) =>
+      course.chapters.map((chapter) => ({
+        url: `${baseUrl}/geekbang/${course.slug}/${chapter.slug}`, // 迁入章节的固定公开路径。
+        lastModified: currentDate, // 与同次构建的文章条目使用一致时间。
+        changeFrequency: 'monthly' as const, // 原文备份不作为实时更新资料。
+        priority: 0.6 // 与现有知识文章保持相同权重。
+      }))
+    ),
     ...postEntries,
     ...mindmapEntries,
     ...knowledgeEntries

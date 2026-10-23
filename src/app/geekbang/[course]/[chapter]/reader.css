@@ -1,0 +1,17 @@
+/* 仅约束迁入原文：长代码、表格和链接在窄屏中不能撑破博客布局。 */
+.geekbang-reader .knowledge-article {
+  overflow-wrap: anywhere;
+}
+.geekbang-reader .knowledge-article pre,
+.geekbang-reader .knowledge-article table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.geekbang-reader .knowledge-article img {
+  max-width: 100%;
+  height: auto;
+}
+.geekbang-reader .knowledge-article :is(h2, h3, h4, h5, h6) {
+  scroll-margin-top: 7rem;
+}
