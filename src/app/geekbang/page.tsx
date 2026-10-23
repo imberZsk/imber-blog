@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 /** 展示课程分类检索及章节入口。 */
 export default function GeekbangPage() {
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-24 pb-16">
+    <main className="mx-auto max-w-7xl px-5 pt-24 pb-16">
       <header className="border-border mb-8 border-b pb-8">
         <Link href="/knowledge" className="text-muted-foreground hover:text-mint text-sm">
           ← 博客知识库
