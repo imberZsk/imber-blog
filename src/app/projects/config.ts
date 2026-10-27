@@ -58,17 +58,6 @@ export const projectsConfig: Project[] = [
     type: 'personal'
   },
   {
-    id: 'visual-muse',
-    name: 'Visual Muse',
-    description: '面向多平台内容创作、Markdown 预览与发布准备的桌面工作台',
-    tech: ['Electron', 'React', 'Markdown'],
-    link: 'https://imber-visual-docs.netlify.app/visual-muse/',
-    github: 'https://github.com/imberZsk/visual-muse',
-    releaseUrl: 'https://github.com/imberZsk/visual-muse/releases/latest',
-    image: '/posts/friends/visual-muse-product.png',
-    type: 'personal'
-  },
-  {
     id: 'imber-frontend',
     name: 'Imber Frontend',
     description: 'Web 动画、3D 交互与前端工程实践的可运行实验场和知识库',
