@@ -99,7 +99,8 @@ export function GeekbangBrowser({ courses }: { courses: Course[] }) {
           <h2 className="mb-5 text-sm font-semibold">专题目录</h2>
           <CourseDirectory courses={filtered} />
         </aside>
-        <div className="grid gap-5 md:grid-cols-2">
+        {/* 网格默认拉伸同排卡片，导致未展开的模块也被撑高；顶部对齐使各卡片保持自身内容高度。 */}
+        <div className="grid items-start gap-5 md:grid-cols-2">
           {filtered.map((course) => (
             <section
               key={course.slug}
