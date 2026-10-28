@@ -36,17 +36,6 @@ export const projectsConfig: Project[] = [
     type: 'personal'
   },
   {
-    id: 'visual-lark-bridge',
-    name: 'Visual Lark Bridge',
-    description: '连接飞书与本机 AI 编程工具，并通过流式卡片展示执行进度',
-    tech: ['Electron', 'React', 'Lark'],
-    link: 'https://imber-visual-docs.netlify.app/visual-lark-bridge/',
-    github: 'https://github.com/imberZsk/visual-lark-bridge',
-    releaseUrl: 'https://github.com/imberZsk/visual-lark-bridge/releases/latest',
-    image: '/posts/friends/visual-lark-bridge-product.png',
-    type: 'personal'
-  },
-  {
     id: 'visual-learn',
     name: 'Visual Learn',
     description: '阅读和管理本地 Markdown 学习资料，追踪进度、标注与总结',
