@@ -6,7 +6,7 @@ import { GeekbangBrowser } from './browser'
 /** 备份阅读入口的独立元数据，避免与原创课程混淆。 */
 export const metadata: Metadata = {
   title: '极客知识库', // 浏览器和搜索结果中的标题。
-  description: '从大模型基础到 Agent 工程，按主题浏览 18 个知识库、320 篇原文备份。' // 描述迁入内容及阅读方式。
+  description: '从大模型基础到 Agent 工程，按主题浏览 18 个知识库、302 篇原文备份。' // 描述迁入内容及阅读方式。
 }
 
 /** 展示课程分类检索及章节入口。 */
@@ -22,7 +22,7 @@ export default function GeekbangPage() {
         <p className="text-muted-foreground mt-4 max-w-2xl leading-7">
           从大模型基础到 Agent 工程，沿着主题与章节循序阅读。
         </p>
-        <p className="text-muted-foreground mt-3 text-sm">18 个知识库 · 320 篇章节 · 原文备份，保留来源与配图</p>
+        <p className="text-muted-foreground mt-3 text-sm">18 个知识库 · 302 篇章节 · 原文备份，保留来源与配图</p>
       </header>
       <GeekbangBrowser courses={geekbangCourses} />
     </main>

@@ -66,7 +66,7 @@ export function KnowledgePageView({ activeTrack }: KnowledgePageViewProps) {
         <span>
           <span className="block font-medium">极客知识库</span>
           <span className="text-muted-foreground mt-1 block text-sm">
-            18 个专题 · 320 篇原文备份，涵盖大模型、Agent 与工程化
+            18 个专题 · 302 篇原文备份，涵盖大模型、Agent 与工程化
           </span>
         </span>
         <span className="text-mint text-sm">浏览专题 →</span>

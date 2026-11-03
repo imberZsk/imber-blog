@@ -5,12 +5,6 @@
     "slug": "LLM_History",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "大模型通识/大模型技术演进/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "1. 2022 年末：从语言生成到自然对话，ChatGPT 为什么成为转折点",
         "file": "1. 2022 年末：从语言生成到自然对话，ChatGPT 为什么成为转折点.html",
         "path": "大模型通识/大模型技术演进/1. 2022 年末：从语言生成到自然对话，ChatGPT 为什么成为转折点.md",
@@ -168,12 +162,6 @@
     "slug": "AI_Basic",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "大模型通识/AI 理论基础/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "1. 先建立一张地图：AI、机器学习、深度学习与大模型是什么关系",
         "file": "1. 先建立一张地图：AI、机器学习、深度学习与大模型是什么关系.html",
         "path": "大模型通识/AI 理论基础/1. 先建立一张地图：AI、机器学习、深度学习与大模型是什么关系.md",
@@ -258,12 +246,6 @@
     "name": "大模型理论基础",
     "slug": "LLM_Basic",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "大模型通识/大模型理论基础/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "1. 文字怎样进入模型：Token、分词与文本表示",
         "file": "1. 文字怎样进入模型：Token、分词与文本表示.html",
@@ -386,12 +368,6 @@
     "slug": "LLM_App_Develop_Basic",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "大模型通识/大模型应用开发入门/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
         "path": "大模型通识/大模型应用开发入门/0. 学前须知.md",
@@ -506,12 +482,6 @@
     "name": "Codex",
     "slug": "Codex_Tutorial",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/Codex/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "1. Codex是什么",
         "file": "1. Codex是什么.html",
@@ -675,12 +645,6 @@
     "name": "Claude Code",
     "slug": "Claude_Code_Tutorial",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/Claude Code/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
@@ -851,12 +815,6 @@
     "slug": "CodeBuddy_Tutorial",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/CodeBuddy/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
         "path": "主流 Agent 入门教程/CodeBuddy/0. 学前须知.md",
@@ -954,12 +912,6 @@
     "slug": "Qoder_Tutorial",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/Qoder/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
         "path": "主流 Agent 入门教程/Qoder/0. 学前须知.md",
@@ -1032,12 +984,6 @@
     "name": "TraeCode",
     "slug": "TraeCode_Tutorial",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/TraeCode/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
@@ -1142,12 +1088,6 @@
     "slug": "Kimi_Code_Tutorial",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/Kimi Code/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "1. 初识-Kimi Code",
         "file": "1. 初识-Kimi Code.html",
         "path": "主流 Agent 入门教程/Kimi Code/1. 初识-Kimi Code.md",
@@ -1232,12 +1172,6 @@
     "name": "MiniMax Code",
     "slug": "MiniMax_Code_Tutorial",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/MiniMax Code/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
@@ -1342,12 +1276,6 @@
     "slug": "ZCode_Tutorial",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/ZCode/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
         "path": "主流 Agent 入门教程/ZCode/0. 学前须知.md",
@@ -1420,12 +1348,6 @@
     "name": "DeepSeek Harness",
     "slug": "DSH_Tutorial",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "主流 Agent 入门教程/DeepSeek Harness/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "1. DSH是什么",
         "file": "1. DSH是什么.html",
@@ -1554,12 +1476,6 @@
     "slug": "Harness_Engineering",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "工程化/Harness Engineering/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "1. 智能体运行环境工程是什么",
         "file": "1. 智能体运行环境工程是什么.html",
         "path": "工程化/Harness Engineering/1. 智能体运行环境工程是什么.md",
@@ -1626,12 +1542,6 @@
     "name": "Loop Engineering",
     "slug": "Loop_Engineering",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "工程化/Loop Engineering/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
@@ -1711,12 +1621,6 @@
     "name": "大模型应用工程化",
     "slug": "LLM_App_Engineering",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "工程化/大模型应用工程化/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "0. 学前须知",
         "file": "0. 学前须知.html",
@@ -1845,12 +1749,6 @@
     "slug": "Jev_Tutorial",
     "chapters": [
       {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "工程化/Jev/学习交流群.md",
-        "slug": "00"
-      },
-      {
         "title": "1. Jev到底是什么",
         "file": "1. Jev到底是什么.html",
         "path": "工程化/Jev/1. Jev到底是什么.md",
@@ -1911,12 +1809,6 @@
     "name": "150 道 AI 面试题",
     "slug": "AI_Interview",
     "chapters": [
-      {
-        "title": "学习交流群",
-        "file": "学习交流群.html",
-        "path": "AI 面试/150 道 AI 面试题/学习交流群.md",
-        "slug": "00"
-      },
       {
         "title": "1. 大模型通识（LLM基础）",
         "file": "1. 大模型通识（LLM基础）.html",

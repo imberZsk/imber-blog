@@ -111,10 +111,7 @@ export function GeekbangBrowser({ courses }: { courses: Course[] }) {
                 {course.category} · {course.chapters.length} 篇
               </p>
               <h2 className="mb-4 text-xl font-semibold">
-                <Link
-                  href={`/geekbang/${course.slug}/${course.chapters.find((chapter) => chapter.title !== '学习交流群')?.slug || course.chapters[0]?.slug}`}
-                  className="hover:text-mint"
-                >
+                <Link href={`/geekbang/${course.slug}/${course.chapters[0]?.slug}`} className="hover:text-mint">
                   {course.name} →
                 </Link>
               </h2>
