@@ -76,7 +76,7 @@
     "tailwind-merge": "^3.6.0",
     "tippy.js": "^6.3.7",
     "use-debounce": "^10.1.1",
-    "zod": "^4.4.3",
+    "zod": "^4.6.6",
     "three": "^0.185.1"
   },
   "devDependencies": {
